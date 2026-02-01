@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
 import { useAllProjects } from "@/hooks/useProject";
@@ -19,8 +20,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => openModal("create-project")}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
+            <Plus size={16} />
             New Project
           </button>
         </div>

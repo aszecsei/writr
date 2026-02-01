@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle, Check, Loader2, Menu, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -20,22 +21,10 @@ export function TopBar() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
           aria-label="Toggle sidebar"
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            role="img"
-            aria-label="Toggle sidebar"
-          >
-            <path d="M3 4.5h12M3 9h12M3 13.5h12" />
-          </svg>
+          <Menu size={18} />
         </button>
         <Link
           href="/"
@@ -64,12 +53,13 @@ export function TopBar() {
         <button
           type="button"
           onClick={toggleAiPanel}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
             aiPanelOpen
               ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
               : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
           }`}
         >
+          <Sparkles size={14} />
           AI
         </button>
       </div>
@@ -82,22 +72,20 @@ function SaveStatusIndicator({
 }: {
   status: "idle" | "saving" | "saved" | "error";
 }) {
-  const label = {
-    idle: "",
-    saving: "Saving...",
-    saved: "Saved",
-    error: "Save failed",
-  }[status];
-
-  if (!label) return null;
+  if (status === "idle") return null;
 
   return (
     <span
-      className={`text-xs ${
+      className={`flex items-center gap-1 text-xs ${
         status === "error" ? "text-red-500" : "text-zinc-400 dark:text-zinc-500"
       }`}
     >
-      {label}
+      {status === "saving" && <Loader2 size={12} className="animate-spin" />}
+      {status === "saved" && <Check size={12} />}
+      {status === "error" && <AlertCircle size={12} />}
+      {status === "saving" && "Saving..."}
+      {status === "saved" && "Saved"}
+      {status === "error" && "Save failed"}
     </span>
   );
 }

@@ -1,6 +1,22 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Bold,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  List,
+  ListOrdered,
+  Quote,
+  Redo2,
+  Strikethrough,
+  Underline,
+  Undo2,
+} from "lucide-react";
 import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
@@ -11,73 +27,101 @@ interface EditorToolbarProps {
 
 interface ToolbarAction {
   label: string;
+  icon: LucideIcon;
   action: (editor: Editor) => void;
   isActive?: (editor: Editor) => boolean;
+  group: "text" | "heading" | "block" | "history";
 }
 
 const actions: ToolbarAction[] = [
   {
-    label: "B",
+    label: "Bold",
+    icon: Bold,
     action: (e) => e.chain().focus().toggleBold().run(),
     isActive: (e) => e.isActive("bold"),
+    group: "text",
   },
   {
-    label: "I",
+    label: "Italic",
+    icon: Italic,
     action: (e) => e.chain().focus().toggleItalic().run(),
     isActive: (e) => e.isActive("italic"),
+    group: "text",
   },
   {
-    label: "U",
+    label: "Underline",
+    icon: Underline,
     action: (e) => e.chain().focus().toggleUnderline().run(),
     isActive: (e) => e.isActive("underline"),
+    group: "text",
   },
   {
-    label: "S",
+    label: "Strikethrough",
+    icon: Strikethrough,
     action: (e) => e.chain().focus().toggleStrike().run(),
     isActive: (e) => e.isActive("strike"),
+    group: "text",
   },
   {
-    label: "H1",
+    label: "Heading 1",
+    icon: Heading1,
     action: (e) => e.chain().focus().toggleHeading({ level: 1 }).run(),
     isActive: (e) => e.isActive("heading", { level: 1 }),
+    group: "heading",
   },
   {
-    label: "H2",
+    label: "Heading 2",
+    icon: Heading2,
     action: (e) => e.chain().focus().toggleHeading({ level: 2 }).run(),
     isActive: (e) => e.isActive("heading", { level: 2 }),
+    group: "heading",
   },
   {
-    label: "H3",
+    label: "Heading 3",
+    icon: Heading3,
     action: (e) => e.chain().focus().toggleHeading({ level: 3 }).run(),
     isActive: (e) => e.isActive("heading", { level: 3 }),
+    group: "heading",
   },
   {
-    label: "Quote",
+    label: "Blockquote",
+    icon: Quote,
     action: (e) => e.chain().focus().toggleBlockquote().run(),
     isActive: (e) => e.isActive("blockquote"),
+    group: "block",
   },
   {
-    label: "Bullet",
+    label: "Bullet List",
+    icon: List,
     action: (e) => e.chain().focus().toggleBulletList().run(),
     isActive: (e) => e.isActive("bulletList"),
+    group: "block",
   },
   {
-    label: "Ordered",
+    label: "Ordered List",
+    icon: ListOrdered,
     action: (e) => e.chain().focus().toggleOrderedList().run(),
     isActive: (e) => e.isActive("orderedList"),
+    group: "block",
   },
   {
-    label: "Code",
+    label: "Code Block",
+    icon: Code,
     action: (e) => e.chain().focus().toggleCodeBlock().run(),
     isActive: (e) => e.isActive("codeBlock"),
+    group: "block",
   },
   {
     label: "Undo",
+    icon: Undo2,
     action: (e) => e.chain().focus().undo().run(),
+    group: "history",
   },
   {
     label: "Redo",
+    icon: Redo2,
     action: (e) => e.chain().focus().redo().run(),
+    group: "history",
   },
 ];
 
@@ -86,6 +130,13 @@ const CATEGORY_LABELS: Record<EditorFont["category"], string> = {
   sans: "Sans-Serif",
   accessible: "Accessible",
 };
+
+const groups: ToolbarAction["group"][] = [
+  "text",
+  "heading",
+  "block",
+  "history",
+];
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   const settings = useAppSettings();
@@ -118,21 +169,33 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         </select>
       </label>
       <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
-      {actions.map((action) => {
-        const active = action.isActive?.(editor) ?? false;
+      {groups.map((group, gi) => {
+        const groupActions = actions.filter((a) => a.group === group);
         return (
-          <button
-            key={action.label}
-            type="button"
-            onClick={() => action.action(editor)}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              active
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            }`}
-          >
-            {action.label}
-          </button>
+          <div key={group} className="flex items-center">
+            {gi > 0 && (
+              <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+            )}
+            {groupActions.map((action) => {
+              const active = action.isActive?.(editor) ?? false;
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.label}
+                  type="button"
+                  title={action.label}
+                  onClick={() => action.action(editor)}
+                  className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                    active
+                      ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
+                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <Icon size={16} />
+                </button>
+              );
+            })}
+          </div>
         );
       })}
     </div>

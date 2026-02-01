@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -75,8 +76,16 @@ export function AppSettingsDialog() {
     "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+        <button
+          type="button"
+          onClick={closeModal}
+          className="absolute right-4 top-4 rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          aria-label="Close dialog"
+        >
+          <X size={16} />
+        </button>
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
           App Settings
         </h2>
@@ -166,15 +175,16 @@ export function AppSettingsDialog() {
                     type={showApiKey ? "text" : "password"}
                     value={openRouterApiKey}
                     onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                    className={`${inputClass} mt-0 pr-16`}
+                    className={`${inputClass} mt-0 pr-10`}
                     placeholder="sk-or-..."
                   />
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    title={showApiKey ? "Hide API key" : "Show API key"}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
-                    {showApiKey ? "Hide" : "Show"}
+                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </label>
@@ -208,13 +218,13 @@ export function AppSettingsDialog() {
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               Save
             </button>

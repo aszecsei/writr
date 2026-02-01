@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle, ArrowUp, Sparkles, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { getAppSettings } from "@/db/operations";
 import {
@@ -123,7 +124,8 @@ export function AiPanel() {
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <Sparkles size={14} />
             AI Assistant
           </h3>
           {messages.length > 0 && (
@@ -133,9 +135,10 @@ export function AiPanel() {
                 setMessages([]);
                 setError(null);
               }}
-              className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              title="Clear conversation"
+              className="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             >
-              Clear
+              <Trash2 size={14} />
             </button>
           )}
         </div>
@@ -176,9 +179,10 @@ export function AiPanel() {
           </div>
         )}
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950 dark:text-red-400">
-            {error}
-          </p>
+          <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950 dark:text-red-400">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <p>{error}</p>
+          </div>
         )}
       </div>
 
@@ -198,9 +202,10 @@ export function AiPanel() {
           <button
             type="submit"
             disabled={!prompt.trim() || loading}
-            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            title="Send message"
+            className="rounded-md bg-zinc-900 p-2 text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            Send
+            <ArrowUp size={16} />
           </button>
         </div>
       </form>

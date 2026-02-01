@@ -1,5 +1,6 @@
 "use client";
 
+import { Calendar } from "lucide-react";
 import Link from "next/link";
 import type { Project } from "@/db/schemas";
 
@@ -13,7 +14,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group block rounded-lg border border-zinc-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+      className="group block rounded-xl border border-zinc-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
     >
       <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-zinc-700 dark:text-zinc-100 dark:group-hover:text-zinc-300">
         {project.title}
@@ -29,7 +30,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </p>
       )}
       <div className="mt-4 flex items-center justify-between text-xs text-zinc-400 dark:text-zinc-500">
-        <span>Updated {updatedDate}</span>
+        <span className="flex items-center gap-1">
+          <Calendar size={12} />
+          Updated {updatedDate}
+        </span>
         {project.targetWordCount > 0 && (
           <span>{project.targetWordCount.toLocaleString()} words target</span>
         )}

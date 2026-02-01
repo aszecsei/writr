@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
 import type { Project } from "@/db/schemas";
 import { ProjectCard } from "./ProjectCard";
 
@@ -11,6 +12,9 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <BookOpen size={24} className="text-zinc-400 dark:text-zinc-500" />
+        </div>
         <p className="text-lg text-zinc-500 dark:text-zinc-400">
           No projects yet
         </p>

@@ -1,5 +1,7 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
+import { Clock, GitFork, Globe, MapPin, Pen, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -11,14 +13,44 @@ import {
   useWorldbuildingDocsByProject,
 } from "@/hooks/useBibleEntries";
 
-const sections = [
-  { key: "characters", label: "Characters", path: "bible/characters" },
-  { key: "locations", label: "Locations", path: "bible/locations" },
-  { key: "timeline", label: "Timeline", path: "bible/timeline" },
-  { key: "family-tree", label: "Family Tree", path: "bible/family-tree" },
-  { key: "style-guide", label: "Style Guide", path: "bible/style-guide" },
-  { key: "worldbuilding", label: "Worldbuilding", path: "bible/worldbuilding" },
-] as const;
+const sections: {
+  key: string;
+  label: string;
+  path: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    key: "characters",
+    label: "Characters",
+    path: "bible/characters",
+    icon: Users,
+  },
+  {
+    key: "locations",
+    label: "Locations",
+    path: "bible/locations",
+    icon: MapPin,
+  },
+  { key: "timeline", label: "Timeline", path: "bible/timeline", icon: Clock },
+  {
+    key: "family-tree",
+    label: "Family Tree",
+    path: "bible/family-tree",
+    icon: GitFork,
+  },
+  {
+    key: "style-guide",
+    label: "Style Guide",
+    path: "bible/style-guide",
+    icon: Pen,
+  },
+  {
+    key: "worldbuilding",
+    label: "Worldbuilding",
+    path: "bible/worldbuilding",
+    icon: Globe,
+  },
+];
 
 export default function BibleOverviewPage() {
   const params = useParams<{ projectId: string }>();
@@ -48,29 +80,35 @@ export default function BibleOverviewPage() {
         worldbuilding details.
       </p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sections.map((section) => (
-          <Link
-            key={section.key}
-            href={`/projects/${params.projectId}/${section.path}`}
-            className="group rounded-lg border border-zinc-200 bg-white p-5 transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-          >
-            <h3 className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-700 dark:text-zinc-100 dark:group-hover:text-zinc-300">
-              {section.label}
-            </h3>
-            <p className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              {counts[section.key] ?? 0}
-            </p>
-            <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-              {section.key === "family-tree"
-                ? counts[section.key] === 1
-                  ? "relationship"
-                  : "relationships"
-                : counts[section.key] === 1
-                  ? "entry"
-                  : "entries"}
-            </p>
-          </Link>
-        ))}
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <Link
+              key={section.key}
+              href={`/projects/${params.projectId}/${section.path}`}
+              className="group rounded-xl border border-zinc-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                <Icon size={16} />
+              </div>
+              <h3 className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-700 dark:text-zinc-100 dark:group-hover:text-zinc-300">
+                {section.label}
+              </h3>
+              <p className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                {counts[section.key] ?? 0}
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+                {section.key === "family-tree"
+                  ? counts[section.key] === 1
+                    ? "relationship"
+                    : "relationships"
+                  : counts[section.key] === 1
+                    ? "entry"
+                    : "entries"}
+              </p>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
