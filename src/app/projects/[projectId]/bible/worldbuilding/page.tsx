@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CompiledView } from "@/components/worldbuilding/CompiledView";
+import { WorldbuildingDocModal } from "@/components/worldbuilding/WorldbuildingDocModal";
 import {
   createWorldbuildingDoc,
   deleteWorldbuildingDoc,
@@ -21,12 +22,12 @@ type Tab = "tree" | "compiled";
 
 export default function WorldbuildingListPage() {
   const params = useParams<{ projectId: string }>();
-  const router = useRouter();
   const docs = useWorldbuildingDocsByProject(params.projectId);
   const [tab, setTab] = useState<Tab>("tree");
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
   const tree = useMemo(() => buildWorldbuildingTree(docs ?? []), [docs]);
 
@@ -108,7 +109,6 @@ export default function WorldbuildingListPage() {
   }
 
   function isDescendant(ancestorId: string, nodeId: string): boolean {
-    // Walk flat docs to check ancestry
     let cursor = nodeId;
     const docMap = new Map((docs ?? []).map((d) => [d.id, d]));
     while (cursor) {
@@ -167,11 +167,7 @@ export default function WorldbuildingListPage() {
           ) : (
             <button
               type="button"
-              onClick={() =>
-                router.push(
-                  `/projects/${params.projectId}/bible/worldbuilding/${node.doc.id}`,
-                )
-              }
+              onClick={() => setSelectedDocId(node.doc.id)}
               className="flex-1 text-left"
             >
               <span
@@ -328,6 +324,15 @@ export default function WorldbuildingListPage() {
           <CompiledView markdown={compiled} />
         )}
       </div>
+
+      {/* Doc editor modal */}
+      {selectedDocId && (
+        <WorldbuildingDocModal
+          docId={selectedDocId}
+          allDocs={docs ?? []}
+          onClose={() => setSelectedDocId(null)}
+        />
+      )}
     </div>
   );
 }
