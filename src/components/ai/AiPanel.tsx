@@ -5,7 +5,10 @@ import { getAppSettings } from "@/db/operations";
 import {
   useCharactersByProject,
   useLocationsByProject,
+  useRelationshipsByProject,
   useStyleGuideByProject,
+  useTimelineByProject,
+  useWorldbuildingDocsByProject,
 } from "@/hooks/useBibleEntries";
 import { useChapter } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
@@ -37,6 +40,9 @@ export function AiPanel() {
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
+  const timelineEvents = useTimelineByProject(projectId);
+  const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
+  const relationships = useRelationshipsByProject(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
   const activeChapter = useChapter(
@@ -67,22 +73,12 @@ export function AiPanel() {
       const context: AiContext = {
         projectTitle: project?.title ?? "",
         genre: project?.genre ?? "",
-        characters:
-          characters?.map((c) => ({
-            name: c.name,
-            role: c.role,
-            description: c.description,
-          })) ?? [],
-        locations:
-          locations?.map((l) => ({
-            name: l.name,
-            description: l.description,
-          })) ?? [],
-        styleGuide:
-          styleGuide?.map((s) => ({
-            title: s.title,
-            content: s.content,
-          })) ?? [],
+        characters: characters ?? [],
+        locations: locations ?? [],
+        styleGuide: styleGuide ?? [],
+        timelineEvents: timelineEvents ?? [],
+        worldbuildingDocs: worldbuildingDocs ?? [],
+        relationships: relationships ?? [],
         currentChapterTitle: activeChapter?.title,
         currentChapterContent: activeChapter?.content || undefined,
       };
@@ -126,9 +122,23 @@ export function AiPanel() {
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          AI Assistant
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            AI Assistant
+          </h3>
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setMessages([]);
+                setError(null);
+              }}
+              className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            >
+              Clear
+            </button>
+          )}
+        </div>
         <select
           value={tool}
           onChange={(e) => setTool(e.target.value as AiTool)}

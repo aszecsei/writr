@@ -13,7 +13,16 @@ export default function CharacterDetailPage() {
 
   const [name, setName] = useState("");
   const [role, setRole] = useState<CharacterRole>("supporting");
+  const [pronouns, setPronouns] = useState("");
+  const [aliasesInput, setAliasesInput] = useState("");
   const [description, setDescription] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [motivations, setMotivations] = useState("");
+  const [internalConflict, setInternalConflict] = useState("");
+  const [strengths, setStrengths] = useState("");
+  const [weaknesses, setWeaknesses] = useState("");
+  const [characterArcs, setCharacterArcs] = useState("");
+  const [dialogueStyle, setDialogueStyle] = useState("");
   const [backstory, setBackstory] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -21,9 +30,18 @@ export default function CharacterDetailPage() {
     if (character) {
       setName(character.name);
       setRole(character.role);
-      setDescription(character.description);
-      setBackstory(character.backstory);
-      setNotes(character.notes);
+      setPronouns(character.pronouns ?? "");
+      setAliasesInput((character.aliases ?? []).join(", "));
+      setDescription(character.description ?? "");
+      setPersonality(character.personality ?? "");
+      setMotivations(character.motivations ?? "");
+      setInternalConflict(character.internalConflict ?? "");
+      setStrengths(character.strengths ?? "");
+      setWeaknesses(character.weaknesses ?? "");
+      setCharacterArcs(character.characterArcs ?? "");
+      setDialogueStyle(character.dialogueStyle ?? "");
+      setBackstory(character.backstory ?? "");
+      setNotes(character.notes ?? "");
     }
   }, [character]);
 
@@ -31,10 +49,23 @@ export default function CharacterDetailPage() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
+    const aliases = aliasesInput
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
     await updateCharacter(params.characterId, {
       name,
       role,
+      pronouns,
+      aliases,
       description,
+      personality,
+      motivations,
+      internalConflict,
+      strengths,
+      weaknesses,
+      characterArcs,
+      dialogueStyle,
       backstory,
       notes,
     });
@@ -45,9 +76,15 @@ export default function CharacterDetailPage() {
     router.push(`/projects/${params.projectId}/bible/characters`);
   }
 
+  const inputClass =
+    "mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
+  const labelClass =
+    "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
+
   return (
     <div className="mx-auto max-w-3xl px-8 py-8">
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <input
             type="text"
@@ -72,13 +109,15 @@ export default function CharacterDetailPage() {
             </button>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+
+        {/* Identity row */}
+        <div className="grid grid-cols-3 gap-4">
+          <label className={labelClass}>
             Role
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as CharacterRole)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className={inputClass}
             >
               <option value="protagonist">Protagonist</option>
               <option value="antagonist">Antagonist</option>
@@ -86,43 +125,147 @@ export default function CharacterDetailPage() {
               <option value="minor">Minor</option>
             </select>
           </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Description
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="Physical appearance, personality traits..."
+          <label className={labelClass}>
+            Pronouns
+            <input
+              type="text"
+              value={pronouns}
+              onChange={(e) => setPronouns(e.target.value)}
+              className={inputClass}
+              placeholder="she/her, he/him, they/them..."
+            />
+          </label>
+          <label className={labelClass}>
+            Aliases
+            <input
+              type="text"
+              value={aliasesInput}
+              onChange={(e) => setAliasesInput(e.target.value)}
+              className={inputClass}
+              placeholder="comma-separated"
             />
           </label>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Backstory
+
+        {/* Physical Description */}
+        <label className={labelClass}>
+          Physical Description
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className={inputClass}
+            placeholder="Appearance, distinguishing features, mannerisms..."
+          />
+        </label>
+
+        {/* Personality & Motivations */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className={labelClass}>
+            Personality
             <textarea
-              value={backstory}
-              onChange={(e) => setBackstory(e.target.value)}
-              rows={6}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="Character history and background..."
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Temperament, habits, social behavior..."
+            />
+          </label>
+          <label className={labelClass}>
+            Motivations
+            <textarea
+              value={motivations}
+              onChange={(e) => setMotivations(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Goals, desires, what drives them..."
             />
           </label>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Notes
+
+        {/* Internal Conflict */}
+        <label className={labelClass}>
+          Internal Conflict
+          <textarea
+            value={internalConflict}
+            onChange={(e) => setInternalConflict(e.target.value)}
+            rows={3}
+            className={inputClass}
+            placeholder="Inner struggles, contradictions, moral dilemmas..."
+          />
+        </label>
+
+        {/* Strengths & Weaknesses */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className={labelClass}>
+            Strengths
             <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="Freeform notes..."
+              value={strengths}
+              onChange={(e) => setStrengths(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Skills, virtues, advantages..."
+            />
+          </label>
+          <label className={labelClass}>
+            Weaknesses
+            <textarea
+              value={weaknesses}
+              onChange={(e) => setWeaknesses(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Flaws, vulnerabilities, blind spots..."
             />
           </label>
         </div>
+
+        {/* Character Arcs & Dialogue Style */}
+        <div className="grid grid-cols-2 gap-4">
+          <label className={labelClass}>
+            Character Arcs
+            <textarea
+              value={characterArcs}
+              onChange={(e) => setCharacterArcs(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Growth, transformation, key turning points..."
+            />
+          </label>
+          <label className={labelClass}>
+            Dialogue Style
+            <textarea
+              value={dialogueStyle}
+              onChange={(e) => setDialogueStyle(e.target.value)}
+              rows={3}
+              className={inputClass}
+              placeholder="Speech patterns, vocabulary, verbal tics..."
+            />
+          </label>
+        </div>
+
+        {/* Backstory */}
+        <label className={labelClass}>
+          Backstory
+          <textarea
+            value={backstory}
+            onChange={(e) => setBackstory(e.target.value)}
+            rows={5}
+            className={inputClass}
+            placeholder="Character history and background..."
+          />
+        </label>
+
+        {/* Notes */}
+        <label className={labelClass}>
+          Notes
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            className={inputClass}
+            placeholder="Freeform notes..."
+          />
+        </label>
       </form>
     </div>
   );

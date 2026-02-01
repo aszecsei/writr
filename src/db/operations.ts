@@ -168,8 +168,16 @@ export async function createCharacter(
       Pick<
         Character,
         | "role"
+        | "pronouns"
         | "aliases"
         | "description"
+        | "personality"
+        | "motivations"
+        | "internalConflict"
+        | "strengths"
+        | "weaknesses"
+        | "characterArcs"
+        | "dialogueStyle"
         | "backstory"
         | "notes"
         | "linkedCharacterIds"
@@ -182,8 +190,16 @@ export async function createCharacter(
     projectId: data.projectId,
     name: data.name,
     role: data.role ?? "supporting",
+    pronouns: data.pronouns ?? "",
     aliases: data.aliases ?? [],
     description: data.description ?? "",
+    personality: data.personality ?? "",
+    motivations: data.motivations ?? "",
+    internalConflict: data.internalConflict ?? "",
+    strengths: data.strengths ?? "",
+    weaknesses: data.weaknesses ?? "",
+    characterArcs: data.characterArcs ?? "",
+    dialogueStyle: data.dialogueStyle ?? "",
     backstory: data.backstory ?? "",
     notes: data.notes ?? "",
     linkedCharacterIds: data.linkedCharacterIds ?? [],

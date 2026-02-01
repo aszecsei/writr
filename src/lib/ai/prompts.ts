@@ -1,3 +1,12 @@
+import {
+  buildCharacterNameMap,
+  serializeCharacter,
+  serializeLocation,
+  serializeRelationship,
+  serializeStyleGuideEntry,
+  serializeTimelineEvent,
+  serializeWorldbuildingDoc,
+} from "./serialize";
 import type { AiContext, AiMessage, AiTool } from "./types";
 
 function buildSystemContext(context: AiContext): string {
@@ -5,27 +14,53 @@ function buildSystemContext(context: AiContext): string {
   if (context.genre) system += ` (genre: ${context.genre})`;
   system += ".\n\n";
 
+  const charMap = buildCharacterNameMap(context.characters);
+
   if (context.characters.length > 0) {
     system += "## Key Characters\n";
-    for (const c of context.characters) {
-      system += `- **${c.name}** (${c.role}): ${c.description}\n`;
+    system += context.characters.map(serializeCharacter).join("\n\n");
+    system += "\n\n";
+  }
+
+  if (context.relationships.length > 0) {
+    const lines = context.relationships
+      .map((r) => serializeRelationship(r, charMap))
+      .filter(Boolean);
+    if (lines.length > 0) {
+      system += "## Character Relationships\n";
+      system += lines.join("\n");
+      system += "\n\n";
     }
-    system += "\n";
   }
 
   if (context.locations.length > 0) {
     system += "## Key Locations\n";
-    for (const l of context.locations) {
-      system += `- **${l.name}**: ${l.description}\n`;
-    }
-    system += "\n";
+    system += context.locations
+      .map((l) => serializeLocation(l, charMap))
+      .join("\n\n");
+    system += "\n\n";
   }
 
   if (context.styleGuide.length > 0) {
     system += "## Style Guide\n";
-    for (const s of context.styleGuide) {
-      system += `### ${s.title}\n${s.content}\n\n`;
-    }
+    system += context.styleGuide.map(serializeStyleGuideEntry).join("\n\n");
+    system += "\n\n";
+  }
+
+  if (context.timelineEvents.length > 0) {
+    system += "## Timeline\n";
+    system += context.timelineEvents
+      .map((e) => serializeTimelineEvent(e, charMap))
+      .join("\n\n");
+    system += "\n\n";
+  }
+
+  if (context.worldbuildingDocs.length > 0) {
+    system += "## Worldbuilding\n";
+    system += context.worldbuildingDocs
+      .map(serializeWorldbuildingDoc)
+      .join("\n\n");
+    system += "\n\n";
   }
 
   return system;

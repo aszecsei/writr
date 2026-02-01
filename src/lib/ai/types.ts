@@ -11,12 +11,24 @@ export interface AiMessage {
   content: string;
 }
 
+import type {
+  Character,
+  CharacterRelationship,
+  Location,
+  StyleGuideEntry,
+  TimelineEvent,
+  WorldbuildingDoc,
+} from "@/db/schemas";
+
 export interface AiContext {
   projectTitle: string;
   genre: string;
-  characters: Array<{ name: string; role: string; description: string }>;
-  locations: Array<{ name: string; description: string }>;
-  styleGuide: Array<{ title: string; content: string }>;
+  characters: Character[];
+  locations: Location[];
+  styleGuide: StyleGuideEntry[];
+  timelineEvents: TimelineEvent[];
+  worldbuildingDocs: WorldbuildingDoc[];
+  relationships: CharacterRelationship[];
   currentChapterTitle?: string;
   currentChapterContent?: string;
   selectedText?: string;

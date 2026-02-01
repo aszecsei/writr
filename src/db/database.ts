@@ -72,6 +72,22 @@ export class WritrDatabase extends Dexie {
             if (doc.order === undefined) doc.order = 0;
           }),
       );
+
+    this.version(4).upgrade((tx) =>
+      tx
+        .table("characters")
+        .toCollection()
+        .modify((c) => {
+          if (c.pronouns === undefined) c.pronouns = "";
+          if (c.personality === undefined) c.personality = "";
+          if (c.motivations === undefined) c.motivations = "";
+          if (c.internalConflict === undefined) c.internalConflict = "";
+          if (c.strengths === undefined) c.strengths = "";
+          if (c.weaknesses === undefined) c.weaknesses = "";
+          if (c.characterArcs === undefined) c.characterArcs = "";
+          if (c.dialogueStyle === undefined) c.dialogueStyle = "";
+        }),
+    );
   }
 }
 
