@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import {
   useCharactersByProject,
   useLocationsByProject,
+  useRelationshipsByProject,
   useStyleGuideByProject,
   useTimelineByProject,
   useWorldbuildingDocsByProject,
@@ -14,6 +15,7 @@ const sections = [
   { key: "characters", label: "Characters", path: "bible/characters" },
   { key: "locations", label: "Locations", path: "bible/locations" },
   { key: "timeline", label: "Timeline", path: "bible/timeline" },
+  { key: "family-tree", label: "Family Tree", path: "bible/family-tree" },
   { key: "style-guide", label: "Style Guide", path: "bible/style-guide" },
   { key: "worldbuilding", label: "Worldbuilding", path: "bible/worldbuilding" },
 ] as const;
@@ -23,6 +25,7 @@ export default function BibleOverviewPage() {
   const characters = useCharactersByProject(params.projectId);
   const locations = useLocationsByProject(params.projectId);
   const timeline = useTimelineByProject(params.projectId);
+  const relationships = useRelationshipsByProject(params.projectId);
   const styleGuide = useStyleGuideByProject(params.projectId);
   const worldbuilding = useWorldbuildingDocsByProject(params.projectId);
 
@@ -30,6 +33,7 @@ export default function BibleOverviewPage() {
     characters: characters?.length,
     locations: locations?.length,
     timeline: timeline?.length,
+    "family-tree": relationships?.length,
     "style-guide": styleGuide?.length,
     worldbuilding: worldbuilding?.length,
   };
@@ -40,8 +44,8 @@ export default function BibleOverviewPage() {
         Story Bible
       </h2>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        Track characters, locations, events, style rules, and worldbuilding
-        details.
+        Track characters, locations, events, relationships, style rules, and
+        worldbuilding details.
       </p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => (
@@ -57,7 +61,13 @@ export default function BibleOverviewPage() {
               {counts[section.key] ?? 0}
             </p>
             <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-              {counts[section.key] === 1 ? "entry" : "entries"}
+              {section.key === "family-tree"
+                ? counts[section.key] === 1
+                  ? "relationship"
+                  : "relationships"
+                : counts[section.key] === 1
+                  ? "entry"
+                  : "entries"}
             </p>
           </Link>
         ))}

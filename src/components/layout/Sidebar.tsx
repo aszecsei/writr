@@ -276,6 +276,7 @@ const bibleLinks = [
   { label: "Characters", path: "bible/characters" },
   { label: "Locations", path: "bible/locations" },
   { label: "Timeline", path: "bible/timeline" },
+  { label: "Family Tree", path: "bible/family-tree" },
   { label: "Style Guide", path: "bible/style-guide" },
   { label: "Worldbuilding", path: "bible/worldbuilding" },
 ];

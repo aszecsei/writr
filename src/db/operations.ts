@@ -7,6 +7,8 @@ import {
   type Chapter,
   ChapterSchema,
   type Character,
+  type CharacterRelationship,
+  CharacterRelationshipSchema,
   CharacterSchema,
   type Location,
   LocationSchema,
@@ -63,6 +65,7 @@ export async function deleteProject(id: string): Promise<void> {
       db.timelineEvents,
       db.styleGuideEntries,
       db.worldbuildingDocs,
+      db.characterRelationships,
     ],
     async () => {
       await db.chapters.where({ projectId: id }).delete();
@@ -71,6 +74,7 @@ export async function deleteProject(id: string): Promise<void> {
       await db.timelineEvents.where({ projectId: id }).delete();
       await db.styleGuideEntries.where({ projectId: id }).delete();
       await db.worldbuildingDocs.where({ projectId: id }).delete();
+      await db.characterRelationships.where({ projectId: id }).delete();
       await db.projects.delete(id);
     },
   );
@@ -199,7 +203,21 @@ export async function updateCharacter(
 }
 
 export async function deleteCharacter(id: string): Promise<void> {
-  await db.characters.delete(id);
+  await db.transaction(
+    "rw",
+    [db.characters, db.characterRelationships],
+    async () => {
+      await db.characterRelationships
+        .where("sourceCharacterId")
+        .equals(id)
+        .delete();
+      await db.characterRelationships
+        .where("targetCharacterId")
+        .equals(id)
+        .delete();
+      await db.characters.delete(id);
+    },
+  );
 }
 
 // ─── Locations ───────────────────────────────────────────────────────
@@ -367,7 +385,7 @@ export async function deleteStyleGuideEntry(id: string): Promise<void> {
 export async function getWorldbuildingDocsByProject(
   projectId: string,
 ): Promise<WorldbuildingDoc[]> {
-  return db.worldbuildingDocs.where({ projectId }).sortBy("title");
+  return db.worldbuildingDocs.where({ projectId }).sortBy("order");
 }
 
 export async function getWorldbuildingDoc(
@@ -381,16 +399,30 @@ export async function createWorldbuildingDoc(
     Partial<
       Pick<
         WorldbuildingDoc,
-        "content" | "tags" | "linkedCharacterIds" | "linkedLocationIds"
+        | "content"
+        | "tags"
+        | "parentDocId"
+        | "order"
+        | "linkedCharacterIds"
+        | "linkedLocationIds"
       >
     >,
 ): Promise<WorldbuildingDoc> {
+  const parentDocId = data.parentDocId ?? null;
+  const order =
+    data.order ??
+    (await db.worldbuildingDocs
+      .where({ projectId: data.projectId })
+      .filter((d) => d.parentDocId === parentDocId)
+      .count());
   const doc = WorldbuildingDocSchema.parse({
     id: generateId(),
     projectId: data.projectId,
     title: data.title,
     content: data.content ?? "",
     tags: data.tags ?? [],
+    parentDocId,
+    order,
     linkedCharacterIds: data.linkedCharacterIds ?? [],
     linkedLocationIds: data.linkedLocationIds ?? [],
     createdAt: now(),
@@ -404,11 +436,107 @@ export async function updateWorldbuildingDoc(
   id: string,
   data: Partial<Omit<WorldbuildingDoc, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
+  // Cycle detection when changing parentDocId
+  if (data.parentDocId !== undefined) {
+    let cursor = data.parentDocId;
+    while (cursor) {
+      if (cursor === id) {
+        throw new Error(
+          "Cannot move a document under one of its own children.",
+        );
+      }
+      const parent = await db.worldbuildingDocs.get(cursor);
+      cursor = parent?.parentDocId ?? null;
+    }
+  }
   await db.worldbuildingDocs.update(id, { ...data, updatedAt: now() });
 }
 
 export async function deleteWorldbuildingDoc(id: string): Promise<void> {
-  await db.worldbuildingDocs.delete(id);
+  const doc = await db.worldbuildingDocs.get(id);
+  if (!doc) return;
+  const newParent = doc.parentDocId;
+  await db.transaction("rw", db.worldbuildingDocs, async () => {
+    // Re-parent children to deleted doc's parent
+    await db.worldbuildingDocs
+      .where({ parentDocId: id })
+      .modify({ parentDocId: newParent });
+    await db.worldbuildingDocs.delete(id);
+  });
+}
+
+export async function reorderWorldbuildingDocs(
+  orderedIds: string[],
+): Promise<void> {
+  await db.transaction("rw", db.worldbuildingDocs, async () => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.worldbuildingDocs.update(orderedIds[i], { order: i });
+    }
+  });
+}
+
+// ─── Character Relationships ────────────────────────────────────────
+
+export async function getRelationshipsByProject(
+  projectId: string,
+): Promise<CharacterRelationship[]> {
+  return db.characterRelationships.where({ projectId }).toArray();
+}
+
+export async function createRelationship(
+  data: Pick<
+    CharacterRelationship,
+    "projectId" | "sourceCharacterId" | "targetCharacterId" | "type"
+  > &
+    Partial<Pick<CharacterRelationship, "customLabel">>,
+): Promise<CharacterRelationship> {
+  if (data.sourceCharacterId === data.targetCharacterId) {
+    throw new Error("A character cannot have a relationship with itself.");
+  }
+
+  // Prevent exact duplicates (same pair + type + label)
+  const existing = await db.characterRelationships
+    .where({ projectId: data.projectId })
+    .toArray();
+
+  const customLabel = data.customLabel ?? "";
+  const isDuplicate = existing.some(
+    (r) =>
+      r.type === data.type &&
+      r.customLabel === customLabel &&
+      ((r.sourceCharacterId === data.sourceCharacterId &&
+        r.targetCharacterId === data.targetCharacterId) ||
+        (r.sourceCharacterId === data.targetCharacterId &&
+          r.targetCharacterId === data.sourceCharacterId)),
+  );
+
+  if (isDuplicate) {
+    throw new Error("This exact relationship already exists.");
+  }
+
+  const relationship = CharacterRelationshipSchema.parse({
+    id: generateId(),
+    projectId: data.projectId,
+    sourceCharacterId: data.sourceCharacterId,
+    targetCharacterId: data.targetCharacterId,
+    type: data.type,
+    customLabel,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+  await db.characterRelationships.add(relationship);
+  return relationship;
+}
+
+export async function updateRelationship(
+  id: string,
+  data: Partial<Pick<CharacterRelationship, "type" | "customLabel">>,
+): Promise<void> {
+  await db.characterRelationships.update(id, { ...data, updatedAt: now() });
+}
+
+export async function deleteRelationship(id: string): Promise<void> {
+  await db.characterRelationships.delete(id);
 }
 
 // ─── App Settings ───────────────────────────────────────────────────

@@ -1,0 +1,170 @@
+import { useState } from "react";
+import { createRelationship } from "@/db/operations";
+import type { Character, RelationshipType } from "@/db/schemas";
+
+const relationshipTypes: { value: RelationshipType; label: string }[] = [
+  { value: "parent", label: "Parent" },
+  { value: "child", label: "Child" },
+  { value: "spouse", label: "Spouse" },
+  { value: "divorced", label: "Divorced" },
+  { value: "sibling", label: "Sibling" },
+  { value: "custom", label: "Custom" },
+];
+
+export function AddRelationshipDialog({
+  projectId,
+  characters,
+  onClose,
+}: {
+  projectId: string;
+  characters: Character[];
+  onClose: () => void;
+}) {
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
+  const [type, setType] = useState<RelationshipType>("spouse");
+  const [customLabel, setCustomLabel] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!sourceId || !targetId) {
+      setError("Please select both characters.");
+      return;
+    }
+
+    try {
+      await createRelationship({
+        projectId,
+        sourceCharacterId: sourceId,
+        targetCharacterId: targetId,
+        type,
+        customLabel: type === "custom" ? customLabel : "",
+      });
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create relationship.",
+      );
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          Add Relationship
+        </h3>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label
+              htmlFor="rel-source"
+              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              From Character
+            </label>
+            <select
+              id="rel-source"
+              value={sourceId}
+              onChange={(e) => setSourceId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              <option value="">Select character...</option>
+              {characters.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="rel-target"
+              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              To Character
+            </label>
+            <select
+              id="rel-target"
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              <option value="">Select character...</option>
+              {characters
+                .filter((c) => c.id !== sourceId)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="rel-type"
+              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              Relationship Type
+            </label>
+            <select
+              id="rel-type"
+              value={type}
+              onChange={(e) => setType(e.target.value as RelationshipType)}
+              className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            >
+              {relationshipTypes.map((rt) => (
+                <option key={rt.value} value={rt.value}>
+                  {rt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {type === "custom" && (
+            <div>
+              <label
+                htmlFor="rel-custom-label"
+                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Custom Label
+              </label>
+              <input
+                id="rel-custom-label"
+                type="text"
+                value={customLabel}
+                onChange={(e) => setCustomLabel(e.target.value)}
+                placeholder="e.g. Mentor, Rival..."
+                className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+              />
+            </div>
+          )}
+
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Add
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

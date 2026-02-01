@@ -58,7 +58,7 @@ export function useWorldbuildingDocsByProject(projectId: string | null) {
   return useLiveQuery(
     () =>
       projectId
-        ? db.worldbuildingDocs.where({ projectId }).sortBy("title")
+        ? db.worldbuildingDocs.where({ projectId }).sortBy("order")
         : [],
     [projectId],
   );
@@ -68,5 +68,13 @@ export function useWorldbuildingDoc(id: string | null) {
   return useLiveQuery(
     () => (id ? db.worldbuildingDocs.get(id) : undefined),
     [id],
+  );
+}
+
+export function useRelationshipsByProject(projectId: string | null) {
+  return useLiveQuery(
+    () =>
+      projectId ? db.characterRelationships.where({ projectId }).toArray() : [],
+    [projectId],
   );
 }

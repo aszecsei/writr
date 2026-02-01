@@ -64,6 +64,30 @@ export const CharacterSchema = z.object({
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
+// ─── Character Relationship ──────────────────────────────────────────
+
+export const RelationshipTypeEnum = z.enum([
+  "parent",
+  "child",
+  "spouse",
+  "divorced",
+  "sibling",
+  "custom",
+]);
+export type RelationshipType = z.infer<typeof RelationshipTypeEnum>;
+
+export const CharacterRelationshipSchema = z.object({
+  id,
+  projectId: projectFk,
+  sourceCharacterId: z.uuid(),
+  targetCharacterId: z.uuid(),
+  type: RelationshipTypeEnum,
+  customLabel: z.string().default(""),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type CharacterRelationship = z.infer<typeof CharacterRelationshipSchema>;
+
 // ─── Location ────────────────────────────────────────────────────────
 
 export const LocationSchema = z.object({
@@ -127,6 +151,8 @@ export const WorldbuildingDocSchema = z.object({
   title: z.string().min(1),
   content: z.string().default(""),
   tags: z.array(z.string()).default([]),
+  parentDocId: z.uuid().nullable().default(null),
+  order: z.number().int().nonnegative().default(0),
   linkedCharacterIds: z.array(z.uuid()).default([]),
   linkedLocationIds: z.array(z.uuid()).default([]),
   createdAt: timestamp,

@@ -21,6 +21,7 @@
     "@tiptap/pm": "^3.18.0",
     "@tiptap/react": "^3.18.0",
     "@tiptap/starter-kit": "^3.18.0",
+    "@xyflow/react": "^12.10.0",
     "dexie": "^4.2.1",
     "dexie-react-hooks": "^4.2.0",
     "immer": "^11.1.3",
