@@ -116,7 +116,10 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
         paragraphs.push(
           new Paragraph({
             children: [
-              new TextRun({ text: "*\u2003\u2003*\u2003\u2003*", color: "666666" }),
+              new TextRun({
+                text: "*\u2003\u2003*\u2003\u2003*",
+                color: "666666",
+              }),
             ],
             alignment: AlignmentType.CENTER,
             spacing: { before: 200, after: 200 },
