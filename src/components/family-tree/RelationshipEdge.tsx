@@ -4,26 +4,7 @@ import {
   type EdgeProps,
   getBezierPath,
 } from "@xyflow/react";
-
-const edgeStyles: Record<
-  string,
-  { stroke: string; strokeDasharray?: string; label?: string }
-> = {
-  parent: { stroke: "#10b981" },
-  child: { stroke: "#10b981" },
-  spouse: { stroke: "#f43f5e" },
-  divorced: { stroke: "#f43f5e", strokeDasharray: "5 3" },
-  sibling: { stroke: "#0ea5e9" },
-  custom: { stroke: "#8b5cf6", strokeDasharray: "5 3" },
-};
-
-const typeLabels: Record<string, string> = {
-  parent: "Parent",
-  child: "Child",
-  spouse: "Spouse",
-  divorced: "Divorced",
-  sibling: "Sibling",
-};
+import { relationshipTypeConfigs } from "./relationship-config";
 
 export type RelationshipEdgeData = {
   relationshipType: string;
@@ -49,11 +30,14 @@ export function RelationshipEdge({
     targetPosition,
   });
 
-  const style = edgeStyles[data.relationshipType] ?? edgeStyles.custom;
+  const config =
+    relationshipTypeConfigs[
+      data.relationshipType as keyof typeof relationshipTypeConfigs
+    ] ?? relationshipTypeConfigs.custom;
   const label =
     data.relationshipType === "custom" && data.customLabel
       ? data.customLabel
-      : (typeLabels[data.relationshipType] ?? data.relationshipType);
+      : (config.label ?? data.relationshipType);
 
   const isDirectional =
     data.relationshipType === "parent" || data.relationshipType === "child";
@@ -64,9 +48,9 @@ export function RelationshipEdge({
         id={id}
         path={edgePath}
         style={{
-          stroke: style.stroke,
+          stroke: config.edgeStroke,
           strokeWidth: 2,
-          strokeDasharray: style.strokeDasharray,
+          strokeDasharray: config.edgeDasharray,
         }}
         markerEnd={isDirectional ? "url(#arrow)" : undefined}
       />

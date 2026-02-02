@@ -1,111 +1,26 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { deleteCharacter, updateCharacter } from "@/db/operations";
 import type { CharacterRole } from "@/db/schemas";
 import { useCharacter } from "@/hooks/useBibleEntries";
+import { useCharacterForm } from "@/hooks/useCharacterForm";
 
 export default function CharacterDetailPage() {
   const params = useParams<{ projectId: string; characterId: string }>();
   const router = useRouter();
   const character = useCharacter(params.characterId);
-
-  const [name, setName] = useState("");
-  const [role, setRole] = useState<CharacterRole>("supporting");
-  const [pronouns, setPronouns] = useState("");
-  const [aliasesInput, setAliasesInput] = useState("");
-  const [description, setDescription] = useState("");
-  const [personality, setPersonality] = useState("");
-  const [motivations, setMotivations] = useState("");
-  const [internalConflict, setInternalConflict] = useState("");
-  const [strengths, setStrengths] = useState("");
-  const [weaknesses, setWeaknesses] = useState("");
-  const [characterArcs, setCharacterArcs] = useState("");
-  const [dialogueStyle, setDialogueStyle] = useState("");
-  const [backstory, setBackstory] = useState("");
-  const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (character) {
-      setName(character.name);
-      setRole(character.role);
-      setPronouns(character.pronouns ?? "");
-      setAliasesInput((character.aliases ?? []).join(", "));
-      setDescription(character.description ?? "");
-      setPersonality(character.personality ?? "");
-      setMotivations(character.motivations ?? "");
-      setInternalConflict(character.internalConflict ?? "");
-      setStrengths(character.strengths ?? "");
-      setWeaknesses(character.weaknesses ?? "");
-      setCharacterArcs(character.characterArcs ?? "");
-      setDialogueStyle(character.dialogueStyle ?? "");
-      setBackstory(character.backstory ?? "");
-      setNotes(character.notes ?? "");
-    }
-  }, [character]);
-
-  const isDirty = useMemo(() => {
-    if (!character) return false;
-    return (
-      name !== character.name ||
-      role !== character.role ||
-      pronouns !== (character.pronouns ?? "") ||
-      aliasesInput !== (character.aliases ?? []).join(", ") ||
-      description !== (character.description ?? "") ||
-      personality !== (character.personality ?? "") ||
-      motivations !== (character.motivations ?? "") ||
-      internalConflict !== (character.internalConflict ?? "") ||
-      strengths !== (character.strengths ?? "") ||
-      weaknesses !== (character.weaknesses ?? "") ||
-      characterArcs !== (character.characterArcs ?? "") ||
-      dialogueStyle !== (character.dialogueStyle ?? "") ||
-      backstory !== (character.backstory ?? "") ||
-      notes !== (character.notes ?? "")
-    );
-  }, [
-    character,
-    name,
-    role,
-    pronouns,
-    aliasesInput,
-    description,
-    personality,
-    motivations,
-    internalConflict,
-    strengths,
-    weaknesses,
-    characterArcs,
-    dialogueStyle,
-    backstory,
-    notes,
-  ]);
+  const { form, setField, isDirty, getUpdatePayload } =
+    useCharacterForm(character);
 
   if (!character) return null;
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
-    const aliases = aliasesInput
-      .split(",")
-      .map((a) => a.trim())
-      .filter(Boolean);
-    await updateCharacter(params.characterId, {
-      name,
-      role,
-      pronouns,
-      aliases,
-      description,
-      personality,
-      motivations,
-      internalConflict,
-      strengths,
-      weaknesses,
-      characterArcs,
-      dialogueStyle,
-      backstory,
-      notes,
-    });
+    await updateCharacter(params.characterId, getUpdatePayload());
   }
 
   async function handleDelete() {
@@ -128,25 +43,12 @@ export default function CharacterDetailPage() {
               href={`/projects/${params.projectId}/bible/characters`}
               className="rounded-md p-1 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <title>Back to characters</title>
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
+              <ChevronLeft size={20} />
             </Link>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={form.name}
+              onChange={(e) => setField("name", e.target.value)}
               className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
               placeholder="Character Name"
             />
@@ -174,8 +76,10 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Role
             <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as CharacterRole)}
+              value={form.role}
+              onChange={(e) =>
+                setField("role", e.target.value as CharacterRole)
+              }
               className={inputClass}
             >
               <option value="protagonist">Protagonist</option>
@@ -188,8 +92,8 @@ export default function CharacterDetailPage() {
             Pronouns
             <input
               type="text"
-              value={pronouns}
-              onChange={(e) => setPronouns(e.target.value)}
+              value={form.pronouns}
+              onChange={(e) => setField("pronouns", e.target.value)}
               className={inputClass}
               placeholder="she/her, he/him, they/them..."
             />
@@ -198,8 +102,8 @@ export default function CharacterDetailPage() {
             Aliases
             <input
               type="text"
-              value={aliasesInput}
-              onChange={(e) => setAliasesInput(e.target.value)}
+              value={form.aliasesInput}
+              onChange={(e) => setField("aliasesInput", e.target.value)}
               className={inputClass}
               placeholder="comma-separated"
             />
@@ -210,8 +114,8 @@ export default function CharacterDetailPage() {
         <label className={labelClass}>
           Physical Description
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={form.description}
+            onChange={(e) => setField("description", e.target.value)}
             rows={3}
             className={inputClass}
             placeholder="Appearance, distinguishing features, mannerisms..."
@@ -223,8 +127,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Personality
             <textarea
-              value={personality}
-              onChange={(e) => setPersonality(e.target.value)}
+              value={form.personality}
+              onChange={(e) => setField("personality", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Temperament, habits, social behavior..."
@@ -233,8 +137,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Motivations
             <textarea
-              value={motivations}
-              onChange={(e) => setMotivations(e.target.value)}
+              value={form.motivations}
+              onChange={(e) => setField("motivations", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Goals, desires, what drives them..."
@@ -246,8 +150,8 @@ export default function CharacterDetailPage() {
         <label className={labelClass}>
           Internal Conflict
           <textarea
-            value={internalConflict}
-            onChange={(e) => setInternalConflict(e.target.value)}
+            value={form.internalConflict}
+            onChange={(e) => setField("internalConflict", e.target.value)}
             rows={3}
             className={inputClass}
             placeholder="Inner struggles, contradictions, moral dilemmas..."
@@ -259,8 +163,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Strengths
             <textarea
-              value={strengths}
-              onChange={(e) => setStrengths(e.target.value)}
+              value={form.strengths}
+              onChange={(e) => setField("strengths", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Skills, virtues, advantages..."
@@ -269,8 +173,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Weaknesses
             <textarea
-              value={weaknesses}
-              onChange={(e) => setWeaknesses(e.target.value)}
+              value={form.weaknesses}
+              onChange={(e) => setField("weaknesses", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Flaws, vulnerabilities, blind spots..."
@@ -283,8 +187,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Character Arcs
             <textarea
-              value={characterArcs}
-              onChange={(e) => setCharacterArcs(e.target.value)}
+              value={form.characterArcs}
+              onChange={(e) => setField("characterArcs", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Growth, transformation, key turning points..."
@@ -293,8 +197,8 @@ export default function CharacterDetailPage() {
           <label className={labelClass}>
             Dialogue Style
             <textarea
-              value={dialogueStyle}
-              onChange={(e) => setDialogueStyle(e.target.value)}
+              value={form.dialogueStyle}
+              onChange={(e) => setField("dialogueStyle", e.target.value)}
               rows={3}
               className={inputClass}
               placeholder="Speech patterns, vocabulary, verbal tics..."
@@ -306,8 +210,8 @@ export default function CharacterDetailPage() {
         <label className={labelClass}>
           Backstory
           <textarea
-            value={backstory}
-            onChange={(e) => setBackstory(e.target.value)}
+            value={form.backstory}
+            onChange={(e) => setField("backstory", e.target.value)}
             rows={5}
             className={inputClass}
             placeholder="Character history and background..."
@@ -318,8 +222,8 @@ export default function CharacterDetailPage() {
         <label className={labelClass}>
           Notes
           <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={form.notes}
+            onChange={(e) => setField("notes", e.target.value)}
             rows={4}
             className={inputClass}
             placeholder="Freeform notes..."

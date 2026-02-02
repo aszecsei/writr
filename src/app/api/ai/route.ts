@@ -26,7 +26,7 @@ const AiRequestSchema = z.object({
   stream: z.boolean().optional(),
   reasoning: z
     .object({
-      effort: z.enum(["xhigh", "high", "medium", "low", "minimal"]),
+      effort: z.enum(["xhigh", "high", "medium", "low", "minimal", "none"]),
     })
     .optional(),
 });

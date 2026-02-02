@@ -6,7 +6,7 @@ import { AiPanel } from "@/components/ai/AiPanel";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { useUiStore } from "@/store/uiStore";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "./sidebar";
 import { TopBar } from "./TopBar";
 
 interface AppShellProps {

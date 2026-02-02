@@ -18,7 +18,8 @@ export function useAutoSave(saveFn: () => Promise<void>, intervalMs = 3000) {
       try {
         await saveFn();
         markSaved();
-      } catch {
+      } catch (err) {
+        console.error("[useAutoSave] Save failed:", err);
         markSaveError();
       }
     }, intervalMs);

@@ -1,81 +1,19 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
 import {
-  BookOpen,
   CheckCircle2,
   Circle,
-  Clock,
   Download,
-  FileText,
-  FolderOpen,
-  GitFork,
-  Globe,
-  LayoutGrid,
-  MapPin,
-  Pen,
   Pencil,
   Plus,
-  Settings,
   Trash2,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createChapter, deleteChapter, updateChapter } from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
-import { type SidebarPanel, useUiStore } from "@/store/uiStore";
-
-const panels: { id: SidebarPanel; label: string; icon: LucideIcon }[] = [
-  { id: "chapters", label: "Chapters", icon: FileText },
-  { id: "bible", label: "Bible", icon: BookOpen },
-  { id: "settings", label: "Settings", icon: Settings },
-];
-
-export function Sidebar() {
-  const params = useParams<{ projectId: string }>();
-  const projectId = params.projectId;
-  const pathname = usePathname();
-  const sidebarPanel = useUiStore((s) => s.sidebarPanel);
-  const setSidebarPanel = useUiStore((s) => s.setSidebarPanel);
-
-  return (
-    <aside className="flex h-full flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-      <nav className="flex border-b border-zinc-200 dark:border-zinc-800">
-        {panels.map((panel) => {
-          const Icon = panel.icon;
-          return (
-            <button
-              key={panel.id}
-              type="button"
-              onClick={() => setSidebarPanel(panel.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors ${
-                sidebarPanel === panel.id
-                  ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-              }`}
-            >
-              <Icon size={14} />
-              {panel.label}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="flex-1 overflow-y-auto p-3">
-        {sidebarPanel === "chapters" && (
-          <ChapterList projectId={projectId} pathname={pathname} />
-        )}
-        {sidebarPanel === "bible" && (
-          <BibleNav projectId={projectId} pathname={pathname} />
-        )}
-        {sidebarPanel === "settings" && (
-          <SettingsNav projectId={projectId} pathname={pathname} />
-        )}
-      </div>
-    </aside>
-  );
-}
+import { useUiStore } from "@/store/uiStore";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
@@ -83,7 +21,7 @@ const STATUS_OPTIONS = [
   { value: "final", label: "Final" },
 ] as const;
 
-function ChapterList({
+export function ChapterList({
   projectId,
   pathname,
 }: {
@@ -309,92 +247,6 @@ function ChapterList({
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-const bibleLinks: { label: string; path: string; icon: LucideIcon }[] = [
-  { label: "Characters", path: "bible/characters", icon: Users },
-  { label: "Locations", path: "bible/locations", icon: MapPin },
-  { label: "Timeline", path: "bible/timeline", icon: Clock },
-  { label: "Family Tree", path: "bible/family-tree", icon: GitFork },
-  { label: "Style Guide", path: "bible/style-guide", icon: Pen },
-  { label: "Worldbuilding", path: "bible/worldbuilding", icon: Globe },
-];
-
-function BibleNav({
-  projectId,
-  pathname,
-}: {
-  projectId: string;
-  pathname: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <Link
-        href={`/projects/${projectId}/bible`}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-          pathname === `/projects/${projectId}/bible`
-            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <LayoutGrid size={14} />
-        Overview
-      </Link>
-      {bibleLinks.map((link) => {
-        const href = `/projects/${projectId}/${link.path}`;
-        const isActive = pathname.startsWith(href);
-        const Icon = link.icon;
-        return (
-          <Link
-            key={link.path}
-            href={href}
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-              isActive
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <Icon size={14} />
-            {link.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-function SettingsNav({
-  projectId,
-  pathname,
-}: {
-  projectId: string;
-  pathname: string;
-}) {
-  const openModal = useUiStore((s) => s.openModal);
-
-  return (
-    <div className="space-y-1">
-      <Link
-        href={`/projects/${projectId}`}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-          pathname === `/projects/${projectId}`
-            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <FolderOpen size={14} />
-        Project Overview
-      </Link>
-      <button
-        type="button"
-        onClick={() => openModal("app-settings")}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-      >
-        <Settings size={14} />
-        App Settings
-      </button>
     </div>
   );
 }

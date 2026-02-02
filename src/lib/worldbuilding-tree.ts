@@ -21,15 +21,23 @@ export function buildWorldbuildingTree(
     else byParent.set(key, [d]);
   }
 
-  function buildNodes(parentId: string | null, depth: number): DocNode[] {
+  function buildNodes(
+    parentId: string | null,
+    depth: number,
+    visited: Set<string> = new Set(),
+  ): DocNode[] {
     const children = byParent.get(parentId) ?? [];
     return children
       .sort((a, b) => a.order - b.order)
-      .map((doc) => ({
-        doc,
-        depth,
-        children: buildNodes(doc.id, depth + 1),
-      }));
+      .filter((doc) => !visited.has(doc.id))
+      .map((doc) => {
+        visited.add(doc.id);
+        return {
+          doc,
+          depth,
+          children: buildNodes(doc.id, depth + 1, visited),
+        };
+      });
   }
 
   return { roots: buildNodes(null, 0) };

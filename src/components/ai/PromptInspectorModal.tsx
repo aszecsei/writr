@@ -1,7 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Modal } from "@/components/ui/Modal";
 import type { AiMessage } from "@/lib/ai/types";
 
 interface PromptInspectorModalProps {
@@ -13,22 +12,6 @@ export function PromptInspectorModal({
   promptMessages,
   onClose,
 }: PromptInspectorModalProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  function handleOverlayClick(e: React.MouseEvent) {
-    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-      onClose();
-    }
-  }
-
   const roleColors: Record<string, string> = {
     system:
       "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
@@ -37,33 +20,12 @@ export function PromptInspectorModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      onClick={handleOverlayClick}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div
-        ref={panelRef}
-        className="relative flex w-full max-w-2xl max-h-[85vh] flex-col rounded-xl bg-white shadow-xl dark:bg-zinc-900"
-      >
-        <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Prompt Inspector
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-            aria-label="Close dialog"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+    <Modal onClose={onClose} maxWidth="max-w-2xl">
+      <div className="flex flex-col max-h-[85vh]">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+          Prompt Inspector
+        </h2>
+        <div className="flex-1 overflow-y-auto space-y-4">
           {promptMessages.map((msg, i) => (
             <div key={`${msg.role}-${i}`}>
               <span
@@ -93,6 +55,6 @@ export function PromptInspectorModal({
           ))}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

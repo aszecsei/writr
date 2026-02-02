@@ -6,36 +6,10 @@ import type {
   CharacterRelationship,
   RelationshipType,
 } from "@/db/schemas";
-
-const typeLabels: Record<string, string> = {
-  parent: "Parent",
-  child: "Child",
-  spouse: "Spouse",
-  divorced: "Divorced",
-  sibling: "Sibling",
-  custom: "Custom",
-};
-
-const typeBadgeColors: Record<string, string> = {
-  parent:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
-  child:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
-  spouse: "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300",
-  divorced: "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300",
-  sibling: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300",
-  custom:
-    "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300",
-};
-
-const relationshipTypes: RelationshipType[] = [
-  "parent",
-  "child",
-  "spouse",
-  "divorced",
-  "sibling",
-  "custom",
-];
+import {
+  relationshipTypeConfigs,
+  relationshipTypeList,
+} from "./relationship-config";
 
 function characterName(id: string, characters: Character[]): string {
   return characters.find((c) => c.id === id)?.name ?? "Unknown";
@@ -60,11 +34,10 @@ function RelationshipRow({
     setEditing(false);
   }
 
-  const badgeClass = typeBadgeColors[rel.type] ?? typeBadgeColors.custom;
+  const config =
+    relationshipTypeConfigs[rel.type] ?? relationshipTypeConfigs.custom;
   const displayLabel =
-    rel.type === "custom" && rel.customLabel
-      ? rel.customLabel
-      : typeLabels[rel.type];
+    rel.type === "custom" && rel.customLabel ? rel.customLabel : config.label;
 
   if (editing) {
     return (
@@ -75,9 +48,9 @@ function RelationshipRow({
             onChange={(e) => setEditType(e.target.value as RelationshipType)}
             className="w-full rounded border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
-            {relationshipTypes.map((t) => (
-              <option key={t} value={t}>
-                {typeLabels[t]}
+            {relationshipTypeList.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
               </option>
             ))}
           </select>
@@ -120,7 +93,7 @@ function RelationshipRow({
           {characterName(rel.targetCharacterId, characters)}
         </div>
         <span
-          className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeClass}`}
+          className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${config.badgeColor}`}
         >
           {displayLabel}
         </span>

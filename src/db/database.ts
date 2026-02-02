@@ -88,6 +88,16 @@ export class WritrDatabase extends Dexie {
           if (c.dialogueStyle === undefined) c.dialogueStyle = "";
         }),
     );
+
+    this.version(5).upgrade((tx) =>
+      tx
+        .table("characters")
+        .toCollection()
+        .modify((c) => {
+          if (c.backstory === undefined) c.backstory = "";
+          if (c.notes === undefined) c.notes = "";
+        }),
+    );
   }
 }
 
