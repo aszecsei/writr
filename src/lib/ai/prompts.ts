@@ -94,6 +94,7 @@ export function buildMessages(
   tool: AiTool,
   userPrompt: string,
   context: AiContext,
+  history: AiMessage[] = [],
 ): AiMessage[] {
   const systemContent = `${buildSystemContext(context)}<task>\n${TOOL_INSTRUCTIONS[tool]}\n</task>`;
 
@@ -109,6 +110,10 @@ export function buildMessages(
       role: "assistant",
       content: "I've read the chapter. What would you like me to help with?",
     });
+  }
+
+  for (const msg of history) {
+    messages.push({ role: msg.role, content: msg.content });
   }
 
   if (context.selectedText) {

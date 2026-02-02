@@ -1,5 +1,5 @@
 import { buildMessages } from "./prompts";
-import type { AiContext, AiResponse, AiTool } from "./types";
+import type { AiContext, AiMessage, AiResponse, AiTool } from "./types";
 
 interface AiSettings {
   apiKey: string;
@@ -12,11 +12,12 @@ function buildRequestBody(
   context: AiContext,
   settings: AiSettings,
   stream: boolean,
+  history: AiMessage[] = [],
 ) {
   return {
     apiKey: settings.apiKey,
     model: settings.model,
-    messages: buildMessages(tool, userPrompt, context),
+    messages: buildMessages(tool, userPrompt, context, history),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,
     stream,
@@ -43,9 +44,10 @@ export async function callAi(
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
+  history: AiMessage[] = [],
 ): Promise<AiResponse> {
   const response = await fetchAi(
-    buildRequestBody(tool, userPrompt, context, settings, false),
+    buildRequestBody(tool, userPrompt, context, settings, false, history),
   );
   const data = await response.json();
 
@@ -61,9 +63,10 @@ export async function* streamAi(
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
+  history: AiMessage[] = [],
 ): AsyncGenerator<string> {
   const response = await fetchAi(
-    buildRequestBody(tool, userPrompt, context, settings, true),
+    buildRequestBody(tool, userPrompt, context, settings, true, history),
   );
 
   if (!response.body) {

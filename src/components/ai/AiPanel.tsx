@@ -15,7 +15,7 @@ import { useChapter } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
-import type { AiContext, AiTool } from "@/lib/ai/types";
+import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -84,9 +84,19 @@ export function AiPanel() {
         currentChapterContent: activeChapter?.content || undefined,
       };
 
+      const history: AiMessage[] = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       if (settings.debugMode) {
-        const messages = buildMessages(tool, userMessage, context);
-        const formatted = messages
+        const debugMessages = buildMessages(
+          tool,
+          userMessage,
+          context,
+          history,
+        );
+        const formatted = debugMessages
           .map((m) => `--- [${m.role.toUpperCase()}] ---\n${m.content}`)
           .join("\n\n");
         setMessages((prev) => [
@@ -116,6 +126,7 @@ export function AiPanel() {
             userMessage,
             context,
             aiSettings,
+            history,
           )) {
             setMessages((prev) => {
               const updated = [...prev];
@@ -128,7 +139,13 @@ export function AiPanel() {
             });
           }
         } else {
-          const response = await callAi(tool, userMessage, context, aiSettings);
+          const response = await callAi(
+            tool,
+            userMessage,
+            context,
+            aiSettings,
+            history,
+          );
 
           setMessages((prev) => [
             ...prev,
