@@ -19,6 +19,7 @@ import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { MarkdownMessage } from "./MarkdownMessage";
 
 const AI_TOOLS: { id: AiTool; label: string }[] = [
   { id: "generate-prose", label: "Generate Prose" },
@@ -210,7 +211,11 @@ export function AiPanel() {
                 : "border border-zinc-200 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
             }`}
           >
-            <p className="whitespace-pre-wrap">{msg.content}</p>
+            {msg.role === "assistant" ? (
+              <MarkdownMessage content={msg.content} />
+            ) : (
+              <p className="whitespace-pre-wrap">{msg.content}</p>
+            )}
           </div>
         ))}
         {loading && (
