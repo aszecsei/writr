@@ -121,8 +121,8 @@ export async function* streamAi(
             }
           }
         }
-        // Also handle reasoning as a direct string field
-        if (delta.reasoning) {
+        // Fallback: handle reasoning as a direct string field
+        else if (delta.reasoning) {
           yield { type: "reasoning", text: delta.reasoning };
         }
 
