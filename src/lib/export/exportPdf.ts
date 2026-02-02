@@ -105,18 +105,11 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
         break;
       case "hr":
         result.push({
-          canvas: [
-            {
-              type: "line",
-              x1: 0,
-              y1: 0,
-              x2: 515,
-              y2: 0,
-              lineWidth: 0.5,
-              lineColor: "#cccccc",
-            },
-          ],
-          margin: [0, 8, 0, 8] as [number, number, number, number],
+          text: "*\u2003\u2003*\u2003\u2003*",
+          alignment: "center",
+          color: "#666666",
+          fontSize: 12,
+          margin: [0, 12, 0, 12] as [number, number, number, number],
         } as Content);
         break;
       case "pageBreak":

@@ -32,7 +32,7 @@ function spansToRuns(spans: TextSpan[]): TextRun[] {
         bold: span.styles.includes("bold"),
         italics: span.styles.includes("italic"),
         strike: span.styles.includes("strikethrough"),
-        font: span.styles.includes("code") ? "Courier New" : undefined,
+        font: span.styles.includes("code") ? "Courier New" : "Calibri",
       }),
   );
 }
@@ -115,8 +115,11 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
       case "hr":
         paragraphs.push(
           new Paragraph({
-            children: [new TextRun({ text: "───────────────────" })],
+            children: [
+              new TextRun({ text: "*\u2003\u2003*\u2003\u2003*", color: "666666" }),
+            ],
             alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 200 },
           }),
         );
         break;
