@@ -1,45 +1,53 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { createProject } from "@/db/operations";
+import { updateProject } from "@/db/operations";
+import { useProject } from "@/hooks/useProject";
 import { useUiStore } from "@/store/uiStore";
 
-export function CreateProjectDialog() {
-  const router = useRouter();
+export function EditProjectDialog() {
   const activeModal = useUiStore((s) => s.activeModal);
+  const modalData = useUiStore((s) => s.modalData);
   const closeModal = useUiStore((s) => s.closeModal);
+
+  const projectId = modalData.projectId as string | undefined;
+  const project = useProject(projectId ?? null);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [genre, setGenre] = useState("");
   const [targetWordCount, setTargetWordCount] = useState(0);
 
-  if (activeModal !== "create-project") return null;
+  useEffect(() => {
+    if (project) {
+      setTitle(project.title);
+      setDescription(project.description);
+      setGenre(project.genre);
+      setTargetWordCount(project.targetWordCount);
+    }
+  }, [project]);
+
+  if (activeModal !== "edit-project" || !projectId) return null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !projectId) return;
 
-    const project = await createProject({
+    await updateProject(projectId, {
       title: title.trim(),
       description: description.trim(),
       genre: genre.trim(),
       targetWordCount: Math.max(0, targetWordCount),
     });
 
-    setTitle("");
-    setDescription("");
-    setGenre("");
-    setTargetWordCount(0);
     closeModal();
-    router.push(`/projects/${project.id}`);
   }
 
   return (
     <Modal onClose={closeModal}>
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-        New Project
+        Edit Project
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
@@ -106,7 +114,7 @@ export function CreateProjectDialog() {
             disabled={!title.trim()}
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            Create
+            Save
           </button>
         </div>
       </form>

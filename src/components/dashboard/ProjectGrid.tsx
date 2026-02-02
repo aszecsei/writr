@@ -6,9 +6,10 @@ import { ProjectCard } from "./ProjectCard";
 
 interface ProjectGridProps {
   projects: Project[];
+  onContextMenu?: (e: React.MouseEvent, projectId: string) => void;
 }
 
-export function ProjectGrid({ projects }: ProjectGridProps) {
+export function ProjectGrid({ projects, onContextMenu }: ProjectGridProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -28,7 +29,11 @@ export function ProjectGrid({ projects }: ProjectGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <ProjectCard
+          key={project.id}
+          project={project}
+          onContextMenu={onContextMenu}
+        />
       ))}
     </div>
   );

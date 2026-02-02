@@ -6,14 +6,18 @@ import type { Project } from "@/db/schemas";
 
 interface ProjectCardProps {
   project: Project;
+  onContextMenu?: (e: React.MouseEvent, projectId: string) => void;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onContextMenu }: ProjectCardProps) {
   const updatedDate = new Date(project.updatedAt).toLocaleDateString();
 
   return (
     <Link
       href={`/projects/${project.id}`}
+      onContextMenu={
+        onContextMenu ? (e) => onContextMenu(e, project.id) : undefined
+      }
       className="group block rounded-xl border border-zinc-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
     >
       <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-zinc-700 dark:text-zinc-100 dark:group-hover:text-zinc-300">

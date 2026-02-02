@@ -1,15 +1,18 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { FileText, Target, Type } from "lucide-react";
+import { FileText, Pencil, Target, Type } from "lucide-react";
 import { useParams } from "next/navigation";
+import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
+import { useUiStore } from "@/store/uiStore";
 
 export default function ProjectOverviewPage() {
   const params = useParams<{ projectId: string }>();
   const project = useProject(params.projectId);
   const chapters = useChaptersByProject(params.projectId);
+  const openModal = useUiStore((s) => s.openModal);
 
   if (!project) return null;
 
@@ -17,9 +20,21 @@ export default function ProjectOverviewPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-8">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-        {project.title}
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+          {project.title}
+        </h2>
+        <button
+          type="button"
+          onClick={() =>
+            openModal("edit-project", { projectId: params.projectId })
+          }
+          className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          aria-label="Edit project"
+        >
+          <Pencil size={16} />
+        </button>
+      </div>
       {project.genre && (
         <span className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
           {project.genre}
@@ -49,6 +64,7 @@ export default function ProjectOverviewPage() {
           />
         )}
       </div>
+      <EditProjectDialog />
     </div>
   );
 }

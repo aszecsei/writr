@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer";
 export type SidebarPanel = "chapters" | "bible" | "settings";
 export type ModalId =
   | "create-project"
+  | "edit-project"
   | "delete-project"
   | "project-settings"
   | "app-settings"

@@ -11,6 +11,12 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+} from "@/components/ui/ContextMenu";
 import { createChapter, deleteChapter, updateChapter } from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import { useUiStore } from "@/store/uiStore";
@@ -35,7 +41,6 @@ export function ChapterList({
   // Context menu state
   const [menuChapterId, setMenuChapterId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Inline rename state
   const [renamingChapterId, setRenamingChapterId] = useState<string | null>(
@@ -45,27 +50,6 @@ export function ChapterList({
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   const closeMenu = useCallback(() => setMenuChapterId(null), []);
-
-  // Close menu on click outside or Escape
-  useEffect(() => {
-    if (!menuChapterId) return;
-
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        closeMenu();
-      }
-    }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") closeMenu();
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuChapterId, closeMenu]);
 
   // Focus rename input when it appears
   useEffect(() => {
@@ -182,25 +166,18 @@ export function ChapterList({
 
       {/* Context Menu */}
       {menuChapterId && (
-        <div
-          ref={menuRef}
-          className="fixed z-50 min-w-[160px] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
-          style={{ left: menuPos.x, top: menuPos.y }}
-        >
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        <ContextMenu position={menuPos} onClose={closeMenu}>
+          <ContextMenuItem
+            icon={Pencil}
             onClick={() => {
               const ch = chapters?.find((c) => c.id === menuChapterId);
               if (ch) handleRenameStart(ch.id, ch.title);
             }}
           >
-            <Pencil size={14} />
             Rename
-          </button>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          </ContextMenuItem>
+          <ContextMenuItem
+            icon={Download}
             onClick={() => {
               closeMenu();
               openModal("export", {
@@ -210,13 +187,10 @@ export function ChapterList({
               });
             }}
           >
-            <Download size={14} />
             Export
-          </button>
-          <div className="my-1 border-t border-zinc-200 dark:border-zinc-700" />
-          <div className="px-3 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            Status
-          </div>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuLabel>Status</ContextMenuLabel>
           {STATUS_OPTIONS.map((opt) => {
             const chapter = chapters?.find((c) => c.id === menuChapterId);
             const isCurrent = chapter?.status === opt.value;
@@ -236,16 +210,15 @@ export function ChapterList({
               </button>
             );
           })}
-          <div className="my-1 border-t border-zinc-200 dark:border-zinc-700" />
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            icon={Trash2}
+            variant="danger"
             onClick={() => handleDelete(menuChapterId)}
           >
-            <Trash2 size={14} />
             Delete
-          </button>
-        </div>
+          </ContextMenuItem>
+        </ContextMenu>
       )}
     </div>
   );
