@@ -5,7 +5,7 @@ import {
   serializeRelationship,
   serializeStyleGuideEntry,
   serializeTimelineEvent,
-  serializeWorldbuildingDoc,
+  serializeWorldbuildingTree,
 } from "./serialize";
 import type { AiContext, AiMessage, AiTool } from "./types";
 
@@ -56,9 +56,7 @@ function buildSystemContext(context: AiContext): string {
 
   if (context.worldbuildingDocs.length > 0) {
     system += "<worldbuilding>\n";
-    system += context.worldbuildingDocs
-      .map(serializeWorldbuildingDoc)
-      .join("\n");
+    system += serializeWorldbuildingTree(context.worldbuildingDocs);
     system += "\n</worldbuilding>\n\n";
   }
 

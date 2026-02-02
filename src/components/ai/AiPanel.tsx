@@ -13,9 +13,9 @@ import {
 } from "@/hooks/useBibleEntries";
 import { useChapter } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
-import { callAi } from "@/lib/ai/client";
+import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
-import type { AiContext, AiResponse, AiTool } from "@/lib/ai/types";
+import type { AiContext, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -103,15 +103,38 @@ export function AiPanel() {
           );
         }
 
-        const response: AiResponse = await callAi(tool, userMessage, context, {
+        const aiSettings = {
           apiKey: settings.openRouterApiKey,
           model: settings.preferredModel,
-        });
+        };
 
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: response.content },
-        ]);
+        if (settings.streamResponses) {
+          setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+          for await (const chunk of streamAi(
+            tool,
+            userMessage,
+            context,
+            aiSettings,
+          )) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              updated[updated.length - 1] = {
+                ...last,
+                content: last.content + chunk,
+              };
+              return updated;
+            });
+          }
+        } else {
+          const response = await callAi(tool, userMessage, context, aiSettings);
+
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: response.content },
+          ]);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");

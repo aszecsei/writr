@@ -39,6 +39,7 @@ export function AppSettingsDialog() {
   const [openRouterApiKey, setOpenRouterApiKey] = useState("");
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
+  const [streamResponses, setStreamResponses] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function AppSettingsDialog() {
       setOpenRouterApiKey(settings.openRouterApiKey);
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
+      setStreamResponses(settings.streamResponses);
     }
   }, [settings]);
 
@@ -65,6 +67,7 @@ export function AppSettingsDialog() {
       openRouterApiKey,
       preferredModel,
       debugMode,
+      streamResponses,
     });
     closeModal();
   }
@@ -197,6 +200,18 @@ export function AppSettingsDialog() {
                   className={inputClass}
                   placeholder="openai/gpt-4o"
                 />
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={streamResponses}
+                  onChange={(e) => setStreamResponses(e.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                />
+                Stream responses
+                <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+                  — show text as it generates
+                </span>
               </label>
               <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 <input

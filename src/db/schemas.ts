@@ -179,6 +179,7 @@ export const AppSettingsSchema = z.object({
   editorFontSize: z.number().int().positive().default(16),
   editorFont: z.string().default("literata"),
   debugMode: z.boolean().default(false),
+  streamResponses: z.boolean().default(true),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

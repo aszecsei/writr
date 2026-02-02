@@ -1,25 +1,33 @@
 import { buildMessages } from "./prompts";
 import type { AiContext, AiResponse, AiTool } from "./types";
 
-export async function callAi(
+interface AiSettings {
+  apiKey: string;
+  model: string;
+}
+
+function buildRequestBody(
   tool: AiTool,
   userPrompt: string,
   context: AiContext,
-  settings: { apiKey: string; model: string },
-): Promise<AiResponse> {
-  const messages = buildMessages(tool, userPrompt, context);
+  settings: AiSettings,
+  stream: boolean,
+) {
+  return {
+    apiKey: settings.apiKey,
+    model: settings.model,
+    messages: buildMessages(tool, userPrompt, context),
+    temperature: tool === "generate-prose" ? 1.0 : 0.5,
+    max_tokens: 24 * 1024,
+    stream,
+  };
+}
 
+async function fetchAi(body: ReturnType<typeof buildRequestBody>) {
   const response = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      apiKey: settings.apiKey,
-      model: settings.model,
-      messages,
-      temperature: tool === "generate-prose" ? 1.0 : 0.5,
-      max_tokens: 24 * 1024,
-      stream: false,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -27,6 +35,18 @@ export async function callAi(
     throw new Error(error.details ?? error.error ?? "AI request failed");
   }
 
+  return response;
+}
+
+export async function callAi(
+  tool: AiTool,
+  userPrompt: string,
+  context: AiContext,
+  settings: AiSettings,
+): Promise<AiResponse> {
+  const response = await fetchAi(
+    buildRequestBody(tool, userPrompt, context, settings, false),
+  );
   const data = await response.json();
 
   return {
@@ -40,39 +60,33 @@ export async function* streamAi(
   tool: AiTool,
   userPrompt: string,
   context: AiContext,
-  settings: { apiKey: string; model: string },
+  settings: AiSettings,
 ): AsyncGenerator<string> {
-  const messages = buildMessages(tool, userPrompt, context);
+  const response = await fetchAi(
+    buildRequestBody(tool, userPrompt, context, settings, true),
+  );
 
-  const response = await fetch("/api/ai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      apiKey: settings.apiKey,
-      model: settings.model,
-      messages,
-      temperature: 0.8,
-      max_tokens: 4096,
-      stream: true,
-    }),
-  });
-
-  if (!response.ok || !response.body) {
-    throw new Error("Streaming request failed");
+  if (!response.body) {
+    throw new Error("No response body for streaming request");
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
+  let buffer = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
 
     for (const line of lines) {
-      const json = line.slice(6);
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+
+      const json = trimmed.slice(6);
       if (json === "[DONE]") return;
 
       try {
