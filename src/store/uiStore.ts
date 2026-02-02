@@ -7,6 +7,7 @@ export type ModalId =
   | "delete-project"
   | "project-settings"
   | "app-settings"
+  | "export"
   | null;
 
 interface UiState {

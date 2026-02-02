@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  Download,
   FileText,
   FolderOpen,
   GitFork,
@@ -91,6 +92,7 @@ function ChapterList({
 }) {
   const chapters = useChaptersByProject(projectId);
   const router = useRouter();
+  const openModal = useUiStore((s) => s.openModal);
 
   // Context menu state
   const [menuChapterId, setMenuChapterId] = useState<string | null>(null);
@@ -257,6 +259,21 @@ function ChapterList({
           >
             <Pencil size={14} />
             Rename
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            onClick={() => {
+              closeMenu();
+              openModal("export", {
+                projectId,
+                chapterId: menuChapterId,
+                scope: "chapter",
+              });
+            }}
+          >
+            <Download size={14} />
+            Export
           </button>
           <div className="my-1 border-t border-zinc-200 dark:border-zinc-700" />
           <div className="px-3 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-500">

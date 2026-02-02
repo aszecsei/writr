@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Bold,
   Code,
+  Download,
   Heading1,
   Heading2,
   Heading3,
@@ -20,6 +21,9 @@ import {
 import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
+import { useEditorStore } from "@/store/editorStore";
+import { useProjectStore } from "@/store/projectStore";
+import { useUiStore } from "@/store/uiStore";
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -141,6 +145,9 @@ const groups: ToolbarAction["group"][] = [
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   const settings = useAppSettings();
   const currentFont = settings?.editorFont ?? "literata";
+  const openModal = useUiStore((s) => s.openModal);
+  const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
 
   const activeStates = useEditorState({
     editor,
@@ -212,6 +219,25 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           </div>
         );
       })}
+      {activeProjectId && activeDocumentId && (
+        <>
+          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <button
+            type="button"
+            title="Export"
+            onClick={() =>
+              openModal("export", {
+                projectId: activeProjectId,
+                chapterId: activeDocumentId,
+                scope: "chapter",
+              })
+            }
+            className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            <Download size={16} />
+          </button>
+        </>
+      )}
     </div>
   );
 }

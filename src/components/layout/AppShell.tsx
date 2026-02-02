@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { ExportDialog } from "@/components/export/ExportDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./Sidebar";
@@ -41,6 +42,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       </Group>
       <AppSettingsDialog />
+      <ExportDialog />
     </div>
   );
 }

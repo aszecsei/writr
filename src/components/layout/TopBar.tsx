@@ -1,6 +1,13 @@
 "use client";
 
-import { AlertCircle, Check, Loader2, Menu, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Download,
+  Loader2,
+  Menu,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -10,7 +17,9 @@ export function TopBar() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleAiPanel = useUiStore((s) => s.toggleAiPanel);
   const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
+  const openModal = useUiStore((s) => s.openModal);
   const projectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
@@ -49,6 +58,21 @@ export function TopBar() {
             </span>
             <SaveStatusIndicator status={saveStatus} />
           </>
+        )}
+        {activeProjectId && (
+          <button
+            type="button"
+            onClick={() =>
+              openModal("export", {
+                projectId: activeProjectId,
+                scope: "book",
+              })
+            }
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-150 hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            <Download size={14} />
+            Export
+          </button>
         )}
         <button
           type="button"
