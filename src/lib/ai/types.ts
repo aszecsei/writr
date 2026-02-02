@@ -15,10 +15,13 @@ import type {
   Character,
   CharacterRelationship,
   Location,
+  ReasoningEffort,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
 } from "@/db/schemas";
+
+export type { ReasoningEffort };
 
 export interface AiContext {
   projectTitle: string;
@@ -36,10 +39,16 @@ export interface AiContext {
 
 export interface AiResponse {
   content: string;
+  reasoning?: string;
   model: string;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+export interface AiStreamChunk {
+  type: "reasoning" | "content";
+  text: string;
 }

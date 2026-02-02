@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertCircle, ArrowUp, Sparkles, Trash2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { AlertCircle, ArrowUp, Code, Sparkles, Trash2 } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { getAppSettings } from "@/db/operations";
 import {
   useCharactersByProject,
@@ -19,6 +19,7 @@ import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { MarkdownMessage } from "./MarkdownMessage";
+import { PromptInspectorModal } from "./PromptInspectorModal";
 
 const AI_TOOLS: { id: AiTool; label: string }[] = [
   { id: "generate-prose", label: "Generate Prose" },
@@ -32,6 +33,18 @@ const AI_TOOLS: { id: AiTool; label: string }[] = [
 interface Message {
   role: "user" | "assistant";
   content: string;
+  reasoning?: string;
+  timestamp: string;
+  promptMessages?: AiMessage[];
+  durationMs?: number;
+}
+
+function formatDuration(ms: number): string {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return remainder > 0 ? `${minutes}m ${remainder}s` : `${minutes}m`;
 }
 
 export function AiPanel() {
@@ -54,6 +67,24 @@ export function AiPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inspectingPrompt, setInspectingPrompt] = useState<AiMessage[] | null>(
+    null,
+  );
+  const requestStartRef = useRef<number | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      requestStartRef.current = null;
+      return;
+    }
+    const interval = setInterval(() => {
+      if (requestStartRef.current != null) {
+        setElapsedMs(Date.now() - requestStartRef.current);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -61,7 +92,14 @@ export function AiPanel() {
 
     const userMessage = prompt.trim();
     setPrompt("");
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: userMessage,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
     setLoading(true);
     setError(null);
 
@@ -101,6 +139,7 @@ export function AiPanel() {
           {
             role: "assistant",
             content: `[DRY-RUN] Prompt that would be sent to ${settings.preferredModel}:\n\n${formatted}`,
+            timestamp: new Date().toISOString(),
           },
         ]);
       } else {
@@ -113,10 +152,30 @@ export function AiPanel() {
         const aiSettings = {
           apiKey: settings.openRouterApiKey,
           model: settings.preferredModel,
+          reasoningEffort: settings.reasoningEffort,
         };
 
+        const capturedPrompt = buildMessages(
+          tool,
+          userMessage,
+          context,
+          history,
+        );
+
+        const startTime = Date.now();
+        requestStartRef.current = startTime;
+        setElapsedMs(0);
+
         if (settings.streamResponses) {
-          setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "",
+              timestamp: new Date().toISOString(),
+              promptMessages: capturedPrompt,
+            },
+          ]);
 
           for await (const chunk of streamAi(
             tool,
@@ -128,13 +187,28 @@ export function AiPanel() {
             setMessages((prev) => {
               const updated = [...prev];
               const last = updated[updated.length - 1];
-              updated[updated.length - 1] = {
-                ...last,
-                content: last.content + chunk,
-              };
+              if (chunk.type === "reasoning") {
+                updated[updated.length - 1] = {
+                  ...last,
+                  reasoning: (last.reasoning ?? "") + chunk.text,
+                };
+              } else {
+                updated[updated.length - 1] = {
+                  ...last,
+                  content: last.content + chunk.text,
+                };
+              }
               return updated;
             });
           }
+
+          const elapsed = Date.now() - startTime;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, durationMs: elapsed };
+            return updated;
+          });
         } else {
           const response = await callAi(
             tool,
@@ -146,7 +220,14 @@ export function AiPanel() {
 
           setMessages((prev) => [
             ...prev,
-            { role: "assistant", content: response.content },
+            {
+              role: "assistant",
+              content: response.content,
+              reasoning: response.reasoning,
+              timestamp: new Date().toISOString(),
+              promptMessages: capturedPrompt,
+              durationMs: Date.now() - startTime,
+            },
           ]);
         }
       }
@@ -207,6 +288,57 @@ export function AiPanel() {
                 : "border border-zinc-200 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
             }`}
           >
+            <div className="mb-1 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="font-medium">
+                {msg.role === "user" ? "User" : "Assistant"}
+              </span>
+              <span>
+                {new Date(msg.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+              {msg.role === "assistant" &&
+                (() => {
+                  const isInFlight =
+                    loading &&
+                    msg.durationMs == null &&
+                    i === messages.length - 1;
+                  const ms = isInFlight ? elapsedMs : msg.durationMs;
+                  if (ms == null) return null;
+                  return (
+                    <span
+                      title={
+                        isInFlight ? undefined : `${(ms / 1000).toFixed(1)}s`
+                      }
+                    >
+                      {formatDuration(ms)}
+                    </span>
+                  );
+                })()}
+              {msg.role === "assistant" && msg.promptMessages && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInspectingPrompt(msg.promptMessages ?? null)
+                  }
+                  title="Inspect prompt"
+                  className="ml-auto rounded p-0.5 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                >
+                  <Code size={12} />
+                </button>
+              )}
+            </div>
+            {msg.role === "assistant" && msg.reasoning && (
+              <details className="mb-2 rounded border border-zinc-200 dark:border-zinc-700">
+                <summary className="cursor-pointer select-none px-2 py-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Reasoning
+                </summary>
+                <div className="px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap">
+                  {msg.reasoning}
+                </div>
+              </details>
+            )}
             {msg.role === "assistant" ? (
               <MarkdownMessage content={msg.content} />
             ) : (
@@ -250,6 +382,12 @@ export function AiPanel() {
           </button>
         </div>
       </form>
+      {inspectingPrompt && (
+        <PromptInspectorModal
+          promptMessages={inspectingPrompt}
+          onClose={() => setInspectingPrompt(null)}
+        />
+      )}
     </aside>
   );
 }

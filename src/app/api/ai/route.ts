@@ -13,6 +13,11 @@ const AiRequestSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   max_tokens: z.number().int().positive().optional(),
   stream: z.boolean().optional(),
+  reasoning: z
+    .object({
+      effort: z.enum(["xhigh", "high", "medium", "low", "minimal"]),
+    })
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -26,8 +31,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { apiKey, model, messages, temperature, max_tokens, stream } =
-    parsed.data;
+  const {
+    apiKey,
+    model,
+    messages,
+    temperature,
+    max_tokens,
+    stream,
+    reasoning,
+  } = parsed.data;
 
   const openRouterResponse = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
@@ -45,6 +57,7 @@ export async function POST(request: NextRequest) {
         temperature: temperature ?? 0.7,
         max_tokens: max_tokens ?? 2048,
         stream: stream ?? false,
+        ...(reasoning ? { reasoning } : {}),
       }),
     },
   );

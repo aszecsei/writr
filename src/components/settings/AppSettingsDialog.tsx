@@ -3,6 +3,7 @@
 import { Eye, EyeOff, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { updateAppSettings } from "@/db/operations";
+import type { ReasoningEffort } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useUiStore } from "@/store/uiStore";
 
@@ -27,6 +28,15 @@ const THEME_OPTIONS = [
   { value: "dark", label: "Dark" },
 ] as const;
 
+const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
+  { value: "xhigh", label: "Extra High" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+  { value: "minimal", label: "Minimal" },
+  { value: "none", label: "None" },
+];
+
 export function AppSettingsDialog() {
   const activeModal = useUiStore((s) => s.activeModal);
   const closeModal = useUiStore((s) => s.closeModal);
@@ -40,6 +50,8 @@ export function AppSettingsDialog() {
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
   const [streamResponses, setStreamResponses] = useState(true);
+  const [reasoningEffort, setReasoningEffort] =
+    useState<ReasoningEffort>("medium");
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
@@ -52,6 +64,7 @@ export function AppSettingsDialog() {
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
+      setReasoningEffort(settings.reasoningEffort);
     }
   }, [settings]);
 
@@ -68,6 +81,7 @@ export function AppSettingsDialog() {
       preferredModel,
       debugMode,
       streamResponses,
+      reasoningEffort,
     });
     closeModal();
   }
@@ -211,6 +225,26 @@ export function AppSettingsDialog() {
                 Stream responses
                 <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
                   — show text as it generates
+                </span>
+              </label>
+              <label className={labelClass}>
+                Reasoning Effort
+                <select
+                  value={reasoningEffort}
+                  onChange={(e) =>
+                    setReasoningEffort(e.target.value as ReasoningEffort)
+                  }
+                  className={inputClass}
+                >
+                  {REASONING_EFFORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                  Controls how much the model reasons before responding.
+                  Requires a reasoning-capable model.
                 </span>
               </label>
               <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">

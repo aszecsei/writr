@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { deleteLocation, updateLocation } from "@/db/operations";
 import { useLocation } from "@/hooks/useBibleEntries";
 
@@ -22,6 +23,15 @@ export default function LocationDetailPage() {
     }
   }, [location]);
 
+  const isDirty = useMemo(() => {
+    if (!location) return false;
+    return (
+      name !== location.name ||
+      description !== location.description ||
+      notes !== location.notes
+    );
+  }, [location, name, description, notes]);
+
   if (!location) return null;
 
   async function handleSave(e: FormEvent) {
@@ -38,13 +48,33 @@ export default function LocationDetailPage() {
     <div className="mx-auto max-w-3xl px-8 py-8">
       <form onSubmit={handleSave} className="space-y-6">
         <div className="flex items-center justify-between">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
-            placeholder="Location Name"
-          />
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${params.projectId}/bible/locations`}
+              className="rounded-md p-1 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </Link>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
+              placeholder="Location Name"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -55,7 +85,8 @@ export default function LocationDetailPage() {
             </button>
             <button
               type="submit"
-              className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              disabled={!isDirty}
+              className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               Save
             </button>

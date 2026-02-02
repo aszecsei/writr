@@ -168,6 +168,18 @@ export const WorldbuildingDocSchema = z.object({
 });
 export type WorldbuildingDoc = z.infer<typeof WorldbuildingDocSchema>;
 
+// ─── Reasoning Effort ────────────────────────────────────────────────
+
+export const ReasoningEffortEnum = z.enum([
+  "xhigh",
+  "high",
+  "medium",
+  "low",
+  "minimal",
+  "none",
+]);
+export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
+
 // ─── App Settings (singleton) ────────────────────────────────────────
 
 export const AppSettingsSchema = z.object({
@@ -180,6 +192,7 @@ export const AppSettingsSchema = z.object({
   editorFont: z.string().default("literata"),
   debugMode: z.boolean().default(false),
   streamResponses: z.boolean().default(true),
+  reasoningEffort: ReasoningEffortEnum.default("medium"),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

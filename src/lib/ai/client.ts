@@ -1,9 +1,17 @@
 import { buildMessages } from "./prompts";
-import type { AiContext, AiMessage, AiResponse, AiTool } from "./types";
+import type {
+  AiContext,
+  AiMessage,
+  AiResponse,
+  AiStreamChunk,
+  AiTool,
+  ReasoningEffort,
+} from "./types";
 
 interface AiSettings {
   apiKey: string;
   model: string;
+  reasoningEffort?: ReasoningEffort;
 }
 
 function buildRequestBody(
@@ -14,7 +22,7 @@ function buildRequestBody(
   stream: boolean,
   history: AiMessage[] = [],
 ) {
-  return {
+  const body: Record<string, unknown> = {
     apiKey: settings.apiKey,
     model: settings.model,
     messages: buildMessages(tool, userPrompt, context, history),
@@ -22,9 +30,15 @@ function buildRequestBody(
     max_tokens: 24 * 1024,
     stream,
   };
+
+  if (settings.reasoningEffort && settings.reasoningEffort !== "none") {
+    body.reasoning = { effort: settings.reasoningEffort };
+  }
+
+  return body;
 }
 
-async function fetchAi(body: ReturnType<typeof buildRequestBody>) {
+async function fetchAi(body: Record<string, unknown>) {
   const response = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -53,6 +67,7 @@ export async function callAi(
 
   return {
     content: data.choices[0].message.content,
+    reasoning: data.choices[0].message.reasoning,
     model: data.model,
     usage: data.usage,
   };
@@ -64,7 +79,7 @@ export async function* streamAi(
   context: AiContext,
   settings: AiSettings,
   history: AiMessage[] = [],
-): AsyncGenerator<string> {
+): AsyncGenerator<AiStreamChunk> {
   const response = await fetchAi(
     buildRequestBody(tool, userPrompt, context, settings, true, history),
   );
@@ -94,8 +109,26 @@ export async function* streamAi(
 
       try {
         const parsed = JSON.parse(json);
-        const delta = parsed.choices?.[0]?.delta?.content;
-        if (delta) yield delta;
+        const delta = parsed.choices?.[0]?.delta;
+        if (!delta) continue;
+
+        // Reasoning tokens from OpenRouter
+        const reasoningDetails = delta.reasoning_details;
+        if (Array.isArray(reasoningDetails)) {
+          for (const detail of reasoningDetails) {
+            if (detail?.text) {
+              yield { type: "reasoning", text: detail.text };
+            }
+          }
+        }
+        // Also handle reasoning as a direct string field
+        if (delta.reasoning) {
+          yield { type: "reasoning", text: delta.reasoning };
+        }
+
+        if (delta.content) {
+          yield { type: "content", text: delta.content };
+        }
       } catch {
         // Skip malformed chunks
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Editor } from "@tiptap/react";
+import { type Editor, useEditorState } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
 import {
   Bold,
@@ -142,6 +142,20 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const settings = useAppSettings();
   const currentFont = settings?.editorFont ?? "literata";
 
+  const activeStates = useEditorState({
+    editor,
+    selector: ({ editor: e }) => {
+      if (!e) return {};
+      const result: Record<string, boolean> = {};
+      for (const action of actions) {
+        if (action.isActive) {
+          result[action.label] = action.isActive(e);
+        }
+      }
+      return result;
+    },
+  });
+
   async function handleFontChange(e: React.ChangeEvent<HTMLSelectElement>) {
     await updateAppSettings({ editorFont: e.target.value });
   }
@@ -177,7 +191,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
             )}
             {groupActions.map((action) => {
-              const active = action.isActive?.(editor) ?? false;
+              const active = activeStates?.[action.label] ?? false;
               const Icon = action.icon;
               return (
                 <button

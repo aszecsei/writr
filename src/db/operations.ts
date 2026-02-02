@@ -559,7 +559,7 @@ export async function deleteRelationship(id: string): Promise<void> {
 
 export async function getAppSettings(): Promise<AppSettings> {
   const existing = await db.appSettings.get(APP_SETTINGS_ID);
-  if (existing) return existing;
+  if (existing) return AppSettingsSchema.parse(existing);
   const defaults = AppSettingsSchema.parse({
     id: APP_SETTINGS_ID,
     updatedAt: now(),

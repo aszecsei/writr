@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { deleteCharacter, updateCharacter } from "@/db/operations";
 import type { CharacterRole } from "@/db/schemas";
 import { useCharacter } from "@/hooks/useBibleEntries";
@@ -45,6 +46,42 @@ export default function CharacterDetailPage() {
     }
   }, [character]);
 
+  const isDirty = useMemo(() => {
+    if (!character) return false;
+    return (
+      name !== character.name ||
+      role !== character.role ||
+      pronouns !== (character.pronouns ?? "") ||
+      aliasesInput !== (character.aliases ?? []).join(", ") ||
+      description !== (character.description ?? "") ||
+      personality !== (character.personality ?? "") ||
+      motivations !== (character.motivations ?? "") ||
+      internalConflict !== (character.internalConflict ?? "") ||
+      strengths !== (character.strengths ?? "") ||
+      weaknesses !== (character.weaknesses ?? "") ||
+      characterArcs !== (character.characterArcs ?? "") ||
+      dialogueStyle !== (character.dialogueStyle ?? "") ||
+      backstory !== (character.backstory ?? "") ||
+      notes !== (character.notes ?? "")
+    );
+  }, [
+    character,
+    name,
+    role,
+    pronouns,
+    aliasesInput,
+    description,
+    personality,
+    motivations,
+    internalConflict,
+    strengths,
+    weaknesses,
+    characterArcs,
+    dialogueStyle,
+    backstory,
+    notes,
+  ]);
+
   if (!character) return null;
 
   async function handleSave(e: FormEvent) {
@@ -86,13 +123,33 @@ export default function CharacterDetailPage() {
       <form onSubmit={handleSave} className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
-            placeholder="Character Name"
-          />
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${params.projectId}/bible/characters`}
+              className="rounded-md p-1 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </Link>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
+              placeholder="Character Name"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -103,7 +160,8 @@ export default function CharacterDetailPage() {
             </button>
             <button
               type="submit"
-              className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              disabled={!isDirty}
+              className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               Save
             </button>
