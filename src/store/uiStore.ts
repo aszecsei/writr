@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export type SidebarPanel = "chapters" | "bible" | "settings";
+export type SidebarPanel = "chapters" | "bible";
 export type ModalId =
   | "create-project"
   | "edit-project"

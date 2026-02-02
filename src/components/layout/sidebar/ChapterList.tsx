@@ -1,9 +1,12 @@
 "use client";
 
+import { move } from "@dnd-kit/helpers";
+import { DragDropProvider } from "@dnd-kit/react";
 import {
   CheckCircle2,
   Circle,
   Download,
+  FolderOpen,
   Pencil,
   Plus,
   Trash2,
@@ -17,9 +20,15 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
-import { createChapter, deleteChapter, updateChapter } from "@/db/operations";
+import {
+  createChapter,
+  deleteChapter,
+  reorderChapters,
+  updateChapter,
+} from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import { useUiStore } from "@/store/uiStore";
+import { SortableChapterItem } from "./SortableChapterItem";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
@@ -37,6 +46,18 @@ export function ChapterList({
   const chapters = useChaptersByProject(projectId);
   const router = useRouter();
   const openModal = useUiStore((s) => s.openModal);
+
+  // Optimistic local state for drag reordering
+  const [localChapters, setLocalChapters] = useState(chapters ?? []);
+  const previousChapters = useRef(localChapters);
+  const isDragging = useRef(false);
+
+  // Sync Dexie live query -> local state (suppressed during drag)
+  useEffect(() => {
+    if (chapters && !isDragging.current) {
+      setLocalChapters(chapters);
+    }
+  }, [chapters]);
 
   // Context menu state
   const [menuChapterId, setMenuChapterId] = useState<string | null>(null);
@@ -111,50 +132,67 @@ export function ChapterList({
     await createChapter({ projectId, title: "Untitled Chapter" });
   }
 
+  const overviewHref = `/projects/${projectId}`;
+  const isOverviewActive = pathname === overviewHref;
+
   return (
     <div className="space-y-1">
-      {chapters?.map((chapter) => {
-        const href = `/projects/${projectId}/chapters/${chapter.id}`;
-        const isActive = pathname === href;
-        const isRenaming = renamingChapterId === chapter.id;
+      <Link
+        href={overviewHref}
+        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+          isOverviewActive
+            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <FolderOpen size={14} />
+        Project Overview
+      </Link>
 
-        if (isRenaming) {
-          return (
-            <div
-              key={chapter.id}
-              className="flex items-center rounded-md bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800"
-            >
-              <input
-                ref={renameInputRef}
-                type="text"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onBlur={handleRenameCommit}
-                onKeyDown={handleRenameKeyDown}
-                className="w-full bg-transparent text-sm text-zinc-900 outline-none dark:text-zinc-100"
+      <DragDropProvider
+        onDragStart={() => {
+          isDragging.current = true;
+          previousChapters.current = localChapters;
+        }}
+        onDragOver={(event) => {
+          setLocalChapters((items) => move(items, event));
+        }}
+        onDragEnd={async (event) => {
+          isDragging.current = false;
+          if (event.canceled) {
+            setLocalChapters(previousChapters.current);
+            return;
+          }
+          const orderedIds = localChapters.map((c) => c.id);
+          await reorderChapters(orderedIds);
+        }}
+      >
+        <div className="space-y-1">
+          {localChapters.map((chapter, index) => {
+            const href = `/projects/${projectId}/chapters/${chapter.id}`;
+            const isActive = pathname === href;
+            const isRenaming = renamingChapterId === chapter.id;
+
+            return (
+              <SortableChapterItem
+                key={chapter.id}
+                chapter={chapter}
+                index={index}
+                projectId={projectId}
+                isActive={isActive}
+                isRenaming={isRenaming}
+                renameValue={renameValue}
+                renameInputRef={renameInputRef}
+                onRenameChange={setRenameValue}
+                onRenameCommit={handleRenameCommit}
+                onRenameKeyDown={handleRenameKeyDown}
+                onContextMenu={handleContextMenu}
               />
-            </div>
-          );
-        }
+            );
+          })}
+        </div>
+      </DragDropProvider>
 
-        return (
-          <Link
-            key={chapter.id}
-            href={href}
-            onContextMenu={(e) => handleContextMenu(e, chapter.id)}
-            className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
-              isActive
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-            }`}
-          >
-            <span className="truncate">{chapter.title}</span>
-            <span className="ml-2 shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-              {chapter.wordCount.toLocaleString()}
-            </span>
-          </Link>
-        );
-      })}
       <button
         type="button"
         onClick={handleAddChapter}
@@ -170,7 +208,7 @@ export function ChapterList({
           <ContextMenuItem
             icon={Pencil}
             onClick={() => {
-              const ch = chapters?.find((c) => c.id === menuChapterId);
+              const ch = localChapters.find((c) => c.id === menuChapterId);
               if (ch) handleRenameStart(ch.id, ch.title);
             }}
           >
@@ -192,7 +230,7 @@ export function ChapterList({
           <ContextMenuSeparator />
           <ContextMenuLabel>Status</ContextMenuLabel>
           {STATUS_OPTIONS.map((opt) => {
-            const chapter = chapters?.find((c) => c.id === menuChapterId);
+            const chapter = localChapters.find((c) => c.id === menuChapterId);
             const isCurrent = chapter?.status === opt.value;
             return (
               <button

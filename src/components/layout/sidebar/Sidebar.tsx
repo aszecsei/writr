@@ -6,12 +6,10 @@ import { useParams, usePathname } from "next/navigation";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
 import { BibleNav } from "./BibleNav";
 import { ChapterList } from "./ChapterList";
-import { SettingsNav } from "./SettingsNav";
 
 const panels: { id: SidebarPanel; label: string; icon: LucideIcon }[] = [
   { id: "chapters", label: "Chapters", icon: FileText },
   { id: "bible", label: "Bible", icon: BookOpen },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -20,6 +18,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const sidebarPanel = useUiStore((s) => s.sidebarPanel);
   const setSidebarPanel = useUiStore((s) => s.setSidebarPanel);
+  const openModal = useUiStore((s) => s.openModal);
 
   return (
     <aside className="flex h-full flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -50,9 +49,16 @@ export function Sidebar() {
         {sidebarPanel === "bible" && (
           <BibleNav projectId={projectId} pathname={pathname} />
         )}
-        {sidebarPanel === "settings" && (
-          <SettingsNav projectId={projectId} pathname={pathname} />
-        )}
+      </div>
+      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+        <button
+          type="button"
+          onClick={() => openModal("app-settings")}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+        >
+          <Settings size={14} />
+          App Settings
+        </button>
       </div>
     </aside>
   );
