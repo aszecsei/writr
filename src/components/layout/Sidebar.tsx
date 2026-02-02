@@ -36,14 +36,11 @@ export function Sidebar() {
   const params = useParams<{ projectId: string }>();
   const projectId = params.projectId;
   const pathname = usePathname();
-  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const sidebarPanel = useUiStore((s) => s.sidebarPanel);
   const setSidebarPanel = useUiStore((s) => s.setSidebarPanel);
 
-  if (!sidebarOpen) return null;
-
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+    <aside className="flex h-full flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
       <nav className="flex border-b border-zinc-200 dark:border-zinc-800">
         {panels.map((panel) => {
           const Icon = panel.icon;

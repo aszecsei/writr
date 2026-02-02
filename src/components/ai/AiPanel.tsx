@@ -18,7 +18,6 @@ import { buildMessages } from "@/lib/ai/prompts";
 import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
-import { useUiStore } from "@/store/uiStore";
 import { MarkdownMessage } from "./MarkdownMessage";
 
 const AI_TOOLS: { id: AiTool; label: string }[] = [
@@ -36,7 +35,6 @@ interface Message {
 }
 
 export function AiPanel() {
-  const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
   const projectId = useProjectStore((s) => s.activeProjectId);
   const project = useProject(projectId);
   const characters = useCharactersByProject(projectId);
@@ -56,8 +54,6 @@ export function AiPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!aiPanelOpen) return null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -162,7 +158,7 @@ export function AiPanel() {
   }
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <aside className="flex h-full flex-col border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">

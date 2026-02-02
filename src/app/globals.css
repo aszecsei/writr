@@ -41,3 +41,32 @@ select:disabled {
 .ProseMirror:focus {
   outline: none;
 }
+
+/* Panel resize handles */
+.resize-handle {
+  width: 0;
+  position: relative;
+}
+
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover::before,
+.resize-handle:active::before {
+  background-color: var(--color-zinc-400);
+}
+
+@media (prefers-color-scheme: dark) {
+  .resize-handle:hover::before,
+  .resize-handle:active::before {
+    background-color: var(--color-zinc-600);
+  }
+}
