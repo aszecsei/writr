@@ -132,7 +132,13 @@ export function AiPanel() {
           history,
         );
         const formatted = debugMessages
-          .map((m) => `--- [${m.role.toUpperCase()}] ---\n${m.content}`)
+          .map((m) => {
+            const text =
+              typeof m.content === "string"
+                ? m.content
+                : m.content.map((p) => p.text).join("");
+            return `--- [${m.role.toUpperCase()}] ---\n${text}`;
+          })
           .join("\n\n");
         setMessages((prev) => [
           ...prev,

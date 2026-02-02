@@ -64,6 +64,7 @@ export default function LocationDetailPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
+                <title>Back to locations</title>
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </Link>

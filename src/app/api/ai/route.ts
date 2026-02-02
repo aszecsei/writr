@@ -7,7 +7,18 @@ const AiRequestSchema = z.object({
   messages: z.array(
     z.object({
       role: z.enum(["system", "user", "assistant"]),
-      content: z.string(),
+      content: z.union([
+        z.string(),
+        z.array(
+          z.object({
+            type: z.literal("text"),
+            text: z.string(),
+            cache_control: z
+              .object({ type: z.literal("ephemeral") })
+              .optional(),
+          }),
+        ),
+      ]),
     }),
   ),
   temperature: z.number().min(0).max(2).optional(),

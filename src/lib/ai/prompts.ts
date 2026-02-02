@@ -7,7 +7,7 @@ import {
   serializeTimelineEvent,
   serializeWorldbuildingTree,
 } from "./serialize";
-import type { AiContext, AiMessage, AiTool } from "./types";
+import type { AiContext, AiMessage, AiTool, ContentPart } from "./types";
 
 function buildSystemContext(context: AiContext): string {
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
@@ -96,7 +96,17 @@ export function buildMessages(
   context: AiContext,
   history: AiMessage[] = [],
 ): AiMessage[] {
-  const systemContent = `${buildSystemContext(context)}<task>\n${TOOL_INSTRUCTIONS[tool]}\n</task>`;
+  const systemContent: ContentPart[] = [
+    {
+      type: "text",
+      text: buildSystemContext(context),
+      cache_control: { type: "ephemeral" },
+    },
+    {
+      type: "text",
+      text: `<task>\n${TOOL_INSTRUCTIONS[tool]}\n</task>`,
+    },
+  ];
 
   const messages: AiMessage[] = [{ role: "system", content: systemContent }];
 
@@ -104,7 +114,13 @@ export function buildMessages(
     const title = context.currentChapterTitle ?? "Untitled";
     messages.push({
       role: "user",
-      content: `<chapter title="${title}">\n${context.currentChapterContent}\n</chapter>`,
+      content: [
+        {
+          type: "text",
+          text: `<chapter title="${title}">\n${context.currentChapterContent}\n</chapter>`,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
     });
     messages.push({
       role: "assistant",

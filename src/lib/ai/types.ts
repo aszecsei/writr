@@ -6,9 +6,21 @@ export type AiTool =
   | "brainstorm"
   | "summarize";
 
+export interface CacheControl {
+  type: "ephemeral";
+}
+
+export interface TextContentPart {
+  type: "text";
+  text: string;
+  cache_control?: CacheControl;
+}
+
+export type ContentPart = TextContentPart;
+
 export interface AiMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: string | ContentPart[];
 }
 
 import type {

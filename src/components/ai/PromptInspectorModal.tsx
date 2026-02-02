@@ -71,9 +71,24 @@ export function PromptInspectorModal({
               >
                 {msg.role}
               </span>
-              <pre className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                {msg.content}
-              </pre>
+              {typeof msg.content === "string" ? (
+                <pre className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                  {msg.content}
+                </pre>
+              ) : (
+                msg.content.map((part) => (
+                  <div key={part.text.slice(0, 64)} className="mt-1.5">
+                    {part.cache_control && (
+                      <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-700 dark:bg-amber-900 dark:text-amber-300 mb-1">
+                        cached
+                      </span>
+                    )}
+                    <pre className="whitespace-pre-wrap break-words rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                      {part.text}
+                    </pre>
+                  </div>
+                ))
+              )}
             </div>
           ))}
         </div>
