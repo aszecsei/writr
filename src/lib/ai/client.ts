@@ -16,8 +16,8 @@ export async function callAi(
       apiKey: settings.apiKey,
       model: settings.model,
       messages,
-      temperature: tool === "generate-prose" ? 0.8 : 0.5,
-      max_tokens: tool === "generate-prose" ? 4096 : 2048,
+      temperature: tool === "generate-prose" ? 1.0 : 0.5,
+      max_tokens: 24 * 1024,
       stream: false,
     }),
   });

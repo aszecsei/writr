@@ -34,28 +34,28 @@ function resolveNames(ids: string[], nameMap: Map<string, string>): string[] {
 }
 
 export function serializeCharacter(c: Character): string {
-  const header = c.pronouns
-    ? `**${c.name}** (${c.role}, ${c.pronouns})`
-    : `**${c.name}** (${c.role})`;
+  const attrs = c.pronouns
+    ? ` role="${c.role}" pronouns="${c.pronouns}"`
+    : ` role="${c.role}"`;
 
-  const lines: string[] = [header];
+  const lines: string[] = [`<character name="${c.name}"${attrs}>`];
 
-  if (c.aliases.length > 0) lines.push(`Aliases: ${c.aliases.join(", ")}`);
-  if (c.description) lines.push(`Description: ${c.description}`);
-  if (c.personality) lines.push(`Personality: ${c.personality}`);
-  if (c.motivations) lines.push(`Motivations: ${c.motivations}`);
-  if (c.strengths || c.weaknesses) {
-    const parts: string[] = [];
-    if (c.strengths) parts.push(`Strengths: ${c.strengths}`);
-    if (c.weaknesses) parts.push(`Weaknesses: ${c.weaknesses}`);
-    lines.push(parts.join(" | "));
-  }
+  if (c.aliases.length > 0)
+    lines.push(`<aliases>${c.aliases.join(", ")}</aliases>`);
+  if (c.description) lines.push(`<description>${c.description}</description>`);
+  if (c.personality) lines.push(`<personality>${c.personality}</personality>`);
+  if (c.motivations) lines.push(`<motivations>${c.motivations}</motivations>`);
+  if (c.strengths) lines.push(`<strengths>${c.strengths}</strengths>`);
+  if (c.weaknesses) lines.push(`<weaknesses>${c.weaknesses}</weaknesses>`);
   if (c.internalConflict)
-    lines.push(`Internal Conflict: ${c.internalConflict}`);
-  if (c.characterArcs) lines.push(`Character Arcs: ${c.characterArcs}`);
-  if (c.dialogueStyle) lines.push(`Dialogue Style: ${c.dialogueStyle}`);
-  if (c.backstory) lines.push(`Backstory: ${c.backstory}`);
+    lines.push(`<internal-conflict>${c.internalConflict}</internal-conflict>`);
+  if (c.characterArcs)
+    lines.push(`<character-arcs>${c.characterArcs}</character-arcs>`);
+  if (c.dialogueStyle)
+    lines.push(`<dialogue-style>${c.dialogueStyle}</dialogue-style>`);
+  if (c.backstory) lines.push(`<backstory>${c.backstory}</backstory>`);
 
+  lines.push("</character>");
   return lines.join("\n");
 }
 
@@ -63,15 +63,16 @@ export function serializeLocation(
   l: Location,
   charMap: Map<string, string>,
 ): string {
-  const lines: string[] = [`**${l.name}**`];
+  const lines: string[] = [`<location name="${l.name}">`];
 
-  if (l.description) lines.push(`Description: ${l.description}`);
-  if (l.notes) lines.push(`Notes: ${l.notes}`);
+  if (l.description) lines.push(`<description>${l.description}</description>`);
+  if (l.notes) lines.push(`<notes>${l.notes}</notes>`);
 
   const charNames = resolveNames(l.linkedCharacterIds, charMap);
   if (charNames.length > 0)
-    lines.push(`Characters here: ${charNames.join(", ")}`);
+    lines.push(`<characters-here>${charNames.join(", ")}</characters-here>`);
 
+  lines.push("</location>");
   return lines.join("\n");
 }
 
@@ -79,27 +80,30 @@ export function serializeTimelineEvent(
   e: TimelineEvent,
   charMap: Map<string, string>,
 ): string {
-  const header = e.date ? `**${e.title}** (${e.date})` : `**${e.title}**`;
-  const lines: string[] = [header];
+  const dateAttr = e.date ? ` date="${e.date}"` : "";
+  const lines: string[] = [`<event title="${e.title}"${dateAttr}>`];
 
-  if (e.description) lines.push(`Description: ${e.description}`);
+  if (e.description) lines.push(`<description>${e.description}</description>`);
 
   const charNames = resolveNames(e.linkedCharacterIds, charMap);
   if (charNames.length > 0)
-    lines.push(`Characters involved: ${charNames.join(", ")}`);
+    lines.push(
+      `<characters-involved>${charNames.join(", ")}</characters-involved>`,
+    );
 
+  lines.push("</event>");
   return lines.join("\n");
 }
 
 export function serializeStyleGuideEntry(s: StyleGuideEntry): string {
-  return `### ${s.title}\n${s.content}`;
+  return `<rule title="${s.title}">\n${s.content}\n</rule>`;
 }
 
 const WORLDBUILDING_TRUNCATE_LENGTH = 200;
 
 export function serializeWorldbuildingDoc(d: WorldbuildingDoc): string {
-  const tags = d.tags.length > 0 ? ` [${d.tags.join(", ")}]` : "";
-  const lines: string[] = [`**${d.title}**${tags}`];
+  const tagsAttr = d.tags.length > 0 ? ` tags="${d.tags.join(", ")}"` : "";
+  const lines: string[] = [`<doc title="${d.title}"${tagsAttr}>`];
 
   if (d.content) {
     const truncated =
@@ -109,6 +113,7 @@ export function serializeWorldbuildingDoc(d: WorldbuildingDoc): string {
     lines.push(truncated);
   }
 
+  lines.push("</doc>");
   return lines.join("\n");
 }
 
@@ -121,5 +126,5 @@ export function serializeRelationship(
   if (!sourceName || !targetName) return "";
 
   const label = r.type === "custom" && r.customLabel ? r.customLabel : r.type;
-  return `${sourceName} → ${targetName} (${label})`;
+  return `<relationship source="${sourceName}" target="${targetName}" type="${label}" />`;
 }

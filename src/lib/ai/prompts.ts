@@ -10,16 +10,15 @@ import {
 import type { AiContext, AiMessage, AiTool } from "./types";
 
 function buildSystemContext(context: AiContext): string {
-  let system = `You are a creative writing assistant for the novel "${context.projectTitle}"`;
-  if (context.genre) system += ` (genre: ${context.genre})`;
-  system += ".\n\n";
+  const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
+  let system = `You are a creative writing assistant.\n\n<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
 
   const charMap = buildCharacterNameMap(context.characters);
 
   if (context.characters.length > 0) {
-    system += "## Key Characters\n";
-    system += context.characters.map(serializeCharacter).join("\n\n");
-    system += "\n\n";
+    system += "<characters>\n";
+    system += context.characters.map(serializeCharacter).join("\n");
+    system += "\n</characters>\n\n";
   }
 
   if (context.relationships.length > 0) {
@@ -27,42 +26,43 @@ function buildSystemContext(context: AiContext): string {
       .map((r) => serializeRelationship(r, charMap))
       .filter(Boolean);
     if (lines.length > 0) {
-      system += "## Character Relationships\n";
+      system += "<relationships>\n";
       system += lines.join("\n");
-      system += "\n\n";
+      system += "\n</relationships>\n\n";
     }
   }
 
   if (context.locations.length > 0) {
-    system += "## Key Locations\n";
+    system += "<locations>\n";
     system += context.locations
       .map((l) => serializeLocation(l, charMap))
-      .join("\n\n");
-    system += "\n\n";
+      .join("\n");
+    system += "\n</locations>\n\n";
   }
 
   if (context.styleGuide.length > 0) {
-    system += "## Style Guide\n";
-    system += context.styleGuide.map(serializeStyleGuideEntry).join("\n\n");
-    system += "\n\n";
+    system += "<style-guide>\n";
+    system += context.styleGuide.map(serializeStyleGuideEntry).join("\n");
+    system += "\n</style-guide>\n\n";
   }
 
   if (context.timelineEvents.length > 0) {
-    system += "## Timeline\n";
+    system += "<timeline>\n";
     system += context.timelineEvents
       .map((e) => serializeTimelineEvent(e, charMap))
-      .join("\n\n");
-    system += "\n\n";
+      .join("\n");
+    system += "\n</timeline>\n\n";
   }
 
   if (context.worldbuildingDocs.length > 0) {
-    system += "## Worldbuilding\n";
+    system += "<worldbuilding>\n";
     system += context.worldbuildingDocs
       .map(serializeWorldbuildingDoc)
-      .join("\n\n");
-    system += "\n\n";
+      .join("\n");
+    system += "\n</worldbuilding>\n\n";
   }
 
+  system += "</novel>\n\n";
   return system;
 }
 
@@ -97,14 +97,15 @@ export function buildMessages(
   userPrompt: string,
   context: AiContext,
 ): AiMessage[] {
-  const systemContent = `${buildSystemContext(context)}\n## Task\n${TOOL_INSTRUCTIONS[tool]}`;
+  const systemContent = `${buildSystemContext(context)}<task>\n${TOOL_INSTRUCTIONS[tool]}\n</task>`;
 
   const messages: AiMessage[] = [{ role: "system", content: systemContent }];
 
   if (context.currentChapterContent) {
+    const title = context.currentChapterTitle ?? "Untitled";
     messages.push({
       role: "user",
-      content: `Here is the current chapter "${context.currentChapterTitle ?? "Untitled"}":\n\n${context.currentChapterContent}`,
+      content: `<chapter title="${title}">\n${context.currentChapterContent}\n</chapter>`,
     });
     messages.push({
       role: "assistant",
@@ -115,7 +116,7 @@ export function buildMessages(
   if (context.selectedText) {
     messages.push({
       role: "user",
-      content: `Selected text:\n\n> ${context.selectedText}\n\n${userPrompt}`,
+      content: `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`,
     });
   } else {
     messages.push({ role: "user", content: userPrompt });
