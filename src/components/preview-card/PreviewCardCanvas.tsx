@@ -17,13 +17,21 @@ interface PreviewCardCanvasProps {
   chapterTitle: string;
   template: CardTemplate;
   aspectRatio: CardAspectRatio;
+  fontFamily: string;
 }
 
 export const PreviewCardCanvas = forwardRef<
   HTMLDivElement,
   PreviewCardCanvasProps
 >(function PreviewCardCanvas(
-  { selectedText, projectTitle, chapterTitle, template, aspectRatio },
+  {
+    selectedText,
+    projectTitle,
+    chapterTitle,
+    template,
+    aspectRatio,
+    fontFamily,
+  },
   ref,
 ) {
   const style = TEMPLATES[template];
@@ -41,7 +49,7 @@ export const PreviewCardCanvas = forwardRef<
   const availableHeight =
     ratio.height - PADDING * 2 - ATTRIBUTION_MARGIN - BRUSHSTROKE_EXTEND * 2;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedText and style.fontFamily affect text measurement
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedText and fontFamily affect text measurement
   useLayoutEffect(() => {
     const textEl = textRef.current;
     if (!textEl) return;
@@ -71,7 +79,7 @@ export const PreviewCardCanvas = forwardRef<
     if (wrapperRef.current) {
       setWrapperHeight(wrapperRef.current.offsetHeight);
     }
-  }, [selectedText, availableWidth, availableHeight, style.fontFamily]);
+  }, [selectedText, availableWidth, availableHeight, fontFamily]);
 
   return (
     <div
@@ -87,7 +95,6 @@ export const PreviewCardCanvas = forwardRef<
           width: ratio.width,
           height: ratio.height,
           background: style.background,
-          fontFamily: style.fontFamily,
           border: style.borderStyle,
           transform: `scale(${scaleFactor})`,
           transformOrigin: "top left",
@@ -116,37 +123,44 @@ export const PreviewCardCanvas = forwardRef<
               paddingLeft: BRUSHSTROKE_WIDTH,
               paddingTop: BRUSHSTROKE_EXTEND,
               paddingBottom: BRUSHSTROKE_EXTEND,
+              ...(style.textBackground && {
+                background: style.textBackground,
+                paddingRight: BRUSHSTROKE_WIDTH,
+                borderRadius: 16,
+              }),
             }}
           >
-            <svg
-              viewBox="0 0 40 200"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: 0,
-                top: BRUSHSTROKE_EXTEND / 3,
-                width: 14,
-                height: wrapperHeight || "100%",
-                opacity: 0.55,
-              }}
-            >
-              <path
-                d={`
-                  M20 0
-                  C12 8, 6 20, 8 40
-                  C10 60, 2 80, 10 100
-                  C18 120, 4 140, 12 160
-                  C16 175, 8 185, 20 200
-                  C32 185, 24 175, 28 160
-                  C36 140, 22 120, 30 100
-                  C38 80, 30 60, 32 40
-                  C34 20, 28 8, 20 0
-                  Z
-                `}
-                fill={style.accentColor}
-              />
-            </svg>
+            {!style.textBackground && (
+              <svg
+                viewBox="0 0 40 200"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: BRUSHSTROKE_EXTEND / 3,
+                  width: 14,
+                  height: wrapperHeight || "100%",
+                  opacity: 0.55,
+                }}
+              >
+                <path
+                  d={`
+                    M20 0
+                    C12 8, 6 20, 8 40
+                    C10 60, 2 80, 10 100
+                    C18 120, 4 140, 12 160
+                    C16 175, 8 185, 20 200
+                    C32 185, 24 175, 28 160
+                    C36 140, 22 120, 30 100
+                    C38 80, 30 60, 32 40
+                    C34 20, 28 8, 20 0
+                    Z
+                  `}
+                  fill={style.accentColor}
+                />
+              </svg>
+            )}
             <blockquote
               ref={textRef}
               style={{
@@ -154,7 +168,7 @@ export const PreviewCardCanvas = forwardRef<
                 fontSize,
                 lineHeight: 1.5,
                 margin: 0,
-                fontStyle: "italic",
+                fontFamily,
               }}
             >
               {selectedText}
@@ -173,6 +187,7 @@ export const PreviewCardCanvas = forwardRef<
             fontSize: "24px",
             letterSpacing: "0.05em",
             textAlign: "center",
+            fontFamily,
           }}
         >
           <div style={{ fontWeight: 600 }}>{projectTitle}</div>

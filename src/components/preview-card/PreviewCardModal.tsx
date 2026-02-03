@@ -3,6 +3,8 @@
 import { Download, ImagePlus, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import { getEditorFont } from "@/lib/fonts";
 import {
   downloadBlob,
   generatePreviewImage,
@@ -30,6 +32,8 @@ export function PreviewCardModal() {
   const activeModal = useUiStore((s) => s.activeModal);
   const modalData = useUiStore((s) => s.modalData);
   const closeModal = useUiStore((s) => s.closeModal);
+  const settings = useAppSettings();
+  const editorFont = getEditorFont(settings?.editorFont ?? "literata");
 
   const [template, setTemplate] = useState<CardTemplate>("minimal");
   const [aspectRatio, setAspectRatio] = useState<CardAspectRatio>("square");
@@ -107,6 +111,7 @@ export function PreviewCardModal() {
             chapterTitle={chapterTitle}
             template={template}
             aspectRatio={aspectRatio}
+            fontFamily={editorFont.cssFamily}
           />
         </div>
 
