@@ -12,17 +12,19 @@ import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
 import { useUiStore } from "@/store/uiStore";
 import { PreviewCardCanvas } from "./PreviewCardCanvas";
 
-const TEMPLATE_OPTIONS: { value: CardTemplate; label: string }[] = [
-  { value: "minimal", label: TEMPLATES.minimal.name },
-  { value: "dramatic", label: TEMPLATES.dramatic.name },
-  { value: "vintage", label: TEMPLATES.vintage.name },
-];
+const TEMPLATE_OPTIONS = (Object.keys(TEMPLATES) as CardTemplate[]).map(
+  (key) => ({
+    value: key,
+    label: TEMPLATES[key].name,
+  }),
+);
 
-const ASPECT_RATIO_OPTIONS: { value: CardAspectRatio; label: string }[] = [
-  { value: "square", label: ASPECT_RATIOS.square.label },
-  { value: "landscape", label: ASPECT_RATIOS.landscape.label },
-  { value: "portrait", label: ASPECT_RATIOS.portrait.label },
-];
+const ASPECT_RATIO_OPTIONS = (
+  Object.keys(ASPECT_RATIOS) as CardAspectRatio[]
+).map((key) => ({
+  value: key,
+  label: ASPECT_RATIOS[key].label,
+}));
 
 export function PreviewCardModal() {
   const activeModal = useUiStore((s) => s.activeModal);
