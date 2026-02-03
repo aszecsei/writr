@@ -9,6 +9,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  ImagePlus,
   Italic,
   List,
   ListOrdered,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useChapter } from "@/hooks/useChapter";
 import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -150,20 +152,34 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
 
-  const activeStates = useEditorState({
+  const chapter = useChapter(activeDocumentId);
+
+  const editorState = useEditorState({
     editor,
     selector: ({ editor: e }) => {
-      if (!e) return {};
+      if (!e)
+        return { activeStates: {}, hasSelection: false, selectedText: "" };
       const result: Record<string, boolean> = {};
       for (const action of actions) {
         if (action.isActive) {
           result[action.label] = action.isActive(e);
         }
       }
-      return result;
+      const { from, to, empty } = e.state.selection;
+      const text = empty ? "" : e.state.doc.textBetween(from, to, " ");
+      return {
+        activeStates: result,
+        hasSelection: !empty && text.trim().length > 0,
+        selectedText: text,
+      };
     },
   });
+
+  const activeStates = editorState?.activeStates ?? {};
+  const hasSelection = editorState?.hasSelection ?? false;
+  const selectedText = editorState?.selectedText ?? "";
 
   async function handleFontChange(e: React.ChangeEvent<HTMLSelectElement>) {
     await updateAppSettings({ editorFont: e.target.value });
@@ -200,7 +216,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
             )}
             {groupActions.map((action) => {
-              const active = activeStates?.[action.label] ?? false;
+              const active = activeStates[action.label] ?? false;
               const Icon = action.icon;
               return (
                 <button
@@ -237,6 +253,25 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <Download size={16} />
+          </button>
+          <button
+            type="button"
+            title="Preview Card (Ctrl+Shift+P)"
+            onClick={() =>
+              openModal("preview-card", {
+                selectedText,
+                projectTitle: activeProjectTitle ?? "Untitled",
+                chapterTitle: chapter?.title ?? "",
+              })
+            }
+            disabled={!hasSelection}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              hasSelection
+                ? "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                : "cursor-not-allowed text-zinc-300 dark:text-zinc-600"
+            }`}
+          >
+            <ImagePlus size={16} />
           </button>
         </>
       )}

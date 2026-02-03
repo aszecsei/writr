@@ -9,6 +9,7 @@ export type ModalId =
   | "project-settings"
   | "app-settings"
   | "export"
+  | "preview-card"
   | null;
 
 interface UiState {
@@ -24,6 +25,7 @@ interface UiState {
   openModal: (id: ModalId, data?: Record<string, unknown>) => void;
   closeModal: () => void;
   toggleAiPanel: () => void;
+  closeAiPanel: () => void;
   toggleFocusMode: () => void;
   setFocusMode: (enabled: boolean) => void;
 }
@@ -62,6 +64,11 @@ export const useUiStore = create<UiState>()(
     toggleAiPanel: () =>
       set((s) => {
         s.aiPanelOpen = !s.aiPanelOpen;
+      }),
+
+    closeAiPanel: () =>
+      set((s) => {
+        s.aiPanelOpen = false;
       }),
 
     toggleFocusMode: () =>

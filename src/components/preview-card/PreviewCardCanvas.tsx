@@ -1,0 +1,188 @@
+"use client";
+
+import { forwardRef, useLayoutEffect, useRef, useState } from "react";
+import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
+import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
+
+const MIN_FONT_SIZE = 24;
+const MAX_FONT_SIZE = 96;
+const PADDING = 96;
+const BRUSHSTROKE_WIDTH = 32;
+const BRUSHSTROKE_EXTEND = 40;
+const ATTRIBUTION_MARGIN = 80;
+
+interface PreviewCardCanvasProps {
+  selectedText: string;
+  projectTitle: string;
+  chapterTitle: string;
+  template: CardTemplate;
+  aspectRatio: CardAspectRatio;
+}
+
+export const PreviewCardCanvas = forwardRef<
+  HTMLDivElement,
+  PreviewCardCanvasProps
+>(function PreviewCardCanvas(
+  { selectedText, projectTitle, chapterTitle, template, aspectRatio },
+  ref,
+) {
+  const style = TEMPLATES[template];
+  const ratio = ASPECT_RATIOS[aspectRatio];
+  const textRef = useRef<HTMLQuoteElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(MAX_FONT_SIZE);
+  const [wrapperHeight, setWrapperHeight] = useState(0);
+
+  const scaleFactor = 0.35;
+  const displayWidth = ratio.width * scaleFactor;
+  const displayHeight = ratio.height * scaleFactor;
+
+  const availableWidth = ratio.width - PADDING * 2 - BRUSHSTROKE_WIDTH;
+  const availableHeight =
+    ratio.height - PADDING * 2 - ATTRIBUTION_MARGIN - BRUSHSTROKE_EXTEND * 2;
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedText and style.fontFamily affect text measurement
+  useLayoutEffect(() => {
+    const textEl = textRef.current;
+    if (!textEl) return;
+
+    let low = MIN_FONT_SIZE;
+    let high = MAX_FONT_SIZE;
+    let bestFit = MIN_FONT_SIZE;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      textEl.style.fontSize = `${mid}px`;
+
+      const fits =
+        textEl.scrollWidth <= availableWidth &&
+        textEl.scrollHeight <= availableHeight;
+
+      if (fits) {
+        bestFit = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    setFontSize(bestFit);
+
+    if (wrapperRef.current) {
+      setWrapperHeight(wrapperRef.current.offsetHeight);
+    }
+  }, [selectedText, availableWidth, availableHeight, style.fontFamily]);
+
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        width: displayWidth,
+        height: displayHeight,
+      }}
+    >
+      <div
+        ref={ref}
+        style={{
+          width: ratio.width,
+          height: ratio.height,
+          background: style.background,
+          fontFamily: style.fontFamily,
+          border: style.borderStyle,
+          transform: `scale(${scaleFactor})`,
+          transformOrigin: "top left",
+          boxSizing: "border-box",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Quote content */}
+        <div
+          style={{
+            position: "absolute",
+            top: PADDING,
+            left: PADDING,
+            right: PADDING,
+            bottom: PADDING + ATTRIBUTION_MARGIN,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <div
+            ref={wrapperRef}
+            style={{
+              position: "relative",
+              maxWidth: availableWidth + BRUSHSTROKE_WIDTH,
+              paddingLeft: BRUSHSTROKE_WIDTH,
+              paddingTop: BRUSHSTROKE_EXTEND,
+              paddingBottom: BRUSHSTROKE_EXTEND,
+            }}
+          >
+            <svg
+              viewBox="0 0 40 200"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: 0,
+                top: BRUSHSTROKE_EXTEND / 3,
+                width: 14,
+                height: wrapperHeight || "100%",
+                opacity: 0.55,
+              }}
+            >
+              <path
+                d={`
+                  M20 0
+                  C12 8, 6 20, 8 40
+                  C10 60, 2 80, 10 100
+                  C18 120, 4 140, 12 160
+                  C16 175, 8 185, 20 200
+                  C32 185, 24 175, 28 160
+                  C36 140, 22 120, 30 100
+                  C38 80, 30 60, 32 40
+                  C34 20, 28 8, 20 0
+                  Z
+                `}
+                fill={style.accentColor}
+              />
+            </svg>
+            <blockquote
+              ref={textRef}
+              style={{
+                color: style.textColor,
+                fontSize,
+                lineHeight: 1.5,
+                margin: 0,
+                fontStyle: "italic",
+              }}
+            >
+              {selectedText}
+            </blockquote>
+          </div>
+        </div>
+
+        {/* Attribution overlay */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: PADDING,
+            left: PADDING,
+            right: PADDING,
+            color: style.accentColor,
+            fontSize: "24px",
+            letterSpacing: "0.05em",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontWeight: 600 }}>{projectTitle}</div>
+          {chapterTitle && (
+            <div style={{ marginTop: "8px", fontSize: "20px" }}>
+              {chapterTitle}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});

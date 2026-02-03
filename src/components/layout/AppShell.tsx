@@ -6,6 +6,7 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { ExportDialog } from "@/components/export/ExportDialog";
+import { PreviewCardModal } from "@/components/preview-card/PreviewCardModal";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import {
   SprintConfigModal,
@@ -118,6 +119,7 @@ export function AppShell({ children }: AppShellProps) {
       </Group>
       <AppSettingsDialog />
       <ExportDialog />
+      <PreviewCardModal />
       <SprintConfigModal />
       <SprintHistoryModal />
       <SprintWidget />

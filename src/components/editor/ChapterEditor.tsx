@@ -9,6 +9,7 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useChapter } from "@/hooks/useChapter";
 import { getEditorFont } from "@/lib/fonts";
 import { useEditorStore } from "@/store/editorStore";
+import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions } from "./extensions";
@@ -43,6 +44,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const markDirty = useEditorStore((s) => s.markDirty);
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
+  const openModal = useUiStore((s) => s.openModal);
+  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const initializedRef = useRef(false);
 
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
@@ -166,6 +169,31 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       clearTimeout(timeoutId);
     };
   }, [focusModeEnabled, editor]);
+
+  // Keyboard shortcut for preview card (Ctrl+Shift+P)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+        e.preventDefault();
+        if (!editor || editor.isDestroyed) return;
+
+        const { from, to, empty } = editor.state.selection;
+        if (empty) return;
+
+        const selectedText = editor.state.doc.textBetween(from, to, " ");
+        if (!selectedText.trim()) return;
+
+        openModal("preview-card", {
+          selectedText,
+          projectTitle: activeProjectTitle ?? "Untitled",
+          chapterTitle: chapter?.title ?? "",
+        });
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [editor, chapter, activeProjectTitle, openModal]);
 
   if (!chapter) {
     return (
