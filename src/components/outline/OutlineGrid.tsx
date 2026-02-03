@@ -72,10 +72,12 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
     chapterTitle: string;
   } | null>(null);
 
-  // Build chapter lookup map
+  // Build chapter lookup map (id -> { title, status })
   const chapterMap = useMemo(() => {
-    if (!chapters) return new Map<string, string>();
-    return new Map(chapters.map((c) => [c.id, c.title]));
+    if (!chapters) return new Map<string, { title: string; status: string }>();
+    return new Map(
+      chapters.map((c) => [c.id, { title: c.title, status: c.status }]),
+    );
   }, [chapters]);
 
   // Get chapters not already linked to a row (for linking menu)
@@ -234,7 +236,8 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
     // Check if row is linked to a chapter
     const row = localRows.find((r) => r.id === rowId);
     if (row?.linkedChapterId) {
-      const chapterTitle = chapterMap.get(row.linkedChapterId) || "Untitled";
+      const chapterTitle =
+        chapterMap.get(row.linkedChapterId)?.title || "Untitled";
       setDeleteConfirm({
         rowId,
         linkedChapterId: row.linkedChapterId,
@@ -357,6 +360,10 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
                 <th className="sticky left-0 z-30 min-w-[180px] border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
                   Chapter
                 </th>
+                {/* Status column header (fixed, non-editable) */}
+                <th className="min-w-[90px] border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                  Status
+                </th>
                 {columns.map((column) => (
                   <OutlineGridHeader
                     key={column.id}
@@ -382,7 +389,12 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
                   cellsMap={cellsMap}
                   chapterTitle={
                     row.linkedChapterId
-                      ? chapterMap.get(row.linkedChapterId)
+                      ? chapterMap.get(row.linkedChapterId)?.title
+                      : undefined
+                  }
+                  chapterStatus={
+                    row.linkedChapterId
+                      ? chapterMap.get(row.linkedChapterId)?.status
                       : undefined
                   }
                   onRowLabelChange={(label) =>

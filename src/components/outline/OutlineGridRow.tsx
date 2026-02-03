@@ -4,11 +4,13 @@ import { useSortable } from "@dnd-kit/react/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DragHandle } from "@/components/bible/DragHandle";
 import type {
+  ChapterStatus,
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow as OutlineGridRowType,
 } from "@/db/schemas";
 import { OutlineGridCell as GridCell } from "./OutlineGridCell";
+import { StatusBadge } from "./StatusBadge";
 
 interface OutlineGridRowProps {
   row: OutlineGridRowType;
@@ -16,6 +18,7 @@ interface OutlineGridRowProps {
   columns: OutlineGridColumn[];
   cellsMap: Map<string, OutlineGridCell>;
   chapterTitle?: string;
+  chapterStatus?: string;
   onRowLabelChange: (label: string) => void;
   onCellSave: (columnId: string, content: string) => void;
   onRowContextMenu: (e: React.MouseEvent) => void;
@@ -28,6 +31,7 @@ export function OutlineGridRow({
   columns,
   cellsMap,
   chapterTitle,
+  chapterStatus,
   onRowLabelChange,
   onCellSave,
   onRowContextMenu,
@@ -129,6 +133,17 @@ export function OutlineGridRow({
           )}
         </div>
       </th>
+
+      {/* Status cell (fixed, non-editable) */}
+      <td className="border border-zinc-200 bg-white px-2 py-2 text-center dark:border-zinc-700 dark:bg-zinc-900">
+        <StatusBadge
+          status={
+            row.linkedChapterId
+              ? (chapterStatus as ChapterStatus) || "draft"
+              : "unlinked"
+          }
+        />
+      </td>
 
       {/* Cells */}
       {columns.map((column) => {
