@@ -24,9 +24,12 @@ export interface AiMessage {
 }
 
 import type {
+  Chapter,
   Character,
   CharacterRelationship,
   Location,
+  OutlineCard,
+  OutlineColumn,
   ReasoningEffort,
   StyleGuideEntry,
   TimelineEvent,
@@ -44,6 +47,9 @@ export interface AiContext {
   timelineEvents: TimelineEvent[];
   worldbuildingDocs: WorldbuildingDoc[];
   relationships: CharacterRelationship[];
+  outlineColumns: OutlineColumn[];
+  outlineCards: OutlineCard[];
+  chapters: Chapter[];
   currentChapterTitle?: string;
   currentChapterContent?: string;
   selectedText?: string;

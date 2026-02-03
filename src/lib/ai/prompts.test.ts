@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  makeChapter,
   makeCharacter,
   makeLocation,
+  makeOutlineCard,
+  makeOutlineColumn,
   makeRelationship,
   makeStyleGuideEntry,
   makeTimelineEvent,
@@ -22,6 +25,9 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],
+    outlineColumns: [],
+    outlineCards: [],
+    chapters: [],
     ...overrides,
   };
 }
@@ -137,6 +143,41 @@ describe("buildMessages", () => {
         }),
       );
       expect(getSystemText(withWb)).toContain("<worldbuilding>");
+    });
+
+    it("includes <outline> section only when columns exist", () => {
+      const noOutline = buildMessages("brainstorm", "test", emptyContext());
+      expect(getSystemText(noOutline)).not.toContain("<outline>");
+
+      const col = makeOutlineColumn({ projectId: pid, title: "Act I" });
+      const char = makeCharacter({ projectId: pid, name: "Hero" });
+      const chapter = makeChapter({ projectId: pid, title: "Chapter 1" });
+      const card = makeOutlineCard({
+        projectId: pid,
+        columnId: col.id,
+        title: "Opening",
+        content: "The hero sets out",
+        linkedCharacterIds: [char.id],
+        linkedChapterIds: [chapter.id],
+      });
+      const withOutline = buildMessages(
+        "brainstorm",
+        "test",
+        emptyContext({
+          characters: [char],
+          chapters: [chapter],
+          outlineColumns: [col],
+          outlineCards: [card],
+        }),
+      );
+      const text = getSystemText(withOutline);
+      expect(text).toContain("<outline>");
+      expect(text).toContain('column title="Act I"');
+      expect(text).toContain('card title="Opening"');
+      expect(text).toContain("<notes>The hero sets out</notes>");
+      expect(text).toContain("<linked-characters>Hero</linked-characters>");
+      expect(text).toContain("<linked-chapters>Chapter 1</linked-chapters>");
+      expect(text).toContain("</outline>");
     });
 
     it("includes <relationships> section only when non-empty and valid", () => {

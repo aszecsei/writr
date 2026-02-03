@@ -1,7 +1,10 @@
 import {
+  buildChapterNameMap,
   buildCharacterNameMap,
+  buildLocationNameMap,
   serializeCharacter,
   serializeLocation,
+  serializeOutline,
   serializeRelationship,
   serializeStyleGuideEntry,
   serializeTimelineEvent,
@@ -58,6 +61,20 @@ function buildSystemContext(context: AiContext): string {
     system += "<worldbuilding>\n";
     system += serializeWorldbuildingTree(context.worldbuildingDocs);
     system += "\n</worldbuilding>\n\n";
+  }
+
+  if (context.outlineColumns.length > 0) {
+    const locationMap = buildLocationNameMap(context.locations);
+    const chapterMap = buildChapterNameMap(context.chapters);
+    system += "<outline>\n";
+    system += serializeOutline(
+      context.outlineColumns,
+      context.outlineCards,
+      charMap,
+      locationMap,
+      chapterMap,
+    );
+    system += "\n</outline>\n\n";
   }
 
   system += "</novel>\n\n";

@@ -1,7 +1,10 @@
 import type {
+  Chapter,
   Character,
   CharacterRelationship,
   Location,
+  OutlineCard,
+  OutlineColumn,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -23,6 +26,14 @@ export function buildLocationNameMap(
   const map = new Map<string, string>();
   for (const l of locations) {
     map.set(l.id, l.name);
+  }
+  return map;
+}
+
+export function buildChapterNameMap(chapters: Chapter[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const c of chapters) {
+    map.set(c.id, c.title);
   }
   return map;
 }
@@ -148,4 +159,68 @@ export function serializeRelationship(
 
   const label = r.type === "custom" && r.customLabel ? r.customLabel : r.type;
   return `<relationship source="${sourceName}" target="${targetName}" type="${label}" />`;
+}
+
+const OUTLINE_CARD_TRUNCATE_LENGTH = 1024;
+
+export function serializeOutline(
+  columns: OutlineColumn[],
+  cards: OutlineCard[],
+  charMap: Map<string, string>,
+  locationMap: Map<string, string>,
+  chapterMap: Map<string, string>,
+): string {
+  const sorted = [...columns].sort((a, b) => a.order - b.order);
+
+  const cardsByColumn = new Map<string, OutlineCard[]>();
+  for (const card of cards) {
+    const list = cardsByColumn.get(card.columnId);
+    if (list) list.push(card);
+    else cardsByColumn.set(card.columnId, [card]);
+  }
+  for (const list of cardsByColumn.values()) {
+    list.sort((a, b) => a.order - b.order);
+  }
+
+  const lines: string[] = [];
+  for (const col of sorted) {
+    lines.push(`<column title="${col.title}">`);
+
+    const colCards = cardsByColumn.get(col.id) ?? [];
+    for (const card of colCards) {
+      lines.push(`<card title="${card.title}">`);
+
+      if (card.content) {
+        const truncated =
+          card.content.length > OUTLINE_CARD_TRUNCATE_LENGTH
+            ? `${card.content.slice(0, OUTLINE_CARD_TRUNCATE_LENGTH)}...`
+            : card.content;
+        lines.push(`<notes>${truncated}</notes>`);
+      }
+
+      const chapterNames = resolveNames(card.linkedChapterIds, chapterMap);
+      if (chapterNames.length > 0)
+        lines.push(
+          `<linked-chapters>${chapterNames.join(", ")}</linked-chapters>`,
+        );
+
+      const charNames = resolveNames(card.linkedCharacterIds, charMap);
+      if (charNames.length > 0)
+        lines.push(
+          `<linked-characters>${charNames.join(", ")}</linked-characters>`,
+        );
+
+      const locNames = resolveNames(card.linkedLocationIds, locationMap);
+      if (locNames.length > 0)
+        lines.push(
+          `<linked-locations>${locNames.join(", ")}</linked-locations>`,
+        );
+
+      lines.push("</card>");
+    }
+
+    lines.push("</column>");
+  }
+
+  return lines.join("\n");
 }

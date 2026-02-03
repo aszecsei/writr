@@ -11,7 +11,11 @@ import {
   useTimelineByProject,
   useWorldbuildingDocsByProject,
 } from "@/hooks/useBibleEntries";
-import { useChapter } from "@/hooks/useChapter";
+import { useChapter, useChaptersByProject } from "@/hooks/useChapter";
+import {
+  useOutlineCardsByProject,
+  useOutlineColumnsByProject,
+} from "@/hooks/useOutline";
 import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
@@ -56,6 +60,9 @@ export function AiPanel() {
   const timelineEvents = useTimelineByProject(projectId);
   const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
+  const outlineColumns = useOutlineColumnsByProject(projectId);
+  const outlineCards = useOutlineCardsByProject(projectId);
+  const chapters = useChaptersByProject(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
   const activeChapter = useChapter(
@@ -115,6 +122,9 @@ export function AiPanel() {
         timelineEvents: timelineEvents ?? [],
         worldbuildingDocs: worldbuildingDocs ?? [],
         relationships: relationships ?? [],
+        outlineColumns: outlineColumns ?? [],
+        outlineCards: outlineCards ?? [],
+        chapters: chapters ?? [],
         currentChapterTitle: activeChapter?.title,
         currentChapterContent: activeChapter?.content || undefined,
       };

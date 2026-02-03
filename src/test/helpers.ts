@@ -1,7 +1,10 @@
 import type {
+  Chapter,
   Character,
   CharacterRelationship,
   Location,
+  OutlineCard,
+  OutlineColumn,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -100,6 +103,55 @@ export function makeWorldbuildingDoc(
     tags: [],
     parentDocId: null,
     order: 0,
+    linkedCharacterIds: [],
+    linkedLocationIds: [],
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeChapter(
+  overrides: Partial<Chapter> & { projectId: string; title: string },
+): Chapter {
+  return {
+    id: nextId(),
+    order: 0,
+    content: "",
+    synopsis: "",
+    status: "draft",
+    wordCount: 0,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeOutlineColumn(
+  overrides: Partial<OutlineColumn> & { projectId: string; title: string },
+): OutlineColumn {
+  return {
+    id: nextId(),
+    order: 0,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeOutlineCard(
+  overrides: Partial<OutlineCard> & {
+    projectId: string;
+    columnId: string;
+    title: string;
+  },
+): OutlineCard {
+  return {
+    id: nextId(),
+    content: "",
+    color: "yellow",
+    order: 0,
+    linkedChapterIds: [],
     linkedCharacterIds: [],
     linkedLocationIds: [],
     createdAt: ts,
