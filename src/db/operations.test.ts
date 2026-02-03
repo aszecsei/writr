@@ -8,23 +8,33 @@ import {
   createOutlineColumn,
   createProject,
   createRelationship,
+  createSprint,
   createStyleGuideEntry,
   createTimelineEvent,
   createWorldbuildingDoc,
   deleteOutlineColumn,
   deleteProject,
+  deleteSprint,
   deleteWorldbuildingDoc,
+  endSprint,
+  getActiveSprint,
   getChaptersByProject,
   getCharactersByProject,
   getLocationsByProject,
   getOutlineCardsByProject,
   getOutlineColumnsByProject,
   getRelationshipsByProject,
+  getSessionsByProject,
+  getSprintsByProject,
   getStyleGuideByProject,
   getTimelineByProject,
   getWorldbuildingDoc,
   getWorldbuildingDocsByProject,
   moveOutlineCards,
+  pauseSprint,
+  recordWritingSession,
+  resumeSprint,
+  updateChapterContent,
   updateWorldbuildingDoc,
 } from "./operations";
 
@@ -39,6 +49,8 @@ beforeEach(async () => {
   await db.characterRelationships.clear();
   await db.outlineColumns.clear();
   await db.outlineCards.clear();
+  await db.writingSprints.clear();
+  await db.writingSessions.clear();
   await db.appSettings.clear();
 });
 
@@ -68,6 +80,12 @@ describe("deleteProject (cascading delete)", () => {
       columnId: col.id,
       title: "Card",
     });
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+      projectId: project.id,
+    });
+    await endSprint(sprint.id, 100);
 
     await deleteProject(project.id);
 
@@ -80,6 +98,7 @@ describe("deleteProject (cascading delete)", () => {
     expect(await getRelationshipsByProject(project.id)).toHaveLength(0);
     expect(await getOutlineColumnsByProject(project.id)).toHaveLength(0);
     expect(await getOutlineCardsByProject(project.id)).toHaveLength(0);
+    expect(await getSprintsByProject(project.id)).toHaveLength(0);
   });
 
   it("does not affect other projects", async () => {
@@ -523,5 +542,274 @@ describe("outline cards", () => {
     const stayedCard = allCards.find((c) => c.id === card2.id);
     expect(stayedCard?.columnId).toBe(col1.id);
     expect(stayedCard?.order).toBe(0);
+  });
+});
+
+describe("writing sprints", () => {
+  it("creates sprint with defaults", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 100,
+    });
+
+    expect(sprint.status).toBe("active");
+    expect(sprint.durationMs).toBe(1500000);
+    expect(sprint.startWordCount).toBe(100);
+    expect(sprint.projectId).toBeNull();
+    expect(sprint.chapterId).toBeNull();
+    expect(sprint.wordCountGoal).toBeNull();
+    expect(sprint.totalPausedMs).toBe(0);
+    expect(sprint.endWordCount).toBeNull();
+  });
+
+  it("creates sprint with project and chapter", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({ projectId: project.id, title: "Ch" });
+
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+      projectId: project.id,
+      chapterId: chapter.id,
+      wordCountGoal: 500,
+    });
+
+    expect(sprint.projectId).toBe(project.id);
+    expect(sprint.chapterId).toBe(chapter.id);
+    expect(sprint.wordCountGoal).toBe(500);
+  });
+
+  it("prevents multiple active sprints", async () => {
+    await createSprint({ durationMs: 1500000, startWordCount: 0 });
+
+    await expect(
+      createSprint({ durationMs: 1500000, startWordCount: 0 }),
+    ).rejects.toThrow("A sprint is already active.");
+  });
+
+  it("prevents creating sprint when paused sprint exists", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+    });
+    await pauseSprint(sprint.id);
+
+    await expect(
+      createSprint({ durationMs: 1500000, startWordCount: 0 }),
+    ).rejects.toThrow("A sprint is already active.");
+  });
+
+  it("allows new sprint after previous one ends", async () => {
+    const sprint1 = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+    });
+    await endSprint(sprint1.id, 100);
+
+    const sprint2 = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 100,
+    });
+    expect(sprint2.status).toBe("active");
+  });
+
+  it("pause and resume tracks time correctly", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+    });
+
+    await pauseSprint(sprint.id);
+    const paused = await getActiveSprint();
+    expect(paused?.status).toBe("paused");
+    expect(paused?.pausedAt).not.toBeNull();
+
+    await resumeSprint(sprint.id);
+    const resumed = await getActiveSprint();
+    expect(resumed?.status).toBe("active");
+    expect(resumed?.pausedAt).toBeNull();
+    expect(resumed?.totalPausedMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("end sprint captures word count", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 50,
+    });
+    await endSprint(sprint.id, 150);
+
+    const ended = await db.writingSprints.get(sprint.id);
+    expect(ended?.status).toBe("completed");
+    expect(ended?.endWordCount).toBe(150);
+    expect(ended?.endedAt).not.toBeNull();
+  });
+
+  it("end sprint with abandoned flag", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+    });
+    await endSprint(sprint.id, 50, true);
+
+    const ended = await db.writingSprints.get(sprint.id);
+    expect(ended?.status).toBe("abandoned");
+  });
+
+  it("delete sprint removes it", async () => {
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+    });
+    await endSprint(sprint.id, 100);
+
+    await deleteSprint(sprint.id);
+
+    const deleted = await db.writingSprints.get(sprint.id);
+    expect(deleted).toBeUndefined();
+  });
+
+  it("getSprintsByProject returns only completed/abandoned sprints for project", async () => {
+    const project = await createProject({ title: "P" });
+
+    const sprint1 = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+      projectId: project.id,
+    });
+    await endSprint(sprint1.id, 100);
+
+    const sprint2 = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 100,
+      projectId: project.id,
+    });
+    await endSprint(sprint2.id, 200, true);
+
+    // Create active sprint - should not appear
+    await createSprint({
+      durationMs: 1500000,
+      startWordCount: 200,
+      projectId: project.id,
+    });
+
+    const history = await getSprintsByProject(project.id);
+    expect(history).toHaveLength(2);
+  });
+
+  it("deleteProject cascades to sprints", async () => {
+    const project = await createProject({ title: "P" });
+    const sprint = await createSprint({
+      durationMs: 1500000,
+      startWordCount: 0,
+      projectId: project.id,
+    });
+    await endSprint(sprint.id, 100);
+
+    await deleteProject(project.id);
+
+    const sprints = await getSprintsByProject(project.id);
+    expect(sprints).toHaveLength(0);
+  });
+});
+
+describe("writing sessions", () => {
+  it("creates a session when recording writing activity", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].wordCountStart).toBe(0);
+    expect(sessions[0].wordCountEnd).toBe(100);
+    expect(sessions[0].chapterId).toBe(chapter.id);
+  });
+
+  it("tracks sessions with correct date and hour", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await recordWritingSession(project.id, chapter.id, 0, 50);
+
+    const sessions = await getSessionsByProject(project.id);
+    const today = new Date().toISOString().slice(0, 10);
+    const currentHour = new Date().getHours();
+
+    expect(sessions[0].date).toBe(today);
+    expect(sessions[0].hourOfDay).toBe(currentHour);
+  });
+
+  it("updateChapterContent records a session when word count changes", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await updateChapterContent(chapter.id, "Hello world", 2);
+
+    // Give async operation time to complete
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].wordCountEnd).toBe(2);
+  });
+
+  it("does not record session when word count stays the same", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    // Update with same word count as default (0)
+    await updateChapterContent(chapter.id, "", 0);
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(0);
+  });
+
+  it("deleteProject cascades to writing sessions", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    await deleteProject(project.id);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(0);
+  });
+
+  it("getSessionsByProject respects days parameter", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    // Record a session for today
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    // Fetch with 30 days should include today's session
+    const sessions30 = await getSessionsByProject(project.id, 30);
+    expect(sessions30).toHaveLength(1);
+
+    // Fetch with 0 days should still include today (boundary condition)
+    const sessions0 = await getSessionsByProject(project.id, 0);
+    expect(sessions0).toHaveLength(1);
   });
 });

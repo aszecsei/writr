@@ -7,10 +7,12 @@ import {
   Loader2,
   Menu,
   Sparkles,
+  Timer,
 } from "lucide-react";
 import Link from "next/link";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useSprintStore } from "@/store/sprintStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function TopBar() {
@@ -23,6 +25,8 @@ export function TopBar() {
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
+  const openSprintConfig = useSprintStore((s) => s.openConfigModal);
+  const activeSprintId = useSprintStore((s) => s.activeSprintId);
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -60,19 +64,34 @@ export function TopBar() {
           </>
         )}
         {activeProjectId && (
-          <button
-            type="button"
-            onClick={() =>
-              openModal("export", {
-                projectId: activeProjectId,
-                scope: "book",
-              })
-            }
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-150 hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
-          >
-            <Download size={14} />
-            Export
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                openModal("export", {
+                  projectId: activeProjectId,
+                  scope: "book",
+                })
+              }
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-150 hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              <Download size={14} />
+              Export
+            </button>
+            <button
+              type="button"
+              onClick={openSprintConfig}
+              disabled={!!activeSprintId}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                activeSprintId
+                  ? "cursor-not-allowed opacity-50"
+                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              }`}
+            >
+              <Timer size={14} />
+              Sprint
+            </button>
+          </>
         )}
         <button
           type="button"

@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { FileText, Pencil, Target, Type } from "lucide-react";
 import { useParams } from "next/navigation";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
+import { WritingStatsDashboard } from "@/components/stats";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
 import { useUiStore } from "@/store/uiStore";
@@ -64,6 +65,15 @@ export default function ProjectOverviewPage() {
           />
         )}
       </div>
+
+      {/* Writing Statistics Dashboard */}
+      <div className="mt-8">
+        <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          Writing Activity
+        </h3>
+        <WritingStatsDashboard projectId={params.projectId} />
+      </div>
+
       <EditProjectDialog />
     </div>
   );

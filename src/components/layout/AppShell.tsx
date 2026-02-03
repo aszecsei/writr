@@ -5,6 +5,11 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
+import {
+  SprintConfigModal,
+  SprintHistoryModal,
+  SprintWidget,
+} from "@/components/sprint";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./TopBar";
@@ -43,6 +48,9 @@ export function AppShell({ children }: AppShellProps) {
       </Group>
       <AppSettingsDialog />
       <ExportDialog />
+      <SprintConfigModal />
+      <SprintHistoryModal />
+      <SprintWidget />
     </div>
   );
 }

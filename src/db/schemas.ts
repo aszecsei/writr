@@ -237,3 +237,47 @@ export const AppSettingsSchema = z.object({
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
+
+// ─── Writing Sprint ─────────────────────────────────────────────────
+
+export const SprintStatusEnum = z.enum([
+  "active",
+  "paused",
+  "completed",
+  "abandoned",
+]);
+export type SprintStatus = z.infer<typeof SprintStatusEnum>;
+
+export const WritingSprintSchema = z.object({
+  id,
+  projectId: projectFk.nullable().default(null),
+  chapterId: z.uuid().nullable().default(null),
+  durationMs: z.number().int().positive(),
+  wordCountGoal: z.number().int().nonnegative().nullable().default(null),
+  status: SprintStatusEnum,
+  startedAt: timestamp,
+  pausedAt: timestamp.nullable().default(null),
+  endedAt: timestamp.nullable().default(null),
+  totalPausedMs: z.number().int().nonnegative().default(0),
+  startWordCount: z.number().int().nonnegative(),
+  endWordCount: z.number().int().nonnegative().nullable().default(null),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type WritingSprint = z.infer<typeof WritingSprintSchema>;
+
+// ─── Writing Session ────────────────────────────────────────────────
+
+export const WritingSessionSchema = z.object({
+  id,
+  projectId: projectFk,
+  chapterId: z.uuid(),
+  date: z.string(), // YYYY-MM-DD for easy grouping
+  hourOfDay: z.number().int().min(0).max(23), // 0-23 for time-of-day analysis
+  wordCountStart: z.number().int().nonnegative(),
+  wordCountEnd: z.number().int().nonnegative(),
+  durationMs: z.number().int().nonnegative(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type WritingSession = z.infer<typeof WritingSessionSchema>;

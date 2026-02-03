@@ -11,6 +11,8 @@ import type {
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
+  WritingSession,
+  WritingSprint,
 } from "./schemas";
 
 export class WritrDatabase extends Dexie {
@@ -24,6 +26,8 @@ export class WritrDatabase extends Dexie {
   characterRelationships!: EntityTable<CharacterRelationship, "id">;
   outlineColumns!: EntityTable<OutlineColumn, "id">;
   outlineCards!: EntityTable<OutlineCard, "id">;
+  writingSprints!: EntityTable<WritingSprint, "id">;
+  writingSessions!: EntityTable<WritingSession, "id">;
   appSettings!: EntityTable<AppSettings, "id">;
 
   constructor() {
@@ -116,6 +120,44 @@ export class WritrDatabase extends Dexie {
         "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
       outlineColumns: "id, projectId, [projectId+order]",
       outlineCards: "id, projectId, columnId, [columnId+order]",
+      appSettings: "id",
+    });
+
+    this.version(7).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      appSettings: "id",
+    });
+
+    this.version(8).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
       appSettings: "id",
     });
   }
