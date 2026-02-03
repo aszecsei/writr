@@ -1,41 +1,72 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { OutlineBoard } from "@/components/outline/OutlineBoard";
-import { createOutlineColumn } from "@/db/operations";
-import { useOutlineColumnsByProject } from "@/hooks/useOutline";
-
-const DEFAULT_COLUMNS = [
-  "Act I",
-  "Act II.A",
-  "Midpoint",
-  "Act II.B",
-  "Act III",
-];
+import { useEffect, useRef, useState } from "react";
+import { OutlineGrid } from "@/components/outline/OutlineGrid";
+import {
+  getTemplateColumns,
+  type OutlineTemplate,
+  OutlineTemplateDialog,
+} from "@/components/outline/OutlineTemplateDialog";
+import { createOutlineGridColumn, createOutlineGridRow } from "@/db/operations";
+import { useChaptersByProject } from "@/hooks/useChapter";
+import {
+  useOutlineGridColumns,
+  useOutlineGridRows,
+} from "@/hooks/useOutlineGrid";
 
 export default function OutlinePage() {
   const params = useParams<{ projectId: string }>();
-  const columns = useOutlineColumnsByProject(params.projectId);
-  const hasInitialized = useRef(false);
+  const columns = useOutlineGridColumns(params.projectId);
+  const rows = useOutlineGridRows(params.projectId);
+  const chapters = useChaptersByProject(params.projectId);
 
+  const hasInitialized = useRef(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+
+  // Show template dialog when grid is empty
   useEffect(() => {
-    if (hasInitialized.current || columns === undefined) return;
-    if (columns.length === 0) {
+    if (hasInitialized.current) return;
+    if (columns === undefined || rows === undefined || chapters === undefined)
+      return;
+
+    // Grid has data, no need for template
+    if (columns.length > 0 || rows.length > 0) {
       hasInitialized.current = true;
-      (async () => {
-        for (let i = 0; i < DEFAULT_COLUMNS.length; i++) {
-          await createOutlineColumn({
-            projectId: params.projectId,
-            title: DEFAULT_COLUMNS[i],
-            order: i,
-          });
-        }
-      })();
-    } else {
-      hasInitialized.current = true;
+      return;
     }
-  }, [columns, params.projectId]);
+
+    // Grid is empty, show template dialog
+    hasInitialized.current = true;
+    setShowTemplateDialog(true);
+  }, [columns, rows, chapters]);
+
+  const handleTemplateSelect = async (template: OutlineTemplate) => {
+    setShowTemplateDialog(false);
+
+    const templateColumns = getTemplateColumns(template);
+
+    // Create columns from template
+    for (let i = 0; i < templateColumns.length; i++) {
+      await createOutlineGridColumn({
+        projectId: params.projectId,
+        title: templateColumns[i],
+        order: i,
+      });
+    }
+
+    // Create rows from existing chapters (if any)
+    if (chapters && chapters.length > 0) {
+      for (let i = 0; i < chapters.length; i++) {
+        await createOutlineGridRow({
+          projectId: params.projectId,
+          linkedChapterId: chapters[i].id,
+          label: "",
+          order: i,
+        });
+      }
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -44,12 +75,19 @@ export default function OutlinePage() {
           Outline
         </h2>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Organize your story with a corkboard of index cards.
+          Organize your story in a spreadsheet-style grid.
         </p>
       </div>
       <div className="flex-1 overflow-hidden">
-        <OutlineBoard projectId={params.projectId} />
+        <OutlineGrid projectId={params.projectId} />
       </div>
+
+      {showTemplateDialog && (
+        <OutlineTemplateDialog
+          onSelect={handleTemplateSelect}
+          onClose={() => setShowTemplateDialog(false)}
+        />
+      )}
     </div>
   );
 }

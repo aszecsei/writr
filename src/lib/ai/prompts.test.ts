@@ -3,8 +3,9 @@ import {
   makeChapter,
   makeCharacter,
   makeLocation,
-  makeOutlineCard,
-  makeOutlineColumn,
+  makeOutlineGridCell,
+  makeOutlineGridColumn,
+  makeOutlineGridRow,
   makeRelationship,
   makeStyleGuideEntry,
   makeTimelineEvent,
@@ -25,8 +26,9 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],
-    outlineColumns: [],
-    outlineCards: [],
+    outlineGridColumns: [],
+    outlineGridRows: [],
+    outlineGridCells: [],
     chapters: [],
     ...overrides,
   };
@@ -149,34 +151,34 @@ describe("buildMessages", () => {
       const noOutline = buildMessages("brainstorm", "test", emptyContext());
       expect(getSystemText(noOutline)).not.toContain("<outline>");
 
-      const col = makeOutlineColumn({ projectId: pid, title: "Act I" });
-      const char = makeCharacter({ projectId: pid, name: "Hero" });
+      const col = makeOutlineGridColumn({ projectId: pid, title: "Act I" });
       const chapter = makeChapter({ projectId: pid, title: "Chapter 1" });
-      const card = makeOutlineCard({
+      const row = makeOutlineGridRow({
         projectId: pid,
+        linkedChapterId: chapter.id,
+      });
+      const cell = makeOutlineGridCell({
+        projectId: pid,
+        rowId: row.id,
         columnId: col.id,
-        title: "Opening",
         content: "The hero sets out",
-        linkedCharacterIds: [char.id],
-        linkedChapterIds: [chapter.id],
       });
       const withOutline = buildMessages(
         "brainstorm",
         "test",
         emptyContext({
-          characters: [char],
           chapters: [chapter],
-          outlineColumns: [col],
-          outlineCards: [card],
+          outlineGridColumns: [col],
+          outlineGridRows: [row],
+          outlineGridCells: [cell],
         }),
       );
       const text = getSystemText(withOutline);
       expect(text).toContain("<outline>");
-      expect(text).toContain('column title="Act I"');
-      expect(text).toContain('card title="Opening"');
-      expect(text).toContain("<notes>The hero sets out</notes>");
-      expect(text).toContain("<linked-characters>Hero</linked-characters>");
-      expect(text).toContain("<linked-chapters>Chapter 1</linked-chapters>");
+      expect(text).toContain("<column>Act I</column>");
+      expect(text).toContain('row label="Chapter 1"');
+      expect(text).toContain('chapter="Chapter 1"');
+      expect(text).toContain('<cell column="Act I">The hero sets out</cell>');
       expect(text).toContain("</outline>");
     });
 

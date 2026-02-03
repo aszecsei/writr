@@ -5,8 +5,9 @@ import type {
   Character,
   CharacterRelationship,
   Location,
-  OutlineCard,
-  OutlineColumn,
+  OutlineGridCell,
+  OutlineGridColumn,
+  OutlineGridRow,
   Project,
   StyleGuideEntry,
   TimelineEvent,
@@ -24,8 +25,9 @@ export class WritrDatabase extends Dexie {
   styleGuideEntries!: EntityTable<StyleGuideEntry, "id">;
   worldbuildingDocs!: EntityTable<WorldbuildingDoc, "id">;
   characterRelationships!: EntityTable<CharacterRelationship, "id">;
-  outlineColumns!: EntityTable<OutlineColumn, "id">;
-  outlineCards!: EntityTable<OutlineCard, "id">;
+  outlineGridColumns!: EntityTable<OutlineGridColumn, "id">;
+  outlineGridRows!: EntityTable<OutlineGridRow, "id">;
+  outlineGridCells!: EntityTable<OutlineGridCell, "id">;
   writingSprints!: EntityTable<WritingSprint, "id">;
   writingSessions!: EntityTable<WritingSession, "id">;
   appSettings!: EntityTable<AppSettings, "id">;
@@ -154,6 +156,29 @@ export class WritrDatabase extends Dexie {
         "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
       outlineColumns: "id, projectId, [projectId+order]",
       outlineCards: "id, projectId, columnId, [columnId+order]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      appSettings: "id",
+    });
+
+    this.version(9).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
       writingSprints:
         "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
       writingSessions:

@@ -1,10 +1,9 @@
 import {
   buildChapterNameMap,
   buildCharacterNameMap,
-  buildLocationNameMap,
   serializeCharacter,
   serializeLocation,
-  serializeOutline,
+  serializeOutlineGrid,
   serializeRelationship,
   serializeStyleGuideEntry,
   serializeTimelineEvent,
@@ -63,15 +62,13 @@ function buildSystemContext(context: AiContext): string {
     system += "\n</worldbuilding>\n\n";
   }
 
-  if (context.outlineColumns.length > 0) {
-    const locationMap = buildLocationNameMap(context.locations);
+  if (context.outlineGridColumns.length > 0) {
     const chapterMap = buildChapterNameMap(context.chapters);
     system += "<outline>\n";
-    system += serializeOutline(
-      context.outlineColumns,
-      context.outlineCards,
-      charMap,
-      locationMap,
+    system += serializeOutlineGrid(
+      context.outlineGridColumns,
+      context.outlineGridRows,
+      context.outlineGridCells,
       chapterMap,
     );
     system += "\n</outline>\n\n";

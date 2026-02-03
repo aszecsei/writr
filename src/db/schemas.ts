@@ -168,19 +168,7 @@ export const WorldbuildingDocSchema = z.object({
 });
 export type WorldbuildingDoc = z.infer<typeof WorldbuildingDocSchema>;
 
-// ─── Outline Column ─────────────────────────────────────────────────
-
-export const OutlineColumnSchema = z.object({
-  id,
-  projectId: projectFk,
-  title: z.string().min(1),
-  order: z.number().int().nonnegative(),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type OutlineColumn = z.infer<typeof OutlineColumnSchema>;
-
-// ─── Outline Card ───────────────────────────────────────────────────
+// ─── Outline Card Color (shared by grid cells) ─────────────────────
 
 export const OutlineCardColorEnum = z.enum([
   "yellow",
@@ -193,21 +181,45 @@ export const OutlineCardColorEnum = z.enum([
 ]);
 export type OutlineCardColor = z.infer<typeof OutlineCardColorEnum>;
 
-export const OutlineCardSchema = z.object({
+// ─── Outline Grid Column ────────────────────────────────────────────
+
+export const OutlineGridColumnSchema = z.object({
   id,
   projectId: projectFk,
-  columnId: z.uuid(),
   title: z.string().min(1),
-  content: z.string().default(""),
-  color: OutlineCardColorEnum.default("yellow"),
   order: z.number().int().nonnegative(),
-  linkedChapterIds: z.array(z.uuid()).default([]),
-  linkedCharacterIds: z.array(z.uuid()).default([]),
-  linkedLocationIds: z.array(z.uuid()).default([]),
+  width: z.number().int().positive().default(200),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
-export type OutlineCard = z.infer<typeof OutlineCardSchema>;
+export type OutlineGridColumn = z.infer<typeof OutlineGridColumnSchema>;
+
+// ─── Outline Grid Row ───────────────────────────────────────────────
+
+export const OutlineGridRowSchema = z.object({
+  id,
+  projectId: projectFk,
+  linkedChapterId: z.uuid().nullable().default(null),
+  label: z.string().default(""),
+  order: z.number().int().nonnegative(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type OutlineGridRow = z.infer<typeof OutlineGridRowSchema>;
+
+// ─── Outline Grid Cell ──────────────────────────────────────────────
+
+export const OutlineGridCellSchema = z.object({
+  id,
+  projectId: projectFk,
+  rowId: z.uuid(),
+  columnId: z.uuid(),
+  content: z.string().default(""),
+  color: OutlineCardColorEnum.default("white"),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type OutlineGridCell = z.infer<typeof OutlineGridCellSchema>;
 
 // ─── Reasoning Effort ────────────────────────────────────────────────
 

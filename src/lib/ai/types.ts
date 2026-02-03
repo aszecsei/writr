@@ -28,8 +28,9 @@ import type {
   Character,
   CharacterRelationship,
   Location,
-  OutlineCard,
-  OutlineColumn,
+  OutlineGridCell,
+  OutlineGridColumn,
+  OutlineGridRow,
   ReasoningEffort,
   StyleGuideEntry,
   TimelineEvent,
@@ -47,8 +48,9 @@ export interface AiContext {
   timelineEvents: TimelineEvent[];
   worldbuildingDocs: WorldbuildingDoc[];
   relationships: CharacterRelationship[];
-  outlineColumns: OutlineColumn[];
-  outlineCards: OutlineCard[];
+  outlineGridColumns: OutlineGridColumn[];
+  outlineGridRows: OutlineGridRow[];
+  outlineGridCells: OutlineGridCell[];
   chapters: Chapter[];
   currentChapterTitle?: string;
   currentChapterContent?: string;

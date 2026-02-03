@@ -13,9 +13,10 @@ import {
 } from "@/hooks/useBibleEntries";
 import { useChapter, useChaptersByProject } from "@/hooks/useChapter";
 import {
-  useOutlineCardsByProject,
-  useOutlineColumnsByProject,
-} from "@/hooks/useOutline";
+  useOutlineGridCells,
+  useOutlineGridColumns,
+  useOutlineGridRows,
+} from "@/hooks/useOutlineGrid";
 import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
@@ -60,8 +61,9 @@ export function AiPanel() {
   const timelineEvents = useTimelineByProject(projectId);
   const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
-  const outlineColumns = useOutlineColumnsByProject(projectId);
-  const outlineCards = useOutlineCardsByProject(projectId);
+  const outlineGridColumns = useOutlineGridColumns(projectId);
+  const outlineGridRows = useOutlineGridRows(projectId);
+  const outlineGridCells = useOutlineGridCells(projectId);
   const chapters = useChaptersByProject(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
@@ -122,8 +124,9 @@ export function AiPanel() {
         timelineEvents: timelineEvents ?? [],
         worldbuildingDocs: worldbuildingDocs ?? [],
         relationships: relationships ?? [],
-        outlineColumns: outlineColumns ?? [],
-        outlineCards: outlineCards ?? [],
+        outlineGridColumns: outlineGridColumns ?? [],
+        outlineGridRows: outlineGridRows ?? [],
+        outlineGridCells: outlineGridCells ?? [],
         chapters: chapters ?? [],
         currentChapterTitle: activeChapter?.title,
         currentChapterContent: activeChapter?.content || undefined,

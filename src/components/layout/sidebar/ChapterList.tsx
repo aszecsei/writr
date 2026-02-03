@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -23,8 +24,9 @@ import {
 } from "@/components/ui/ContextMenu";
 import {
   createChapter,
-  deleteChapter,
-  reorderChapters,
+  hasLinkedRow,
+  syncDeleteChapter,
+  syncReorderChapters,
   updateChapter,
 } from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
@@ -70,6 +72,13 @@ export function ChapterList({
   );
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    chapterId: string;
+    chapterTitle: string;
+    hasLinkedRow: boolean;
+  } | null>(null);
 
   const closeMenu = useCallback(() => setMenuChapterId(null), []);
 
@@ -122,8 +131,41 @@ export function ChapterList({
 
   async function handleDelete(chapterId: string) {
     closeMenu();
+    const chapter = localChapters.find((c) => c.id === chapterId);
+    if (!chapter) return;
+
+    // Check if chapter has a linked outline row
+    if (await hasLinkedRow(chapterId)) {
+      setDeleteConfirm({
+        chapterId,
+        chapterTitle: chapter.title,
+        hasLinkedRow: true,
+      });
+      return;
+    }
+
     const href = `/projects/${projectId}/chapters/${chapterId}`;
-    await deleteChapter(chapterId);
+    await syncDeleteChapter(chapterId, false);
+    if (pathname === href) {
+      router.push(`/projects/${projectId}`);
+    }
+  }
+
+  async function handleConfirmDeleteChapter() {
+    if (!deleteConfirm) return;
+    const href = `/projects/${projectId}/chapters/${deleteConfirm.chapterId}`;
+    await syncDeleteChapter(deleteConfirm.chapterId, false);
+    setDeleteConfirm(null);
+    if (pathname === href) {
+      router.push(`/projects/${projectId}`);
+    }
+  }
+
+  async function handleConfirmDeleteChapterAndRow() {
+    if (!deleteConfirm) return;
+    const href = `/projects/${projectId}/chapters/${deleteConfirm.chapterId}`;
+    await syncDeleteChapter(deleteConfirm.chapterId, true);
+    setDeleteConfirm(null);
     if (pathname === href) {
       router.push(`/projects/${projectId}`);
     }
@@ -177,7 +219,7 @@ export function ChapterList({
             return;
           }
           const orderedIds = localChapters.map((c) => c.id);
-          await reorderChapters(orderedIds);
+          await syncReorderChapters(orderedIds);
         }}
       >
         <div className="space-y-1">
@@ -270,6 +312,28 @@ export function ChapterList({
             Delete
           </ContextMenuItem>
         </ContextMenu>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          title="Delete linked chapter?"
+          message={
+            <>
+              The chapter <strong>"{deleteConfirm.chapterTitle}"</strong> is
+              linked to an outline row. You can delete just the chapter or
+              delete both the chapter and outline row.
+            </>
+          }
+          variant="danger"
+          confirmLabel="Delete chapter only"
+          onConfirm={handleConfirmDeleteChapter}
+          onCancel={() => setDeleteConfirm(null)}
+          extraAction={{
+            label: "Delete chapter and row",
+            onClick: handleConfirmDeleteChapterAndRow,
+          }}
+        />
       )}
     </div>
   );

@@ -3,8 +3,9 @@ import type {
   Character,
   CharacterRelationship,
   Location,
-  OutlineCard,
-  OutlineColumn,
+  OutlineGridCell,
+  OutlineGridColumn,
+  OutlineGridRow,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -127,11 +128,26 @@ export function makeChapter(
   };
 }
 
-export function makeOutlineColumn(
-  overrides: Partial<OutlineColumn> & { projectId: string; title: string },
-): OutlineColumn {
+export function makeOutlineGridColumn(
+  overrides: Partial<OutlineGridColumn> & { projectId: string; title: string },
+): OutlineGridColumn {
   return {
     id: nextId(),
+    order: 0,
+    width: 200,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeOutlineGridRow(
+  overrides: Partial<OutlineGridRow> & { projectId: string },
+): OutlineGridRow {
+  return {
+    id: nextId(),
+    linkedChapterId: null,
+    label: "",
     order: 0,
     createdAt: ts,
     updatedAt: ts,
@@ -139,21 +155,17 @@ export function makeOutlineColumn(
   };
 }
 
-export function makeOutlineCard(
-  overrides: Partial<OutlineCard> & {
+export function makeOutlineGridCell(
+  overrides: Partial<OutlineGridCell> & {
     projectId: string;
+    rowId: string;
     columnId: string;
-    title: string;
   },
-): OutlineCard {
+): OutlineGridCell {
   return {
     id: nextId(),
     content: "",
-    color: "yellow",
-    order: 0,
-    linkedChapterIds: [],
-    linkedCharacterIds: [],
-    linkedLocationIds: [],
+    color: "white",
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
