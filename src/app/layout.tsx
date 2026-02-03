@@ -11,6 +11,7 @@ import {
   Merriweather,
   Source_Sans_3,
 } from "next/font/google";
+import Script from "next/script";
 import { AppProviders } from "@/components/providers/AppProviders";
 import "./globals.css";
 
@@ -89,7 +90,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script src="/theme-init.js" strategy="beforeInteractive" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${literaryFontVars} antialiased`}
       >

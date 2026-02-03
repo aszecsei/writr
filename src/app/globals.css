@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -13,11 +14,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -64,9 +63,7 @@ select:disabled {
   background-color: var(--color-zinc-400);
 }
 
-@media (prefers-color-scheme: dark) {
-  .resize-handle:hover::before,
-  .resize-handle:active::before {
-    background-color: var(--color-zinc-600);
-  }
+.dark .resize-handle:hover::before,
+.dark .resize-handle:active::before {
+  background-color: var(--color-zinc-600);
 }

@@ -6,7 +6,13 @@ import { OutlineBoard } from "@/components/outline/OutlineBoard";
 import { createOutlineColumn } from "@/db/operations";
 import { useOutlineColumnsByProject } from "@/hooks/useOutline";
 
-const DEFAULT_COLUMNS = ["Act I", "Act II.A", "Midpoint", "Act II.B", "Act III"];
+const DEFAULT_COLUMNS = [
+  "Act I",
+  "Act II.A",
+  "Midpoint",
+  "Act II.B",
+  "Act III",
+];
 
 export default function OutlinePage() {
   const params = useParams<{ projectId: string }>();
