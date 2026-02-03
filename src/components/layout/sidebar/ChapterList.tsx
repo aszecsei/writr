@@ -5,6 +5,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import {
   CheckCircle2,
   Circle,
+  Columns3,
   Download,
   FolderOpen,
   Pencil,
@@ -147,6 +148,18 @@ export function ChapterList({
       >
         <FolderOpen size={14} />
         Project Overview
+      </Link>
+
+      <Link
+        href={`/projects/${projectId}/outline`}
+        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+          pathname.startsWith(`/projects/${projectId}/outline`)
+            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <Columns3 size={14} />
+        Outline
       </Link>
 
       <DragDropProvider

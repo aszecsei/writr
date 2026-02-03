@@ -4,21 +4,27 @@ import {
   createChapter,
   createCharacter,
   createLocation,
+  createOutlineCard,
+  createOutlineColumn,
   createProject,
   createRelationship,
   createStyleGuideEntry,
   createTimelineEvent,
   createWorldbuildingDoc,
+  deleteOutlineColumn,
   deleteProject,
   deleteWorldbuildingDoc,
   getChaptersByProject,
   getCharactersByProject,
   getLocationsByProject,
+  getOutlineCardsByProject,
+  getOutlineColumnsByProject,
   getRelationshipsByProject,
   getStyleGuideByProject,
   getTimelineByProject,
   getWorldbuildingDoc,
   getWorldbuildingDocsByProject,
+  moveOutlineCards,
   updateWorldbuildingDoc,
 } from "./operations";
 
@@ -31,6 +37,8 @@ beforeEach(async () => {
   await db.styleGuideEntries.clear();
   await db.worldbuildingDocs.clear();
   await db.characterRelationships.clear();
+  await db.outlineColumns.clear();
+  await db.outlineCards.clear();
   await db.appSettings.clear();
 });
 
@@ -51,6 +59,15 @@ describe("deleteProject (cascading delete)", () => {
       targetCharacterId: char2.id,
       type: "sibling",
     });
+    const col = await createOutlineColumn({
+      projectId: project.id,
+      title: "Ideas",
+    });
+    await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card",
+    });
 
     await deleteProject(project.id);
 
@@ -61,6 +78,8 @@ describe("deleteProject (cascading delete)", () => {
     expect(await getStyleGuideByProject(project.id)).toHaveLength(0);
     expect(await getWorldbuildingDocsByProject(project.id)).toHaveLength(0);
     expect(await getRelationshipsByProject(project.id)).toHaveLength(0);
+    expect(await getOutlineColumnsByProject(project.id)).toHaveLength(0);
+    expect(await getOutlineCardsByProject(project.id)).toHaveLength(0);
   });
 
   it("does not affect other projects", async () => {
@@ -375,5 +394,134 @@ describe("auto-order", () => {
     expect(root2.order).toBe(1);
     // child1 is under root1, so it starts at 0 within that scope
     expect(child1.order).toBe(0);
+  });
+});
+
+describe("outline columns", () => {
+  it("creates columns with auto-order", async () => {
+    const project = await createProject({ title: "P" });
+    const col1 = await createOutlineColumn({
+      projectId: project.id,
+      title: "Ideas",
+    });
+    const col2 = await createOutlineColumn({
+      projectId: project.id,
+      title: "In Progress",
+    });
+    expect(col1.order).toBe(0);
+    expect(col2.order).toBe(1);
+  });
+
+  it("returns columns sorted by order", async () => {
+    const project = await createProject({ title: "P" });
+    await createOutlineColumn({
+      projectId: project.id,
+      title: "B",
+      order: 1,
+    });
+    await createOutlineColumn({
+      projectId: project.id,
+      title: "A",
+      order: 0,
+    });
+    const cols = await getOutlineColumnsByProject(project.id);
+    expect(cols[0].title).toBe("A");
+    expect(cols[1].title).toBe("B");
+  });
+
+  it("deleteOutlineColumn cascades to cards", async () => {
+    const project = await createProject({ title: "P" });
+    const col = await createOutlineColumn({
+      projectId: project.id,
+      title: "Ideas",
+    });
+    await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card1",
+    });
+    await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card2",
+    });
+
+    await deleteOutlineColumn(col.id);
+
+    expect(await getOutlineColumnsByProject(project.id)).toHaveLength(0);
+    expect(await getOutlineCardsByProject(project.id)).toHaveLength(0);
+  });
+});
+
+describe("outline cards", () => {
+  it("creates cards with auto-order within column", async () => {
+    const project = await createProject({ title: "P" });
+    const col = await createOutlineColumn({
+      projectId: project.id,
+      title: "Ideas",
+    });
+    const card1 = await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card1",
+    });
+    const card2 = await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card2",
+    });
+    expect(card1.order).toBe(0);
+    expect(card2.order).toBe(1);
+  });
+
+  it("cards default to yellow color", async () => {
+    const project = await createProject({ title: "P" });
+    const col = await createOutlineColumn({
+      projectId: project.id,
+      title: "Ideas",
+    });
+    const card = await createOutlineCard({
+      projectId: project.id,
+      columnId: col.id,
+      title: "Card1",
+    });
+    expect(card.color).toBe("yellow");
+  });
+
+  it("moveOutlineCards updates columnId and order atomically", async () => {
+    const project = await createProject({ title: "P" });
+    const col1 = await createOutlineColumn({
+      projectId: project.id,
+      title: "A",
+    });
+    const col2 = await createOutlineColumn({
+      projectId: project.id,
+      title: "B",
+    });
+    const card1 = await createOutlineCard({
+      projectId: project.id,
+      columnId: col1.id,
+      title: "Card1",
+    });
+    const card2 = await createOutlineCard({
+      projectId: project.id,
+      columnId: col1.id,
+      title: "Card2",
+    });
+
+    // Move card1 to col2 at position 0, card2 stays in col1 at position 0
+    await moveOutlineCards([
+      { id: card1.id, columnId: col2.id, order: 0 },
+      { id: card2.id, columnId: col1.id, order: 0 },
+    ]);
+
+    const allCards = await getOutlineCardsByProject(project.id);
+    const movedCard = allCards.find((c) => c.id === card1.id);
+    expect(movedCard?.columnId).toBe(col2.id);
+    expect(movedCard?.order).toBe(0);
+
+    const stayedCard = allCards.find((c) => c.id === card2.id);
+    expect(stayedCard?.columnId).toBe(col1.id);
+    expect(stayedCard?.order).toBe(0);
   });
 });

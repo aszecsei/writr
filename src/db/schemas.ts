@@ -168,6 +168,47 @@ export const WorldbuildingDocSchema = z.object({
 });
 export type WorldbuildingDoc = z.infer<typeof WorldbuildingDocSchema>;
 
+// ─── Outline Column ─────────────────────────────────────────────────
+
+export const OutlineColumnSchema = z.object({
+  id,
+  projectId: projectFk,
+  title: z.string().min(1),
+  order: z.number().int().nonnegative(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type OutlineColumn = z.infer<typeof OutlineColumnSchema>;
+
+// ─── Outline Card ───────────────────────────────────────────────────
+
+export const OutlineCardColorEnum = z.enum([
+  "yellow",
+  "pink",
+  "blue",
+  "green",
+  "orange",
+  "purple",
+  "white",
+]);
+export type OutlineCardColor = z.infer<typeof OutlineCardColorEnum>;
+
+export const OutlineCardSchema = z.object({
+  id,
+  projectId: projectFk,
+  columnId: z.uuid(),
+  title: z.string().min(1),
+  content: z.string().default(""),
+  color: OutlineCardColorEnum.default("yellow"),
+  order: z.number().int().nonnegative(),
+  linkedChapterIds: z.array(z.uuid()).default([]),
+  linkedCharacterIds: z.array(z.uuid()).default([]),
+  linkedLocationIds: z.array(z.uuid()).default([]),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type OutlineCard = z.infer<typeof OutlineCardSchema>;
+
 // ─── Reasoning Effort ────────────────────────────────────────────────
 
 export const ReasoningEffortEnum = z.enum([
