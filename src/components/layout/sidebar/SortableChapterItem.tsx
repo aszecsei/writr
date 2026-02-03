@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import Link from "next/link";
 import { DragHandle } from "@/components/bible/DragHandle";
+import { formatReadingTimeCompact } from "@/lib/reading-time";
 
 interface SortableChapterItemProps {
   chapter: {
@@ -80,7 +81,8 @@ export function SortableChapterItem({
       >
         <span className="truncate">{chapter.title}</span>
         <span className="ml-2 shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-          {chapter.wordCount.toLocaleString()}
+          {chapter.wordCount.toLocaleString()} ·{" "}
+          {formatReadingTimeCompact(chapter.wordCount)}
         </span>
       </Link>
     </div>

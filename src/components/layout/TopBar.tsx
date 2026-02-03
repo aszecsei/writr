@@ -10,6 +10,8 @@ import {
   Timer,
 } from "lucide-react";
 import Link from "next/link";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import { formatReadingTime } from "@/lib/reading-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
@@ -27,6 +29,7 @@ export function TopBar() {
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const openSprintConfig = useSprintStore((s) => s.openConfigModal);
   const activeSprintId = useSprintStore((s) => s.activeSprintId);
+  const settings = useAppSettings();
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -58,7 +61,8 @@ export function TopBar() {
         {activeDocumentId && (
           <>
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              {wordCount.toLocaleString()} words
+              {wordCount.toLocaleString()} words ·{" "}
+              {formatReadingTime(wordCount, settings?.readingSpeedWpm)}
             </span>
             <SaveStatusIndicator status={saveStatus} />
           </>

@@ -46,6 +46,7 @@ export function AppSettingsDialog() {
   const [editorFont, setEditorFont] = useState("literata");
   const [editorFontSize, setEditorFontSize] = useState(16);
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
+  const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [openRouterApiKey, setOpenRouterApiKey] = useState("");
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
@@ -60,6 +61,7 @@ export function AppSettingsDialog() {
       setEditorFont(settings.editorFont);
       setEditorFontSize(settings.editorFontSize);
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
+      setReadingSpeedWpm(settings.readingSpeedWpm);
       setOpenRouterApiKey(settings.openRouterApiKey);
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
@@ -77,6 +79,7 @@ export function AppSettingsDialog() {
       editorFont,
       editorFontSize,
       autoSaveIntervalMs: autoSaveSeconds * 1000,
+      readingSpeedWpm,
       openRouterApiKey,
       preferredModel,
       debugMode,
@@ -176,6 +179,20 @@ export function AppSettingsDialog() {
                   />
                 </label>
               </div>
+              <label className={labelClass}>
+                Reading Speed (WPM)
+                <input
+                  type="number"
+                  min={100}
+                  max={500}
+                  value={readingSpeedWpm}
+                  onChange={(e) => setReadingSpeedWpm(Number(e.target.value))}
+                  className={inputClass}
+                />
+                <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                  Words per minute for reading time estimates (default: 200)
+                </span>
+              </label>
             </div>
           </fieldset>
 

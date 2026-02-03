@@ -234,6 +234,7 @@ export const AppSettingsSchema = z.object({
   debugMode: z.boolean().default(false),
   streamResponses: z.boolean().default(true),
   reasoningEffort: ReasoningEffortEnum.default("medium"),
+  readingSpeedWpm: z.number().int().positive().default(200),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
