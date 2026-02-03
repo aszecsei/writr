@@ -6,21 +6,20 @@ import { type FormEvent, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { deleteProject } from "@/db/operations";
 import { useProject } from "@/hooks/useProject";
-import { useUiStore } from "@/store/uiStore";
+import { isDeleteProjectModal, useUiStore } from "@/store/uiStore";
 
 export function DeleteProjectDialog() {
-  const activeModal = useUiStore((s) => s.activeModal);
-  const modalData = useUiStore((s) => s.modalData);
+  const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const router = useRouter();
   const pathname = usePathname();
 
-  const projectId = modalData.projectId as string | undefined;
+  const projectId = isDeleteProjectModal(modal) ? modal.projectId : undefined;
   const project = useProject(projectId ?? null);
 
   const [confirmName, setConfirmName] = useState("");
 
-  if (activeModal !== "delete-project" || !projectId) return null;
+  if (!isDeleteProjectModal(modal)) return null;
 
   const nameMatches = confirmName === project?.title;
 

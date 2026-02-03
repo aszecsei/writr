@@ -273,7 +273,8 @@ export function ChapterList({
             icon={Download}
             onClick={() => {
               closeMenu();
-              openModal("export", {
+              openModal({
+                id: "export",
                 projectId,
                 chapterId: menuChapterId,
                 scope: "chapter",

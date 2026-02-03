@@ -3,15 +3,15 @@
 import { Modal } from "@/components/ui/Modal";
 import type { AiMessage } from "@/lib/ai/types";
 
-interface PromptInspectorModalProps {
+interface PromptInspectorDialogProps {
   promptMessages: AiMessage[];
   onClose: () => void;
 }
 
-export function PromptInspectorModal({
+export function PromptInspectorDialog({
   promptMessages,
   onClose,
-}: PromptInspectorModalProps) {
+}: PromptInspectorDialogProps) {
   const roleColors: Record<string, string> = {
     system:
       "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",

@@ -72,7 +72,8 @@ export function TopBar() {
             <button
               type="button"
               onClick={() =>
-                openModal("export", {
+                openModal({
+                  id: "export",
                   projectId: activeProjectId,
                   scope: "book",
                 })

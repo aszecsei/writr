@@ -1,34 +1,17 @@
 "use client";
 
-import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import {
-  createChapterFromRow,
-  createOutlineGridColumn,
-  createOutlineGridRow,
-  deleteOutlineGridColumn,
-  insertOutlineGridColumnAt,
-  insertOutlineGridRowAt,
-  linkChapterToRow,
-  syncDeleteOutlineRow,
-  syncReorderOutlineRows,
-  unlinkChapterFromRow,
-  updateOutlineGridColumn,
-  updateRowLabel,
-  upsertOutlineGridCell,
-} from "@/db/operations";
-import type {
-  OutlineGridRow as GridRowType,
-  OutlineCardColor,
-} from "@/db/schemas";
+import { syncDeleteOutlineRow } from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import {
   useOutlineGridCellsMap,
   useOutlineGridColumns,
   useOutlineGridRows,
 } from "@/hooks/useOutlineGrid";
+import { useOutlineGridDragDrop } from "@/hooks/useOutlineGridDragDrop";
+import { useOutlineGridOperations } from "@/hooks/useOutlineGridOperations";
 import {
   type ContextMenuTarget,
   OutlineGridContextMenu,
@@ -47,17 +30,9 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
   const cellsMap = useOutlineGridCellsMap(projectId);
   const chapters = useChaptersByProject(projectId);
 
-  // Local state for optimistic drag reordering
-  const [localRows, setLocalRows] = useState<GridRowType[]>([]);
-  const previousRows = useRef<GridRowType[]>([]);
-  const isDragging = useRef(false);
-
-  // Sync live query -> local state (suppressed during drag)
-  useEffect(() => {
-    if (rows && !isDragging.current) {
-      setLocalRows(rows);
-    }
-  }, [rows]);
+  // Drag and drop state
+  const { localRows, onDragStart, onDragOver, onDragEnd } =
+    useOutlineGridDragDrop(rows);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -98,40 +73,22 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
     return cellsMap.get(`${rowId}:${columnId}`)?.color;
   }, [contextMenu, cellsMap]);
 
-  // Handlers for toolbar
-  const handleAddRow = useCallback(async () => {
-    await createOutlineGridRow({ projectId });
-  }, [projectId]);
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
 
-  const handleAddColumn = useCallback(async () => {
-    await createOutlineGridColumn({ projectId, title: "New Column" });
-  }, [projectId]);
+  // Operations hook
+  const operations = useOutlineGridOperations({
+    projectId,
+    localRows,
+    columns,
+    contextMenu,
+    chapterMap,
+    closeContextMenu,
+    setDeleteConfirm,
+  });
 
-  // Handlers for column header
-  const handleRenameColumn = useCallback(
-    async (columnId: string, title: string) => {
-      await updateOutlineGridColumn(columnId, { title });
-    },
-    [],
-  );
-
-  // Handlers for row - sync is automatic via updateRowLabel
-  const handleRowLabelChange = useCallback(
-    async (rowId: string, label: string) => {
-      await updateRowLabel(rowId, label);
-    },
-    [],
-  );
-
-  // Handler for cell save
-  const handleCellSave = useCallback(
-    async (rowId: string, columnId: string, content: string) => {
-      await upsertOutlineGridCell({ projectId, rowId, columnId, content });
-    },
-    [projectId],
-  );
-
-  // Context menu handlers
+  // Context menu handler
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, target: ContextMenuTarget) => {
       e.preventDefault();
@@ -140,117 +97,7 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
     [],
   );
 
-  const closeContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
-
-  // Get the row/column for context menu operations
-  const getRowOrder = useCallback(
-    (rowId: string) => {
-      return localRows.find((r) => r.id === rowId)?.order ?? 0;
-    },
-    [localRows],
-  );
-
-  const getColumnOrder = useCallback(
-    (columnId: string) => {
-      return columns?.find((c) => c.id === columnId)?.order ?? 0;
-    },
-    [columns],
-  );
-
-  // Context menu actions
-  const handleInsertRowAbove = useCallback(async () => {
-    if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
-    if (rowId) {
-      const order = getRowOrder(rowId);
-      await insertOutlineGridRowAt(projectId, order);
-    }
-    closeContextMenu();
-  }, [contextMenu, projectId, getRowOrder, closeContextMenu]);
-
-  const handleInsertRowBelow = useCallback(async () => {
-    if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
-    if (rowId) {
-      const order = getRowOrder(rowId);
-      await insertOutlineGridRowAt(projectId, order + 1);
-    }
-    closeContextMenu();
-  }, [contextMenu, projectId, getRowOrder, closeContextMenu]);
-
-  const handleInsertColumnLeft = useCallback(async () => {
-    if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
-    if (columnId) {
-      const order = getColumnOrder(columnId);
-      await insertOutlineGridColumnAt(projectId, "New Column", order);
-    }
-    closeContextMenu();
-  }, [contextMenu, projectId, getColumnOrder, closeContextMenu]);
-
-  const handleInsertColumnRight = useCallback(async () => {
-    if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
-    if (columnId) {
-      const order = getColumnOrder(columnId);
-      await insertOutlineGridColumnAt(projectId, "New Column", order + 1);
-    }
-    closeContextMenu();
-  }, [contextMenu, projectId, getColumnOrder, closeContextMenu]);
-
-  const handleDeleteRow = useCallback(async () => {
-    if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
-    if (!rowId) {
-      closeContextMenu();
-      return;
-    }
-
-    // Check if row is linked to a chapter
-    const row = localRows.find((r) => r.id === rowId);
-    if (row?.linkedChapterId) {
-      const chapterTitle =
-        chapterMap.get(row.linkedChapterId)?.title || "Untitled";
-      setDeleteConfirm({
-        rowId,
-        linkedChapterId: row.linkedChapterId,
-        chapterTitle,
-      });
-      closeContextMenu();
-      return;
-    }
-
-    await syncDeleteOutlineRow(rowId, false);
-    closeContextMenu();
-  }, [contextMenu, localRows, chapterMap, closeContextMenu]);
-
+  // Delete confirmation handlers
   const handleConfirmDeleteRow = useCallback(async () => {
     if (!deleteConfirm) return;
     await syncDeleteOutlineRow(deleteConfirm.rowId, false);
@@ -262,57 +109,6 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
     await syncDeleteOutlineRow(deleteConfirm.rowId, true);
     setDeleteConfirm(null);
   }, [deleteConfirm]);
-
-  const handleDeleteColumn = useCallback(async () => {
-    if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
-    if (columnId) {
-      await deleteOutlineGridColumn(columnId);
-    }
-    closeContextMenu();
-  }, [contextMenu, closeContextMenu]);
-
-  const handleRenameColumnFromMenu = useCallback(() => {
-    closeContextMenu();
-  }, [closeContextMenu]);
-
-  const handleSetColor = useCallback(
-    async (color: OutlineCardColor) => {
-      if (!contextMenu || contextMenu.target.type !== "cell") return;
-      const { rowId, columnId } = contextMenu.target;
-      await upsertOutlineGridCell({ projectId, rowId, columnId, color });
-    },
-    [contextMenu, projectId],
-  );
-
-  const handleLinkChapter = useCallback(
-    async (chapterId: string) => {
-      if (!contextMenu || contextMenu.target.type !== "row") return;
-      const { rowId } = contextMenu.target;
-      await linkChapterToRow(chapterId, rowId);
-      closeContextMenu();
-    },
-    [contextMenu, closeContextMenu],
-  );
-
-  const handleUnlinkChapter = useCallback(async () => {
-    if (!contextMenu || contextMenu.target.type !== "row") return;
-    const { rowId } = contextMenu.target;
-    await unlinkChapterFromRow(rowId);
-    closeContextMenu();
-  }, [contextMenu, closeContextMenu]);
-
-  const handleCreateChapter = useCallback(async () => {
-    if (!contextMenu || contextMenu.target.type !== "row") return;
-    const { rowId } = contextMenu.target;
-    await createChapterFromRow(rowId, projectId);
-    closeContextMenu();
-  }, [contextMenu, projectId, closeContextMenu]);
 
   // Loading state
   if (!columns || !rows || !cellsMap) {
@@ -328,30 +124,17 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-2 dark:border-zinc-700">
         <OutlineGridToolbar
-          onAddRow={handleAddRow}
-          onAddColumn={handleAddColumn}
+          onAddRow={operations.handleAddRow}
+          onAddColumn={operations.handleAddColumn}
         />
       </div>
 
       {/* Grid */}
       <div className="flex-1 overflow-auto">
         <DragDropProvider
-          onDragStart={() => {
-            isDragging.current = true;
-            previousRows.current = localRows;
-          }}
-          onDragOver={(event) => {
-            setLocalRows((items) => move(items, event));
-          }}
-          onDragEnd={async (event) => {
-            isDragging.current = false;
-            if (event.canceled) {
-              setLocalRows(previousRows.current);
-              return;
-            }
-            const orderedIds = localRows.map((r) => r.id);
-            await syncReorderOutlineRows(orderedIds);
-          }}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
         >
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-20">
@@ -368,7 +151,9 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
                   <OutlineGridHeader
                     key={column.id}
                     column={column}
-                    onRename={(title) => handleRenameColumn(column.id, title)}
+                    onRename={(title) =>
+                      operations.handleRenameColumn(column.id, title)
+                    }
                     onContextMenu={(e) =>
                       handleContextMenu(e, {
                         type: "column",
@@ -398,10 +183,10 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
                       : undefined
                   }
                   onRowLabelChange={(label) =>
-                    handleRowLabelChange(row.id, label)
+                    operations.handleRowLabelChange(row.id, label)
                   }
                   onCellSave={(columnId, content) =>
-                    handleCellSave(row.id, columnId, content)
+                    operations.handleCellSave(row.id, columnId, content)
                   }
                   onRowContextMenu={(e) =>
                     handleContextMenu(e, {
@@ -441,17 +226,17 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
           currentColor={currentCellColor}
           availableChapters={availableChapters}
           onClose={closeContextMenu}
-          onInsertRowAbove={handleInsertRowAbove}
-          onInsertRowBelow={handleInsertRowBelow}
-          onInsertColumnLeft={handleInsertColumnLeft}
-          onInsertColumnRight={handleInsertColumnRight}
-          onDeleteRow={handleDeleteRow}
-          onDeleteColumn={handleDeleteColumn}
-          onRenameColumn={handleRenameColumnFromMenu}
-          onSetColor={handleSetColor}
-          onLinkChapter={handleLinkChapter}
-          onUnlinkChapter={handleUnlinkChapter}
-          onCreateChapter={handleCreateChapter}
+          onInsertRowAbove={operations.handleInsertRowAbove}
+          onInsertRowBelow={operations.handleInsertRowBelow}
+          onInsertColumnLeft={operations.handleInsertColumnLeft}
+          onInsertColumnRight={operations.handleInsertColumnRight}
+          onDeleteRow={operations.handleDeleteRow}
+          onDeleteColumn={operations.handleDeleteColumn}
+          onRenameColumn={operations.handleRenameColumnFromMenu}
+          onSetColor={operations.handleSetColor}
+          onLinkChapter={operations.handleLinkChapter}
+          onUnlinkChapter={operations.handleUnlinkChapter}
+          onCreateChapter={operations.handleCreateChapter}
         />
       )}
 

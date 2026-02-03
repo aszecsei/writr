@@ -9,7 +9,7 @@ import type { WorldbuildingDoc } from "@/db/schemas";
 import { useWorldbuildingDoc } from "@/hooks/useBibleEntries";
 import { buildWorldbuildingTree, type DocNode } from "@/lib/worldbuilding-tree";
 
-export function WorldbuildingDocModal({
+export function WorldbuildingDocDialog({
   docId,
   allDocs,
   onClose,

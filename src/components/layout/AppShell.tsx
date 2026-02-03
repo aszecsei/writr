@@ -6,11 +6,11 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { ExportDialog } from "@/components/export/ExportDialog";
-import { PreviewCardModal } from "@/components/preview-card/PreviewCardModal";
+import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import {
-  SprintConfigModal,
-  SprintHistoryModal,
+  SprintConfigDialog,
+  SprintHistoryDialog,
   SprintWidget,
 } from "@/components/sprint";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -87,8 +87,8 @@ export function AppShell({ children }: AppShellProps) {
         <main className="h-full overflow-y-auto">{children}</main>
         <SprintWidget />
         <AppSettingsDialog />
-        <SprintConfigModal />
-        <SprintHistoryModal />
+        <SprintConfigDialog />
+        <SprintHistoryDialog />
       </div>
     );
   }
@@ -119,9 +119,9 @@ export function AppShell({ children }: AppShellProps) {
       </Group>
       <AppSettingsDialog />
       <ExportDialog />
-      <PreviewCardModal />
-      <SprintConfigModal />
-      <SprintHistoryModal />
+      <PreviewCardDialog />
+      <SprintConfigDialog />
+      <SprintHistoryDialog />
       <SprintWidget />
     </div>
   );

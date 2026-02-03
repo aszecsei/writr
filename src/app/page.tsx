@@ -40,7 +40,7 @@ export default function DashboardPage() {
           </h1>
           <button
             type="button"
-            onClick={() => openModal("create-project")}
+            onClick={() => openModal({ id: "create-project" })}
             className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             <Plus size={16} />
@@ -64,7 +64,7 @@ export default function DashboardPage() {
             icon={Pencil}
             onClick={() => {
               closeMenu();
-              openModal("edit-project", { projectId: menuProjectId });
+              openModal({ id: "edit-project", projectId: menuProjectId });
             }}
           >
             Edit
@@ -75,7 +75,7 @@ export default function DashboardPage() {
             variant="danger"
             onClick={() => {
               closeMenu();
-              openModal("delete-project", { projectId: menuProjectId });
+              openModal({ id: "delete-project", projectId: menuProjectId });
             }}
           >
             Delete

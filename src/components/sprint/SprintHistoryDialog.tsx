@@ -86,7 +86,7 @@ function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
   );
 }
 
-export function SprintHistoryModal() {
+export function SprintHistoryDialog() {
   const historyModalOpen = useSprintStore((s) => s.historyModalOpen);
   const closeHistoryModal = useSprintStore((s) => s.closeHistoryModal);
   const projectId = useProjectStore((s) => s.activeProjectId);

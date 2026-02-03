@@ -29,7 +29,7 @@ export default function ProjectOverviewPage() {
         <button
           type="button"
           onClick={() =>
-            openModal("edit-project", { projectId: params.projectId })
+            openModal({ id: "edit-project", projectId: params.projectId })
           }
           className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
           aria-label="Edit project"

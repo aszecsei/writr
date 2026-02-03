@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./database";
 import {
+  clearSessionCache,
   createChapter,
   createCharacter,
   createLocation,
@@ -37,6 +38,7 @@ import {
 } from "./operations";
 
 beforeEach(async () => {
+  clearSessionCache();
   await db.projects.clear();
   await db.chapters.clear();
   await db.characters.clear();
@@ -680,5 +682,108 @@ describe("writing sessions", () => {
     // Fetch with 0 days should still include today (boundary condition)
     const sessions0 = await getSessionsByProject(project.id, 0);
     expect(sessions0).toHaveLength(1);
+  });
+});
+
+describe("recordWritingSession (session management)", () => {
+  it("creates new session on first write", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].wordCountStart).toBe(0);
+    expect(sessions[0].wordCountEnd).toBe(100);
+    expect(sessions[0].durationMs).toBe(0);
+  });
+
+  it("extends existing session within timeout window", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    // First write
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    // Small delay to accumulate time
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Second write within timeout - should extend
+    await recordWritingSession(project.id, chapter.id, 100, 200);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].wordCountStart).toBe(0);
+    expect(sessions[0].wordCountEnd).toBe(200);
+    expect(sessions[0].durationMs).toBeGreaterThanOrEqual(50);
+  });
+
+  it("accumulates duration across multiple extensions", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    // First write
+    await recordWritingSession(project.id, chapter.id, 0, 100);
+
+    // Second write
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await recordWritingSession(project.id, chapter.id, 100, 150);
+
+    // Third write
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await recordWritingSession(project.id, chapter.id, 150, 200);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    // Duration should be sum of both intervals (~60ms total)
+    expect(sessions[0].durationMs).toBeGreaterThanOrEqual(60);
+  });
+
+  it("creates separate sessions for different chapters", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter1 = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+    const chapter2 = await createChapter({
+      projectId: project.id,
+      title: "Ch2",
+    });
+
+    await recordWritingSession(project.id, chapter1.id, 0, 100);
+    await recordWritingSession(project.id, chapter2.id, 0, 50);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(2);
+  });
+
+  it("preserves wordCountStart when extending session", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    // Start at 500 words
+    await recordWritingSession(project.id, chapter.id, 500, 600);
+
+    // Extend
+    await recordWritingSession(project.id, chapter.id, 600, 700);
+
+    const sessions = await getSessionsByProject(project.id);
+    expect(sessions).toHaveLength(1);
+    // Original start should be preserved
+    expect(sessions[0].wordCountStart).toBe(500);
+    expect(sessions[0].wordCountEnd).toBe(700);
   });
 });

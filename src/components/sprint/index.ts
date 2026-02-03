@@ -1,3 +1,3 @@
-export { SprintConfigModal } from "./SprintConfigModal";
-export { SprintHistoryModal } from "./SprintHistoryModal";
+export { SprintConfigDialog } from "./SprintConfigDialog";
+export { SprintHistoryDialog } from "./SprintHistoryDialog";
 export { SprintWidget } from "./SprintWidget";

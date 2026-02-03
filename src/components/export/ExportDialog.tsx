@@ -8,7 +8,7 @@ import {
   type ExportScope,
   performExport,
 } from "@/lib/export";
-import { useUiStore } from "@/store/uiStore";
+import { isExportModal, useUiStore } from "@/store/uiStore";
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
   { value: "markdown", label: "Markdown (.md)" },
@@ -22,28 +22,20 @@ const SCOPE_OPTIONS: { value: ExportScope; label: string }[] = [
 ];
 
 export function ExportDialog() {
-  const activeModal = useUiStore((s) => s.activeModal);
-  const modalData = useUiStore((s) => s.modalData);
+  const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
 
   const [format, setFormat] = useState<ExportFormat>("markdown");
-  const [scope, setScope] = useState<ExportScope>(
-    (modalData.scope as ExportScope) ?? "book",
-  );
+  const [scope, setScope] = useState<ExportScope>("book");
   const [includeTitlePage, setIncludeTitlePage] = useState(true);
   const [includeChapterHeadings, setIncludeChapterHeadings] = useState(true);
   const [pageBreaks, setPageBreaks] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (activeModal !== "export") return null;
+  if (!isExportModal(modal)) return null;
 
-  const projectId = modalData.projectId as string | undefined;
-  const chapterId = modalData.chapterId as string | undefined;
-
-  if (!projectId) return null;
-
-  const resolvedProjectId = projectId;
+  const { projectId, chapterId } = modal;
   const hasChapter = !!chapterId;
   const effectiveScope = hasChapter ? scope : "book";
 
@@ -54,7 +46,7 @@ export function ExportDialog() {
       await performExport({
         format,
         scope: effectiveScope,
-        projectId: resolvedProjectId,
+        projectId,
         chapterId: effectiveScope === "chapter" ? chapterId : undefined,
         includeTitlePage,
         includeChapterHeadings,

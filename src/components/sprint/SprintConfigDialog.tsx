@@ -15,7 +15,7 @@ const DURATION_PRESETS = [
   { label: "60 min", ms: 60 * 60 * 1000 },
 ];
 
-export function SprintConfigModal() {
+export function SprintConfigDialog() {
   const configModalOpen = useSprintStore((s) => s.configModalOpen);
   const closeConfigModal = useSprintStore((s) => s.closeConfigModal);
   const openHistoryModal = useSprintStore((s) => s.openHistoryModal);

@@ -24,7 +24,7 @@ import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { MarkdownMessage } from "./MarkdownMessage";
-import { PromptInspectorModal } from "./PromptInspectorModal";
+import { PromptInspectorDialog } from "./PromptInspectorDialog";
 
 const AI_TOOLS: { id: AiTool; label: string }[] = [
   { id: "generate-prose", label: "Generate Prose" },
@@ -402,7 +402,7 @@ export function AiPanel() {
         </div>
       </form>
       {inspectingPrompt && (
-        <PromptInspectorModal
+        <PromptInspectorDialog
           promptMessages={inspectingPrompt}
           onClose={() => setInspectingPrompt(null)}
         />

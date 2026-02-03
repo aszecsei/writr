@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CompiledView } from "@/components/worldbuilding/CompiledView";
-import { WorldbuildingDocModal } from "@/components/worldbuilding/WorldbuildingDocModal";
+import { WorldbuildingDocDialog } from "@/components/worldbuilding/WorldbuildingDocDialog";
 import {
   createWorldbuildingDoc,
   deleteWorldbuildingDoc,
@@ -325,9 +325,9 @@ export default function WorldbuildingListPage() {
         )}
       </div>
 
-      {/* Doc editor modal */}
+      {/* Doc editor dialog */}
       {selectedDocId && (
-        <WorldbuildingDocModal
+        <WorldbuildingDocDialog
           docId={selectedDocId}
           allDocs={docs ?? []}
           onClose={() => setSelectedDocId(null)}

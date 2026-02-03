@@ -4,41 +4,47 @@ import { type FormEvent, useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { updateProject } from "@/db/operations";
 import { useProject } from "@/hooks/useProject";
-import { useUiStore } from "@/store/uiStore";
+import { isEditProjectModal, useUiStore } from "@/store/uiStore";
+import { type ProjectFormData, ProjectFormFields } from "./ProjectFormFields";
+
+const initialValues: ProjectFormData = {
+  title: "",
+  description: "",
+  genre: "",
+  targetWordCount: 0,
+};
 
 export function EditProjectDialog() {
-  const activeModal = useUiStore((s) => s.activeModal);
-  const modalData = useUiStore((s) => s.modalData);
+  const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
 
-  const projectId = modalData.projectId as string | undefined;
-  const project = useProject(projectId ?? null);
+  const projectId = isEditProjectModal(modal) ? modal.projectId : null;
+  const project = useProject(projectId);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [genre, setGenre] = useState("");
-  const [targetWordCount, setTargetWordCount] = useState(0);
+  const [values, setValues] = useState<ProjectFormData>(initialValues);
 
   useEffect(() => {
     if (project) {
-      setTitle(project.title);
-      setDescription(project.description);
-      setGenre(project.genre);
-      setTargetWordCount(project.targetWordCount);
+      setValues({
+        title: project.title,
+        description: project.description,
+        genre: project.genre,
+        targetWordCount: project.targetWordCount,
+      });
     }
   }, [project]);
 
-  if (activeModal !== "edit-project" || !projectId) return null;
+  if (!isEditProjectModal(modal)) return null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !projectId) return;
+    if (!values.title.trim() || !projectId) return;
 
     await updateProject(projectId, {
-      title: title.trim(),
-      description: description.trim(),
-      genre: genre.trim(),
-      targetWordCount: Math.max(0, targetWordCount),
+      title: values.title.trim(),
+      description: values.description.trim(),
+      genre: values.genre.trim(),
+      targetWordCount: Math.max(0, values.targetWordCount),
     });
 
     closeModal();
@@ -50,57 +56,7 @@ export function EditProjectDialog() {
         Edit Project
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Title
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="My Novel"
-            />
-          </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Genre
-            <input
-              type="text"
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="Fantasy, Sci-Fi, etc."
-            />
-          </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Description
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="A brief description of your project..."
-            />
-          </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Target Word Count
-            <input
-              type="number"
-              value={targetWordCount}
-              onChange={(e) =>
-                setTargetWordCount(Number.parseInt(e.target.value, 10) || 0)
-              }
-              min={0}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="0"
-            />
-          </label>
-        </div>
+        <ProjectFormFields values={values} onChange={setValues} />
         <div className="flex justify-end gap-3">
           <button
             type="button"
@@ -111,7 +67,7 @@ export function EditProjectDialog() {
           </button>
           <button
             type="submit"
-            disabled={!title.trim()}
+            disabled={!values.title.trim()}
             className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             Save

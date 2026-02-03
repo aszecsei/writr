@@ -2,27 +2,40 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 export type SidebarPanel = "chapters" | "bible";
-export type ModalId =
-  | "create-project"
-  | "edit-project"
-  | "delete-project"
-  | "project-settings"
-  | "app-settings"
-  | "export"
-  | "preview-card"
-  | null;
+
+// Discriminated union for modal state - provides type safety at call sites
+export type ModalState =
+  | { id: null }
+  | { id: "create-project" }
+  | { id: "edit-project"; projectId: string }
+  | { id: "delete-project"; projectId: string }
+  | { id: "project-settings" }
+  | { id: "app-settings" }
+  | {
+      id: "export";
+      projectId: string;
+      chapterId?: string;
+      scope?: "book" | "chapter";
+    }
+  | {
+      id: "preview-card";
+      selectedText: string;
+      projectTitle: string;
+      chapterTitle: string;
+    };
+
+export type ModalId = ModalState["id"];
 
 interface UiState {
   sidebarOpen: boolean;
   sidebarPanel: SidebarPanel;
-  activeModal: ModalId;
-  modalData: Record<string, unknown>;
+  modal: ModalState;
   aiPanelOpen: boolean;
   focusModeEnabled: boolean;
 
   toggleSidebar: () => void;
   setSidebarPanel: (panel: SidebarPanel) => void;
-  openModal: (id: ModalId, data?: Record<string, unknown>) => void;
+  openModal: <T extends ModalState>(modal: T) => void;
   closeModal: () => void;
   toggleAiPanel: () => void;
   closeAiPanel: () => void;
@@ -34,8 +47,7 @@ export const useUiStore = create<UiState>()(
   immer((set) => ({
     sidebarOpen: true,
     sidebarPanel: "chapters",
-    activeModal: null,
-    modalData: {},
+    modal: { id: null },
     aiPanelOpen: false,
     focusModeEnabled: false,
 
@@ -49,16 +61,14 @@ export const useUiStore = create<UiState>()(
         s.sidebarPanel = panel;
       }),
 
-    openModal: (id, data = {}) =>
+    openModal: (modal) =>
       set((s) => {
-        s.activeModal = id;
-        s.modalData = data;
+        s.modal = modal;
       }),
 
     closeModal: () =>
       set((s) => {
-        s.activeModal = null;
-        s.modalData = {};
+        s.modal = { id: null };
       }),
 
     toggleAiPanel: () =>
@@ -82,3 +92,34 @@ export const useUiStore = create<UiState>()(
       }),
   })),
 );
+
+// Type guard helpers for narrowing modal state
+export function isEditProjectModal(
+  modal: ModalState,
+): modal is { id: "edit-project"; projectId: string } {
+  return modal.id === "edit-project";
+}
+
+export function isDeleteProjectModal(
+  modal: ModalState,
+): modal is { id: "delete-project"; projectId: string } {
+  return modal.id === "delete-project";
+}
+
+export function isExportModal(modal: ModalState): modal is {
+  id: "export";
+  projectId: string;
+  chapterId?: string;
+  scope?: "book" | "chapter";
+} {
+  return modal.id === "export";
+}
+
+export function isPreviewCardModal(modal: ModalState): modal is {
+  id: "preview-card";
+  selectedText: string;
+  projectTitle: string;
+  chapterTitle: string;
+} {
+  return modal.id === "preview-card";
+}

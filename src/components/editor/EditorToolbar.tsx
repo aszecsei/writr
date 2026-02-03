@@ -244,7 +244,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             type="button"
             title="Export"
             onClick={() =>
-              openModal("export", {
+              openModal({
+                id: "export",
                 projectId: activeProjectId,
                 chapterId: activeDocumentId,
                 scope: "chapter",
@@ -258,7 +259,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             type="button"
             title="Preview Card (Ctrl+Shift+P)"
             onClick={() =>
-              openModal("preview-card", {
+              openModal({
+                id: "preview-card",
                 selectedText,
                 projectTitle: activeProjectTitle ?? "Untitled",
                 chapterTitle: chapter?.title ?? "",

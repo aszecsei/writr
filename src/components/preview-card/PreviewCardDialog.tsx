@@ -11,7 +11,7 @@ import {
 } from "@/lib/preview-card/generate";
 import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
 import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
-import { useUiStore } from "@/store/uiStore";
+import { isPreviewCardModal, useUiStore } from "@/store/uiStore";
 import { PreviewCardCanvas } from "./PreviewCardCanvas";
 
 const TEMPLATE_OPTIONS = (Object.keys(TEMPLATES) as CardTemplate[]).map(
@@ -28,9 +28,8 @@ const ASPECT_RATIO_OPTIONS = (
   label: ASPECT_RATIOS[key].label,
 }));
 
-export function PreviewCardModal() {
-  const activeModal = useUiStore((s) => s.activeModal);
-  const modalData = useUiStore((s) => s.modalData);
+export function PreviewCardDialog() {
+  const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
@@ -42,11 +41,9 @@ export function PreviewCardModal() {
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  if (activeModal !== "preview-card") return null;
+  if (!isPreviewCardModal(modal)) return null;
 
-  const selectedText = (modalData.selectedText as string) ?? "";
-  const projectTitle = (modalData.projectTitle as string) ?? "Untitled";
-  const chapterTitle = (modalData.chapterTitle as string) ?? "";
+  const { selectedText, projectTitle, chapterTitle } = modal;
 
   if (!selectedText) {
     return (

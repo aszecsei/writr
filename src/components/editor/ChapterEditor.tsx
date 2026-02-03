@@ -183,7 +183,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         const selectedText = editor.state.doc.textBetween(from, to, " ");
         if (!selectedText.trim()) return;
 
-        openModal("preview-card", {
+        openModal({
+          id: "preview-card",
           selectedText,
           projectTitle: activeProjectTitle ?? "Untitled",
           chapterTitle: chapter?.title ?? "",

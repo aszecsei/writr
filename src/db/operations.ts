@@ -757,6 +757,11 @@ const sessionCache = new Map<
 // How long before a session is considered stale (5 minutes)
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000;
 
+/** Clears the session cache. Exported for test cleanup. */
+export function clearSessionCache(): void {
+  sessionCache.clear();
+}
+
 /**
  * Records a writing session for a chapter.
  * If a session exists for the same chapter in the same hour and is recent,
@@ -781,8 +786,8 @@ export async function recordWritingSession(
     await db.writingSessions.update(cached.sessionId, {
       wordCountEnd: newWordCount,
       durationMs:
-        (await db.writingSessions.get(cached.sessionId))?.durationMs ??
-        0 + timeSinceLastUpdate,
+        ((await db.writingSessions.get(cached.sessionId))?.durationMs ?? 0) +
+        timeSinceLastUpdate,
       updatedAt: now(),
     });
     sessionCache.set(cacheKey, {

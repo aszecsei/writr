@@ -1,7 +1,6 @@
 "use client";
 
 import { useSortable } from "@dnd-kit/react/sortable";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { DragHandle } from "@/components/bible/DragHandle";
 import type {
   ChapterStatus,
@@ -9,6 +8,7 @@ import type {
   OutlineGridColumn,
   OutlineGridRow as OutlineGridRowType,
 } from "@/db/schemas";
+import { useInlineEdit } from "@/hooks/useInlineEdit";
 import { OutlineGridCell as GridCell } from "./OutlineGridCell";
 import { StatusBadge } from "./StatusBadge";
 
@@ -42,53 +42,21 @@ export function OutlineGridRow({
     index,
   });
 
-  const [isEditingLabel, setIsEditingLabel] = useState(false);
-  const [labelValue, setLabelValue] = useState(chapterTitle || row.label || "");
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const displayLabel = chapterTitle || row.label || "";
 
-  // Sync when row label or chapter title changes externally
-  useEffect(() => {
-    if (!isEditingLabel) {
-      setLabelValue(chapterTitle || row.label || "");
-    }
-  }, [row.label, chapterTitle, isEditingLabel]);
-
-  const startEditing = useCallback(() => {
-    setLabelValue(chapterTitle || row.label || "");
-    setIsEditingLabel(true);
-  }, [chapterTitle, row.label]);
-
-  const saveAndClose = useCallback(() => {
-    setIsEditingLabel(false);
-    const trimmed = labelValue.trim();
-    const currentValue = chapterTitle || row.label || "";
-    if (trimmed !== currentValue) {
-      // Sync logic is handled by the DB layer automatically
-      onRowLabelChange(trimmed);
-    }
-  }, [labelValue, chapterTitle, row.label, onRowLabelChange]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setLabelValue(chapterTitle || row.label || "");
-        setIsEditingLabel(false);
-      } else if (e.key === "Enter") {
-        saveAndClose();
-      }
-    },
-    [chapterTitle, row.label, saveAndClose],
-  );
-
-  // Focus input when entering edit mode
-  useEffect(() => {
-    if (isEditingLabel && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditingLabel]);
+  const {
+    isEditing: isEditingLabel,
+    editValue: labelValue,
+    setEditValue: setLabelValue,
+    inputRef,
+    startEditing,
+    saveAndClose,
+    handleKeyDown,
+  } = useInlineEdit({
+    initialValue: displayLabel,
+    onSave: onRowLabelChange,
+    saveOnEnter: true,
+  });
 
   return (
     <tr ref={ref} className={isDragSource ? "opacity-50" : ""}>
@@ -104,7 +72,7 @@ export function OutlineGridRow({
           </span>
           {isEditingLabel ? (
             <input
-              ref={inputRef}
+              ref={inputRef as React.RefObject<HTMLInputElement>}
               type="text"
               value={labelValue}
               onChange={(e) => setLabelValue(e.target.value)}

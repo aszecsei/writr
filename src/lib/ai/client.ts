@@ -129,8 +129,11 @@ export async function* streamAi(
         if (delta.content) {
           yield { type: "content", text: delta.content };
         }
-      } catch {
-        // Skip malformed chunks
+      } catch (error) {
+        // Log malformed chunks in development for debugging
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[AI Stream] Skipping malformed chunk:", json, error);
+        }
       }
     }
   }

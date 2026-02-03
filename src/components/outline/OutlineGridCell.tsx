@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type {
   OutlineCardColor,
   OutlineGridCell as OutlineGridCellType,
 } from "@/db/schemas";
+import { useInlineEdit } from "@/hooks/useInlineEdit";
 
 const COLOR_CLASSES: Record<OutlineCardColor, string> = {
   white: "bg-white dark:bg-zinc-900",
@@ -28,51 +28,23 @@ export function OutlineGridCell({
   onSave,
   onContextMenu,
 }: OutlineGridCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(cell?.content ?? "");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const content = cell?.content ?? "";
   const color = cell?.color ?? "white";
 
-  // Sync editValue when cell content changes externally
-  useEffect(() => {
-    if (!isEditing) {
-      setEditValue(content);
-    }
-  }, [content, isEditing]);
-
-  const startEditing = useCallback(() => {
-    setEditValue(content);
-    setIsEditing(true);
-  }, [content]);
-
-  const saveAndClose = useCallback(() => {
-    setIsEditing(false);
-    if (editValue !== content) {
-      onSave(editValue);
-    }
-  }, [editValue, content, onSave]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setEditValue(content);
-        setIsEditing(false);
-      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        saveAndClose();
-      }
-    },
-    [content, saveAndClose],
-  );
-
-  // Focus textarea when entering edit mode
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.selectionStart = textareaRef.current.value.length;
-    }
-  }, [isEditing]);
+  const {
+    isEditing,
+    editValue,
+    setEditValue,
+    inputRef,
+    startEditing,
+    saveAndClose,
+    handleKeyDown,
+  } = useInlineEdit({
+    initialValue: content,
+    onSave,
+    saveOnEnter: false,
+    saveOnCtrlEnter: true,
+  });
 
   return (
     <td
@@ -81,7 +53,7 @@ export function OutlineGridCell({
     >
       {isEditing ? (
         <textarea
-          ref={textareaRef}
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={saveAndClose}
