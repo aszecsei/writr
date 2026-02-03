@@ -90,7 +90,7 @@ export function OutlineGridRow({
     <tr ref={ref} className={isDragSource ? "opacity-50" : ""}>
       {/* Row header: drag handle + number + title */}
       <th
-        className="sticky left-0 z-10 min-w-[180px] border border-zinc-200 bg-zinc-50 px-1 py-2 text-left font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-850 dark:text-zinc-400"
+        className="sticky left-0 z-10 min-w-[180px] border border-zinc-200 bg-zinc-50 px-1 py-2 text-left font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
         onContextMenu={onRowContextMenu}
       >
         <div className="flex items-center gap-1">

@@ -1,7 +1,14 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface ContextMenuProps {
   children: ReactNode;
@@ -11,10 +18,45 @@ interface ContextMenuProps {
 
 export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [adjustedPosition, setAdjustedPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
+
+  // Measure menu and adjust position to stay within viewport
+  useLayoutEffect(() => {
+    // Reset to hidden while we measure
+    setAdjustedPosition(null);
+
+    if (!menuRef.current) return;
+
+    const menu = menuRef.current;
+    const rect = menu.getBoundingClientRect();
+    const padding = 8;
+
+    let x = position.x;
+    let y = position.y;
+
+    // Check right overflow - position menu to left of click point
+    if (x + rect.width > window.innerWidth - padding) {
+      x = position.x - rect.width;
+    }
+
+    // Check bottom overflow - position menu above click point
+    if (y + rect.height > window.innerHeight - padding) {
+      y = position.y - rect.height;
+    }
+
+    // Clamp to ensure menu stays on screen
+    x = Math.max(padding, x);
+    y = Math.max(padding, y);
+
+    setAdjustedPosition({ x, y });
+  }, [position.x, position.y]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -38,7 +80,11 @@ export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
     <div
       ref={menuRef}
       className="fixed z-50 min-w-[160px] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
-      style={{ left: position.x, top: position.y }}
+      style={{
+        left: adjustedPosition?.x ?? position.x,
+        top: adjustedPosition?.y ?? position.y,
+        visibility: adjustedPosition ? "visible" : "hidden",
+      }}
     >
       {children}
     </div>
