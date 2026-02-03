@@ -235,6 +235,7 @@ export const AppSettingsSchema = z.object({
   streamResponses: z.boolean().default(true),
   reasoningEffort: ReasoningEffortEnum.default("medium"),
   readingSpeedWpm: z.number().int().positive().default(200),
+  autoFocusModeOnSprint: z.boolean().default(false),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

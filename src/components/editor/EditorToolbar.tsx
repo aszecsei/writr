@@ -12,6 +12,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  Maximize2,
   Quote,
   Redo2,
   Strikethrough,
@@ -146,6 +147,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const settings = useAppSettings();
   const currentFont = settings?.editorFont ?? "literata";
   const openModal = useUiStore((s) => s.openModal);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
 
@@ -238,6 +240,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           </button>
         </>
       )}
+      <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+      <button
+        type="button"
+        title="Focus mode (Ctrl+Shift+F)"
+        onClick={toggleFocusMode}
+        className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+      >
+        <Maximize2 size={16} />
+      </button>
     </div>
   );
 }

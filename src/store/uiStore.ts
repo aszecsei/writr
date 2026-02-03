@@ -17,12 +17,15 @@ interface UiState {
   activeModal: ModalId;
   modalData: Record<string, unknown>;
   aiPanelOpen: boolean;
+  focusModeEnabled: boolean;
 
   toggleSidebar: () => void;
   setSidebarPanel: (panel: SidebarPanel) => void;
   openModal: (id: ModalId, data?: Record<string, unknown>) => void;
   closeModal: () => void;
   toggleAiPanel: () => void;
+  toggleFocusMode: () => void;
+  setFocusMode: (enabled: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -32,6 +35,7 @@ export const useUiStore = create<UiState>()(
     activeModal: null,
     modalData: {},
     aiPanelOpen: false,
+    focusModeEnabled: false,
 
     toggleSidebar: () =>
       set((s) => {
@@ -58,6 +62,16 @@ export const useUiStore = create<UiState>()(
     toggleAiPanel: () =>
       set((s) => {
         s.aiPanelOpen = !s.aiPanelOpen;
+      }),
+
+    toggleFocusMode: () =>
+      set((s) => {
+        s.focusModeEnabled = !s.focusModeEnabled;
+      }),
+
+    setFocusMode: (enabled) =>
+      set((s) => {
+        s.focusModeEnabled = enabled;
       }),
   })),
 );

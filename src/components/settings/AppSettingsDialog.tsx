@@ -47,6 +47,7 @@ export function AppSettingsDialog() {
   const [editorFontSize, setEditorFontSize] = useState(16);
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
+  const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
   const [openRouterApiKey, setOpenRouterApiKey] = useState("");
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
@@ -62,6 +63,7 @@ export function AppSettingsDialog() {
       setEditorFontSize(settings.editorFontSize);
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
       setReadingSpeedWpm(settings.readingSpeedWpm);
+      setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
       setOpenRouterApiKey(settings.openRouterApiKey);
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
@@ -80,6 +82,7 @@ export function AppSettingsDialog() {
       editorFontSize,
       autoSaveIntervalMs: autoSaveSeconds * 1000,
       readingSpeedWpm,
+      autoFocusModeOnSprint,
       openRouterApiKey,
       preferredModel,
       debugMode,
@@ -191,6 +194,18 @@ export function AppSettingsDialog() {
                 />
                 <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
                   Words per minute for reading time estimates (default: 200)
+                </span>
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={autoFocusModeOnSprint}
+                  onChange={(e) => setAutoFocusModeOnSprint(e.target.checked)}
+                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                />
+                Auto-enable focus mode when starting a sprint
+                <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+                  — distraction-free writing
                 </span>
               </label>
             </div>

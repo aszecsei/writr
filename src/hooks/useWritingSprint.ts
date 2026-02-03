@@ -7,12 +7,14 @@ import {
   createSprint,
   endSprint,
   getActiveSprint,
+  getAppSettings,
   pauseSprint,
   resumeSprint,
 } from "@/db/operations";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
+import { useUiStore } from "@/store/uiStore";
 
 export function useWritingSprint() {
   const activeSprint = useLiveQuery(() => getActiveSprint(), []);
@@ -100,6 +102,12 @@ export function useWritingSprint() {
         wordCountGoal,
       });
       closeConfigModal();
+
+      // Auto-enable focus mode if setting is enabled
+      const settings = await getAppSettings();
+      if (settings.autoFocusModeOnSprint) {
+        useUiStore.getState().setFocusMode(true);
+      }
     },
     [
       activeProjectId,

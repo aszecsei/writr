@@ -5,8 +5,13 @@ import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
+import { TypewriterScrolling } from "./TypewriterScrolling";
 
-export function createExtensions() {
+export interface ExtensionOptions {
+  typewriterScrollingRef?: { current: boolean };
+}
+
+export function createExtensions(options?: ExtensionOptions) {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
@@ -25,6 +30,9 @@ export function createExtensions() {
       html: false,
       transformCopiedText: true,
       transformPastedText: true,
+    }),
+    TypewriterScrolling.configure({
+      enabledRef: options?.typewriterScrollingRef ?? { current: false },
     }),
   ];
 }

@@ -2,13 +2,14 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { updateChapterContent } from "@/db/operations";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useChapter } from "@/hooks/useChapter";
 import { getEditorFont } from "@/lib/fonts";
 import { useEditorStore } from "@/store/editorStore";
+import { useUiStore } from "@/store/uiStore";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions } from "./extensions";
 
@@ -41,10 +42,22 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const clearActiveDocument = useEditorStore((s) => s.clearActiveDocument);
   const markDirty = useEditorStore((s) => s.markDirty);
   const setWordCount = useEditorStore((s) => s.setWordCount);
+  const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const initializedRef = useRef(false);
 
+  // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
+  const typewriterScrollingRef = useRef(false);
+  typewriterScrollingRef.current = focusModeEnabled;
+
+  // Memoize extensions to prevent recreation on every render
+  const extensions = useMemo(
+    () => createExtensions({ typewriterScrollingRef }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   const editor = useEditor({
-    extensions: createExtensions(),
+    extensions,
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor: e }) => {
@@ -88,6 +101,72 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   useAutoSave(save);
 
+  // Save on unmount to preserve content when toggling focus mode
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+  const chapterIdRef = useRef(chapterId);
+  chapterIdRef.current = chapterId;
+
+  useEffect(() => {
+    return () => {
+      const ed = editorRef.current;
+      if (ed && !ed.isDestroyed) {
+        const markdown = getMarkdown(ed.storage);
+        const wc = getWordCount(ed.storage);
+        // Fire-and-forget save on unmount
+        updateChapterContent(chapterIdRef.current, markdown, wc);
+      }
+    };
+  }, []);
+
+  // Focus editor and scroll to center cursor when entering focus mode
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focusModeEnabled || !editor || editor.isDestroyed) return;
+
+    const focusAndScroll = () => {
+      if (editor.isDestroyed || !scrollContainerRef.current) return;
+
+      // Focus the editor so user can start typing immediately
+      editor.commands.focus();
+
+      // Scroll to center the cursor
+      const view = editor.view;
+      const { from } = view.state.selection;
+      const coords = view.coordsAtPos(from);
+      const container = scrollContainerRef.current;
+
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.height / 2;
+      const cursorOffsetInContainer =
+        coords.top - containerRect.top + container.scrollTop;
+      const targetScroll = cursorOffsetInContainer - containerCenter;
+
+      container.scrollTo({
+        top: Math.max(0, targetScroll),
+        behavior: "instant",
+      });
+    };
+
+    // Focus after fullscreen transition completes
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement) {
+        // Just entered fullscreen, focus the editor
+        setTimeout(focusAndScroll, 50);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    // Also try immediately in case fullscreen already happened or isn't available
+    const timeoutId = setTimeout(focusAndScroll, 100);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      clearTimeout(timeoutId);
+    };
+  }, [focusModeEnabled, editor]);
+
   if (!chapter) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -98,9 +177,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <EditorToolbar editor={editor} />
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-8 py-6">
+      {!focusModeEnabled && <EditorToolbar editor={editor} />}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+        <div
+          className="mx-auto max-w-3xl px-8"
+          style={{
+            // Add top/bottom padding in focus mode to allow cursor to always be centered
+            paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
+            paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
+          }}
+        >
           <EditorContent
             editor={editor}
             className="prose prose-zinc dark:prose-invert max-w-none"

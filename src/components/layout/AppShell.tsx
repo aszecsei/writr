@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import {
@@ -10,6 +12,7 @@ import {
   SprintHistoryModal,
   SprintWidget,
 } from "@/components/sprint";
+import { useFocusModeShortcuts } from "@/hooks/useFocusModeShortcuts";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./TopBar";
@@ -21,6 +24,63 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
+  const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
+  const setFocusMode = useUiStore((s) => s.setFocusMode);
+
+  // Register global keyboard shortcuts for focus mode
+  useFocusModeShortcuts();
+
+  // Handle browser fullscreen API
+  useEffect(() => {
+    async function handleFullscreen() {
+      if (focusModeEnabled) {
+        // Enter fullscreen
+        if (!document.fullscreenElement) {
+          try {
+            await document.documentElement.requestFullscreen();
+          } catch {
+            // Fullscreen may not be available in all contexts
+          }
+        }
+      } else {
+        // Exit fullscreen
+        if (document.fullscreenElement) {
+          try {
+            await document.exitFullscreen();
+          } catch {
+            // May fail if not in fullscreen
+          }
+        }
+      }
+    }
+    handleFullscreen();
+  }, [focusModeEnabled]);
+
+  // Listen for user exiting fullscreen via Escape/F11 and sync state
+  useEffect(() => {
+    function handleFullscreenChange() {
+      if (!document.fullscreenElement && focusModeEnabled) {
+        setFocusMode(false);
+      }
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [focusModeEnabled, setFocusMode]);
+
+  // In focus mode, render a simplified layout without unmounting children
+  if (focusModeEnabled) {
+    return (
+      <div className="flex h-screen flex-col">
+        <FocusModeOverlay />
+        <main className="h-full overflow-y-auto">{children}</main>
+        <SprintWidget />
+        <AppSettingsDialog />
+        <SprintConfigModal />
+        <SprintHistoryModal />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col">
