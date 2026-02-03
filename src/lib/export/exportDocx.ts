@@ -8,6 +8,7 @@ import {
   Paragraph,
   TextRun,
 } from "docx";
+import { match } from "ts-pattern";
 import type { DocNode, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "./types";
@@ -41,25 +42,25 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
   const paragraphs: Paragraph[] = [];
 
   for (const node of nodes) {
-    switch (node.type) {
-      case "heading":
+    match(node)
+      .with({ type: "heading" }, ({ level, spans }) => {
         paragraphs.push(
           new Paragraph({
-            heading: HEADING_MAP[node.level],
-            children: spansToRuns(node.spans),
+            heading: HEADING_MAP[level],
+            children: spansToRuns(spans),
           }),
         );
-        break;
-      case "paragraph":
+      })
+      .with({ type: "paragraph" }, ({ spans }) => {
         paragraphs.push(
           new Paragraph({
-            children: spansToRuns(node.spans),
+            children: spansToRuns(spans),
             spacing: { after: 200 },
           }),
         );
-        break;
-      case "blockquote":
-        for (const child of node.children) {
+      })
+      .with({ type: "blockquote" }, ({ children }) => {
+        for (const child of children) {
           if (child.type === "paragraph") {
             paragraphs.push(
               new Paragraph({
@@ -79,12 +80,12 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
             paragraphs.push(...nodesToParagraphs([child]));
           }
         }
-        break;
-      case "list":
-        for (const [i, itemNodes] of node.items.entries()) {
+      })
+      .with({ type: "list" }, ({ ordered, items }) => {
+        for (const [i, itemNodes] of items.entries()) {
           for (const [j, itemNode] of itemNodes.entries()) {
             if (itemNode.type === "paragraph") {
-              const bullet = node.ordered ? `${i + 1}. ` : "\u2022 ";
+              const bullet = ordered ? `${i + 1}. ` : "\u2022 ";
               const runs = spansToRuns(itemNode.spans);
               if (j === 0) {
                 runs.unshift(new TextRun({ text: bullet }));
@@ -100,9 +101,9 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
             }
           }
         }
-        break;
-      case "code":
-        for (const line of node.text.split("\n")) {
+      })
+      .with({ type: "code" }, ({ text }) => {
+        for (const line of text.split("\n")) {
           paragraphs.push(
             new Paragraph({
               children: [
@@ -111,8 +112,8 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
             }),
           );
         }
-        break;
-      case "hr":
+      })
+      .with({ type: "hr" }, () => {
         paragraphs.push(
           new Paragraph({
             children: [
@@ -125,11 +126,11 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
             spacing: { before: 200, after: 200 },
           }),
         );
-        break;
-      case "pageBreak":
+      })
+      .with({ type: "pageBreak" }, () => {
         paragraphs.push(new Paragraph({ children: [new PageBreak()] }));
-        break;
-    }
+      })
+      .exhaustive();
   }
 
   return paragraphs;

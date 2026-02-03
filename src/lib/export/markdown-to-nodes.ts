@@ -1,4 +1,5 @@
 import { Lexer, type Token, type Tokens } from "marked";
+import { match } from "ts-pattern";
 
 export type InlineStyle = "bold" | "italic" | "code" | "strikethrough";
 
@@ -24,67 +25,63 @@ function parseInlineTokens(
   const spans: TextSpan[] = [];
 
   for (const token of tokens) {
-    switch (token.type) {
-      case "text": {
-        const t = token as Tokens.Text;
-        if (t.tokens) {
-          spans.push(...parseInlineTokens(t.tokens, parentStyles));
+    match(token as Token)
+      .with({ type: "text" }, (t) => {
+        const textToken = t as Tokens.Text;
+        if (textToken.tokens) {
+          spans.push(...parseInlineTokens(textToken.tokens, parentStyles));
         } else {
-          spans.push({ text: t.text, styles: [...parentStyles] });
+          spans.push({ text: textToken.text, styles: [...parentStyles] });
         }
-        break;
-      }
-      case "strong": {
-        const t = token as Tokens.Strong;
-        spans.push(...parseInlineTokens(t.tokens, [...parentStyles, "bold"]));
-        break;
-      }
-      case "em": {
-        const t = token as Tokens.Em;
-        spans.push(...parseInlineTokens(t.tokens, [...parentStyles, "italic"]));
-        break;
-      }
-      case "del": {
-        const t = token as Tokens.Del;
+      })
+      .with({ type: "strong" }, (t) => {
+        const strongToken = t as Tokens.Strong;
         spans.push(
-          ...parseInlineTokens(t.tokens, [...parentStyles, "strikethrough"]),
+          ...parseInlineTokens(strongToken.tokens, [...parentStyles, "bold"]),
         );
-        break;
-      }
-      case "codespan": {
-        const t = token as Tokens.Codespan;
-        spans.push({ text: t.text, styles: [...parentStyles, "code"] });
-        break;
-      }
-      case "br": {
+      })
+      .with({ type: "em" }, (t) => {
+        const emToken = t as Tokens.Em;
+        spans.push(
+          ...parseInlineTokens(emToken.tokens, [...parentStyles, "italic"]),
+        );
+      })
+      .with({ type: "del" }, (t) => {
+        const delToken = t as Tokens.Del;
+        spans.push(
+          ...parseInlineTokens(delToken.tokens, [
+            ...parentStyles,
+            "strikethrough",
+          ]),
+        );
+      })
+      .with({ type: "codespan" }, (t) => {
+        const codeToken = t as Tokens.Codespan;
+        spans.push({ text: codeToken.text, styles: [...parentStyles, "code"] });
+      })
+      .with({ type: "br" }, () => {
         spans.push({ text: "\n", styles: [] });
-        break;
-      }
-      case "escape": {
-        const t = token as Tokens.Escape;
-        spans.push({ text: t.text, styles: [...parentStyles] });
-        break;
-      }
-      case "link": {
-        const t = token as Tokens.Link;
-        spans.push(...parseInlineTokens(t.tokens, parentStyles));
-        break;
-      }
-      case "image": {
-        const t = token as Tokens.Image;
+      })
+      .with({ type: "escape" }, (t) => {
+        const escapeToken = t as Tokens.Escape;
+        spans.push({ text: escapeToken.text, styles: [...parentStyles] });
+      })
+      .with({ type: "link" }, (t) => {
+        const linkToken = t as Tokens.Link;
+        spans.push(...parseInlineTokens(linkToken.tokens, parentStyles));
+      })
+      .with({ type: "image" }, (t) => {
+        const imageToken = t as Tokens.Image;
         spans.push({
-          text: t.text || t.title || "[image]",
+          text: imageToken.text || imageToken.title || "[image]",
           styles: [...parentStyles],
         });
-        break;
-      }
-      default: {
+      })
+      .otherwise(() => {
         if ("text" in token && typeof token.text === "string") {
           spans.push({ text: token.text, styles: [...parentStyles] });
         }
-        break;
-      }
-    }
+      });
   }
 
   return spans;
@@ -94,61 +91,55 @@ function walkTokens(tokens: Token[]): DocNode[] {
   const nodes: DocNode[] = [];
 
   for (const token of tokens) {
-    switch (token.type) {
-      case "heading": {
-        const t = token as Tokens.Heading;
+    match(token as Token)
+      .with({ type: "heading" }, (t) => {
+        const headingToken = t as Tokens.Heading;
         nodes.push({
           type: "heading",
-          level: t.depth as 1 | 2 | 3 | 4 | 5 | 6,
-          spans: parseInlineTokens(t.tokens),
+          level: headingToken.depth as 1 | 2 | 3 | 4 | 5 | 6,
+          spans: parseInlineTokens(headingToken.tokens),
         });
-        break;
-      }
-      case "paragraph": {
-        const t = token as Tokens.Paragraph;
+      })
+      .with({ type: "paragraph" }, (t) => {
+        const paragraphToken = t as Tokens.Paragraph;
         nodes.push({
           type: "paragraph",
-          spans: parseInlineTokens(t.tokens),
+          spans: parseInlineTokens(paragraphToken.tokens),
         });
-        break;
-      }
-      case "blockquote": {
-        const t = token as Tokens.Blockquote;
+      })
+      .with({ type: "blockquote" }, (t) => {
+        const blockquoteToken = t as Tokens.Blockquote;
         nodes.push({
           type: "blockquote",
-          children: walkTokens(t.tokens),
+          children: walkTokens(blockquoteToken.tokens),
         });
-        break;
-      }
-      case "list": {
-        const t = token as Tokens.List;
+      })
+      .with({ type: "list" }, (t) => {
+        const listToken = t as Tokens.List;
         nodes.push({
           type: "list",
-          ordered: t.ordered,
-          items: t.items.map((item) => walkTokens(item.tokens)),
+          ordered: listToken.ordered,
+          items: listToken.items.map((item) => walkTokens(item.tokens)),
         });
-        break;
-      }
-      case "code": {
-        const t = token as Tokens.Code;
-        nodes.push({ type: "code", text: t.text });
-        break;
-      }
-      case "hr": {
+      })
+      .with({ type: "code" }, (t) => {
+        const codeToken = t as Tokens.Code;
+        nodes.push({ type: "code", text: codeToken.text });
+      })
+      .with({ type: "hr" }, () => {
         nodes.push({ type: "hr" });
-        break;
-      }
-      case "space":
-        break;
-      default:
+      })
+      .with({ type: "space" }, () => {
+        // Ignore space tokens
+      })
+      .otherwise(() => {
         if ("text" in token && typeof token.text === "string") {
           nodes.push({
             type: "paragraph",
             spans: [{ text: token.text, styles: [] }],
           });
         }
-        break;
-    }
+      });
   }
 
   return nodes;

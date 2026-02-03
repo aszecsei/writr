@@ -3,6 +3,7 @@ import type {
   ContentText,
   TDocumentDefinitions,
 } from "pdfmake/interfaces";
+import { match } from "ts-pattern";
 import type { DocNode, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "./types";
@@ -47,63 +48,60 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
   const result: Content[] = [];
 
   for (const node of nodes) {
-    switch (node.type) {
-      case "heading": {
-        const textContent = spansToPdfText(node.spans);
+    match(node)
+      .with({ type: "heading" }, ({ level, spans }) => {
+        const textContent = spansToPdfText(spans);
         result.push({
           ...textContent,
-          fontSize: HEADING_SIZES[node.level] ?? 12,
+          fontSize: HEADING_SIZES[level] ?? 12,
           bold: true,
           margin: [0, 12, 0, 4] as [number, number, number, number],
         });
-        break;
-      }
-      case "paragraph":
+      })
+      .with({ type: "paragraph" }, ({ spans }) => {
         result.push({
-          ...spansToPdfText(node.spans),
+          ...spansToPdfText(spans),
           margin: [0, 0, 0, 8] as [number, number, number, number],
         });
-        break;
-      case "blockquote": {
-        const inner = nodesToPdfContent(node.children);
+      })
+      .with({ type: "blockquote" }, ({ children }) => {
+        const inner = nodesToPdfContent(children);
         result.push({
           margin: [20, 0, 0, 8] as [number, number, number, number],
           stack: inner,
           italics: true,
           color: "#555555",
         } as Content);
-        break;
-      }
-      case "list": {
-        const items: Content[] = node.items.map((itemNodes) => {
+      })
+      .with({ type: "list" }, ({ ordered, items }) => {
+        const listItems: Content[] = items.map((itemNodes) => {
           const itemContent = nodesToPdfContent(itemNodes);
           return itemContent.length === 1
             ? itemContent[0]
             : ({ stack: itemContent } as Content);
         });
-        if (node.ordered) {
+        if (ordered) {
           result.push({
-            ol: items,
+            ol: listItems,
             margin: [0, 0, 0, 8] as [number, number, number, number],
           } as Content);
         } else {
           result.push({
-            ul: items,
+            ul: listItems,
             margin: [0, 0, 0, 8] as [number, number, number, number],
           } as Content);
         }
-        break;
-      }
-      case "code":
+      })
+      .with({ type: "code" }, ({ text }) => {
         result.push({
-          text: node.text,
+          text,
           font: "Courier",
           fontSize: 9,
           background: "#f5f5f5",
           margin: [0, 0, 0, 8] as [number, number, number, number],
         } as Content);
-        break;
-      case "hr":
+      })
+      .with({ type: "hr" }, () => {
         result.push({
           text: "*\u2003\u2003*\u2003\u2003*",
           alignment: "center",
@@ -111,11 +109,11 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
           fontSize: 12,
           margin: [0, 12, 0, 12] as [number, number, number, number],
         } as Content);
-        break;
-      case "pageBreak":
+      })
+      .with({ type: "pageBreak" }, () => {
         result.push({ text: "", pageBreak: "before" } as Content);
-        break;
-    }
+      })
+      .exhaustive();
   }
 
   return result;

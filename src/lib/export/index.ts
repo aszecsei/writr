@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import { triggerDownload } from "./download";
 import { exportDocx } from "./exportDocx";
 import { exportMarkdown } from "./exportMarkdown";
@@ -18,18 +19,11 @@ const FORMAT_EXTENSIONS: Record<ExportOptions["format"], string> = {
 export async function performExport(options: ExportOptions): Promise<void> {
   const content = await gatherContent(options);
 
-  let blob: Blob;
-  switch (options.format) {
-    case "markdown":
-      blob = exportMarkdown(content, options);
-      break;
-    case "docx":
-      blob = await exportDocx(content, options);
-      break;
-    case "pdf":
-      blob = await exportPdf(content, options);
-      break;
-  }
+  const blob = await match(options.format)
+    .with("markdown", () => exportMarkdown(content, options))
+    .with("docx", () => exportDocx(content, options))
+    .with("pdf", () => exportPdf(content, options))
+    .exhaustive();
 
   const baseName =
     options.scope === "chapter" && content.chapters.length === 1
