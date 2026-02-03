@@ -48,6 +48,7 @@ export function AppSettingsDialog() {
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
+  const [enableAiFeatures, setEnableAiFeatures] = useState(false);
   const [openRouterApiKey, setOpenRouterApiKey] = useState("");
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
@@ -64,6 +65,7 @@ export function AppSettingsDialog() {
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
       setReadingSpeedWpm(settings.readingSpeedWpm);
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
+      setEnableAiFeatures(settings.enableAiFeatures);
       setOpenRouterApiKey(settings.openRouterApiKey);
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
@@ -83,6 +85,7 @@ export function AppSettingsDialog() {
       autoSaveIntervalMs: autoSaveSeconds * 1000,
       readingSpeedWpm,
       autoFocusModeOnSprint,
+      enableAiFeatures,
       openRouterApiKey,
       preferredModel,
       debugMode,
@@ -217,80 +220,96 @@ export function AppSettingsDialog() {
               AI Integration
             </legend>
             <div className="mt-2 space-y-4">
-              <label className={labelClass}>
-                OpenRouter API Key
-                <div className="relative mt-1">
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    value={openRouterApiKey}
-                    onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                    className={`${inputClass} mt-0 pr-10`}
-                    placeholder="sk-or-..."
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    title={showApiKey ? "Hide API key" : "Show API key"}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  >
-                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </label>
-              <label className={labelClass}>
-                Preferred Model
-                <input
-                  type="text"
-                  value={preferredModel}
-                  onChange={(e) => setPreferredModel(e.target.value)}
-                  className={inputClass}
-                  placeholder="openai/gpt-4o"
-                />
-              </label>
               <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 <input
                   type="checkbox"
-                  checked={streamResponses}
-                  onChange={(e) => setStreamResponses(e.target.checked)}
+                  checked={enableAiFeatures}
+                  onChange={(e) => setEnableAiFeatures(e.target.checked)}
                   className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
                 />
-                Stream responses
+                Enable AI features
                 <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
-                  — show text as it generates
+                  — show AI panel and tools
                 </span>
               </label>
-              <label className={labelClass}>
-                Reasoning Effort
-                <select
-                  value={reasoningEffort}
-                  onChange={(e) =>
-                    setReasoningEffort(e.target.value as ReasoningEffort)
-                  }
-                  className={inputClass}
-                >
-                  {REASONING_EFFORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                  Controls how much the model reasons before responding.
-                  Requires a reasoning-capable model.
-                </span>
-              </label>
-              <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={debugMode}
-                  onChange={(e) => setDebugMode(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
-                />
-                Debug mode (dry-run)
-                <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
-                  — show prompt instead of calling AI
-                </span>
-              </label>
+              {enableAiFeatures && (
+                <>
+                  <label className={labelClass}>
+                    OpenRouter API Key
+                    <div className="relative mt-1">
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        value={openRouterApiKey}
+                        onChange={(e) => setOpenRouterApiKey(e.target.value)}
+                        className={`${inputClass} mt-0 pr-10`}
+                        placeholder="sk-or-..."
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        title={showApiKey ? "Hide API key" : "Show API key"}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      >
+                        {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </label>
+                  <label className={labelClass}>
+                    Preferred Model
+                    <input
+                      type="text"
+                      value={preferredModel}
+                      onChange={(e) => setPreferredModel(e.target.value)}
+                      className={inputClass}
+                      placeholder="openai/gpt-4o"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={streamResponses}
+                      onChange={(e) => setStreamResponses(e.target.checked)}
+                      className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                    />
+                    Stream responses
+                    <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+                      — show text as it generates
+                    </span>
+                  </label>
+                  <label className={labelClass}>
+                    Reasoning Effort
+                    <select
+                      value={reasoningEffort}
+                      onChange={(e) =>
+                        setReasoningEffort(e.target.value as ReasoningEffort)
+                      }
+                      className={inputClass}
+                    >
+                      {REASONING_EFFORT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                      Controls how much the model reasons before responding.
+                      Requires a reasoning-capable model.
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={debugMode}
+                      onChange={(e) => setDebugMode(e.target.checked)}
+                      className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                    />
+                    Debug mode (dry-run)
+                    <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+                      — show prompt instead of calling AI
+                    </span>
+                  </label>
+                </>
+              )}
             </div>
           </fieldset>
 

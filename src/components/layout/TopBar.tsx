@@ -97,18 +97,20 @@ export function TopBar() {
             </button>
           </>
         )}
-        <button
-          type="button"
-          onClick={toggleAiPanel}
-          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
-            aiPanelOpen
-              ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-              : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-          }`}
-        >
-          <Sparkles size={14} />
-          AI
-        </button>
+        {settings?.enableAiFeatures && (
+          <button
+            type="button"
+            onClick={toggleAiPanel}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              aiPanelOpen
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <Sparkles size={14} />
+            AI
+          </button>
+        )}
       </div>
     </header>
   );

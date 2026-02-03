@@ -12,6 +12,7 @@ import {
   SprintHistoryModal,
   SprintWidget,
 } from "@/components/sprint";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { useFocusModeShortcuts } from "@/hooks/useFocusModeShortcuts";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
@@ -24,8 +25,10 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
+  const closeAiPanel = useUiStore((s) => s.closeAiPanel);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const setFocusMode = useUiStore((s) => s.setFocusMode);
+  const settings = useAppSettings();
 
   // Register global keyboard shortcuts for focus mode
   useFocusModeShortcuts();
@@ -68,6 +71,13 @@ export function AppShell({ children }: AppShellProps) {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, [focusModeEnabled, setFocusMode]);
 
+  // Close AI panel if AI features are disabled
+  useEffect(() => {
+    if (!settings?.enableAiFeatures && aiPanelOpen) {
+      closeAiPanel();
+    }
+  }, [settings?.enableAiFeatures, aiPanelOpen, closeAiPanel]);
+
   // In focus mode, render a simplified layout without unmounting children
   if (focusModeEnabled) {
     return (
@@ -97,7 +107,7 @@ export function AppShell({ children }: AppShellProps) {
         <Panel id="main" minSize="30%">
           <main className="h-full overflow-y-auto">{children}</main>
         </Panel>
-        {aiPanelOpen && (
+        {aiPanelOpen && settings?.enableAiFeatures && (
           <>
             <Separator className="resize-handle" />
             <Panel id="ai-panel" defaultSize="25%" minSize="15%">

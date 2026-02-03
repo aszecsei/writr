@@ -237,6 +237,7 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
+  enableAiFeatures: z.boolean().default(false),
   openRouterApiKey: z.string().default(""),
   preferredModel: z.string().default("openai/gpt-4o"),
   theme: z.enum(["light", "dark", "system"]).default("system"),
