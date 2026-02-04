@@ -8,6 +8,7 @@ import type {
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
+  PlaylistTrack,
   Project,
   StyleGuideEntry,
   TimelineEvent,
@@ -30,6 +31,7 @@ export class WritrDatabase extends Dexie {
   outlineGridCells!: EntityTable<OutlineGridCell, "id">;
   writingSprints!: EntityTable<WritingSprint, "id">;
   writingSessions!: EntityTable<WritingSession, "id">;
+  playlistTracks!: EntityTable<PlaylistTrack, "id">;
   appSettings!: EntityTable<AppSettings, "id">;
 
   constructor() {
@@ -183,6 +185,30 @@ export class WritrDatabase extends Dexie {
         "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
       writingSessions:
         "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      appSettings: "id",
+    });
+
+    this.version(10).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      playlistTracks: "id, projectId, [projectId+order]",
       appSettings: "id",
     });
   }

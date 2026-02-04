@@ -296,3 +296,22 @@ export const WritingSessionSchema = z.object({
   updatedAt: timestamp,
 });
 export type WritingSession = z.infer<typeof WritingSessionSchema>;
+
+// ─── Playlist Track ──────────────────────────────────────────────────
+
+export const TrackSourceSchema = z.enum(["youtube"]);
+export type TrackSource = z.infer<typeof TrackSourceSchema>;
+
+export const PlaylistTrackSchema = z.object({
+  id,
+  projectId: projectFk,
+  title: z.string().min(1),
+  url: z.string().url(),
+  source: TrackSourceSchema,
+  thumbnailUrl: z.string().default(""),
+  duration: z.number().int().nonnegative().default(0),
+  order: z.number().int().nonnegative(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type PlaylistTrack = z.infer<typeof PlaylistTrackSchema>;

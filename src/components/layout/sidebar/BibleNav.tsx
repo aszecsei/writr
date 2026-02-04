@@ -7,6 +7,7 @@ import {
   Globe,
   LayoutGrid,
   MapPin,
+  Music,
   Pen,
   Users,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const bibleLinks: { label: string; path: string; icon: LucideIcon }[] = [
   { label: "Family Tree", path: "bible/family-tree", icon: GitFork },
   { label: "Style Guide", path: "bible/style-guide", icon: Pen },
   { label: "Worldbuilding", path: "bible/worldbuilding", icon: Globe },
+  { label: "Playlist", path: "bible/playlist", icon: Music },
 ];
 
 export function BibleNav({

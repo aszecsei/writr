@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { BookOpen, FileText, Settings } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
+import { MusicControlBar } from "@/components/radio/MusicControlBar";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
 import { BibleNav } from "./BibleNav";
 import { ChapterList } from "./ChapterList";
@@ -51,6 +52,7 @@ export function Sidebar() {
         )}
       </div>
       <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+        <MusicControlBar />
         <button
           type="button"
           onClick={() => openModal({ id: "app-settings" })}

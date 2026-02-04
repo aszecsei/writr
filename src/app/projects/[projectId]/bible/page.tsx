@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Clock, GitFork, Globe, MapPin, Pen, Users } from "lucide-react";
+import { Clock, GitFork, Globe, MapPin, Music, Pen, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -12,6 +12,7 @@ import {
   useTimelineByProject,
   useWorldbuildingDocsByProject,
 } from "@/hooks/useBibleEntries";
+import { usePlaylistByProject } from "@/hooks/usePlaylistEntries";
 
 const sections: {
   key: string;
@@ -50,6 +51,12 @@ const sections: {
     path: "bible/worldbuilding",
     icon: Globe,
   },
+  {
+    key: "playlist",
+    label: "Playlist",
+    path: "bible/playlist",
+    icon: Music,
+  },
 ];
 
 export default function BibleOverviewPage() {
@@ -60,6 +67,7 @@ export default function BibleOverviewPage() {
   const relationships = useRelationshipsByProject(params.projectId);
   const styleGuide = useStyleGuideByProject(params.projectId);
   const worldbuilding = useWorldbuildingDocsByProject(params.projectId);
+  const playlist = usePlaylistByProject(params.projectId);
 
   const counts: Record<string, number | undefined> = {
     characters: characters?.length,
@@ -68,6 +76,7 @@ export default function BibleOverviewPage() {
     "family-tree": relationships?.length,
     "style-guide": styleGuide?.length,
     worldbuilding: worldbuilding?.length,
+    playlist: playlist?.length,
   };
 
   return (
@@ -102,9 +111,13 @@ export default function BibleOverviewPage() {
                   ? counts[section.key] === 1
                     ? "relationship"
                     : "relationships"
-                  : counts[section.key] === 1
-                    ? "entry"
-                    : "entries"}
+                  : section.key === "playlist"
+                    ? counts[section.key] === 1
+                      ? "track"
+                      : "tracks"
+                    : counts[section.key] === 1
+                      ? "entry"
+                      : "entries"}
               </p>
             </Link>
           );
