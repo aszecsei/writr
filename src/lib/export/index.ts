@@ -6,6 +6,11 @@ import { exportPdf } from "./exportPdf";
 import { gatherContent } from "./gather";
 import type { ExportOptions } from "./types";
 
+export {
+  copyChapterAo3HtmlToClipboard,
+  copyChapterMarkdownToClipboard,
+} from "./clipboard";
+
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "export";
 }
