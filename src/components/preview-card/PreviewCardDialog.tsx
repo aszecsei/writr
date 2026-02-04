@@ -43,9 +43,9 @@ export function PreviewCardDialog() {
 
   if (!isPreviewCardModal(modal)) return null;
 
-  const { selectedText, projectTitle, chapterTitle } = modal;
+  const { selectedHtml, projectTitle, chapterTitle } = modal;
 
-  if (!selectedText) {
+  if (!selectedHtml) {
     return (
       <Modal onClose={closeModal}>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -103,7 +103,7 @@ export function PreviewCardDialog() {
         <div className="flex justify-center rounded-lg bg-zinc-100 p-4 dark:bg-zinc-800">
           <PreviewCardCanvas
             ref={canvasRef}
-            selectedText={selectedText}
+            selectedHtml={selectedHtml}
             projectTitle={projectTitle}
             chapterTitle={chapterTitle}
             template={template}

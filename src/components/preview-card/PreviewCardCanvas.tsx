@@ -12,7 +12,7 @@ const BRUSHSTROKE_EXTEND = 40;
 const ATTRIBUTION_MARGIN = 80;
 
 interface PreviewCardCanvasProps {
-  selectedText: string;
+  selectedHtml: string;
   projectTitle: string;
   chapterTitle: string;
   template: CardTemplate;
@@ -25,7 +25,7 @@ export const PreviewCardCanvas = forwardRef<
   PreviewCardCanvasProps
 >(function PreviewCardCanvas(
   {
-    selectedText,
+    selectedHtml,
     projectTitle,
     chapterTitle,
     template,
@@ -49,7 +49,7 @@ export const PreviewCardCanvas = forwardRef<
   const availableHeight =
     ratio.height - PADDING * 2 - ATTRIBUTION_MARGIN - BRUSHSTROKE_EXTEND * 2;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedText and fontFamily affect text measurement
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedHtml and fontFamily affect text measurement
   useLayoutEffect(() => {
     const textEl = textRef.current;
     if (!textEl) return;
@@ -79,7 +79,7 @@ export const PreviewCardCanvas = forwardRef<
     if (wrapperRef.current) {
       setWrapperHeight(wrapperRef.current.offsetHeight);
     }
-  }, [selectedText, availableWidth, availableHeight, fontFamily]);
+  }, [selectedHtml, availableWidth, availableHeight, fontFamily]);
 
   return (
     <div
@@ -170,9 +170,10 @@ export const PreviewCardCanvas = forwardRef<
                 margin: 0,
                 fontFamily,
               }}
-            >
-              {selectedText}
-            </blockquote>
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is generated from TipTap's document model via generateHTML, not external user input
+              dangerouslySetInnerHTML={{ __html: selectedHtml }}
+              className="[&_p]:mb-4 [&_p:last-child]:mb-0 [&_strong]:font-bold [&_em]:italic"
+            />
           </div>
         </div>
 

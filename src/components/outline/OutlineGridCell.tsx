@@ -80,7 +80,9 @@ export function OutlineGridCell({
         >
           {content ? (
             <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
             </div>
           ) : (
             <span className="text-sm text-zinc-400 dark:text-zinc-500">

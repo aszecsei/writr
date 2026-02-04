@@ -1,6 +1,7 @@
 "use no memo";
 "use client";
 
+import { generateHTML } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { updateChapterContent } from "@/db/operations";
@@ -180,12 +181,17 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         const { from, to, empty } = editor.state.selection;
         if (empty) return;
 
-        const selectedText = editor.state.doc.textBetween(from, to, " ");
-        if (!selectedText.trim()) return;
+        const slice = editor.state.doc.slice(from, to);
+        const json = { type: "doc", content: slice.content.toJSON() };
+        const selectedHtml = generateHTML(
+          json,
+          editor.extensionManager.extensions,
+        );
+        if (!selectedHtml.trim()) return;
 
         openModal({
           id: "preview-card",
-          selectedText,
+          selectedHtml,
           projectTitle: activeProjectTitle ?? "Untitled",
           chapterTitle: chapter?.title ?? "",
         });

@@ -19,7 +19,7 @@ export type ModalState =
     }
   | {
       id: "preview-card";
-      selectedText: string;
+      selectedHtml: string;
       projectTitle: string;
       chapterTitle: string;
     };
@@ -117,7 +117,7 @@ export function isExportModal(modal: ModalState): modal is {
 
 export function isPreviewCardModal(modal: ModalState): modal is {
   id: "preview-card";
-  selectedText: string;
+  selectedHtml: string;
   projectTitle: string;
   chapterTitle: string;
 } {

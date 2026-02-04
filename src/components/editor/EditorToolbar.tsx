@@ -1,5 +1,6 @@
 "use client";
 
+import { generateHTML } from "@tiptap/core";
 import { type Editor, useEditorState } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -192,7 +193,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     editor,
     selector: ({ editor: e }) => {
       if (!e)
-        return { activeStates: {}, hasSelection: false, selectedText: "" };
+        return { activeStates: {}, hasSelection: false, selectedHtml: "" };
       const result: Record<string, boolean> = {};
       for (const action of actions) {
         if (action.isActive) {
@@ -200,18 +201,23 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         }
       }
       const { from, to, empty } = e.state.selection;
-      const text = empty ? "" : e.state.doc.textBetween(from, to, " ");
+      let selectedHtml = "";
+      if (!empty) {
+        const slice = e.state.doc.slice(from, to);
+        const json = { type: "doc", content: slice.content.toJSON() };
+        selectedHtml = generateHTML(json, e.extensionManager.extensions);
+      }
       return {
         activeStates: result,
-        hasSelection: !empty && text.trim().length > 0,
-        selectedText: text,
+        hasSelection: !empty && selectedHtml.trim().length > 0,
+        selectedHtml,
       };
     },
   });
 
   const activeStates = editorState?.activeStates ?? {};
   const hasSelection = editorState?.hasSelection ?? false;
-  const selectedText = editorState?.selectedText ?? "";
+  const selectedHtml = editorState?.selectedHtml ?? "";
 
   async function handleFontChange(e: React.ChangeEvent<HTMLSelectElement>) {
     await updateAppSettings({ editorFont: e.target.value });
@@ -359,7 +365,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             onClick={() =>
               openModal({
                 id: "preview-card",
-                selectedText,
+                selectedHtml,
                 projectTitle: activeProjectTitle ?? "Untitled",
                 chapterTitle: chapter?.title ?? "",
               })
