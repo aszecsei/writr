@@ -22,9 +22,10 @@ import { OutlineGridToolbar } from "./OutlineGridToolbar";
 
 interface OutlineGridProps {
   projectId: string;
+  highlightCellId?: string | null;
 }
 
-export function OutlineGrid({ projectId }: OutlineGridProps) {
+export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   const columns = useOutlineGridColumns(projectId);
   const rows = useOutlineGridRows(projectId);
   const cellsMap = useOutlineGridCellsMap(projectId);
@@ -172,6 +173,7 @@ export function OutlineGrid({ projectId }: OutlineGridProps) {
                   index={index}
                   columns={columns}
                   cellsMap={cellsMap}
+                  highlightCellId={highlightCellId}
                   chapterTitle={
                     row.linkedChapterId
                       ? chapterMap.get(row.linkedChapterId)?.title

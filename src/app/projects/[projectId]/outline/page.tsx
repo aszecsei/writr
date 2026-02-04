@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { OutlineGrid } from "@/components/outline/OutlineGrid";
 import {
@@ -17,6 +17,8 @@ import {
 
 export default function OutlinePage() {
   const params = useParams<{ projectId: string }>();
+  const searchParams = useSearchParams();
+  const highlightCellId = searchParams.get("highlight");
   const columns = useOutlineGridColumns(params.projectId);
   const rows = useOutlineGridRows(params.projectId);
   const chapters = useChaptersByProject(params.projectId);
@@ -79,7 +81,10 @@ export default function OutlinePage() {
         </p>
       </div>
       <div className="flex-1 overflow-hidden">
-        <OutlineGrid projectId={params.projectId} />
+        <OutlineGrid
+          projectId={params.projectId}
+          highlightCellId={highlightCellId}
+        />
       </div>
 
       {showTemplateDialog && (

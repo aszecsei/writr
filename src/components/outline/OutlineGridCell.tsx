@@ -5,6 +5,7 @@ import type {
   OutlineCardColor,
   OutlineGridCell as OutlineGridCellType,
 } from "@/db/schemas";
+import { useHighlightFade } from "@/hooks/useHighlightFade";
 import { useInlineEdit } from "@/hooks/useInlineEdit";
 
 const COLOR_CLASSES: Record<OutlineCardColor, string> = {
@@ -19,17 +20,21 @@ const COLOR_CLASSES: Record<OutlineCardColor, string> = {
 
 interface OutlineGridCellProps {
   cell: OutlineGridCellType | undefined;
+  isHighlighted?: boolean;
   onSave: (content: string) => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }
 
 export function OutlineGridCell({
   cell,
+  isHighlighted,
   onSave,
   onContextMenu,
 }: OutlineGridCellProps) {
   const content = cell?.content ?? "";
   const color = cell?.color ?? "white";
+
+  const { elementRef, showHighlight } = useHighlightFade(isHighlighted);
 
   const {
     isEditing,
@@ -46,9 +51,14 @@ export function OutlineGridCell({
     saveOnCtrlEnter: true,
   });
 
+  const highlightClasses = showHighlight
+    ? "ring-2 ring-yellow-400 border-yellow-400 dark:ring-yellow-500 dark:border-yellow-500"
+    : "";
+
   return (
     <td
-      className={`border border-zinc-200 p-0 dark:border-zinc-700 ${COLOR_CLASSES[color]}`}
+      ref={elementRef as React.RefObject<HTMLTableCellElement>}
+      className={`border border-zinc-200 p-0 transition-all duration-500 dark:border-zinc-700 ${COLOR_CLASSES[color]} ${highlightClasses}`}
       onContextMenu={onContextMenu}
     >
       {isEditing ? (

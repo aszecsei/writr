@@ -17,6 +17,7 @@ interface OutlineGridRowProps {
   index: number;
   columns: OutlineGridColumn[];
   cellsMap: Map<string, OutlineGridCell>;
+  highlightCellId?: string | null;
   chapterTitle?: string;
   chapterStatus?: string;
   onRowLabelChange: (label: string) => void;
@@ -30,6 +31,7 @@ export function OutlineGridRow({
   index,
   columns,
   cellsMap,
+  highlightCellId,
   chapterTitle,
   chapterStatus,
   onRowLabelChange,
@@ -120,6 +122,7 @@ export function OutlineGridRow({
           <GridCell
             key={column.id}
             cell={cell}
+            isHighlighted={cell?.id === highlightCellId}
             onSave={(content) => onCellSave(column.id, content)}
             onContextMenu={(e) => onCellContextMenu(e, column.id)}
           />

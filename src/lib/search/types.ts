@@ -6,7 +6,8 @@ export type SearchableEntityType =
   | "location"
   | "timelineEvent"
   | "styleGuideEntry"
-  | "worldbuildingDoc";
+  | "worldbuildingDoc"
+  | "outlineCell";
 
 export interface SearchResult {
   id: string;

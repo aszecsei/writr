@@ -230,6 +230,47 @@ async function searchWorldbuildingDocs(
   return results;
 }
 
+async function searchOutlineCells(
+  projectId: string,
+  query: string,
+): Promise<SearchResult[]> {
+  const [cells, rows, columns] = await Promise.all([
+    db.outlineGridCells.where({ projectId }).toArray(),
+    db.outlineGridRows.where({ projectId }).toArray(),
+    db.outlineGridColumns.where({ projectId }).toArray(),
+  ]);
+
+  // Build lookup maps
+  const rowMap = new Map(rows.map((r) => [r.id, r]));
+  const columnMap = new Map(columns.map((c) => [c.id, c]));
+
+  const results: SearchResult[] = [];
+
+  for (const cell of cells) {
+    if (!textContainsQuery(cell.content, query)) continue;
+
+    const row = rowMap.get(cell.rowId);
+    const column = columnMap.get(cell.columnId);
+    if (!row || !column) continue;
+
+    // Build title from row label/number and column name
+    const rowLabel = row.label || `Row ${row.order + 1}`;
+    const title = `${rowLabel} - ${column.title}`;
+
+    results.push({
+      id: cell.id,
+      entityType: "outlineCell",
+      title,
+      subtitle: column.title,
+      snippet: extractSnippet(cell.content, query),
+      matchField: "content",
+      url: entityConfigs.outlineCell.buildUrl(projectId, cell.id),
+    });
+  }
+
+  return results;
+}
+
 export async function searchProject(
   projectId: string,
   query: string,
@@ -244,6 +285,7 @@ export async function searchProject(
     timelineEvents,
     styleGuideEntries,
     worldbuildingDocs,
+    outlineCells,
   ] = await Promise.all([
     searchChapters(projectId, query),
     searchCharacters(projectId, query),
@@ -251,6 +293,7 @@ export async function searchProject(
     searchTimelineEvents(projectId, query),
     searchStyleGuideEntries(projectId, query),
     searchWorldbuildingDocs(projectId, query),
+    searchOutlineCells(projectId, query),
   ]);
 
   const allResults: Record<SearchableEntityType, SearchResult[]> = {
@@ -260,6 +303,7 @@ export async function searchProject(
     timelineEvent: timelineEvents,
     styleGuideEntry: styleGuideEntries,
     worldbuildingDoc: worldbuildingDocs,
+    outlineCell: outlineCells,
   };
 
   const grouped: GroupedSearchResults[] = [];
@@ -316,6 +360,9 @@ export async function searchProjectPaginated(
         break;
       case "worldbuildingDoc":
         searchPromises.push(searchWorldbuildingDocs(projectId, query));
+        break;
+      case "outlineCell":
+        searchPromises.push(searchOutlineCells(projectId, query));
         break;
     }
   }

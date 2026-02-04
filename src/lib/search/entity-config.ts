@@ -1,4 +1,12 @@
-import { Clock, FileText, Globe, MapPin, Pen, Users } from "lucide-react";
+import {
+  Clock,
+  FileText,
+  Globe,
+  Grid3x3,
+  MapPin,
+  Pen,
+  Users,
+} from "lucide-react";
 import type { EntityGroupConfig, SearchableEntityType } from "./types";
 
 export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
@@ -64,6 +72,15 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
       `/projects/${projectId}/bible/worldbuilding?doc=${entityId}`,
     searchableFields: ["title", "tags", "content"],
   },
+  outlineCell: {
+    type: "outlineCell",
+    label: "Outline Cell",
+    labelPlural: "Outline Cells",
+    icon: Grid3x3,
+    buildUrl: (projectId, entityId) =>
+      `/projects/${projectId}/outline?highlight=${entityId}`,
+    searchableFields: ["content"],
+  },
 };
 
 export const entityTypeOrder: SearchableEntityType[] = [
@@ -73,4 +90,5 @@ export const entityTypeOrder: SearchableEntityType[] = [
   "timelineEvent",
   "styleGuideEntry",
   "worldbuildingDoc",
+  "outlineCell",
 ];
