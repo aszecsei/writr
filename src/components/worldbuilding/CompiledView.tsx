@@ -1,32 +1,11 @@
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useState } from "react";
-import { Markdown } from "tiptap-markdown";
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export function CompiledView({ markdown }: { markdown: string }) {
   const [copied, setCopied] = useState(false);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
-      }),
-      Markdown.configure({
-        html: false,
-      }),
-    ],
-    content: markdown,
-    editable: false,
-    immediatelyRender: false,
-  });
-
-  useEffect(() => {
-    if (editor && markdown !== undefined) {
-      editor.commands.setContent(markdown);
-    }
-  }, [editor, markdown]);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(markdown);
@@ -47,7 +26,7 @@ export function CompiledView({ markdown }: { markdown: string }) {
       </div>
       {markdown ? (
         <div className="prose prose-zinc dark:prose-invert max-w-none">
-          <EditorContent editor={editor} />
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
         </div>
       ) : (
         <p className="py-12 text-center text-sm text-zinc-400 dark:text-zinc-500">

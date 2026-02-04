@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type {
   OutlineCardColor,
   OutlineGridCell as OutlineGridCellType,
@@ -79,7 +80,7 @@ export function OutlineGridCell({
         >
           {content ? (
             <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300">
-              <ReactMarkdown>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
           ) : (
             <span className="text-sm text-zinc-400 dark:text-zinc-500">
