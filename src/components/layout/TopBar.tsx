@@ -10,6 +10,7 @@ import {
   Timer,
 } from "lucide-react";
 import Link from "next/link";
+import { SearchBar } from "@/components/search";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { formatReadingTime } from "@/lib/reading-time";
 import { useEditorStore } from "@/store/editorStore";
@@ -32,8 +33,9 @@ export function TopBar() {
   const settings = useAppSettings();
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center gap-3">
+    <header className="grid h-12 shrink-0 grid-cols-[1fr_minmax(0,768px)_1fr] items-center gap-4 border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
+      {/* Left section - branding */}
+      <div className="flex items-center gap-3 justify-self-start">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -57,10 +59,21 @@ export function TopBar() {
           </>
         )}
       </div>
-      <div className="flex items-center gap-4">
+
+      {/* Center section - search bar */}
+      {activeProjectId ? (
+        <div className="w-full max-w-xl justify-self-center">
+          <SearchBar />
+        </div>
+      ) : (
+        <div />
+      )}
+
+      {/* Right section - actions */}
+      <div className="flex items-center gap-4 justify-self-end">
         {activeDocumentId && (
           <>
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+            <span className="whitespace-nowrap text-xs text-zinc-400 dark:text-zinc-500">
               {wordCount.toLocaleString()} words ·{" "}
               {formatReadingTime(wordCount, settings?.readingSpeedWpm)}
             </span>

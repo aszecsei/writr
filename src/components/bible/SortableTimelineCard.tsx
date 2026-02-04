@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import { useState } from "react";
 import { deleteTimelineEvent, updateTimelineEvent } from "@/db/operations";
+import { useHighlightFade } from "@/hooks/useHighlightFade";
 import { DragHandle } from "./DragHandle";
 
 interface SortableTimelineCardProps {
@@ -13,21 +14,30 @@ interface SortableTimelineCardProps {
     date: string;
   };
   index: number;
+  isHighlighted?: boolean;
 }
 
 export function SortableTimelineCard({
   event,
   index,
+  isHighlighted,
 }: SortableTimelineCardProps) {
   const { ref, handleRef, isDragSource } = useSortable({
     id: event.id,
     index,
   });
+  const { elementRef, showHighlight } = useHighlightFade(isHighlighted);
 
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description);
   const [date, setDate] = useState(event.date);
+
+  const mergeRefs = (node: HTMLDivElement | null) => {
+    ref(node);
+    (elementRef as React.MutableRefObject<HTMLDivElement | null>).current =
+      node;
+  };
 
   async function handleSave() {
     await updateTimelineEvent(event.id, { title, description, date });
@@ -37,8 +47,12 @@ export function SortableTimelineCard({
   if (editing) {
     return (
       <div
-        ref={ref}
-        className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 space-y-3"
+        ref={mergeRefs}
+        className={`space-y-3 rounded-lg border bg-white p-4 transition-all duration-500 dark:bg-zinc-900 ${
+          showHighlight
+            ? "border-yellow-400 ring-2 ring-yellow-400 dark:border-yellow-500 dark:ring-yellow-500"
+            : "border-zinc-200 dark:border-zinc-800"
+        }`}
       >
         <input
           type="text"
@@ -82,16 +96,18 @@ export function SortableTimelineCard({
 
   return (
     <div
-      ref={ref}
-      className={`flex items-start gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-4 transition-opacity dark:border-zinc-800 dark:bg-zinc-900 ${
+      ref={mergeRefs}
+      className={`flex items-start gap-3 rounded-lg border bg-white px-4 py-4 transition-all duration-500 dark:bg-zinc-900 ${
         isDragSource
-          ? "opacity-50 shadow-lg ring-2 ring-zinc-300 dark:ring-zinc-600"
-          : ""
+          ? "border-zinc-200 opacity-50 shadow-lg ring-2 ring-zinc-300 dark:border-zinc-800 dark:ring-zinc-600"
+          : showHighlight
+            ? "border-yellow-400 ring-2 ring-yellow-400 dark:border-yellow-500 dark:ring-yellow-500"
+            : "border-zinc-200 dark:border-zinc-800"
       }`}
     >
       <DragHandle ref={handleRef} />
       <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 border-zinc-400 dark:border-zinc-500" />
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
           {event.title}
         </h3>

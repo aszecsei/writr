@@ -2,7 +2,7 @@
 
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { SortableTimelineCard } from "@/components/bible/SortableTimelineCard";
 import { createTimelineEvent, reorderTimelineEvents } from "@/db/operations";
@@ -10,6 +10,8 @@ import { useTimelineByProject } from "@/hooks/useBibleEntries";
 
 export default function TimelinePage() {
   const params = useParams<{ projectId: string }>();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const events = useTimelineByProject(params.projectId);
   const [newTitle, setNewTitle] = useState("");
 
@@ -87,7 +89,12 @@ export default function TimelinePage() {
             </p>
           )}
           {localEvents.map((event, index) => (
-            <SortableTimelineCard key={event.id} event={event} index={index} />
+            <SortableTimelineCard
+              key={event.id}
+              event={event}
+              index={index}
+              isHighlighted={event.id === highlightId}
+            />
           ))}
         </div>
       </DragDropProvider>

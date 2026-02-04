@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import {
   createStyleGuideEntry,
@@ -9,9 +9,12 @@ import {
 } from "@/db/operations";
 import type { StyleGuideCategory } from "@/db/schemas";
 import { useStyleGuideByProject } from "@/hooks/useBibleEntries";
+import { useHighlightFade } from "@/hooks/useHighlightFade";
 
 export default function StyleGuidePage() {
   const params = useParams<{ projectId: string }>();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const entries = useStyleGuideByProject(params.projectId);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<StyleGuideCategory>("custom");
@@ -73,7 +76,11 @@ export default function StyleGuidePage() {
           </p>
         )}
         {entries?.map((entry) => (
-          <StyleGuideCard key={entry.id} entry={entry} />
+          <StyleGuideCard
+            key={entry.id}
+            entry={entry}
+            isHighlighted={entry.id === highlightId}
+          />
         ))}
       </div>
     </div>
@@ -82,6 +89,7 @@ export default function StyleGuidePage() {
 
 function StyleGuideCard({
   entry,
+  isHighlighted,
 }: {
   entry: {
     id: string;
@@ -89,7 +97,9 @@ function StyleGuideCard({
     category: string;
     content: string;
   };
+  isHighlighted?: boolean;
 }) {
+  const { elementRef, showHighlight } = useHighlightFade(isHighlighted);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
@@ -101,7 +111,14 @@ function StyleGuideCard({
 
   if (editing) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 space-y-3">
+      <div
+        ref={elementRef}
+        className={`space-y-3 rounded-lg border bg-white p-4 transition-all duration-500 dark:bg-zinc-900 ${
+          showHighlight
+            ? "border-yellow-400 ring-2 ring-yellow-400 dark:border-yellow-500 dark:ring-yellow-500"
+            : "border-zinc-200 dark:border-zinc-800"
+        }`}
+      >
         <input
           type="text"
           value={title}
@@ -136,7 +153,14 @@ function StyleGuideCard({
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div
+      ref={elementRef}
+      className={`rounded-lg border bg-white px-5 py-4 transition-all duration-500 dark:bg-zinc-900 ${
+        showHighlight
+          ? "border-yellow-400 ring-2 ring-yellow-400 dark:border-yellow-500 dark:ring-yellow-500"
+          : "border-zinc-200 dark:border-zinc-800"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -164,7 +188,7 @@ function StyleGuideCard({
         </div>
       </div>
       {entry.content && (
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap">
+        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-400">
           {entry.content}
         </p>
       )}
