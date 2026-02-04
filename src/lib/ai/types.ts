@@ -4,7 +4,8 @@ export type AiTool =
   | "suggest-edits"
   | "character-dialogue"
   | "brainstorm"
-  | "summarize";
+  | "summarize"
+  | "consistency-check";
 
 export interface CacheControl {
   type: "ephemeral";

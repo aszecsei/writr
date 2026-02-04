@@ -102,6 +102,32 @@ const TOOL_INSTRUCTIONS: Record<AiTool, string> = {
   summarize:
     "Provide a concise summary of the provided text, capturing key plot points, " +
     "character developments, and thematic elements.",
+
+  "consistency-check":
+    "Analyze the story content for consistency issues. Check for:\n\n" +
+    "## Plot Holes\n" +
+    "- Events referenced but never established\n" +
+    "- Unresolved plot threads or dangling setups\n" +
+    "- Cause-and-effect gaps\n" +
+    "- Contradictory facts about the world or events\n\n" +
+    "## Timeline Contradictions\n" +
+    "- Events occurring in impossible order\n" +
+    "- Characters in two places at once\n" +
+    "- Age/date inconsistencies\n" +
+    "- Travel times that don't make sense\n\n" +
+    "## Character Inconsistencies\n" +
+    "- Personality shifts without justification\n" +
+    "- Dialogue that doesn't match established voice\n" +
+    "- Knowledge the character shouldn't have\n" +
+    "- Contradictory motivations or goals\n" +
+    "- Relationship dynamics that conflict with established history\n\n" +
+    "FORMAT YOUR RESPONSE AS:\n\n" +
+    "### Plot Holes\n[List with severity: CRITICAL/MAJOR/MINOR]\n\n" +
+    "### Timeline Issues\n[List with specific events/dates]\n\n" +
+    "### Character Inconsistencies\n[List with character name]\n\n" +
+    "### Summary\n[Brief assessment and prioritized recommendations]\n\n" +
+    "If no issues found in a category, state 'No issues detected.' " +
+    "Be thorough but avoid false positives.",
 };
 
 export function buildMessages(

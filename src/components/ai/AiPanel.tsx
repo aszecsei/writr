@@ -33,6 +33,7 @@ const AI_TOOLS: { id: AiTool; label: string }[] = [
   { id: "character-dialogue", label: "Character Dialogue" },
   { id: "brainstorm", label: "Brainstorm" },
   { id: "summarize", label: "Summarize" },
+  { id: "consistency-check", label: "Consistency Check" },
 ];
 
 interface Message {
