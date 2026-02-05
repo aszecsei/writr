@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Character, CharacterRole } from "@/db/schemas";
 
 interface CharacterFormState {
@@ -18,6 +18,8 @@ interface CharacterFormState {
   dialogueStyle: string;
   backstory: string;
   notes: string;
+  linkedCharacterIds: string[];
+  linkedLocationIds: string[];
 }
 
 type CharacterFormField = keyof CharacterFormState;
@@ -38,6 +40,8 @@ export function useCharacterForm(character: Character | undefined) {
     dialogueStyle: "",
     backstory: "",
     notes: "",
+    linkedCharacterIds: [],
+    linkedLocationIds: [],
   });
 
   useEffect(() => {
@@ -57,12 +61,16 @@ export function useCharacterForm(character: Character | undefined) {
         dialogueStyle: character.dialogueStyle ?? "",
         backstory: character.backstory ?? "",
         notes: character.notes ?? "",
+        linkedCharacterIds: character.linkedCharacterIds ?? [],
+        linkedLocationIds: character.linkedLocationIds ?? [],
       });
     }
   }, [character]);
 
   const isDirty = useMemo(() => {
     if (!character) return false;
+    const charLinkedChars = character.linkedCharacterIds ?? [];
+    const charLinkedLocs = character.linkedLocationIds ?? [];
     return (
       form.name !== character.name ||
       form.role !== character.role ||
@@ -77,7 +85,11 @@ export function useCharacterForm(character: Character | undefined) {
       form.characterArcs !== (character.characterArcs ?? "") ||
       form.dialogueStyle !== (character.dialogueStyle ?? "") ||
       form.backstory !== (character.backstory ?? "") ||
-      form.notes !== (character.notes ?? "")
+      form.notes !== (character.notes ?? "") ||
+      form.linkedCharacterIds.length !== charLinkedChars.length ||
+      form.linkedCharacterIds.some((id, i) => id !== charLinkedChars[i]) ||
+      form.linkedLocationIds.length !== charLinkedLocs.length ||
+      form.linkedLocationIds.some((id, i) => id !== charLinkedLocs[i])
     );
   }, [character, form]);
 
@@ -87,6 +99,36 @@ export function useCharacterForm(character: Character | undefined) {
   ) {
     setFormState((prev) => ({ ...prev, [field]: value }));
   }
+
+  const addLinkedCharacterId = useCallback((id: string) => {
+    setFormState((prev) =>
+      prev.linkedCharacterIds.includes(id)
+        ? prev
+        : { ...prev, linkedCharacterIds: [...prev.linkedCharacterIds, id] },
+    );
+  }, []);
+
+  const removeLinkedCharacterId = useCallback((id: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      linkedCharacterIds: prev.linkedCharacterIds.filter((cid) => cid !== id),
+    }));
+  }, []);
+
+  const addLinkedLocationId = useCallback((id: string) => {
+    setFormState((prev) =>
+      prev.linkedLocationIds.includes(id)
+        ? prev
+        : { ...prev, linkedLocationIds: [...prev.linkedLocationIds, id] },
+    );
+  }, []);
+
+  const removeLinkedLocationId = useCallback((id: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      linkedLocationIds: prev.linkedLocationIds.filter((lid) => lid !== id),
+    }));
+  }, []);
 
   function getUpdatePayload() {
     const aliases = form.aliasesInput
@@ -108,8 +150,19 @@ export function useCharacterForm(character: Character | undefined) {
       dialogueStyle: form.dialogueStyle,
       backstory: form.backstory,
       notes: form.notes,
+      linkedCharacterIds: form.linkedCharacterIds,
+      linkedLocationIds: form.linkedLocationIds,
     };
   }
 
-  return { form, setField, isDirty, getUpdatePayload };
+  return {
+    form,
+    setField,
+    isDirty,
+    getUpdatePayload,
+    addLinkedCharacterId,
+    removeLinkedCharacterId,
+    addLinkedLocationId,
+    removeLinkedLocationId,
+  };
 }
