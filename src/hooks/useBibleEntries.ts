@@ -1,80 +1,42 @@
 "use client";
 
-import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import {
+  createEntityHook,
+  createProjectListHook,
+  createProjectListUnsortedHook,
+} from "./factories";
 
-export function useCharactersByProject(projectId: string | null) {
-  return useLiveQuery(
-    () => (projectId ? db.characters.where({ projectId }).sortBy("name") : []),
-    [projectId],
-  );
-}
+export const useCharactersByProject = createProjectListHook(
+  db.characters,
+  "name",
+);
+export const useCharacter = createEntityHook(db.characters);
 
-export function useCharacter(id: string | null) {
-  return useLiveQuery(() => (id ? db.characters.get(id) : undefined), [id]);
-}
+export const useLocationsByProject = createProjectListHook(
+  db.locations,
+  "name",
+);
+export const useLocation = createEntityHook(db.locations);
 
-export function useLocationsByProject(projectId: string | null) {
-  return useLiveQuery(
-    () => (projectId ? db.locations.where({ projectId }).sortBy("name") : []),
-    [projectId],
-  );
-}
+export const useTimelineByProject = createProjectListHook(
+  db.timelineEvents,
+  "order",
+);
+export const useTimelineEvent = createEntityHook(db.timelineEvents);
 
-export function useLocation(id: string | null) {
-  return useLiveQuery(() => (id ? db.locations.get(id) : undefined), [id]);
-}
+export const useStyleGuideByProject = createProjectListHook(
+  db.styleGuideEntries,
+  "order",
+);
+export const useStyleGuideEntry = createEntityHook(db.styleGuideEntries);
 
-export function useTimelineByProject(projectId: string | null) {
-  return useLiveQuery(
-    () =>
-      projectId ? db.timelineEvents.where({ projectId }).sortBy("order") : [],
-    [projectId],
-  );
-}
+export const useWorldbuildingDocsByProject = createProjectListHook(
+  db.worldbuildingDocs,
+  "order",
+);
+export const useWorldbuildingDoc = createEntityHook(db.worldbuildingDocs);
 
-export function useTimelineEvent(id: string | null) {
-  return useLiveQuery(() => (id ? db.timelineEvents.get(id) : undefined), [id]);
-}
-
-export function useStyleGuideByProject(projectId: string | null) {
-  return useLiveQuery(
-    () =>
-      projectId
-        ? db.styleGuideEntries.where({ projectId }).sortBy("order")
-        : [],
-    [projectId],
-  );
-}
-
-export function useStyleGuideEntry(id: string | null) {
-  return useLiveQuery(
-    () => (id ? db.styleGuideEntries.get(id) : undefined),
-    [id],
-  );
-}
-
-export function useWorldbuildingDocsByProject(projectId: string | null) {
-  return useLiveQuery(
-    () =>
-      projectId
-        ? db.worldbuildingDocs.where({ projectId }).sortBy("order")
-        : [],
-    [projectId],
-  );
-}
-
-export function useWorldbuildingDoc(id: string | null) {
-  return useLiveQuery(
-    () => (id ? db.worldbuildingDocs.get(id) : undefined),
-    [id],
-  );
-}
-
-export function useRelationshipsByProject(projectId: string | null) {
-  return useLiveQuery(
-    () =>
-      projectId ? db.characterRelationships.where({ projectId }).toArray() : [],
-    [projectId],
-  );
-}
+export const useRelationshipsByProject = createProjectListUnsortedHook(
+  db.characterRelationships,
+);

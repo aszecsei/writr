@@ -2,6 +2,12 @@
 
 import { History, Play, Timer } from "lucide-react";
 import { useState } from "react";
+import {
+  BUTTON_CANCEL,
+  BUTTON_PRIMARY,
+  RADIO_ACTIVE,
+  RADIO_INACTIVE,
+} from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useWritingSprint } from "@/hooks/useWritingSprint";
 import { useProjectStore } from "@/store/projectStore";
@@ -68,10 +74,6 @@ export function SprintConfigDialog() {
 
   const radioClass =
     "flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm font-medium transition-colors";
-  const radioActiveClass =
-    "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900";
-  const radioInactiveClass =
-    "border-zinc-200 text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600";
 
   return (
     <Modal onClose={closeConfigModal}>
@@ -101,7 +103,7 @@ export function SprintConfigDialog() {
                   setSelectedDuration(preset.ms);
                   setUseCustom(false);
                 }}
-                className={`${radioClass} ${!useCustom && selectedDuration === preset.ms ? radioActiveClass : radioInactiveClass}`}
+                className={`${radioClass} ${!useCustom && selectedDuration === preset.ms ? RADIO_ACTIVE : RADIO_INACTIVE}`}
               >
                 {preset.label}
               </button>
@@ -109,7 +111,7 @@ export function SprintConfigDialog() {
             <button
               type="button"
               onClick={() => setUseCustom(true)}
-              className={`${radioClass} ${useCustom ? radioActiveClass : radioInactiveClass}`}
+              className={`${radioClass} ${useCustom ? RADIO_ACTIVE : RADIO_INACTIVE}`}
             >
               Custom
             </button>
@@ -168,7 +170,7 @@ export function SprintConfigDialog() {
             <button
               type="button"
               onClick={closeConfigModal}
-              className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className={BUTTON_CANCEL}
             >
               Cancel
             </button>
@@ -176,7 +178,7 @@ export function SprintConfigDialog() {
               type="button"
               onClick={handleStart}
               disabled={!isValidDuration}
-              className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
             >
               <Play size={14} />
               Start Sprint

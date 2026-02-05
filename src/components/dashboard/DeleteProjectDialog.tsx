@@ -3,6 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { BUTTON_CANCEL, BUTTON_DANGER } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteProject } from "@/db/operations";
 import { useProject } from "@/hooks/useProject";
@@ -79,17 +80,13 @@ export function DeleteProjectDialog() {
           </label>
         </div>
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
+          <button type="button" onClick={handleClose} className={BUTTON_CANCEL}>
             Cancel
           </button>
           <button
             type="submit"
             disabled={!nameMatches}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-red-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-600 dark:hover:bg-red-700"
+            className={BUTTON_DANGER}
           >
             Delete Project
           </button>

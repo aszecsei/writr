@@ -1,0 +1,41 @@
+"use client";
+
+import { updateAppSettings } from "@/db/operations";
+import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
+
+const CATEGORY_LABELS: Record<EditorFont["category"], string> = {
+  serif: "Serif",
+  sans: "Sans-Serif",
+  accessible: "Accessible",
+};
+
+interface FontSelectorProps {
+  currentFont: string;
+}
+
+export function FontSelector({ currentFont }: FontSelectorProps) {
+  async function handleFontChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    await updateAppSettings({ editorFont: e.target.value });
+  }
+
+  return (
+    <label className="flex items-center gap-1">
+      <span className="sr-only">Editor font</span>
+      <select
+        value={currentFont}
+        onChange={handleFontChange}
+        className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+      >
+        {(["serif", "sans", "accessible"] as const).map((cat) => (
+          <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
+            {EDITOR_FONTS.filter((f) => f.category === cat).map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </label>
+  );
+}

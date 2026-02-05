@@ -80,12 +80,55 @@ function aggregateTimeOfDayStats(sessions: WritingSession[]): TimeOfDayStats[] {
     .sort((a, b) => a.hour - b.hour);
 }
 
+function calculateLongestStreak(activeDays: string[]): number {
+  let longest = 1;
+  let currentRun = 1;
+
+  for (let i = 1; i < activeDays.length; i++) {
+    const prevDate = new Date(activeDays[i - 1]);
+    const currDate = new Date(activeDays[i]);
+    const diffDays = (currDate.getTime() - prevDate.getTime()) / 86400000;
+
+    if (diffDays === 1) {
+      currentRun++;
+      longest = Math.max(longest, currentRun);
+    } else {
+      currentRun = 1;
+    }
+  }
+
+  return longest;
+}
+
+function calculateCurrentStreak(
+  activeDays: string[],
+  today: string,
+  yesterday: string,
+): number {
+  const lastActiveDate = activeDays[activeDays.length - 1];
+  if (lastActiveDate !== today && lastActiveDate !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = activeDays.length - 2; i >= 0; i--) {
+    const prevDate = new Date(activeDays[i]);
+    const nextDate = new Date(activeDays[i + 1]);
+    const diffDays = (nextDate.getTime() - prevDate.getTime()) / 86400000;
+
+    if (diffDays === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
   if (dailyStats.length === 0) {
     return { currentStreak: 0, longestStreak: 0, lastActiveDate: null };
   }
 
-  // Filter to days with actual writing (wordsWritten > 0)
   const activeDays = dailyStats
     .filter((d) => d.wordsWritten > 0)
     .map((d) => d.date)
@@ -99,41 +142,11 @@ function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-  // Calculate longest streak
-  let longestStreak = 1;
-  let currentRun = 1;
-
-  for (let i = 1; i < activeDays.length; i++) {
-    const prevDate = new Date(activeDays[i - 1]);
-    const currDate = new Date(activeDays[i]);
-    const diffDays = (currDate.getTime() - prevDate.getTime()) / 86400000;
-
-    if (diffDays === 1) {
-      currentRun++;
-      longestStreak = Math.max(longestStreak, currentRun);
-    } else {
-      currentRun = 1;
-    }
-  }
-
-  // Calculate current streak (must include today or yesterday)
-  let currentStreak = 0;
-  if (lastActiveDate === today || lastActiveDate === yesterday) {
-    currentStreak = 1;
-    for (let i = activeDays.length - 2; i >= 0; i--) {
-      const prevDate = new Date(activeDays[i]);
-      const nextDate = new Date(activeDays[i + 1]);
-      const diffDays = (nextDate.getTime() - prevDate.getTime()) / 86400000;
-
-      if (diffDays === 1) {
-        currentStreak++;
-      } else {
-        break;
-      }
-    }
-  }
-
-  return { currentStreak, longestStreak, lastActiveDate };
+  return {
+    currentStreak: calculateCurrentStreak(activeDays, today, yesterday),
+    longestStreak: calculateLongestStreak(activeDays),
+    lastActiveDate,
+  };
 }
 
 function findBestHour(timeOfDay: TimeOfDayStats[]): number | null {

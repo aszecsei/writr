@@ -44,6 +44,35 @@ function spansToPdfText(spans: TextSpan[]): ContentText {
   };
 }
 
+function handlePdfBlockquote(children: DocNode[]): Content {
+  const inner = nodesToPdfContent(children);
+  return {
+    margin: [20, 0, 0, 8] as [number, number, number, number],
+    stack: inner,
+    italics: true,
+    color: "#555555",
+  } as Content;
+}
+
+function handlePdfList(ordered: boolean, items: DocNode[][]): Content {
+  const listItems: Content[] = items.map((itemNodes) => {
+    const itemContent = nodesToPdfContent(itemNodes);
+    return itemContent.length === 1
+      ? itemContent[0]
+      : ({ stack: itemContent } as Content);
+  });
+  if (ordered) {
+    return {
+      ol: listItems,
+      margin: [0, 0, 0, 8] as [number, number, number, number],
+    } as Content;
+  }
+  return {
+    ul: listItems,
+    margin: [0, 0, 0, 8] as [number, number, number, number],
+  } as Content;
+}
+
 function nodesToPdfContent(nodes: DocNode[]): Content[] {
   const result: Content[] = [];
 
@@ -65,32 +94,10 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
         });
       })
       .with({ type: "blockquote" }, ({ children }) => {
-        const inner = nodesToPdfContent(children);
-        result.push({
-          margin: [20, 0, 0, 8] as [number, number, number, number],
-          stack: inner,
-          italics: true,
-          color: "#555555",
-        } as Content);
+        result.push(handlePdfBlockquote(children));
       })
       .with({ type: "list" }, ({ ordered, items }) => {
-        const listItems: Content[] = items.map((itemNodes) => {
-          const itemContent = nodesToPdfContent(itemNodes);
-          return itemContent.length === 1
-            ? itemContent[0]
-            : ({ stack: itemContent } as Content);
-        });
-        if (ordered) {
-          result.push({
-            ol: listItems,
-            margin: [0, 0, 0, 8] as [number, number, number, number],
-          } as Content);
-        } else {
-          result.push({
-            ul: listItems,
-            margin: [0, 0, 0, 8] as [number, number, number, number],
-          } as Content);
-        }
+        result.push(handlePdfList(ordered, items));
       })
       .with({ type: "code" }, ({ text }) => {
         result.push({

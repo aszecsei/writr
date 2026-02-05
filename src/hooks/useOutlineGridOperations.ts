@@ -39,6 +39,16 @@ interface UseOutlineGridOperationsProps {
   ) => void;
 }
 
+function getTargetRowId(target: ContextMenuTarget): string | null {
+  return target.type === "cell" || target.type === "row" ? target.rowId : null;
+}
+
+function getTargetColumnId(target: ContextMenuTarget): string | null {
+  return target.type === "cell" || target.type === "column"
+    ? target.columnId
+    : null;
+}
+
 export function useOutlineGridOperations({
   projectId,
   localRows,
@@ -99,73 +109,46 @@ export function useOutlineGridOperations({
   // Insert operations
   const handleInsertRowAbove = useCallback(async () => {
     if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
-    if (rowId) {
-      const order = getRowOrder(rowId);
-      await insertOutlineGridRowAt(projectId, order);
-    }
+    const rowId = getTargetRowId(contextMenu.target);
+    if (rowId) await insertOutlineGridRowAt(projectId, getRowOrder(rowId));
     closeContextMenu();
   }, [contextMenu, projectId, getRowOrder, closeContextMenu]);
 
   const handleInsertRowBelow = useCallback(async () => {
     if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
-    if (rowId) {
-      const order = getRowOrder(rowId);
-      await insertOutlineGridRowAt(projectId, order + 1);
-    }
+    const rowId = getTargetRowId(contextMenu.target);
+    if (rowId) await insertOutlineGridRowAt(projectId, getRowOrder(rowId) + 1);
     closeContextMenu();
   }, [contextMenu, projectId, getRowOrder, closeContextMenu]);
 
   const handleInsertColumnLeft = useCallback(async () => {
     if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
-    if (columnId) {
-      const order = getColumnOrder(columnId);
-      await insertOutlineGridColumnAt(projectId, "New Column", order);
-    }
+    const columnId = getTargetColumnId(contextMenu.target);
+    if (columnId)
+      await insertOutlineGridColumnAt(
+        projectId,
+        "New Column",
+        getColumnOrder(columnId),
+      );
     closeContextMenu();
   }, [contextMenu, projectId, getColumnOrder, closeContextMenu]);
 
   const handleInsertColumnRight = useCallback(async () => {
     if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
-    if (columnId) {
-      const order = getColumnOrder(columnId);
-      await insertOutlineGridColumnAt(projectId, "New Column", order + 1);
-    }
+    const columnId = getTargetColumnId(contextMenu.target);
+    if (columnId)
+      await insertOutlineGridColumnAt(
+        projectId,
+        "New Column",
+        getColumnOrder(columnId) + 1,
+      );
     closeContextMenu();
   }, [contextMenu, projectId, getColumnOrder, closeContextMenu]);
 
   // Delete operations
   const handleDeleteRow = useCallback(async () => {
     if (!contextMenu) return;
-    const rowId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.rowId
-        : contextMenu.target.type === "row"
-          ? contextMenu.target.rowId
-          : null;
+    const rowId = getTargetRowId(contextMenu.target);
     if (!rowId) {
       closeContextMenu();
       return;
@@ -191,12 +174,7 @@ export function useOutlineGridOperations({
 
   const handleDeleteColumn = useCallback(async () => {
     if (!contextMenu) return;
-    const columnId =
-      contextMenu.target.type === "cell"
-        ? contextMenu.target.columnId
-        : contextMenu.target.type === "column"
-          ? contextMenu.target.columnId
-          : null;
+    const columnId = getTargetColumnId(contextMenu.target);
     if (columnId) {
       await deleteOutlineGridColumn(columnId);
     }

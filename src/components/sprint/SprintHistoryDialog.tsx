@@ -1,6 +1,7 @@
 "use client";
 
 import { History, Trash2 } from "lucide-react";
+import { BUTTON_CANCEL } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteSprint } from "@/db/operations";
 import type { WritingSprint } from "@/db/schemas";
@@ -156,7 +157,7 @@ export function SprintHistoryDialog() {
         <button
           type="button"
           onClick={closeHistoryModal}
-          className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className={BUTTON_CANCEL}
         >
           Close
         </button>

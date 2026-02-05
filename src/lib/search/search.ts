@@ -1,3 +1,4 @@
+import type { EntityTable } from "dexie";
 import { db } from "@/db/database";
 import { entityConfigs, entityTypeOrder } from "./entity-config";
 import {
@@ -46,188 +47,20 @@ function searchEntity<T extends { id: string }>(
   };
 }
 
-async function searchChapters(
+async function searchTable<T extends { id: string }>(
+  table: EntityTable<T, "id">,
   projectId: string,
   query: string,
+  entityType: SearchableEntityType,
+  titleField: string,
+  subtitleField?: string,
 ): Promise<SearchResult[]> {
-  const chapters = await db.chapters.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const chapter of chapters) {
-    const fields = entityConfigs.chapter.searchableFields;
-    if (
-      fields.some((field) =>
-        textContainsQuery(
-          (chapter as Record<string, unknown>)[field] as string,
-          query,
-        ),
-      )
-    ) {
-      const result = searchEntity(
-        chapter,
-        "chapter",
-        projectId,
-        query,
-        "title",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
-}
-
-async function searchCharacters(
-  projectId: string,
-  query: string,
-): Promise<SearchResult[]> {
-  const characters = await db.characters.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const character of characters) {
-    const fields = entityConfigs.character.searchableFields;
-    const charRecord = character as Record<string, unknown>;
-    if (
-      fields.some((field) =>
-        textContainsQuery(charRecord[field] as string | string[], query),
-      )
-    ) {
-      const result = searchEntity(
-        character,
-        "character",
-        projectId,
-        query,
-        "name",
-        "role",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
-}
-
-async function searchLocations(
-  projectId: string,
-  query: string,
-): Promise<SearchResult[]> {
-  const locations = await db.locations.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const location of locations) {
-    const fields = entityConfigs.location.searchableFields;
-    if (
-      fields.some((field) =>
-        textContainsQuery(
-          (location as Record<string, unknown>)[field] as string,
-          query,
-        ),
-      )
-    ) {
-      const result = searchEntity(
-        location,
-        "location",
-        projectId,
-        query,
-        "name",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
-}
-
-async function searchTimelineEvents(
-  projectId: string,
-  query: string,
-): Promise<SearchResult[]> {
-  const events = await db.timelineEvents.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const event of events) {
-    const fields = entityConfigs.timelineEvent.searchableFields;
-    if (
-      fields.some((field) =>
-        textContainsQuery(
-          (event as Record<string, unknown>)[field] as string,
-          query,
-        ),
-      )
-    ) {
-      const result = searchEntity(
-        event,
-        "timelineEvent",
-        projectId,
-        query,
-        "title",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
-}
-
-async function searchStyleGuideEntries(
-  projectId: string,
-  query: string,
-): Promise<SearchResult[]> {
-  const entries = await db.styleGuideEntries.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const entry of entries) {
-    const fields = entityConfigs.styleGuideEntry.searchableFields;
-    if (
-      fields.some((field) =>
-        textContainsQuery(
-          (entry as Record<string, unknown>)[field] as string,
-          query,
-        ),
-      )
-    ) {
-      const result = searchEntity(
-        entry,
-        "styleGuideEntry",
-        projectId,
-        query,
-        "title",
-        "category",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
-}
-
-async function searchWorldbuildingDocs(
-  projectId: string,
-  query: string,
-): Promise<SearchResult[]> {
-  const docs = await db.worldbuildingDocs.where({ projectId }).toArray();
-  const results: SearchResult[] = [];
-
-  for (const doc of docs) {
-    const fields = entityConfigs.worldbuildingDoc.searchableFields;
-    const docRecord = doc as Record<string, unknown>;
-    if (
-      fields.some((field) =>
-        textContainsQuery(docRecord[field] as string | string[], query),
-      )
-    ) {
-      const result = searchEntity(
-        doc,
-        "worldbuildingDoc",
-        projectId,
-        query,
-        "title",
-      );
-      if (result) results.push(result);
-    }
-  }
-
-  return results;
+  const entities = (await table.where({ projectId }).toArray()) as T[];
+  return entities
+    .map((e) =>
+      searchEntity(e, entityType, projectId, query, titleField, subtitleField),
+    )
+    .filter((r): r is SearchResult => r !== null);
 }
 
 async function searchOutlineCells(
@@ -240,7 +73,6 @@ async function searchOutlineCells(
     db.outlineGridColumns.where({ projectId }).toArray(),
   ]);
 
-  // Build lookup maps
   const rowMap = new Map(rows.map((r) => [r.id, r]));
   const columnMap = new Map(columns.map((c) => [c.id, c]));
 
@@ -253,7 +85,6 @@ async function searchOutlineCells(
     const column = columnMap.get(cell.columnId);
     if (!row || !column) continue;
 
-    // Build title from row label/number and column name
     const rowLabel = row.label || `Row ${row.order + 1}`;
     const title = `${rowLabel} - ${column.title}`;
 
@@ -271,6 +102,30 @@ async function searchOutlineCells(
   return results;
 }
 
+const searchFunctions: Record<
+  SearchableEntityType,
+  (projectId: string, query: string) => Promise<SearchResult[]>
+> = {
+  chapter: (pid, q) => searchTable(db.chapters, pid, q, "chapter", "title"),
+  character: (pid, q) =>
+    searchTable(db.characters, pid, q, "character", "name", "role"),
+  location: (pid, q) => searchTable(db.locations, pid, q, "location", "name"),
+  timelineEvent: (pid, q) =>
+    searchTable(db.timelineEvents, pid, q, "timelineEvent", "title"),
+  styleGuideEntry: (pid, q) =>
+    searchTable(
+      db.styleGuideEntries,
+      pid,
+      q,
+      "styleGuideEntry",
+      "title",
+      "category",
+    ),
+  worldbuildingDoc: (pid, q) =>
+    searchTable(db.worldbuildingDocs, pid, q, "worldbuildingDoc", "title"),
+  outlineCell: searchOutlineCells,
+};
+
 export async function searchProject(
   projectId: string,
   query: string,
@@ -278,38 +133,15 @@ export async function searchProject(
 ): Promise<GroupedSearchResults[]> {
   if (!query.trim()) return [];
 
-  const [
-    chapters,
-    characters,
-    locations,
-    timelineEvents,
-    styleGuideEntries,
-    worldbuildingDocs,
-    outlineCells,
-  ] = await Promise.all([
-    searchChapters(projectId, query),
-    searchCharacters(projectId, query),
-    searchLocations(projectId, query),
-    searchTimelineEvents(projectId, query),
-    searchStyleGuideEntries(projectId, query),
-    searchWorldbuildingDocs(projectId, query),
-    searchOutlineCells(projectId, query),
-  ]);
-
-  const allResults: Record<SearchableEntityType, SearchResult[]> = {
-    chapter: chapters,
-    character: characters,
-    location: locations,
-    timelineEvent: timelineEvents,
-    styleGuideEntry: styleGuideEntries,
-    worldbuildingDoc: worldbuildingDocs,
-    outlineCell: outlineCells,
-  };
+  const allResults = await Promise.all(
+    entityTypeOrder.map((type) => searchFunctions[type](projectId, query)),
+  );
 
   const grouped: GroupedSearchResults[] = [];
 
-  for (const entityType of entityTypeOrder) {
-    const results = allResults[entityType];
+  for (let i = 0; i < entityTypeOrder.length; i++) {
+    const entityType = entityTypeOrder[i];
+    const results = allResults[i];
     if (results.length > 0) {
       const config = entityConfigs[entityType];
       grouped.push({
@@ -336,38 +168,13 @@ export async function searchProjectPaginated(
     return { results: [], totalCount: 0, page, pageSize, totalPages: 0 };
   }
 
-  const searchPromises: Promise<SearchResult[]>[] = [];
   const typesToSearch = entityTypeFilter?.length
     ? entityTypeFilter
     : entityTypeOrder;
 
-  for (const entityType of typesToSearch) {
-    switch (entityType) {
-      case "chapter":
-        searchPromises.push(searchChapters(projectId, query));
-        break;
-      case "character":
-        searchPromises.push(searchCharacters(projectId, query));
-        break;
-      case "location":
-        searchPromises.push(searchLocations(projectId, query));
-        break;
-      case "timelineEvent":
-        searchPromises.push(searchTimelineEvents(projectId, query));
-        break;
-      case "styleGuideEntry":
-        searchPromises.push(searchStyleGuideEntries(projectId, query));
-        break;
-      case "worldbuildingDoc":
-        searchPromises.push(searchWorldbuildingDocs(projectId, query));
-        break;
-      case "outlineCell":
-        searchPromises.push(searchOutlineCells(projectId, query));
-        break;
-    }
-  }
-
-  const resultsArrays = await Promise.all(searchPromises);
+  const resultsArrays = await Promise.all(
+    typesToSearch.map((type) => searchFunctions[type](projectId, query)),
+  );
   const allResults = resultsArrays.flat();
 
   const totalCount = allResults.length;

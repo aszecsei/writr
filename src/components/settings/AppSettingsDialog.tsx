@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
+import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type { ReasoningEffort } from "@/db/schemas";
@@ -119,17 +120,10 @@ export function AppSettingsDialog() {
         />
 
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
+          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
             Cancel
           </button>
-          <button
-            type="submit"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
+          <button type="submit" className={BUTTON_PRIMARY}>
             Save
           </button>
         </div>

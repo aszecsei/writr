@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { createRelationship } from "@/db/operations";
 import type { Character, RelationshipType } from "@/db/schemas";
@@ -141,17 +142,10 @@ export function AddRelationshipDialog({
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
+          <button type="button" onClick={onClose} className={BUTTON_CANCEL}>
             Cancel
           </button>
-          <button
-            type="submit"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
+          <button type="submit" className={BUTTON_PRIMARY}>
             Add
           </button>
         </div>

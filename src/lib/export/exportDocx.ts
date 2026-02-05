@@ -38,6 +38,55 @@ function spansToRuns(spans: TextSpan[]): TextRun[] {
   );
 }
 
+function handleBlockquote(children: DocNode[], paragraphs: Paragraph[]): void {
+  for (const child of children) {
+    if (child.type === "paragraph") {
+      paragraphs.push(
+        new Paragraph({
+          children: spansToRuns(child.spans),
+          indent: { left: 720 },
+          border: {
+            left: {
+              style: "single" as const,
+              size: 6,
+              space: 10,
+              color: "999999",
+            },
+          },
+        }),
+      );
+    } else {
+      paragraphs.push(...nodesToParagraphs([child]));
+    }
+  }
+}
+
+function handleList(
+  ordered: boolean,
+  items: DocNode[][],
+  paragraphs: Paragraph[],
+): void {
+  for (const [i, itemNodes] of items.entries()) {
+    for (const [j, itemNode] of itemNodes.entries()) {
+      if (itemNode.type === "paragraph") {
+        const bullet = ordered ? `${i + 1}. ` : "\u2022 ";
+        const runs = spansToRuns(itemNode.spans);
+        if (j === 0) {
+          runs.unshift(new TextRun({ text: bullet }));
+        }
+        paragraphs.push(
+          new Paragraph({
+            children: runs,
+            indent: { left: 720 },
+          }),
+        );
+      } else {
+        paragraphs.push(...nodesToParagraphs([itemNode]));
+      }
+    }
+  }
+}
+
 function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
   const paragraphs: Paragraph[] = [];
 
@@ -60,47 +109,10 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
         );
       })
       .with({ type: "blockquote" }, ({ children }) => {
-        for (const child of children) {
-          if (child.type === "paragraph") {
-            paragraphs.push(
-              new Paragraph({
-                children: spansToRuns(child.spans),
-                indent: { left: 720 },
-                border: {
-                  left: {
-                    style: "single" as const,
-                    size: 6,
-                    space: 10,
-                    color: "999999",
-                  },
-                },
-              }),
-            );
-          } else {
-            paragraphs.push(...nodesToParagraphs([child]));
-          }
-        }
+        handleBlockquote(children, paragraphs);
       })
       .with({ type: "list" }, ({ ordered, items }) => {
-        for (const [i, itemNodes] of items.entries()) {
-          for (const [j, itemNode] of itemNodes.entries()) {
-            if (itemNode.type === "paragraph") {
-              const bullet = ordered ? `${i + 1}. ` : "\u2022 ";
-              const runs = spansToRuns(itemNode.spans);
-              if (j === 0) {
-                runs.unshift(new TextRun({ text: bullet }));
-              }
-              paragraphs.push(
-                new Paragraph({
-                  children: runs,
-                  indent: { left: 720 },
-                }),
-              );
-            } else {
-              paragraphs.push(...nodesToParagraphs([itemNode]));
-            }
-          }
-        }
+        handleList(ordered, items, paragraphs);
       })
       .with({ type: "code" }, ({ text }) => {
         for (const line of text.split("\n")) {
