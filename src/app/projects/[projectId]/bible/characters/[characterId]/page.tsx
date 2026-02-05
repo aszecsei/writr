@@ -16,7 +16,10 @@ import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { CollapsibleSection } from "@/components/bible/CollapsibleSection";
 import { RoleBadge } from "@/components/bible/RoleBadge";
-import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
+import {
+  AutoResizeTextarea,
+  useHeightSync,
+} from "@/components/ui/AutoResizeTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteCharacter, updateCharacter } from "@/db/operations";
 import type { CharacterRole } from "@/db/schemas";
@@ -46,6 +49,8 @@ export default function CharacterDetailPage() {
     removeLinkedLocationId,
   } = useCharacterForm(character);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const personalitySync = useHeightSync();
+  const strengthsSync = useHeightSync();
 
   if (!character) return null;
 
@@ -190,6 +195,7 @@ export default function CharacterDetailPage() {
                 className={inputClass}
                 labelClassName={labelClass}
                 placeholder="Temperament, habits, social behavior..."
+                heightSync={personalitySync}
               />
               <AutoResizeTextarea
                 label="Motivations"
@@ -199,6 +205,7 @@ export default function CharacterDetailPage() {
                 className={inputClass}
                 labelClassName={labelClass}
                 placeholder="Goals, desires, what drives them..."
+                heightSync={personalitySync}
               />
             </div>
             <AutoResizeTextarea
@@ -219,6 +226,7 @@ export default function CharacterDetailPage() {
                 className={inputClass}
                 labelClassName={labelClass}
                 placeholder="Skills, virtues, advantages..."
+                heightSync={strengthsSync}
               />
               <AutoResizeTextarea
                 label="Weaknesses"
@@ -228,6 +236,7 @@ export default function CharacterDetailPage() {
                 className={inputClass}
                 labelClassName={labelClass}
                 placeholder="Flaws, vulnerabilities, blind spots..."
+                heightSync={strengthsSync}
               />
             </div>
           </div>
