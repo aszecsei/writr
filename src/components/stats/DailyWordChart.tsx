@@ -41,7 +41,7 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
           return (
             <div
               key={day.date}
-              className="group relative flex-1"
+              className="group relative flex-1 h-full flex flex-col justify-end"
               title={`${day.date}: ${day.wordsWritten.toLocaleString()} words`}
             >
               <div

@@ -41,7 +41,7 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
           return (
             <div
               key={stat.hour}
-              className="group relative flex-1"
+              className="group relative flex-1 h-full flex flex-col justify-end"
               title={`${formatHour(stat.hour)}: ${stat.wordsWritten.toLocaleString()} words`}
             >
               <div
