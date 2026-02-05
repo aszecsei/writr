@@ -2,7 +2,7 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 
 export interface TypewriterScrollingOptions {
-  enabledRef: { current: boolean };
+  enabledRef: { current: boolean } | undefined;
 }
 
 export const TypewriterScrolling = Extension.create<TypewriterScrollingOptions>(
@@ -11,7 +11,7 @@ export const TypewriterScrolling = Extension.create<TypewriterScrollingOptions>(
 
     addOptions() {
       return {
-        enabledRef: { current: false },
+        enabledRef: undefined as { current: boolean } | undefined,
       };
     },
 
@@ -25,7 +25,7 @@ export const TypewriterScrolling = Extension.create<TypewriterScrollingOptions>(
             return {
               update(view, prevState) {
                 // Check if enabled via ref (allows dynamic toggling)
-                if (!enabledRef.current) return;
+                if (!enabledRef?.current) return;
 
                 // Only scroll if selection changed
                 if (prevState && view.state.selection.eq(prevState.selection)) {

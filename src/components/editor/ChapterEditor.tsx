@@ -4,16 +4,22 @@
 import { generateHTML } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { updateChapterContent } from "@/db/operations";
+import { updateChapterContent, updateComment } from "@/db/operations";
+import type { Comment } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useChapter } from "@/hooks/useChapter";
+import { useCommentsByChapter } from "@/hooks/useComments";
+import { reconcileComment } from "@/lib/comments/reconcile";
 import { getEditorFont } from "@/lib/fonts";
+import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { CommentMargin, CommentPopover } from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions } from "./extensions";
+import { COMMENTS_UPDATED_META } from "./extensions/Comments";
 
 // tiptap-markdown and character-count store methods on editor.storage
 // but TipTap's Storage type doesn't expose them, so we cast through unknown
@@ -38,6 +44,7 @@ interface ChapterEditorProps {
 
 export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const chapter = useChapter(chapterId);
+  const comments = useCommentsByChapter(chapterId);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
   const setActiveDocument = useEditorStore((s) => s.setActiveDocument);
@@ -47,15 +54,26 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const openModal = useUiStore((s) => s.openModal);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const marginVisible = useCommentStore((s) => s.marginVisible);
   const initializedRef = useRef(false);
+  const reconcileRunRef = useRef(false);
 
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
   const typewriterScrollingRef = useRef(false);
   typewriterScrollingRef.current = focusModeEnabled;
 
+  // Ref for comments - allows dynamic updates without recreating editor
+  const commentsRef = useRef<Comment[]>([]);
+
+  // Filter to active/orphaned comments (not resolved)
+  const activeComments = useMemo(() => {
+    const filtered = (comments ?? []).filter((c) => c.status !== "resolved");
+    return filtered;
+  }, [comments]);
+
   // Memoize extensions to prevent recreation on every render
   const extensions = useMemo(
-    () => createExtensions({ typewriterScrollingRef }),
+    () => createExtensions({ typewriterScrollingRef, commentsRef }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -70,6 +88,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       setWordCount(wc);
     },
   });
+
+  // Update the comments ref and force ProseMirror to re-render decorations
+  useEffect(() => {
+    commentsRef.current = activeComments;
+    if (editor && !editor.isDestroyed) {
+      // Dispatch a transaction with metadata to trigger decoration rebuild
+      const tr = editor.state.tr.setMeta(COMMENTS_UPDATED_META, true);
+      editor.view.dispatch(tr);
+    }
+  }, [activeComments, editor]);
 
   // Set active document on mount
   useEffect(() => {
@@ -93,7 +121,44 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId change
   useEffect(() => {
     initializedRef.current = false;
+    reconcileRunRef.current = false;
   }, [chapterId]);
+
+  // Reconcile comment positions on chapter load
+  useEffect(() => {
+    if (
+      !editor ||
+      editor.isDestroyed ||
+      !comments ||
+      !initializedRef.current ||
+      reconcileRunRef.current
+    )
+      return;
+    reconcileRunRef.current = true;
+
+    const doc = editor.state.doc;
+    const plainText = doc.textBetween(1, doc.content.size, "\n");
+
+    for (const comment of comments) {
+      if (comment.status === "resolved") continue;
+
+      const result = reconcileComment(comment, plainText);
+
+      if (!result.found) {
+        if (comment.status !== "orphaned") {
+          updateComment(comment.id, { status: "orphaned" });
+        }
+      } else if (result.newFrom !== undefined && result.newTo !== undefined) {
+        updateComment(comment.id, {
+          fromOffset: result.newFrom,
+          toOffset: result.newTo,
+          status: "active",
+        });
+      } else if (comment.status === "orphaned") {
+        updateComment(comment.id, { status: "active" });
+      }
+    }
+  }, [editor, comments]);
 
   // Auto-save
   const save = useCallback(async () => {
@@ -213,7 +278,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   return (
     <div className="flex h-full flex-col">
       {!focusModeEnabled && <EditorToolbar editor={editor} />}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
         <div
           className="mx-auto max-w-3xl px-8"
           style={{
@@ -228,6 +293,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
             style={{ fontFamily: editorFont.cssFamily }}
           />
         </div>
+        {!focusModeEnabled && (
+          <CommentMargin
+            editor={editor}
+            comments={activeComments}
+            expanded={marginVisible}
+          />
+        )}
+        {!focusModeEnabled && !marginVisible && (
+          <CommentPopover editor={editor} comments={activeComments} />
+        )}
       </div>
     </div>
   );

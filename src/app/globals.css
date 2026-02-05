@@ -67,3 +67,74 @@ select:disabled {
 .dark .resize-handle:active::before {
   background-color: var(--color-zinc-600);
 }
+
+/* Comment highlights */
+.comment-highlight {
+  border-radius: 2px;
+  cursor: pointer;
+  border-bottom: 2px solid currentColor;
+}
+
+.comment-highlight-yellow {
+  background-color: rgba(250, 204, 21, 0.4);
+  border-bottom-color: rgb(234, 179, 8);
+}
+.comment-highlight-blue {
+  background-color: rgba(96, 165, 250, 0.4);
+  border-bottom-color: rgb(59, 130, 246);
+}
+.comment-highlight-green {
+  background-color: rgba(74, 222, 128, 0.4);
+  border-bottom-color: rgb(34, 197, 94);
+}
+.comment-highlight-red {
+  background-color: rgba(248, 113, 113, 0.4);
+  border-bottom-color: rgb(239, 68, 68);
+}
+.comment-highlight-purple {
+  background-color: rgba(192, 132, 252, 0.4);
+  border-bottom-color: rgb(168, 85, 247);
+}
+
+.dark .comment-highlight-yellow {
+  background-color: rgba(250, 204, 21, 0.25);
+}
+.dark .comment-highlight-blue {
+  background-color: rgba(96, 165, 250, 0.25);
+}
+.dark .comment-highlight-green {
+  background-color: rgba(74, 222, 128, 0.25);
+}
+.dark .comment-highlight-red {
+  background-color: rgba(248, 113, 113, 0.25);
+}
+.dark .comment-highlight-purple {
+  background-color: rgba(192, 132, 252, 0.25);
+}
+
+/* Comment markers (point comments) */
+.comment-marker {
+  display: inline-block;
+  width: 2px;
+  height: 1.3em;
+  margin: 0 1px;
+  border-radius: 1px;
+  cursor: pointer;
+  vertical-align: text-bottom;
+}
+
+.comment-marker-yellow {
+  background-color: rgb(234, 179, 8);
+}
+.comment-marker-blue {
+  background-color: rgb(59, 130, 246);
+}
+.comment-marker-green {
+  background-color: rgb(34, 197, 94);
+}
+.comment-marker-red {
+  background-color: rgb(239, 68, 68);
+}
+.comment-marker-purple {
+  background-color: rgb(168, 85, 247);
+}

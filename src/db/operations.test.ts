@@ -4,6 +4,7 @@ import {
   clearSessionCache,
   createChapter,
   createCharacter,
+  createComment,
   createLocation,
   createOutlineGridColumn,
   createOutlineGridRow,
@@ -13,6 +14,8 @@ import {
   createStyleGuideEntry,
   createTimelineEvent,
   createWorldbuildingDoc,
+  deleteChapter,
+  deleteComment,
   deleteProject,
   deleteSprint,
   deleteWorldbuildingDoc,
@@ -20,6 +23,8 @@ import {
   getActiveSprint,
   getChaptersByProject,
   getCharactersByProject,
+  getComment,
+  getCommentsByChapter,
   getLocationsByProject,
   getOutlineGridColumnsByProject,
   getOutlineGridRowsByProject,
@@ -32,8 +37,10 @@ import {
   getWorldbuildingDocsByProject,
   pauseSprint,
   recordWritingSession,
+  resolveComment,
   resumeSprint,
   updateChapterContent,
+  updateComment,
   updateWorldbuildingDoc,
 } from "./operations";
 
@@ -52,6 +59,7 @@ beforeEach(async () => {
   await db.outlineGridCells.clear();
   await db.writingSprints.clear();
   await db.writingSessions.clear();
+  await db.comments.clear();
   await db.appSettings.clear();
 });
 
@@ -785,5 +793,228 @@ describe("recordWritingSession (session management)", () => {
     // Original start should be preserved
     expect(sessions[0].wordCountStart).toBe(500);
     expect(sessions[0].wordCountEnd).toBe(700);
+  });
+});
+
+describe("comments", () => {
+  it("creates a comment with defaults", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    const comment = await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 10,
+      toOffset: 20,
+      anchorText: "some text",
+    });
+
+    expect(comment.projectId).toBe(project.id);
+    expect(comment.chapterId).toBe(chapter.id);
+    expect(comment.fromOffset).toBe(10);
+    expect(comment.toOffset).toBe(20);
+    expect(comment.anchorText).toBe("some text");
+    expect(comment.content).toBe("");
+    expect(comment.color).toBe("yellow");
+    expect(comment.status).toBe("active");
+    expect(comment.resolvedAt).toBeNull();
+  });
+
+  it("creates a positioned comment (from === to)", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    const comment = await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 50,
+      toOffset: 50,
+    });
+
+    expect(comment.fromOffset).toBe(50);
+    expect(comment.toOffset).toBe(50);
+    expect(comment.anchorText).toBe("");
+    expect(comment.content).toBe("");
+  });
+
+  it("retrieves comments by chapter sorted by fromOffset", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 100,
+      toOffset: 110,
+    });
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 20,
+      toOffset: 30,
+    });
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 50,
+      toOffset: 60,
+    });
+
+    const comments = await getCommentsByChapter(chapter.id);
+    expect(comments).toHaveLength(3);
+    expect(comments[0].fromOffset).toBe(20);
+    expect(comments[1].fromOffset).toBe(50);
+    expect(comments[2].fromOffset).toBe(100);
+  });
+
+  it("updates comment content and color", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    const comment = await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+
+    await updateComment(comment.id, {
+      content: "This is a note",
+      color: "blue",
+    });
+
+    const updated = await getComment(comment.id);
+    expect(updated?.content).toBe("This is a note");
+    expect(updated?.color).toBe("blue");
+  });
+
+  it("resolves a comment", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    const comment = await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+
+    await resolveComment(comment.id);
+
+    const resolved = await getComment(comment.id);
+    expect(resolved?.status).toBe("resolved");
+    expect(resolved?.resolvedAt).not.toBeNull();
+  });
+
+  it("deletes a comment", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    const comment = await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+
+    await deleteComment(comment.id);
+
+    const deleted = await getComment(comment.id);
+    expect(deleted).toBeUndefined();
+  });
+
+  it("deleteChapter cascades to comments", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 20,
+      toOffset: 30,
+    });
+
+    await deleteChapter(chapter.id);
+
+    const comments = await getCommentsByChapter(chapter.id);
+    expect(comments).toHaveLength(0);
+  });
+
+  it("deleteProject cascades to comments", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+
+    await deleteProject(project.id);
+
+    const comments = await getCommentsByChapter(chapter.id);
+    expect(comments).toHaveLength(0);
+  });
+
+  it("comments on different chapters are isolated", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter1 = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+    const chapter2 = await createChapter({
+      projectId: project.id,
+      title: "Ch2",
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter1.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter2.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+
+    const comments1 = await getCommentsByChapter(chapter1.id);
+    const comments2 = await getCommentsByChapter(chapter2.id);
+
+    expect(comments1).toHaveLength(1);
+    expect(comments2).toHaveLength(1);
   });
 });

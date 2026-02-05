@@ -315,3 +315,33 @@ export const PlaylistTrackSchema = z.object({
   updatedAt: timestamp,
 });
 export type PlaylistTrack = z.infer<typeof PlaylistTrackSchema>;
+
+// ─── Comment ─────────────────────────────────────────────────────────
+
+export const CommentColorEnum = z.enum([
+  "yellow",
+  "blue",
+  "green",
+  "red",
+  "purple",
+]);
+export type CommentColor = z.infer<typeof CommentColorEnum>;
+
+export const CommentStatusEnum = z.enum(["active", "orphaned", "resolved"]);
+export type CommentStatus = z.infer<typeof CommentStatusEnum>;
+
+export const CommentSchema = z.object({
+  id,
+  projectId: projectFk,
+  chapterId: z.uuid(),
+  content: z.string().default(""),
+  color: CommentColorEnum.default("yellow"),
+  fromOffset: z.number().int().nonnegative(),
+  toOffset: z.number().int().nonnegative(), // from === to for positioned (point) comments
+  anchorText: z.string().default(""), // Empty for positioned (point) comments
+  status: CommentStatusEnum.default("active"),
+  resolvedAt: timestamp.nullable().default(null),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type Comment = z.infer<typeof CommentSchema>;

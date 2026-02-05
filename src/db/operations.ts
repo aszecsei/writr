@@ -10,6 +10,8 @@ import {
   type CharacterRelationship,
   CharacterRelationshipSchema,
   CharacterSchema,
+  type Comment,
+  CommentSchema,
   type Location,
   LocationSchema,
   type OutlineGridCell,
@@ -99,6 +101,7 @@ export async function deleteProject(id: string): Promise<void> {
       db.writingSprints,
       db.writingSessions,
       db.playlistTracks,
+      db.comments,
     ],
     async () => {
       await db.chapters.where({ projectId: id }).delete();
@@ -114,6 +117,7 @@ export async function deleteProject(id: string): Promise<void> {
       await db.writingSprints.where({ projectId: id }).delete();
       await db.writingSessions.where({ projectId: id }).delete();
       await db.playlistTracks.where({ projectId: id }).delete();
+      await db.comments.where({ projectId: id }).delete();
       await db.projects.delete(id);
     },
   );
@@ -194,7 +198,10 @@ export async function reorderChapters(orderedIds: string[]): Promise<void> {
 }
 
 export async function deleteChapter(id: string): Promise<void> {
-  await db.chapters.delete(id);
+  await db.transaction("rw", [db.chapters, db.comments], async () => {
+    await db.comments.where({ chapterId: id }).delete();
+    await db.chapters.delete(id);
+  });
 }
 
 // ─── Characters ──────────────────────────────────────────────────────
@@ -1141,4 +1148,68 @@ export async function reorderPlaylistTracks(
       await db.playlistTracks.update(orderedIds[i], { order: i });
     }
   });
+}
+
+// ─── Comments ────────────────────────────────────────────────────────
+
+export async function getCommentsByChapter(
+  chapterId: string,
+): Promise<Comment[]> {
+  return db.comments.where({ chapterId }).sortBy("fromOffset");
+}
+
+export async function getComment(id: string): Promise<Comment | undefined> {
+  return db.comments.get(id);
+}
+
+export async function createComment(
+  data: Pick<Comment, "projectId" | "chapterId" | "fromOffset" | "toOffset"> &
+    Partial<Pick<Comment, "content" | "color" | "anchorText" | "status">>,
+): Promise<Comment> {
+  const comment = CommentSchema.parse({
+    id: generateId(),
+    projectId: data.projectId,
+    chapterId: data.chapterId,
+    content: data.content ?? "",
+    color: data.color ?? "yellow",
+    fromOffset: data.fromOffset,
+    toOffset: data.toOffset,
+    anchorText: data.anchorText ?? "",
+    status: data.status ?? "active",
+    resolvedAt: null,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+  await db.comments.add(comment);
+  return comment;
+}
+
+export async function updateComment(
+  id: string,
+  data: Partial<
+    Pick<
+      Comment,
+      | "content"
+      | "color"
+      | "fromOffset"
+      | "toOffset"
+      | "anchorText"
+      | "status"
+      | "resolvedAt"
+    >
+  >,
+): Promise<void> {
+  await db.comments.update(id, { ...data, updatedAt: now() });
+}
+
+export async function resolveComment(id: string): Promise<void> {
+  await db.comments.update(id, {
+    status: "resolved",
+    resolvedAt: now(),
+    updatedAt: now(),
+  });
+}
+
+export async function deleteComment(id: string): Promise<void> {
+  await db.comments.delete(id);
 }

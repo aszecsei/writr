@@ -19,6 +19,7 @@ import {
   List,
   ListOrdered,
   Maximize2,
+  PanelRight,
   Quote,
   Redo2,
   Strikethrough,
@@ -34,9 +35,11 @@ import {
   copyChapterMarkdownToClipboard,
 } from "@/lib/export";
 import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
+import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { CreateCommentButton } from "./comments";
 
 type CopiedType = "markdown" | "ao3" | null;
 
@@ -165,6 +168,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const marginVisible = useCommentStore((s) => s.marginVisible);
+  const toggleMargin = useCommentStore((s) => s.toggleMargin);
 
   const chapter = useChapter(activeDocumentId);
 
@@ -378,6 +383,24 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             }`}
           >
             <ImagePlus size={16} />
+          </button>
+          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <CreateCommentButton
+            editor={editor}
+            projectId={activeProjectId}
+            chapterId={activeDocumentId}
+          />
+          <button
+            type="button"
+            title="Toggle comment margin"
+            onClick={toggleMargin}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              marginVisible
+                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
+                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <PanelRight size={16} />
           </button>
         </>
       )}
