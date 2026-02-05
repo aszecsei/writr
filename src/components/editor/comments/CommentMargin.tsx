@@ -239,7 +239,7 @@ function ExpandedCard({
           ? "border border-l-2 border-zinc-300 shadow-md dark:border-zinc-600"
           : "border border-l-2 border-zinc-200 hover:shadow dark:border-zinc-700"
       }`}
-      style={{ top: top - 10 }}
+      style={{ top: top - 10, zIndex: isSelected ? 10 : 1 }}
       onClick={() => {
         if (!isSelected) onSelect();
       }}
