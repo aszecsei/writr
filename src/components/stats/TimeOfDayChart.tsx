@@ -14,15 +14,11 @@ function formatHour(hour: number): string {
 }
 
 export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
-  const maxWords = Math.max(1, ...timeOfDay.map((t) => t.wordsWritten));
+  // Reorder hours to start at 4 AM: Morning, Afternoon, Evening, Night
+  const ordered = [...timeOfDay.slice(4), ...timeOfDay.slice(0, 4)];
+  const maxWords = Math.max(1, ...ordered.map((t) => t.wordsWritten));
 
-  // Group into time periods for labels
-  const periods = [
-    { label: "Morning", hours: [6, 7, 8, 9, 10, 11] },
-    { label: "Afternoon", hours: [12, 13, 14, 15, 16, 17] },
-    { label: "Evening", hours: [18, 19, 20, 21, 22, 23] },
-    { label: "Night", hours: [0, 1, 2, 3, 4, 5] },
-  ];
+  const periods = ["Morning", "Afternoon", "Evening", "Night"];
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -30,7 +26,7 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
         Writing by Time of Day
       </h3>
       <div className="flex h-32 gap-1">
-        {timeOfDay.map((stat) => {
+        {ordered.map((stat) => {
           const height =
             stat.wordsWritten > 0
               ? Math.max(4, (stat.wordsWritten / maxWords) * 100)
@@ -71,8 +67,8 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
         })}
       </div>
       <div className="mt-2 flex justify-between text-xs text-zinc-400 dark:text-zinc-500">
-        {periods.map((period) => (
-          <span key={period.label}>{period.label}</span>
+        {periods.map((label) => (
+          <span key={label}>{label}</span>
         ))}
       </div>
     </div>
