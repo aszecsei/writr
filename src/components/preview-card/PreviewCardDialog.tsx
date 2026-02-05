@@ -36,6 +36,8 @@ export function PreviewCardDialog() {
 
   const [template, setTemplate] = useState<CardTemplate>("minimal");
   const [aspectRatio, setAspectRatio] = useState<CardAspectRatio>("square");
+  const [showWorkTitle, setShowWorkTitle] = useState(true);
+  const [showChapterTitle, setShowChapterTitle] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +111,8 @@ export function PreviewCardDialog() {
             template={template}
             aspectRatio={aspectRatio}
             fontFamily={editorFont.cssFamily}
+            showWorkTitle={showWorkTitle}
+            showChapterTitle={showChapterTitle}
           />
         </div>
 
@@ -145,6 +149,32 @@ export function PreviewCardDialog() {
                 {opt.label}
               </button>
             ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Attribution
+          </legend>
+          <div className="mt-2 flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={showWorkTitle}
+                onChange={(e) => setShowWorkTitle(e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+              />
+              Work title
+            </label>
+            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <input
+                type="checkbox"
+                checked={showChapterTitle}
+                onChange={(e) => setShowChapterTitle(e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+              />
+              Chapter title
+            </label>
           </div>
         </fieldset>
 

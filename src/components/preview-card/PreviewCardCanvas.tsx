@@ -18,6 +18,8 @@ interface PreviewCardCanvasProps {
   template: CardTemplate;
   aspectRatio: CardAspectRatio;
   fontFamily: string;
+  showWorkTitle: boolean;
+  showChapterTitle: boolean;
 }
 
 export const PreviewCardCanvas = forwardRef<
@@ -31,6 +33,8 @@ export const PreviewCardCanvas = forwardRef<
     template,
     aspectRatio,
     fontFamily,
+    showWorkTitle,
+    showChapterTitle,
   },
   ref,
 ) {
@@ -45,9 +49,13 @@ export const PreviewCardCanvas = forwardRef<
   const displayWidth = ratio.width * scaleFactor;
   const displayHeight = ratio.height * scaleFactor;
 
+  const hasAttribution = showWorkTitle || showChapterTitle;
   const availableWidth = ratio.width - PADDING * 2 - BRUSHSTROKE_WIDTH;
   const availableHeight =
-    ratio.height - PADDING * 2 - ATTRIBUTION_MARGIN - BRUSHSTROKE_EXTEND * 2;
+    ratio.height -
+    PADDING * 2 -
+    (hasAttribution ? ATTRIBUTION_MARGIN : 0) -
+    BRUSHSTROKE_EXTEND * 2;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectedHtml and fontFamily affect text measurement
   useLayoutEffect(() => {
@@ -110,7 +118,7 @@ export const PreviewCardCanvas = forwardRef<
             top: PADDING,
             left: PADDING,
             right: PADDING,
-            bottom: PADDING + ATTRIBUTION_MARGIN,
+            bottom: PADDING + (hasAttribution ? ATTRIBUTION_MARGIN : 0),
             display: "flex",
             alignItems: "center",
           }}
@@ -178,26 +186,30 @@ export const PreviewCardCanvas = forwardRef<
         </div>
 
         {/* Attribution overlay */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: PADDING,
-            left: PADDING,
-            right: PADDING,
-            color: style.accentColor,
-            fontSize: "24px",
-            letterSpacing: "0.05em",
-            textAlign: "center",
-            fontFamily,
-          }}
-        >
-          <div style={{ fontWeight: 600 }}>{projectTitle}</div>
-          {chapterTitle && (
-            <div style={{ marginTop: "8px", fontSize: "20px" }}>
-              {chapterTitle}
-            </div>
-          )}
-        </div>
+        {hasAttribution && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: PADDING,
+              left: PADDING,
+              right: PADDING,
+              color: style.accentColor,
+              fontSize: "24px",
+              letterSpacing: "0.05em",
+              textAlign: "center",
+              fontFamily,
+            }}
+          >
+            {showWorkTitle && (
+              <div style={{ fontWeight: 600 }}>{projectTitle}</div>
+            )}
+            {showChapterTitle && chapterTitle && (
+              <div style={{ marginTop: "8px", fontSize: "20px" }}>
+                {chapterTitle}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
