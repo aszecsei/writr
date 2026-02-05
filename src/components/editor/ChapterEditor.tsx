@@ -58,6 +58,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const clearActiveDocument = useEditorStore((s) => s.clearActiveDocument);
   const markDirty = useEditorStore((s) => s.markDirty);
   const setWordCount = useEditorStore((s) => s.setWordCount);
+  const setSelection = useEditorStore((s) => s.setSelection);
+  const clearSelection = useEditorStore((s) => s.clearSelection);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const openModal = useUiStore((s) => s.openModal);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
@@ -72,6 +74,22 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
 
+  // Stable callback refs for selection preserver
+  const setSelectionRef = useRef(setSelection);
+  setSelectionRef.current = setSelection;
+  const clearSelectionRef = useRef(clearSelection);
+  clearSelectionRef.current = clearSelection;
+
+  const onSelectionChange = useCallback(
+    (text: string, from: number, to: number) => {
+      setSelectionRef.current(text, from, to);
+    },
+    [],
+  );
+  const onSelectionClear = useCallback(() => {
+    clearSelectionRef.current();
+  }, []);
+
   // Filter to active/orphaned comments (not resolved)
   const activeComments = useMemo(() => {
     const filtered = (comments ?? []).filter((c) => c.status !== "resolved");
@@ -79,9 +97,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   }, [comments]);
 
   // Memoize extensions to prevent recreation on every render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refs and stable callbacks intentionally omitted to prevent editor recreation
   const extensions = useMemo(
-    () => createExtensions({ typewriterScrollingRef, commentsRef }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () =>
+      createExtensions({
+        typewriterScrollingRef,
+        commentsRef,
+        onSelectionChange,
+        onSelectionClear,
+      }),
     [],
   );
 

@@ -62,6 +62,8 @@ export function AiPanel() {
   const chapters = useChaptersByProject(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
+  const selectedText = useEditorStore((s) => s.selectedText);
+  const clearSelection = useEditorStore((s) => s.clearSelection);
   const activeChapter = useChapter(
     activeDocumentType === "chapter" ? activeDocumentId : null,
   );
@@ -213,7 +215,10 @@ export function AiPanel() {
         outlineGridCells: outlineGridCells ?? [],
         chapters: chapters ?? [],
         currentChapterTitle: activeChapter?.title,
-        currentChapterContent: activeChapter?.content || undefined,
+        currentChapterContent: selectedText
+          ? undefined
+          : activeChapter?.content || undefined,
+        selectedText: selectedText || undefined,
       };
 
       const history: AiMessage[] = messages.map((m) => ({
@@ -282,6 +287,10 @@ export function AiPanel() {
           );
         }
       }
+      // Selection is consumed once per submit
+      if (selectedText) {
+        clearSelection();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {
@@ -327,6 +336,8 @@ export function AiPanel() {
         onChange={setPrompt}
         onSubmit={handleSubmit}
         loading={loading}
+        selectedText={selectedText}
+        onClearSelection={clearSelection}
       />
       {inspectingPrompt && (
         <PromptInspectorDialog

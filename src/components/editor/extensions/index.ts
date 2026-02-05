@@ -7,11 +7,14 @@ import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { Comment } from "@/db/schemas";
 import { Comments } from "./Comments";
+import { SelectionPreserver } from "./SelectionPreserver";
 import { TypewriterScrolling } from "./TypewriterScrolling";
 
 export interface ExtensionOptions {
   typewriterScrollingRef?: { current: boolean };
   commentsRef?: { current: Comment[] };
+  onSelectionChange?: (text: string, from: number, to: number) => void;
+  onSelectionClear?: () => void;
 }
 
 export function createExtensions(options?: ExtensionOptions) {
@@ -39,6 +42,10 @@ export function createExtensions(options?: ExtensionOptions) {
     }),
     Comments.configure({
       commentsRef: options?.commentsRef ?? { current: [] },
+    }),
+    SelectionPreserver.configure({
+      onSelectionChange: options?.onSelectionChange,
+      onSelectionClear: options?.onSelectionClear,
     }),
   ];
 }

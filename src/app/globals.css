@@ -41,6 +41,14 @@ select:disabled {
   outline: none;
 }
 
+.selection-preserved {
+  background-color: rgba(59, 130, 246, 0.3);
+  border-radius: 2px;
+}
+.dark .selection-preserved {
+  background-color: rgba(96, 165, 250, 0.25);
+}
+
 /* Panel resize handles */
 .resize-handle {
   width: 0;

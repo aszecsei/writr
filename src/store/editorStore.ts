@@ -11,6 +11,8 @@ interface EditorState {
   saveStatus: SaveStatus;
   lastSavedAt: string | null;
   wordCount: number;
+  selectedText: string | null;
+  selectedRange: { from: number; to: number } | null;
 
   setActiveDocument: (id: string, type: DocumentType) => void;
   clearActiveDocument: () => void;
@@ -19,6 +21,8 @@ interface EditorState {
   markSaved: () => void;
   markSaveError: () => void;
   setWordCount: (count: number) => void;
+  setSelection: (text: string, from: number, to: number) => void;
+  clearSelection: () => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -29,6 +33,8 @@ export const useEditorStore = create<EditorState>()(
     saveStatus: "idle",
     lastSavedAt: null,
     wordCount: 0,
+    selectedText: null,
+    selectedRange: null,
 
     setActiveDocument: (id, type) =>
       set((s) => {
@@ -45,6 +51,8 @@ export const useEditorStore = create<EditorState>()(
         s.isDirty = false;
         s.saveStatus = "idle";
         s.wordCount = 0;
+        s.selectedText = null;
+        s.selectedRange = null;
       }),
 
     markDirty: () =>
@@ -73,6 +81,18 @@ export const useEditorStore = create<EditorState>()(
     setWordCount: (count) =>
       set((s) => {
         s.wordCount = count;
+      }),
+
+    setSelection: (text, from, to) =>
+      set((s) => {
+        s.selectedText = text;
+        s.selectedRange = { from, to };
+      }),
+
+    clearSelection: () =>
+      set((s) => {
+        s.selectedText = null;
+        s.selectedRange = null;
       }),
   })),
 );
