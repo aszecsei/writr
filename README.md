@@ -4,7 +4,11 @@ A privacy-first, local-first writing application for novelists and long-form fic
 
 ## Overview
 
-Writr is a full-featured writing environment designed for authors working on novels, serials, and other long-form fiction. All data lives in your browser's local storage -- there are no accounts, no cloud sync, and no tracking. Writr gives you a distraction-free editor, a comprehensive story bible, AI-powered writing tools, analytics, and manuscript export, all without your words ever leaving your machine.
+Writr is a full-featured writing environment designed for authors working on novels, serials, and other long-form fiction. All data lives in your browser's local storage -- there are no accounts, no cloud sync, and no tracking. Writr gives you a distraction-free editor, a comprehensive story bible, powerful writing tools, analytics, and manuscript export, all without your words ever leaving your machine.
+
+## AI Stance
+
+Many people dislike genAI. Many more people are annoyed by sites or apps shoving it in their faces. This is why all AI functionality is **disabled by default**. You'll never be prompted, encouraged, or reminded to use a feature you don't want to use.
 
 ## Features
 
@@ -35,18 +39,6 @@ A multi-dimensional planning tool for structuring your story:
 - Chapter linking to connect outline cells to actual chapters
 - Templates for common outline structures
 
-### AI Assistance
-
-Seven writing tools powered by OpenRouter, with story bible context automatically included:
-
-- **Generate prose** -- draft new passages from a prompt
-- **Review text** -- get feedback on selected text
-- **Suggest edits** -- receive inline revision suggestions
-- **Character dialogue** -- generate in-character dialogue
-- **Brainstorm** -- explore ideas and plot directions
-- **Summarize** -- condense chapters or sections
-- **Consistency check** -- flag contradictions against your story bible
-
 ### Analytics
 
 - Writing session tracking with automatic start/stop detection
@@ -64,6 +56,18 @@ Export a single chapter or your full manuscript in multiple formats:
 - HTML (AO3-compatible)
 - Clipboard copy
 
+### AI Assistance
+
+Seven writing tools powered by OpenRouter, with story bible context automatically included:
+
+- **Generate prose** -- draft new passages from a prompt
+- **Review text** -- get feedback on selected text
+- **Suggest edits** -- receive inline revision suggestions
+- **Character dialogue** -- generate in-character dialogue
+- **Brainstorm** -- explore ideas and plot directions
+- **Summarize** -- condense chapters or sections
+- **Consistency check** -- flag contradictions against your story bible
+
 ### Additional Features
 
 - **Full-text search** across chapters, characters, locations, and all other entity types
@@ -76,7 +80,7 @@ Export a single chapter or your full manuscript in multiple formats:
 Writr is built around a simple principle: your writing belongs to you.
 
 - All data is stored locally in your browser's IndexedDB. Nothing is sent to a server.
-- There are no user accounts, no cloud storage, and no analytics or tracking.
+- There are no user accounts, no cloud storage, and no third-party analytics or tracking.
 - AI requests are proxied through a local Next.js API route. Your OpenRouter API key is stored in local settings and is only ever sent to OpenRouter's API.
 - You can export your data at any time for backups or migration.
 
@@ -127,11 +131,11 @@ AI tools require an [OpenRouter](https://openrouter.ai/) API key. Once the app i
 
 ### Testing
 
-Tests use [Vitest](https://vitest.dev/) with `fake-indexeddb` for IndexedDB mocking. Test files are colocated with their source files (e.g., `operations.test.ts` next to `operations.ts`).
+Tests use [Vitest](https://vitest.dev/) with `fake-indexeddb` for IndexedDB mocking.
 
 ### Linting and Formatting
 
-The project uses [Biome](https://biomejs.dev/) for both linting and formatting with 2-space indentation.
+The project uses [Biome](https://biomejs.dev/) for both linting and formatting.
 
 ## Tech Stack
 
