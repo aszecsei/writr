@@ -4,7 +4,11 @@
 import { generateHTML } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { updateChapterContent, updateComment } from "@/db/operations";
+import {
+  updateChapterContent,
+  updateComment,
+  updateCommentPositions,
+} from "@/db/operations";
 import type { Comment } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -19,7 +23,10 @@ import { useUiStore } from "@/store/uiStore";
 import { CommentMargin, CommentPopover } from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions } from "./extensions";
-import { COMMENTS_UPDATED_META } from "./extensions/Comments";
+import {
+  COMMENTS_UPDATED_META,
+  getCommentPositions,
+} from "./extensions/Comments";
 
 // tiptap-markdown and character-count store methods on editor.storage
 // but TipTap's Storage type doesn't expose them, so we cast through unknown
@@ -89,10 +96,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     },
   });
 
-  // Update the comments ref and force ProseMirror to re-render decorations
+  // Update the comments ref and force ProseMirror to re-render decorations.
+  // Only dispatch after content is initialized to prevent positions being
+  // mapped through the setContent replacement (which would corrupt them).
   useEffect(() => {
     commentsRef.current = activeComments;
-    if (editor && !editor.isDestroyed) {
+    if (editor && !editor.isDestroyed && initializedRef.current) {
       // Dispatch a transaction with metadata to trigger decoration rebuild
       const tr = editor.state.tr.setMeta(COMMENTS_UPDATED_META, true);
       editor.view.dispatch(tr);
@@ -166,6 +175,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     const markdown = getMarkdown(editor.storage);
     const wordCount = getWordCount(editor.storage);
     await updateChapterContent(chapterId, markdown, wordCount);
+    // Persist tracked comment positions to IndexedDB
+    const positions = getCommentPositions(editor.state);
+    if (positions.size > 0) {
+      await updateCommentPositions(positions);
+    }
   }, [editor, chapterId]);
 
   useAutoSave(save);
@@ -184,6 +198,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         const wc = getWordCount(ed.storage);
         // Fire-and-forget save on unmount
         updateChapterContent(chapterIdRef.current, markdown, wc);
+        // Persist tracked comment positions
+        const positions = getCommentPositions(ed.state);
+        if (positions.size > 0) {
+          updateCommentPositions(positions);
+        }
       }
     };
   }, []);

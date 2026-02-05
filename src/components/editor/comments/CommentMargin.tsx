@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteComment, resolveComment, updateComment } from "@/db/operations";
 import type { Comment, CommentColor } from "@/db/schemas";
 import { useCommentStore } from "@/store/commentStore";
+import { getCommentPositions } from "../extensions/Comments";
 
 interface CommentMarginProps {
   editor: Editor | null;
@@ -61,11 +62,16 @@ export function CommentMargin({
 
     const newPositions: CommentPosition[] = [];
     const docSize = view.state.doc.content.size;
+    const positionMap = getCommentPositions(view.state);
 
     for (const comment of comments) {
       if (comment.status === "resolved") continue;
 
-      const pos = Math.max(1, Math.min(comment.fromOffset, docSize));
+      const mapped = positionMap.get(comment.id);
+      const pos = Math.max(
+        1,
+        Math.min(mapped?.from ?? comment.fromOffset, docSize),
+      );
 
       try {
         const coords = view.coordsAtPos(pos);
@@ -229,23 +235,16 @@ function ExpandedCard({
     onDeselect();
   }, [comment.id, onDeselect]);
 
-  return (
-    <button
-      type="button"
-      className={`pointer-events-auto absolute w-full cursor-pointer rounded border-l-2 bg-white text-left shadow-sm transition-shadow dark:bg-zinc-800 ${
-        CARD_BORDER_COLOR[comment.color]
-      } ${
-        isSelected
-          ? "border border-l-2 border-zinc-300 shadow-md dark:border-zinc-600"
-          : "border border-l-2 border-zinc-200 hover:shadow dark:border-zinc-700"
-      }`}
-      style={{ top: top - 10, zIndex: isSelected ? 10 : 1 }}
-      onClick={() => {
-        if (!isSelected) onSelect();
-      }}
-    >
-      {isSelected ? (
-        /* ── Selected: Full editing view ── */
+  const sharedClassName = `pointer-events-auto absolute w-full rounded border-l-2 bg-white text-left shadow-sm transition-shadow dark:bg-zinc-800 ${
+    CARD_BORDER_COLOR[comment.color]
+  }`;
+
+  if (isSelected) {
+    return (
+      <div
+        className={`${sharedClassName} border border-l-2 border-zinc-300 shadow-md dark:border-zinc-600`}
+        style={{ top: top - 10, zIndex: 10 }}
+      >
         <div className="p-2">
           <div className="mb-1.5 flex items-center justify-between">
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
@@ -253,8 +252,7 @@ function ExpandedCard({
             </span>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 handleSaveContent();
                 onDeselect();
               }}
@@ -279,10 +277,7 @@ function ExpandedCard({
               <button
                 key={color}
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleColorChange(color);
-                }}
+                onClick={() => handleColorChange(color)}
                 className={`h-4 w-4 rounded-full transition-transform hover:scale-110 ${
                   COLOR_BUTTON_CLASSES[color]
                 } ${
@@ -299,10 +294,7 @@ function ExpandedCard({
           <div className="flex items-center justify-between border-t border-zinc-200 pt-1.5 dark:border-zinc-700">
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleResolve();
-              }}
+              onClick={handleResolve}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
             >
               <Check size={12} />
@@ -310,10 +302,7 @@ function ExpandedCard({
             </button>
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
+              onClick={handleDelete}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
             >
               <Trash2 size={12} />
@@ -321,20 +310,28 @@ function ExpandedCard({
             </button>
           </div>
         </div>
-      ) : (
-        /* ── Not selected: Compact content view ── */
-        <div className="px-2 py-1.5">
-          {comment.content ? (
-            <p className="line-clamp-2 text-xs text-zinc-700 dark:text-zinc-300">
-              {comment.content}
-            </p>
-          ) : (
-            <p className="text-xs italic text-zinc-400 dark:text-zinc-500">
-              Empty comment
-            </p>
-          )}
-        </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={`${sharedClassName} cursor-pointer border border-l-2 border-zinc-200 hover:shadow dark:border-zinc-700`}
+      style={{ top: top - 10, zIndex: 1 }}
+      onClick={onSelect}
+    >
+      <div className="px-2 py-1.5">
+        {comment.content ? (
+          <p className="line-clamp-2 text-xs text-zinc-700 dark:text-zinc-300">
+            {comment.content}
+          </p>
+        ) : (
+          <p className="text-xs italic text-zinc-400 dark:text-zinc-500">
+            Empty comment
+          </p>
+        )}
+      </div>
     </button>
   );
 }

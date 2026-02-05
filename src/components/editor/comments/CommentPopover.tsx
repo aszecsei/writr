@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteComment, resolveComment, updateComment } from "@/db/operations";
 import type { Comment, CommentColor } from "@/db/schemas";
 import { useCommentStore } from "@/store/commentStore";
+import { getCommentPositions } from "../extensions/Comments";
 
 interface CommentPopoverProps {
   editor: Editor | null;
@@ -58,7 +59,12 @@ export function CommentPopover({ editor, comments }: CommentPopoverProps) {
 
     const view = editor.view;
     const docSize = view.state.doc.content.size;
-    const pos = Math.max(1, Math.min(selectedComment.fromOffset, docSize));
+    const positionMap = getCommentPositions(view.state);
+    const mapped = positionMap.get(selectedComment.id);
+    const pos = Math.max(
+      1,
+      Math.min(mapped?.from ?? selectedComment.fromOffset, docSize),
+    );
     const scrollContainer = view.dom.closest(
       ".overflow-y-auto",
     ) as HTMLElement | null;

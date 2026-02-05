@@ -1213,3 +1213,62 @@ export async function resolveComment(id: string): Promise<void> {
 export async function deleteComment(id: string): Promise<void> {
   await db.comments.delete(id);
 }
+
+/**
+ * Batch-update comment positions from the editor's position map.
+ * Runs in a single Dexie transaction (one live-query notification).
+ * Only writes when fromOffset/toOffset actually changed.
+ * Marks previously-ranged comments as "orphaned" if their range collapsed.
+ */
+export async function updateCommentPositions(
+  positionMap: Map<string, { from: number; to: number }>,
+): Promise<void> {
+  if (positionMap.size === 0) return;
+
+  const ids = [...positionMap.keys()];
+  const comments = await db.comments.bulkGet(ids);
+
+  const updates: {
+    key: string;
+    changes: Record<string, unknown>;
+  }[] = [];
+
+  for (const comment of comments) {
+    if (!comment) continue;
+    const mapped = positionMap.get(comment.id);
+    if (!mapped) continue;
+
+    const changes: Record<string, unknown> = {};
+    let changed = false;
+
+    if (comment.fromOffset !== mapped.from) {
+      changes.fromOffset = mapped.from;
+      changed = true;
+    }
+    if (comment.toOffset !== mapped.to) {
+      changes.toOffset = mapped.to;
+      changed = true;
+    }
+
+    // Detect collapsed range: was a range comment, now from === to
+    const wasRange = comment.fromOffset < comment.toOffset;
+    const isNowPoint = mapped.from === mapped.to;
+    if (wasRange && isNowPoint && comment.status === "active") {
+      changes.status = "orphaned";
+      changed = true;
+    }
+
+    if (changed) {
+      changes.updatedAt = new Date().toISOString();
+      updates.push({ key: comment.id, changes });
+    }
+  }
+
+  if (updates.length === 0) return;
+
+  await db.transaction("rw", db.comments, async () => {
+    for (const { key, changes } of updates) {
+      await db.comments.update(key, changes);
+    }
+  });
+}
