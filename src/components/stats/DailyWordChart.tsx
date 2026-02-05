@@ -29,7 +29,7 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
       <h3 className="mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-100">
         Daily Words (Last {days} Days)
       </h3>
-      <div className="flex h-32 items-end gap-[2px]">
+      <div className="flex h-32 gap-[2px]">
         {filledData.map((day) => {
           const height =
             day.wordsWritten > 0

@@ -29,7 +29,7 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
       <h3 className="mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-100">
         Writing by Time of Day
       </h3>
-      <div className="flex h-24 items-end gap-1">
+      <div className="flex h-32 gap-1">
         {timeOfDay.map((stat) => {
           const height =
             stat.wordsWritten > 0
