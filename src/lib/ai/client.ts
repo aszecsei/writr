@@ -38,11 +38,12 @@ function buildRequestBody(
   return body;
 }
 
-async function fetchAi(body: Record<string, unknown>) {
+async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
   const response = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!response.ok) {
@@ -59,9 +60,11 @@ export async function callAi(
   context: AiContext,
   settings: AiSettings,
   history: AiMessage[] = [],
+  signal?: AbortSignal,
 ): Promise<AiResponse> {
   const response = await fetchAi(
     buildRequestBody(tool, userPrompt, context, settings, false, history),
+    signal,
   );
   const data = await response.json();
 
@@ -79,9 +82,11 @@ export async function* streamAi(
   context: AiContext,
   settings: AiSettings,
   history: AiMessage[] = [],
+  signal?: AbortSignal,
 ): AsyncGenerator<AiStreamChunk> {
   const response = await fetchAi(
     buildRequestBody(tool, userPrompt, context, settings, true, history),
+    signal,
   );
 
   if (!response.body) {
@@ -93,6 +98,7 @@ export async function* streamAi(
   let buffer = "";
 
   while (true) {
+    if (signal?.aborted) break;
     const { done, value } = await reader.read();
     if (done) break;
 

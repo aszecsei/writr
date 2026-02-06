@@ -22,7 +22,10 @@ export type ModalState =
       selectedHtml: string;
       projectTitle: string;
       chapterTitle: string;
-    };
+    }
+  | { id: "link-editor"; currentHref?: string }
+  | { id: "insert-image" }
+  | { id: "ruby-editor"; currentAnnotation?: string };
 
 export type ModalId = ModalState["id"];
 
@@ -122,4 +125,16 @@ export function isPreviewCardModal(modal: ModalState): modal is {
   chapterTitle: string;
 } {
   return modal.id === "preview-card";
+}
+
+export function isLinkEditorModal(
+  modal: ModalState,
+): modal is { id: "link-editor"; currentHref?: string } {
+  return modal.id === "link-editor";
+}
+
+export function isRubyEditorModal(
+  modal: ModalState,
+): modal is { id: "ruby-editor"; currentAnnotation?: string } {
+  return modal.id === "ruby-editor";
 }

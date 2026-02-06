@@ -31,19 +31,37 @@ function spansToHtml(spans: TextSpan[]): string {
         html = `<strong>${html}</strong>`;
       }
 
+      // Handle ruby text
+      if (span.ruby) {
+        html = `<ruby>${html}<rt>${escapeHtml(span.ruby)}</rt></ruby>`;
+      }
+
       return html;
     })
     .join("");
+}
+
+function buildStyleAttr(alignment?: string, indent?: number): string {
+  const styles: string[] = [];
+  if (alignment && alignment !== "left") {
+    styles.push(`text-align: ${alignment}`);
+  }
+  if (indent && indent > 0) {
+    styles.push(`margin-left: ${indent * 2}em`);
+  }
+  return styles.length > 0 ? ` style="${styles.join("; ")}"` : "";
 }
 
 function nodeToHtml(node: DocNode): string {
   return match(node)
     .with({ type: "heading" }, (n) => {
       const tag = `h${n.level}`;
-      return `<${tag}>${spansToHtml(n.spans)}</${tag}>`;
+      const style = buildStyleAttr(n.alignment, n.indent);
+      return `<${tag}${style}>${spansToHtml(n.spans)}</${tag}>`;
     })
     .with({ type: "paragraph" }, (n) => {
-      return `<p>${spansToHtml(n.spans)}</p>`;
+      const style = buildStyleAttr(n.alignment, n.indent);
+      return `<p${style}>${spansToHtml(n.spans)}</p>`;
     })
     .with({ type: "blockquote" }, (n) => {
       const inner = n.children.map(nodeToHtml).join("\n");
@@ -64,6 +82,10 @@ function nodeToHtml(node: DocNode): string {
     })
     .with({ type: "hr" }, () => {
       return "<hr>";
+    })
+    .with({ type: "image" }, (n) => {
+      const altAttr = n.alt ? ` alt="${escapeHtml(n.alt)}"` : "";
+      return `<img src="${escapeHtml(n.src)}"${altAttr} />`;
     })
     .with({ type: "pageBreak" }, () => {
       // AO3 doesn't support page breaks, render as hr

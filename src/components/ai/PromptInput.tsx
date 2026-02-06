@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp, Square, X } from "lucide-react";
 import type { FormEvent } from "react";
 
 interface PromptInputProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
+  onCancel?: () => void;
   loading: boolean;
   selectedText?: string | null;
   onClearSelection?: () => void;
@@ -16,6 +17,7 @@ export function PromptInput({
   value,
   onChange,
   onSubmit,
+  onCancel,
   loading,
   selectedText,
   onClearSelection,
@@ -52,14 +54,25 @@ export function PromptInput({
           disabled={loading}
           className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
         />
-        <button
-          type="submit"
-          disabled={!value.trim() || loading}
-          title="Send message"
-          className="rounded-md bg-zinc-900 p-2 text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          <ArrowUp size={16} />
-        </button>
+        {loading ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            title="Cancel request"
+            className="rounded-md bg-red-600 p-2 text-white transition-all duration-150 hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-500 dark:hover:bg-red-600"
+          >
+            <Square size={16} />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!value.trim()}
+            title="Send message"
+            className="rounded-md bg-zinc-900 p-2 text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            <ArrowUp size={16} />
+          </button>
+        )}
       </div>
     </form>
   );

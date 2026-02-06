@@ -4,7 +4,7 @@ import type {
   TDocumentDefinitions,
 } from "pdfmake/interfaces";
 import { match } from "ts-pattern";
-import type { DocNode, TextSpan } from "./markdown-to-nodes";
+import type { DocNode, TextAlignment, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "./types";
 
@@ -17,9 +17,44 @@ const HEADING_SIZES: Record<number, number> = {
   6: 11,
 };
 
+type PdfAlignment = "left" | "center" | "right" | "justify";
+
+function mapAlignment(alignment?: TextAlignment): PdfAlignment | undefined {
+  return alignment as PdfAlignment | undefined;
+}
+
+function spanToPdfParts(s: TextSpan): Array<{
+  text: string;
+  bold?: boolean;
+  italics?: boolean;
+  decoration?: "lineThrough";
+  font?: string;
+  fontSize?: number;
+  color?: string;
+}> {
+  const base = {
+    bold: s.styles.includes("bold") || undefined,
+    italics: s.styles.includes("italic") || undefined,
+    decoration: s.styles.includes("strikethrough")
+      ? ("lineThrough" as const)
+      : undefined,
+    font: s.styles.includes("code") ? "Courier" : undefined,
+  };
+
+  // For ruby text, render as "base(annotation)"
+  if (s.ruby) {
+    return [
+      { text: s.text, ...base },
+      { text: `(${s.ruby})`, fontSize: 8, color: "#666666" },
+    ];
+  }
+
+  return [{ text: s.text, ...base }];
+}
+
 function spansToPdfText(spans: TextSpan[]): ContentText {
   if (spans.length === 0) return { text: "" };
-  if (spans.length === 1) {
+  if (spans.length === 1 && !spans[0].ruby) {
     const s = spans[0];
     return {
       text: s.text,
@@ -32,15 +67,7 @@ function spansToPdfText(spans: TextSpan[]): ContentText {
     };
   }
   return {
-    text: spans.map((s) => ({
-      text: s.text,
-      bold: s.styles.includes("bold") || undefined,
-      italics: s.styles.includes("italic") || undefined,
-      decoration: s.styles.includes("strikethrough")
-        ? ("lineThrough" as const)
-        : undefined,
-      font: s.styles.includes("code") ? "Courier" : undefined,
-    })),
+    text: spans.flatMap((s) => spanToPdfParts(s)),
   };
 }
 
@@ -78,19 +105,23 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
 
   for (const node of nodes) {
     match(node)
-      .with({ type: "heading" }, ({ level, spans }) => {
+      .with({ type: "heading" }, ({ level, spans, alignment, indent }) => {
         const textContent = spansToPdfText(spans);
+        const leftMargin = indent ? indent * 20 : 0;
         result.push({
           ...textContent,
           fontSize: HEADING_SIZES[level] ?? 12,
           bold: true,
-          margin: [0, 12, 0, 4] as [number, number, number, number],
+          alignment: mapAlignment(alignment),
+          margin: [leftMargin, 12, 0, 4] as [number, number, number, number],
         });
       })
-      .with({ type: "paragraph" }, ({ spans }) => {
+      .with({ type: "paragraph" }, ({ spans, alignment, indent }) => {
+        const leftMargin = indent ? indent * 20 : 0;
         result.push({
           ...spansToPdfText(spans),
-          margin: [0, 0, 0, 8] as [number, number, number, number],
+          alignment: mapAlignment(alignment),
+          margin: [leftMargin, 0, 0, 8] as [number, number, number, number],
         });
       })
       .with({ type: "blockquote" }, ({ children }) => {
@@ -115,6 +146,16 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
           color: "#666666",
           fontSize: 12,
           margin: [0, 12, 0, 12] as [number, number, number, number],
+        } as Content);
+      })
+      .with({ type: "image" }, ({ alt }) => {
+        // For images, add a placeholder text since embedding requires fetching
+        result.push({
+          text: alt ? `[Image: ${alt}]` : "[Image]",
+          italics: true,
+          color: "#666666",
+          alignment: "center",
+          margin: [0, 8, 0, 8] as [number, number, number, number],
         } as Content);
       })
       .with({ type: "pageBreak" }, () => {

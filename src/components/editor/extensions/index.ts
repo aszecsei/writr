@@ -1,12 +1,16 @@
 import CharacterCount from "@tiptap/extension-character-count";
+import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { Comment } from "@/db/schemas";
 import { Comments } from "./Comments";
+import { Indent } from "./Indent";
+import { Ruby } from "./Ruby";
 import { SelectionPreserver } from "./SelectionPreserver";
 import { TypewriterScrolling } from "./TypewriterScrolling";
 
@@ -31,9 +35,20 @@ export function createExtensions(options?: ExtensionOptions) {
       openOnClick: false,
       autolink: true,
     }),
+    Image.configure({
+      inline: false,
+      allowBase64: false,
+    }),
+    TextAlign.configure({
+      types: ["heading", "paragraph"],
+      alignments: ["left", "center", "right", "justify"],
+      defaultAlignment: "left",
+    }),
+    Indent,
+    Ruby,
     Typography,
     Markdown.configure({
-      html: false,
+      html: true,
       transformCopiedText: true,
       transformPastedText: true,
     }),

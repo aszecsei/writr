@@ -41,6 +41,29 @@ select:disabled {
   outline: none;
 }
 
+/* Nested list styling for ProseMirror */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5em;
+}
+
+.ProseMirror ul ul,
+.ProseMirror ol ol,
+.ProseMirror ul ol,
+.ProseMirror ol ul {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror li > ul,
+.ProseMirror li > ol {
+  margin-left: 0;
+}
+
+.ProseMirror li p {
+  margin: 0;
+}
+
 .selection-preserved {
   background-color: rgba(59, 130, 246, 0.3);
   border-radius: 2px;
@@ -145,4 +168,19 @@ select:disabled {
 }
 .comment-marker-purple {
   background-color: rgb(168, 85, 247);
+}
+
+/* Ruby text styling */
+ruby {
+  ruby-position: over;
+}
+
+ruby rt {
+  font-size: 0.5em;
+  /* Use explicit RGB to avoid html2canvas issues with lab() colors */
+  color: rgb(113, 113, 122);
+}
+
+.dark ruby rt {
+  color: rgb(161, 161, 170);
 }

@@ -6,7 +6,12 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  ImagePlus,
+  IndentDecrease,
+  IndentIncrease,
   Italic,
+  Languages,
+  Link2,
   List,
   ListOrdered,
   Quote,
@@ -16,12 +21,23 @@ import {
   Undo2,
 } from "lucide-react";
 
+export type ToolbarGroup =
+  | "text"
+  | "link"
+  | "heading"
+  | "align"
+  | "block"
+  | "indent"
+  | "history";
+
 export interface ToolbarAction {
   label: string;
   icon: LucideIcon;
   action: (editor: Editor) => void;
   isActive?: (editor: Editor) => boolean;
-  group: "text" | "heading" | "block" | "history";
+  group: ToolbarGroup;
+  /** If true, action opens a modal and needs special handling */
+  opensModal?: boolean;
 }
 
 export const actions: ToolbarAction[] = [
@@ -52,6 +68,21 @@ export const actions: ToolbarAction[] = [
     action: (e) => e.chain().focus().toggleStrike().run(),
     isActive: (e) => e.isActive("strike"),
     group: "text",
+  },
+  {
+    label: "Link",
+    icon: Link2,
+    action: () => {}, // Handled specially in EditorToolbar
+    isActive: (e) => e.isActive("link"),
+    group: "link",
+    opensModal: true,
+  },
+  {
+    label: "Image",
+    icon: ImagePlus,
+    action: () => {}, // Handled specially in EditorToolbar
+    group: "link",
+    opensModal: true,
   },
   {
     label: "Heading 1",
@@ -103,6 +134,38 @@ export const actions: ToolbarAction[] = [
     group: "block",
   },
   {
+    label: "Indent",
+    icon: IndentIncrease,
+    action: (e) => {
+      if (e.isActive("listItem")) {
+        e.chain().focus().sinkListItem("listItem").run();
+      } else {
+        e.chain().focus().indent().run();
+      }
+    },
+    group: "indent",
+  },
+  {
+    label: "Outdent",
+    icon: IndentDecrease,
+    action: (e) => {
+      if (e.isActive("listItem")) {
+        e.chain().focus().liftListItem("listItem").run();
+      } else {
+        e.chain().focus().outdent().run();
+      }
+    },
+    group: "indent",
+  },
+  {
+    label: "Ruby Text",
+    icon: Languages,
+    action: () => {}, // Handled specially in EditorToolbar
+    isActive: (e) => e.isActive("ruby"),
+    group: "text",
+    opensModal: true,
+  },
+  {
     label: "Undo",
     icon: Undo2,
     action: (e) => e.chain().focus().undo().run(),
@@ -116,9 +179,12 @@ export const actions: ToolbarAction[] = [
   },
 ];
 
-export const groups: ToolbarAction["group"][] = [
+export const groups: ToolbarGroup[] = [
   "text",
+  "link",
   "heading",
+  "align",
   "block",
+  "indent",
   "history",
 ];

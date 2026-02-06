@@ -9,7 +9,7 @@ import {
   TextRun,
 } from "docx";
 import { match } from "ts-pattern";
-import type { DocNode, TextSpan } from "./markdown-to-nodes";
+import type { DocNode, TextAlignment, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "./types";
 
@@ -25,17 +25,48 @@ const HEADING_MAP: Record<
   6: HeadingLevel.HEADING_6,
 };
 
+const ALIGNMENT_MAP: Record<
+  TextAlignment,
+  (typeof AlignmentType)[keyof typeof AlignmentType]
+> = {
+  left: AlignmentType.LEFT,
+  center: AlignmentType.CENTER,
+  right: AlignmentType.RIGHT,
+  justify: AlignmentType.JUSTIFIED,
+};
+
 function spansToRuns(spans: TextSpan[]): TextRun[] {
-  return spans.map(
-    (span) =>
-      new TextRun({
-        text: span.text,
-        bold: span.styles.includes("bold"),
-        italics: span.styles.includes("italic"),
-        strike: span.styles.includes("strikethrough"),
-        font: span.styles.includes("code") ? "Courier New" : "Calibri",
-      }),
-  );
+  const runs: TextRun[] = [];
+  for (const span of spans) {
+    // For ruby text, render as "base(annotation)" since DOCX ruby support is complex
+    if (span.ruby) {
+      runs.push(
+        new TextRun({
+          text: span.text,
+          bold: span.styles.includes("bold"),
+          italics: span.styles.includes("italic"),
+          strike: span.styles.includes("strikethrough"),
+          font: span.styles.includes("code") ? "Courier New" : "Calibri",
+        }),
+        new TextRun({
+          text: `(${span.ruby})`,
+          size: 16, // Smaller size for annotation
+          color: "666666",
+        }),
+      );
+    } else {
+      runs.push(
+        new TextRun({
+          text: span.text,
+          bold: span.styles.includes("bold"),
+          italics: span.styles.includes("italic"),
+          strike: span.styles.includes("strikethrough"),
+          font: span.styles.includes("code") ? "Courier New" : "Calibri",
+        }),
+      );
+    }
+  }
+  return runs;
 }
 
 function handleBlockquote(children: DocNode[], paragraphs: Paragraph[]): void {
@@ -92,19 +123,23 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
 
   for (const node of nodes) {
     match(node)
-      .with({ type: "heading" }, ({ level, spans }) => {
+      .with({ type: "heading" }, ({ level, spans, alignment, indent }) => {
         paragraphs.push(
           new Paragraph({
             heading: HEADING_MAP[level],
             children: spansToRuns(spans),
+            alignment: alignment ? ALIGNMENT_MAP[alignment] : undefined,
+            indent: indent ? { left: indent * 720 } : undefined,
           }),
         );
       })
-      .with({ type: "paragraph" }, ({ spans }) => {
+      .with({ type: "paragraph" }, ({ spans, alignment, indent }) => {
         paragraphs.push(
           new Paragraph({
             children: spansToRuns(spans),
             spacing: { after: 200 },
+            alignment: alignment ? ALIGNMENT_MAP[alignment] : undefined,
+            indent: indent ? { left: indent * 720 } : undefined,
           }),
         );
       })
@@ -136,6 +171,22 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
             ],
             alignment: AlignmentType.CENTER,
             spacing: { before: 200, after: 200 },
+          }),
+        );
+      })
+      .with({ type: "image" }, ({ alt }) => {
+        // For images, add a placeholder text since embedding requires fetching
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: alt ? `[Image: ${alt}]` : "[Image]",
+                italics: true,
+                color: "666666",
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 100 },
           }),
         );
       })
