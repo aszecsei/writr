@@ -133,15 +133,23 @@ export function SpellcheckScannerModal({
 
   const handleAddToAppDictionary = useCallback(async () => {
     if (!currentWord) return;
+    addToIgnored(currentWord.word);
     await addWordToAppDictionary(currentWord.word);
     removeMisspellingAt(scanner.currentIndex);
-  }, [currentWord, removeMisspellingAt, scanner.currentIndex]);
+  }, [currentWord, addToIgnored, removeMisspellingAt, scanner.currentIndex]);
 
   const handleAddToProjectDictionary = useCallback(async () => {
     if (!currentWord) return;
+    addToIgnored(currentWord.word);
     await addWordToProjectDictionary(projectId, currentWord.word);
     removeMisspellingAt(scanner.currentIndex);
-  }, [currentWord, projectId, removeMisspellingAt, scanner.currentIndex]);
+  }, [
+    currentWord,
+    addToIgnored,
+    projectId,
+    removeMisspellingAt,
+    scanner.currentIndex,
+  ]);
 
   const handleIgnore = useCallback(() => {
     if (!currentWord) return;

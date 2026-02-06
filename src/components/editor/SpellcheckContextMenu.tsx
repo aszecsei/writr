@@ -46,14 +46,16 @@ export function SpellcheckContextMenu({
   );
 
   const handleAddToAppDictionary = useCallback(async () => {
+    addToIgnored(contextMenu.word);
     await addWordToAppDictionary(contextMenu.word);
     onClose();
-  }, [contextMenu.word, onClose]);
+  }, [addToIgnored, contextMenu.word, onClose]);
 
   const handleAddToProjectDictionary = useCallback(async () => {
+    addToIgnored(contextMenu.word);
     await addWordToProjectDictionary(projectId, contextMenu.word);
     onClose();
-  }, [projectId, contextMenu.word, onClose]);
+  }, [addToIgnored, projectId, contextMenu.word, onClose]);
 
   const handleIgnore = useCallback(() => {
     addToIgnored(contextMenu.word);

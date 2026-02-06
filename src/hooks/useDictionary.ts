@@ -1,4 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
 import { db } from "@/db/database";
 import type { AppDictionary, ProjectDictionary } from "@/db/schemas";
 import { APP_DICTIONARY_ID } from "@/lib/constants";
@@ -34,19 +35,21 @@ export function useCombinedDictionaryWords(
   const appDict = useAppDictionary();
   const projectDict = useProjectDictionary(projectId);
 
-  const combined = new Set<string>();
+  return useMemo(() => {
+    const combined = new Set<string>();
 
-  if (appDict?.words) {
-    for (const word of appDict.words) {
-      combined.add(word.toLowerCase());
+    if (appDict?.words) {
+      for (const word of appDict.words) {
+        combined.add(word.toLowerCase());
+      }
     }
-  }
 
-  if (projectDict?.words) {
-    for (const word of projectDict.words) {
-      combined.add(word.toLowerCase());
+    if (projectDict?.words) {
+      for (const word of projectDict.words) {
+        combined.add(word.toLowerCase());
+      }
     }
-  }
 
-  return combined;
+    return combined;
+  }, [appDict?.words, projectDict?.words]);
 }
