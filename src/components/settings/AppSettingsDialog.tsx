@@ -6,10 +6,13 @@ import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type { ReasoningEffort } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import type { Backup } from "@/lib/backup";
 import { useUiStore } from "@/store/uiStore";
 import { AiSettings } from "./AiSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
+import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
+import { ImportBackupDialog } from "./ImportBackupDialog";
 
 const INPUT_CLASS =
   "mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
@@ -35,6 +38,11 @@ export function AppSettingsDialog() {
   const [streamResponses, setStreamResponses] = useState(true);
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
+
+  const [pendingImport, setPendingImport] = useState<{
+    backup: Backup;
+    filename: string;
+  } | null>(null);
 
   useEffect(() => {
     if (settings) {
@@ -119,6 +127,12 @@ export function AppSettingsDialog() {
           labelClass={LABEL_CLASS}
         />
 
+        <BackupSettings
+          onImportReady={(backup, filename) =>
+            setPendingImport({ backup, filename })
+          }
+        />
+
         <div className="flex justify-end gap-3">
           <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
             Cancel
@@ -128,6 +142,17 @@ export function AppSettingsDialog() {
           </button>
         </div>
       </form>
+
+      {pendingImport && (
+        <ImportBackupDialog
+          backup={pendingImport.backup}
+          filename={pendingImport.filename}
+          onClose={() => setPendingImport(null)}
+          onImportComplete={() => {
+            // Result is shown in the dialog, user will close it
+          }}
+        />
+      )}
     </Modal>
   );
 }
