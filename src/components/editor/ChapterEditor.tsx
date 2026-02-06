@@ -78,7 +78,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const initializedRef = useRef(false);
   const reconcileRunRef = useRef(false);
-  const justInitializedRef = useRef(false);
 
   // Spellcheck state
   const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
@@ -226,12 +225,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: these deps intentionally trigger rebuilds
   useEffect(() => {
     if (editor && !editor.isDestroyed && initializedRef.current) {
-      // Skip if content was just initialized — setContent triggers a docChanged
-      // which already schedules a spellcheck via the async plugin
-      if (justInitializedRef.current) {
-        justInitializedRef.current = false;
-        return;
-      }
       const tr = editor.state.tr.setMeta(SPELLCHECK_UPDATED_META, true);
       editor.view.dispatch(tr);
     }
@@ -258,7 +251,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       const wc = getWordCount(editor.storage);
       setWordCount(wc);
       initializedRef.current = true;
-      justInitializedRef.current = true;
     }
   }, [editor, chapter, setWordCount]);
 

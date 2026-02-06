@@ -1,5 +1,8 @@
+import { enableMapSet } from "immer";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+
+enableMapSet();
 
 export interface MisspelledWord {
   word: string;
