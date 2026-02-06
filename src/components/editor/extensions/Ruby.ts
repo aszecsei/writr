@@ -43,6 +43,27 @@ export const Ruby = Mark.create<RubyOptions>({
     return [
       {
         tag: "ruby",
+        contentElement: (element) => {
+          // Use .ruby-base span if present (current format)
+          const rubyBase = element.querySelector(".ruby-base");
+          if (rubyBase instanceof HTMLElement) {
+            return rubyBase;
+          }
+          // Fallback for legacy/pasted content without span wrapper:
+          // Return a temp element with only non-<rt> content
+          const temp = document.createElement("span");
+          for (const child of element.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) {
+              temp.appendChild(child.cloneNode(true));
+            } else if (
+              child instanceof HTMLElement &&
+              child.tagName.toLowerCase() !== "rt"
+            ) {
+              temp.appendChild(child.cloneNode(true));
+            }
+          }
+          return temp;
+        },
       },
     ];
   },
