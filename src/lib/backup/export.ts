@@ -29,6 +29,7 @@ export async function gatherProjectData(
     writingSessions,
     playlistTracks,
     comments,
+    projectDictionary,
   ] = await Promise.all([
     db.chapters.where({ projectId }).toArray(),
     db.characters.where({ projectId }).toArray(),
@@ -44,6 +45,7 @@ export async function gatherProjectData(
     db.writingSessions.where({ projectId }).toArray(),
     db.playlistTracks.where({ projectId }).toArray(),
     db.comments.where({ projectId }).toArray(),
+    db.projectDictionaries.where({ projectId }).first(),
   ]);
 
   return {
@@ -62,6 +64,7 @@ export async function gatherProjectData(
     writingSessions,
     playlistTracks,
     comments,
+    projectDictionary,
   };
 }
 
@@ -85,6 +88,7 @@ export async function exportProject(
 export async function exportFullBackup(): Promise<FullBackup> {
   const allProjects = await db.projects.toArray();
   const appSettings = await db.appSettings.get("app-settings");
+  const appDictionary = await db.appDictionary.get("app-dictionary");
 
   const projectDataResults = await Promise.all(
     allProjects.map((project) => gatherProjectData(project.id)),
@@ -103,6 +107,7 @@ export async function exportFullBackup(): Promise<FullBackup> {
       projectCount: projects.length,
     },
     appSettings,
+    appDictionary,
     projects,
   };
 }

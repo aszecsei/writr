@@ -112,6 +112,9 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   for (const comment of data.comments) {
     idMap.set(comment.id, generateId());
   }
+  if (data.projectDictionary) {
+    idMap.set(data.projectDictionary.id, generateId());
+  }
 
   // Remap project
   const project = {
@@ -233,6 +236,15 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     chapterId: mustGetId(idMap, c.chapterId),
   }));
 
+  // Remap project dictionary
+  const projectDictionary = data.projectDictionary
+    ? {
+        ...data.projectDictionary,
+        id: mustGetId(idMap, data.projectDictionary.id),
+        projectId: newProjectId,
+      }
+    : undefined;
+
   return {
     project,
     chapters,
@@ -249,6 +261,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     writingSessions,
     playlistTracks,
     comments,
+    projectDictionary,
   };
 }
 
@@ -267,6 +280,7 @@ async function deleteProjectData(projectId: string): Promise<void> {
   await db.writingSessions.where({ projectId }).delete();
   await db.playlistTracks.where({ projectId }).delete();
   await db.comments.where({ projectId }).delete();
+  await db.projectDictionaries.where({ projectId }).delete();
   await db.projects.delete(projectId);
 }
 
@@ -286,6 +300,9 @@ async function insertProjectData(data: ProjectBackupData): Promise<void> {
   await db.writingSessions.bulkAdd(data.writingSessions);
   await db.playlistTracks.bulkAdd(data.playlistTracks);
   await db.comments.bulkAdd(data.comments);
+  if (data.projectDictionary) {
+    await db.projectDictionaries.add(data.projectDictionary);
+  }
 }
 
 async function importSingleProject(
@@ -348,7 +365,9 @@ export async function importBackup(
         db.writingSessions,
         db.playlistTracks,
         db.comments,
+        db.projectDictionaries,
         db.appSettings,
+        db.appDictionary,
       ],
       async () => {
         // Import projects
@@ -369,13 +388,14 @@ export async function importBackup(
         }
 
         // Restore settings for full backups if requested
-        if (
-          isFullBackup(backup) &&
-          options.restoreSettings &&
-          backup.appSettings
-        ) {
-          await db.appSettings.put(backup.appSettings);
-          result.settingsRestored = true;
+        if (isFullBackup(backup) && options.restoreSettings) {
+          if (backup.appSettings) {
+            await db.appSettings.put(backup.appSettings);
+            result.settingsRestored = true;
+          }
+          if (backup.appDictionary) {
+            await db.appDictionary.put(backup.appDictionary);
+          }
         }
       },
     );

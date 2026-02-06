@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import {
+  AppDictionarySchema,
   AppSettingsSchema,
   ChapterSchema,
   CharacterRelationshipSchema,
@@ -10,6 +11,7 @@ import {
   OutlineGridColumnSchema,
   OutlineGridRowSchema,
   PlaylistTrackSchema,
+  ProjectDictionarySchema,
   ProjectSchema,
   StyleGuideEntrySchema,
   TimelineEventSchema,
@@ -43,6 +45,7 @@ export const ProjectBackupDataSchema = z.object({
   writingSessions: z.array(WritingSessionSchema),
   playlistTracks: z.array(PlaylistTrackSchema),
   comments: z.array(CommentSchema),
+  projectDictionary: ProjectDictionarySchema.optional(),
 });
 
 export const FullBackupSchema = z.object({
@@ -50,6 +53,7 @@ export const FullBackupSchema = z.object({
     message: "Expected full backup metadata",
   }),
   appSettings: AppSettingsSchema.optional(),
+  appDictionary: AppDictionarySchema.optional(),
   projects: z.array(ProjectBackupDataSchema),
 });
 

@@ -1,4 +1,5 @@
 import type {
+  AppDictionary,
   AppSettings,
   Chapter,
   Character,
@@ -10,6 +11,7 @@ import type {
   OutlineGridRow,
   PlaylistTrack,
   Project,
+  ProjectDictionary,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -43,11 +45,13 @@ export interface ProjectBackupData {
   writingSessions: WritingSession[];
   playlistTracks: PlaylistTrack[];
   comments: Comment[];
+  projectDictionary?: ProjectDictionary;
 }
 
 export interface FullBackup {
   metadata: BackupMetadata;
   appSettings?: AppSettings;
+  appDictionary?: AppDictionary;
   projects: ProjectBackupData[];
 }
 

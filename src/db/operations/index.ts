@@ -15,6 +15,7 @@ export {
 export * from "./chapters";
 export * from "./characters";
 export * from "./comments";
+export * from "./dictionary";
 export * from "./locations";
 export * from "./outline";
 export * from "./playlist";

@@ -168,6 +168,26 @@ export const WorldbuildingDocSchema = z.object({
 });
 export type WorldbuildingDoc = z.infer<typeof WorldbuildingDocSchema>;
 
+// ─── App Dictionary (singleton) ─────────────────────────────────────
+
+export const AppDictionarySchema = z.object({
+  id: z.literal("app-dictionary"),
+  words: z.array(z.string()).default([]),
+  updatedAt: timestamp,
+});
+export type AppDictionary = z.infer<typeof AppDictionarySchema>;
+
+// ─── Project Dictionary ─────────────────────────────────────────────
+
+export const ProjectDictionarySchema = z.object({
+  id,
+  projectId: projectFk,
+  words: z.array(z.string()).default([]),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type ProjectDictionary = z.infer<typeof ProjectDictionarySchema>;
+
 // ─── Outline Card Color (shared by grid cells) ─────────────────────
 
 export const OutlineCardColorEnum = z.enum([

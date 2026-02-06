@@ -184,3 +184,16 @@ ruby rt {
 .dark ruby rt {
   color: rgb(161, 161, 170);
 }
+
+/* Spellcheck styling */
+.spelling-error {
+  text-decoration: underline wavy;
+  text-decoration-color: rgb(239, 68, 68);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.spelling-error-active {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-radius: 2px;
+}

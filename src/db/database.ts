@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 import type {
+  AppDictionary,
   AppSettings,
   Chapter,
   Character,
@@ -11,6 +12,7 @@ import type {
   OutlineGridRow,
   PlaylistTrack,
   Project,
+  ProjectDictionary,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -35,6 +37,8 @@ export class WritrDatabase extends Dexie {
   playlistTracks!: EntityTable<PlaylistTrack, "id">;
   comments!: EntityTable<Comment, "id">;
   appSettings!: EntityTable<AppSettings, "id">;
+  appDictionary!: EntityTable<AppDictionary, "id">;
+  projectDictionaries!: EntityTable<ProjectDictionary, "id">;
 
   constructor() {
     super("writr");
@@ -237,6 +241,33 @@ export class WritrDatabase extends Dexie {
       playlistTracks: "id, projectId, [projectId+order]",
       comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
       appSettings: "id",
+    });
+
+    this.version(12).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      playlistTracks: "id, projectId, [projectId+order]",
+      comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+      appSettings: "id",
+      appDictionary: "id",
+      projectDictionaries: "id, projectId",
     });
   }
 }

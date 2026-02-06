@@ -3,7 +3,7 @@
 
 import { generateHTML } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   updateChapterContent,
   updateComment,
@@ -12,13 +12,21 @@ import {
 import type { Comment } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import {
+  useCharactersByProject,
+  useLocationsByProject,
+} from "@/hooks/useBibleEntries";
 import { useChapter } from "@/hooks/useChapter";
 import { useCommentsByChapter } from "@/hooks/useComments";
+import { useCombinedDictionaryWords } from "@/hooks/useDictionary";
 import { reconcileComment } from "@/lib/comments/reconcile";
 import { getEditorFont } from "@/lib/fonts";
+import { getSpellcheckService, type SpellcheckService } from "@/lib/spellcheck";
+import { combineCustomWords } from "@/lib/spellcheck/auto-populate";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
 import { CommentMargin, CommentPopover } from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
@@ -27,6 +35,9 @@ import {
   COMMENTS_UPDATED_META,
   getCommentPositions,
 } from "./extensions/Comments";
+import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
+import { SpellcheckContextMenu } from "./SpellcheckContextMenu";
+import { SpellcheckScannerModal } from "./SpellcheckScannerModal";
 
 // tiptap-markdown and character-count store methods on editor.storage
 // but TipTap's Storage type doesn't expose them, so we cast through unknown
@@ -62,10 +73,26 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const openModal = useUiStore((s) => s.openModal);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const initializedRef = useRef(false);
   const reconcileRunRef = useRef(false);
+  const justInitializedRef = useRef(false);
+
+  // Spellcheck state
+  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
+  const ignoredWords = useSpellcheckStore((s) => s.ignoredWords);
+  const contextMenu = useSpellcheckStore((s) => s.contextMenu);
+  const openContextMenu = useSpellcheckStore((s) => s.openContextMenu);
+  const closeContextMenu = useSpellcheckStore((s) => s.closeContextMenu);
+
+  // Dictionary and story bible data for spellcheck
+  const dictionaryWords = useCombinedDictionaryWords(
+    activeProjectId ?? undefined,
+  );
+  const characters = useCharactersByProject(activeProjectId);
+  const locations = useLocationsByProject(activeProjectId);
 
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
   const typewriterScrollingRef = useRef(false);
@@ -73,6 +100,31 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
+
+  // Refs for spellcheck - allows dynamic updates without recreating editor
+  const spellcheckerRef = useRef<SpellcheckService | null>(null);
+  const customWordsRef = useRef<Set<string>>(new Set());
+  const spellcheckEnabledRef = useRef(spellcheckEnabled);
+  spellcheckEnabledRef.current = spellcheckEnabled;
+  const ignoredWordsRef = useRef<Set<string>>(new Set());
+  ignoredWordsRef.current = ignoredWords;
+  const [spellcheckLoaded, setSpellcheckLoaded] = useState(() =>
+    getSpellcheckService().isLoaded(),
+  );
+
+  // Combine dictionary words with story bible names
+  const combinedCustomWords = useMemo(() => {
+    return combineCustomWords(
+      dictionaryWords,
+      characters ?? [],
+      locations ?? [],
+    );
+  }, [dictionaryWords, characters, locations]);
+
+  // Update customWordsRef when combined words change
+  useEffect(() => {
+    customWordsRef.current = combinedCustomWords;
+  }, [combinedCustomWords]);
 
   // Stable callback refs for selection preserver
   const setSelectionRef = useRef(setSelection);
@@ -90,6 +142,20 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     clearSelectionRef.current();
   }, []);
 
+  // Spellcheck context menu callback
+  const onSpellcheckContextMenu = useCallback(
+    (
+      word: string,
+      from: number,
+      to: number,
+      suggestions: string[],
+      rect: DOMRect,
+    ) => {
+      openContextMenu({ word, from, to, suggestions, rect });
+    },
+    [openContextMenu],
+  );
+
   // Filter to active/orphaned comments (not resolved)
   const activeComments = useMemo(() => {
     const filtered = (comments ?? []).filter((c) => c.status !== "resolved");
@@ -103,6 +169,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       createExtensions({
         typewriterScrollingRef,
         commentsRef,
+        spellcheckerRef,
+        customWordsRef,
+        spellcheckEnabledRef,
+        ignoredWordsRef,
+        onSpellcheckContextMenu,
         onSelectionChange,
         onSelectionClear,
       }),
@@ -113,6 +184,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     extensions,
     content: "",
     immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        spellcheck: "false",
+      },
+    },
     onUpdate: ({ editor: e }) => {
       markDirty();
       const wc = getWordCount(e.storage);
@@ -132,6 +208,41 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     }
   }, [activeComments, editor]);
 
+  // Initialize spellcheck service
+  useEffect(() => {
+    const service = getSpellcheckService();
+    spellcheckerRef.current = service;
+
+    if (service.isLoaded()) {
+      setSpellcheckLoaded(true);
+    } else if (!service.isLoading()) {
+      service.load().then(() => {
+        setSpellcheckLoaded(true);
+      });
+    }
+  }, []);
+
+  // Trigger spellcheck rebuild when custom words or enabled state changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: these deps intentionally trigger rebuilds
+  useEffect(() => {
+    if (editor && !editor.isDestroyed && initializedRef.current) {
+      // Skip if content was just initialized — setContent triggers a docChanged
+      // which already schedules a spellcheck via the async plugin
+      if (justInitializedRef.current) {
+        justInitializedRef.current = false;
+        return;
+      }
+      const tr = editor.state.tr.setMeta(SPELLCHECK_UPDATED_META, true);
+      editor.view.dispatch(tr);
+    }
+  }, [
+    editor,
+    combinedCustomWords,
+    spellcheckEnabled,
+    ignoredWords,
+    spellcheckLoaded,
+  ]);
+
   // Set active document on mount
   useEffect(() => {
     setActiveDocument(chapterId, "chapter");
@@ -147,6 +258,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       const wc = getWordCount(editor.storage);
       setWordCount(wc);
       initializedRef.current = true;
+      justInitializedRef.current = true;
     }
   }, [editor, chapter, setWordCount]);
 
@@ -347,6 +459,19 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           <CommentPopover editor={editor} comments={activeComments} />
         )}
       </div>
+      {/* Spellcheck context menu */}
+      {contextMenu && activeProjectId && (
+        <SpellcheckContextMenu
+          editor={editor}
+          projectId={activeProjectId}
+          contextMenu={contextMenu}
+          onClose={closeContextMenu}
+        />
+      )}
+      {/* Spellcheck scanner modal */}
+      {activeProjectId && (
+        <SpellcheckScannerModal editor={editor} projectId={activeProjectId} />
+      )}
     </div>
   );
 }

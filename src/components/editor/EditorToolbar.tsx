@@ -2,17 +2,26 @@
 
 import { generateHTML } from "@tiptap/core";
 import { type Editor, useEditorState } from "@tiptap/react";
-import { Download, ImagePlus, Maximize2, PanelRight } from "lucide-react";
+import {
+  Download,
+  ImagePlus,
+  Maximize2,
+  PanelRight,
+  ScanSearch,
+  SpellCheck,
+} from "lucide-react";
 import { useCallback } from "react";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useChapter } from "@/hooks/useChapter";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
 import { AlignmentDropdown } from "./AlignmentDropdown";
 import { CopyMenu } from "./CopyMenu";
 import { CreateCommentButton } from "./comments";
+import { getSpellcheckResults } from "./extensions/Spellcheck";
 import { FontSelector } from "./FontSelector";
 import { InsertImageDialog } from "./InsertImageDialog";
 import { LinkEditorDialog } from "./LinkEditorDialog";
@@ -34,7 +43,18 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const toggleMargin = useCommentStore((s) => s.toggleMargin);
 
+  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
+  const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
+  const openScanner = useSpellcheckStore((s) => s.openScanner);
+
   const chapter = useChapter(activeDocumentId);
+
+  // Open spellcheck scanner with current misspellings
+  const handleOpenScanner = useCallback(() => {
+    if (!editor) return;
+    const results = getSpellcheckResults(editor.state);
+    openScanner(results);
+  }, [editor, openScanner]);
 
   // Link editor callbacks
   const handleLinkApply = useCallback(
@@ -232,6 +252,32 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             }`}
           >
             <PanelRight size={16} />
+          </button>
+          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <button
+            type="button"
+            title="Toggle spellcheck"
+            onClick={toggleSpellcheck}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              spellcheckEnabled
+                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
+                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <SpellCheck size={16} />
+          </button>
+          <button
+            type="button"
+            title="Open spellcheck scanner"
+            onClick={handleOpenScanner}
+            disabled={!spellcheckEnabled}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              spellcheckEnabled
+                ? "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                : "cursor-not-allowed text-zinc-300 dark:text-zinc-600"
+            }`}
+          >
+            <ScanSearch size={16} />
           </button>
         </>
       )}
