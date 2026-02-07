@@ -21,6 +21,7 @@ export * from "./outline";
 export * from "./playlist";
 export * from "./projects";
 export * from "./settings";
+export * from "./snapshots";
 export * from "./sprints";
 export * from "./style-guide";
 export * from "./timeline";

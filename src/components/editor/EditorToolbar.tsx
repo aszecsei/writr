@@ -4,6 +4,7 @@ import { generateHTML } from "@tiptap/core";
 import { type Editor, useEditorState } from "@tiptap/react";
 import {
   Download,
+  History,
   ImagePlus,
   Maximize2,
   PanelRight,
@@ -213,6 +214,20 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <Download size={16} />
+          </button>
+          <button
+            type="button"
+            title="Version history"
+            onClick={() =>
+              openModal({
+                id: "version-history",
+                chapterId: activeDocumentId,
+                projectId: activeProjectId,
+              })
+            }
+            className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            <History size={16} />
           </button>
           <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
           <button

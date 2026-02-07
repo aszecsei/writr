@@ -3,6 +3,7 @@ import type {
   AppDictionary,
   AppSettings,
   Chapter,
+  ChapterSnapshot,
   Character,
   CharacterRelationship,
   Comment,
@@ -36,6 +37,7 @@ export class WritrDatabase extends Dexie {
   writingSessions!: EntityTable<WritingSession, "id">;
   playlistTracks!: EntityTable<PlaylistTrack, "id">;
   comments!: EntityTable<Comment, "id">;
+  chapterSnapshots!: EntityTable<ChapterSnapshot, "id">;
   appSettings!: EntityTable<AppSettings, "id">;
   appDictionary!: EntityTable<AppDictionary, "id">;
   projectDictionaries!: EntityTable<ProjectDictionary, "id">;
@@ -278,6 +280,34 @@ export class WritrDatabase extends Dexie {
           if (s.lastExportedAt === undefined) s.lastExportedAt = null;
         }),
     );
+
+    this.version(14).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      playlistTracks: "id, projectId, [projectId+order]",
+      comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+      chapterSnapshots: "id, chapterId, projectId, [chapterId+createdAt]",
+      appSettings: "id",
+      appDictionary: "id",
+      projectDictionaries: "id, projectId",
+    });
   }
 }
 

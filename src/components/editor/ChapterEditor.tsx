@@ -254,12 +254,13 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     }
   }, [editor, chapter, setWordCount]);
 
-  // Reset initialized flag when chapterId changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId change
+  // Reset initialized flag when chapterId changes or content is restored
+  const contentVersion = useEditorStore((s) => s.contentVersion);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion change
   useEffect(() => {
     initializedRef.current = false;
     reconcileRunRef.current = false;
-  }, [chapterId]);
+  }, [chapterId, contentVersion]);
 
   // Reconcile comment positions on chapter load
   useEffect(() => {

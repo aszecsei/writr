@@ -337,6 +337,19 @@ export const PlaylistTrackSchema = z.object({
 });
 export type PlaylistTrack = z.infer<typeof PlaylistTrackSchema>;
 
+// ─── Chapter Snapshot ────────────────────────────────────────────────
+
+export const ChapterSnapshotSchema = z.object({
+  id,
+  chapterId: z.string().uuid(),
+  projectId: projectFk,
+  name: z.string().min(1),
+  content: z.string(),
+  wordCount: z.number().int().nonnegative(),
+  createdAt: timestamp,
+});
+export type ChapterSnapshot = z.infer<typeof ChapterSnapshotSchema>;
+
 // ─── Comment ─────────────────────────────────────────────────────────
 
 export const CommentColorEnum = z.enum([

@@ -26,7 +26,8 @@ export type ModalState =
   | { id: "link-editor"; currentHref?: string }
   | { id: "insert-image" }
   | { id: "ruby-editor"; currentAnnotation?: string }
-  | { id: "dictionary-manager" };
+  | { id: "dictionary-manager" }
+  | { id: "version-history"; chapterId: string; projectId: string };
 
 export type ModalId = ModalState["id"];
 
@@ -138,4 +139,10 @@ export function isRubyEditorModal(
   modal: ModalState,
 ): modal is { id: "ruby-editor"; currentAnnotation?: string } {
   return modal.id === "ruby-editor";
+}
+
+export function isVersionHistoryModal(
+  modal: ModalState,
+): modal is { id: "version-history"; chapterId: string; projectId: string } {
+  return modal.id === "version-history";
 }

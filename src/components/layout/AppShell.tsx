@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
+import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
@@ -89,6 +90,7 @@ export function AppShell({ children }: AppShellProps) {
         <SprintWidget />
         <AppSettingsDialog />
         <DictionaryManagerDialog />
+        <VersionHistoryDialog />
         <SprintConfigDialog />
         <SprintHistoryDialog />
       </div>
@@ -121,6 +123,7 @@ export function AppShell({ children }: AppShellProps) {
       </Group>
       <AppSettingsDialog />
       <DictionaryManagerDialog />
+      <VersionHistoryDialog />
       <ExportDialog />
       <PreviewCardDialog />
       <SprintConfigDialog />

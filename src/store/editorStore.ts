@@ -13,6 +13,7 @@ interface EditorState {
   wordCount: number;
   selectedText: string | null;
   selectedRange: { from: number; to: number } | null;
+  contentVersion: number;
 
   setActiveDocument: (id: string, type: DocumentType) => void;
   clearActiveDocument: () => void;
@@ -23,6 +24,7 @@ interface EditorState {
   setWordCount: (count: number) => void;
   setSelection: (text: string, from: number, to: number) => void;
   clearSelection: () => void;
+  bumpContentVersion: () => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -35,6 +37,7 @@ export const useEditorStore = create<EditorState>()(
     wordCount: 0,
     selectedText: null,
     selectedRange: null,
+    contentVersion: 0,
 
     setActiveDocument: (id, type) =>
       set((s) => {
@@ -93,6 +96,11 @@ export const useEditorStore = create<EditorState>()(
       set((s) => {
         s.selectedText = null;
         s.selectedRange = null;
+      }),
+
+    bumpContentVersion: () =>
+      set((s) => {
+        s.contentVersion += 1;
       }),
   })),
 );
