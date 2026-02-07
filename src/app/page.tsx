@@ -1,11 +1,13 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog";
 import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
+import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
+import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -38,14 +40,24 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
             writr
           </h1>
-          <button
-            type="button"
-            onClick={() => openModal({ id: "create-project" })}
-            className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            <Plus size={16} />
-            New Project
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openModal({ id: "app-settings" })}
+              className="flex items-center justify-center rounded-md p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+              aria-label="App Settings"
+            >
+              <Settings size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => openModal({ id: "create-project" })}
+              className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              <Plus size={16} />
+              New Project
+            </button>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
@@ -86,6 +98,8 @@ export default function DashboardPage() {
       <CreateProjectDialog />
       <EditProjectDialog />
       <DeleteProjectDialog />
+      <AppSettingsDialog />
+      <DictionaryManagerDialog />
     </div>
   );
 }
