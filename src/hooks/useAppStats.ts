@@ -14,15 +14,20 @@ export interface AppStats {
   totalWordCount: number;
   lastExportedAt: string | null;
   storageSizeBytes: number | null;
+  storageQuotaBytes: number | null;
 }
 
 export function useAppStats(): AppStats | undefined {
   const [storageSizeBytes, setStorageSizeBytes] = useState<number | null>(null);
+  const [storageQuotaBytes, setStorageQuotaBytes] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     if (typeof navigator !== "undefined" && navigator.storage?.estimate) {
       navigator.storage.estimate().then((estimate) => {
         setStorageSizeBytes(estimate.usage ?? null);
+        setStorageQuotaBytes(estimate.quota ?? null);
       });
     }
   }, []);
@@ -65,5 +70,6 @@ export function useAppStats(): AppStats | undefined {
   return {
     ...stats,
     storageSizeBytes,
+    storageQuotaBytes,
   };
 }

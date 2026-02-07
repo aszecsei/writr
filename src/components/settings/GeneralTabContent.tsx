@@ -6,7 +6,9 @@ import { AppearanceSettings } from "./AppearanceSettings";
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
 function formatRelativeDate(iso: string): string {
@@ -78,7 +80,9 @@ export function GeneralTabContent({
             value={
               stats
                 ? stats.storageSizeBytes != null
-                  ? formatBytes(stats.storageSizeBytes)
+                  ? stats.storageQuotaBytes != null
+                    ? `${formatBytes(stats.storageSizeBytes)} / ${formatBytes(stats.storageQuotaBytes)} (${((stats.storageSizeBytes / stats.storageQuotaBytes) * 100).toFixed(1)}%)`
+                    : formatBytes(stats.storageSizeBytes)
                   : "N/A"
                 : "\u2014"
             }
