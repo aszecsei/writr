@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowRight,
   Check,
   Code,
@@ -10,7 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { AiMessage } from "@/lib/ai/types";
+import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { MarkdownMessage } from "./MarkdownMessage";
 
 interface Message {
@@ -21,6 +22,7 @@ interface Message {
   timestamp: string;
   promptMessages?: AiMessage[];
   durationMs?: number;
+  finishReason?: FinishReason;
 }
 
 function formatDuration(ms: number): string {
@@ -46,6 +48,24 @@ interface MessageListProps {
   onEditingContentChange: (content: string) => void;
   onCancelEdit: () => void;
   onConfirmEdit: () => void;
+}
+
+function StopReasonBanner({ reason }: { reason: FinishReason }) {
+  if (reason === "stop") return null;
+
+  const message =
+    reason === "length"
+      ? "Response was truncated due to token limit."
+      : reason === "content_filter"
+        ? "Response was filtered by the model's content policy."
+        : "Response ended with an unexpected stop reason.";
+
+  return (
+    <div className="mt-2 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
+      <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
 }
 
 export type { Message };
@@ -205,7 +225,12 @@ export function MessageList({
                 </div>
               </div>
             ) : msg.role === "assistant" ? (
-              <MarkdownMessage content={msg.content} />
+              <>
+                <MarkdownMessage content={msg.content} />
+                {msg.finishReason && (
+                  <StopReasonBanner reason={msg.finishReason} />
+                )}
+              </>
             ) : (
               <p className="whitespace-pre-wrap">{msg.content}</p>
             )}
@@ -214,16 +239,27 @@ export function MessageList({
       })}
       {!loading &&
         messages.length > 0 &&
-        messages[messages.length - 1].role === "assistant" && (
-          <button
-            type="button"
-            onClick={onContinue}
-            className="mx-auto flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-1.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            <ArrowRight size={12} />
-            Continue
-          </button>
-        )}
+        messages[messages.length - 1].role === "assistant" &&
+        (() => {
+          const lastMsg = messages[messages.length - 1];
+          const wasTruncated = lastMsg.finishReason === "length";
+          return (
+            <button
+              type="button"
+              onClick={onContinue}
+              className={
+                wasTruncated
+                  ? "mx-auto flex items-center gap-1.5 rounded-md border border-amber-400 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400 dark:hover:bg-amber-900"
+                  : "mx-auto flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-1.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              }
+            >
+              <ArrowRight size={12} />
+              {wasTruncated
+                ? "Continue (response was truncated)"
+                : "Continue"}
+            </button>
+          );
+        })()}
       {loading && (
         <div className="flex justify-center py-2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />

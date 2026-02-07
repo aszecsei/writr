@@ -6,6 +6,7 @@ import type {
   AiResponse,
   AiStreamChunk,
   AiToolId,
+  FinishReason,
   ReasoningEffort,
 } from "./types";
 
@@ -68,6 +69,19 @@ async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
   return response;
 }
 
+function normalizeFinishReason(raw: string | null | undefined): FinishReason {
+  switch (raw) {
+    case "stop":
+      return "stop";
+    case "length":
+      return "length";
+    case "content_filter":
+      return "content_filter";
+    default:
+      return raw ? "unknown" : "stop";
+  }
+}
+
 export async function callAi(
   tool: AiToolId,
   userPrompt: string,
@@ -87,6 +101,7 @@ export async function callAi(
     reasoning: data.choices[0].message.reasoning,
     model: data.model,
     usage: data.usage,
+    finishReason: normalizeFinishReason(data.choices[0].finish_reason),
   };
 }
 
@@ -129,25 +144,34 @@ export async function* streamAi(
 
       try {
         const parsed = JSON.parse(json);
-        const delta = parsed.choices?.[0]?.delta;
-        if (!delta) continue;
+        const choice = parsed.choices?.[0];
+        const delta = choice?.delta;
 
-        // Reasoning tokens from OpenRouter
-        const reasoningDetails = delta.reasoning_details;
-        if (Array.isArray(reasoningDetails)) {
-          for (const detail of reasoningDetails) {
-            if (detail?.text) {
-              yield { type: "reasoning", text: detail.text };
+        if (delta) {
+          // Reasoning tokens from OpenRouter
+          const reasoningDetails = delta.reasoning_details;
+          if (Array.isArray(reasoningDetails)) {
+            for (const detail of reasoningDetails) {
+              if (detail?.text) {
+                yield { type: "reasoning", text: detail.text };
+              }
             }
           }
-        }
-        // Fallback: handle reasoning as a direct string field
-        else if (delta.reasoning) {
-          yield { type: "reasoning", text: delta.reasoning };
+          // Fallback: handle reasoning as a direct string field
+          else if (delta.reasoning) {
+            yield { type: "reasoning", text: delta.reasoning };
+          }
+
+          if (delta.content) {
+            yield { type: "content", text: delta.content };
+          }
         }
 
-        if (delta.content) {
-          yield { type: "content", text: delta.content };
+        if (choice?.finish_reason) {
+          yield {
+            type: "stop",
+            finishReason: normalizeFinishReason(choice.finish_reason),
+          };
         }
       } catch (error) {
         // Log malformed chunks in development for debugging

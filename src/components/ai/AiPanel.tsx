@@ -33,6 +33,7 @@ import type {
   AiMessage,
   AiToolId,
   BuiltinAiTool,
+  FinishReason,
 } from "@/lib/ai/types";
 import { BUILTIN_TOOL_IDS } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
@@ -253,6 +254,7 @@ export function AiPanel() {
         },
       ]);
 
+      let streamFinishReason: FinishReason | undefined;
       for await (const chunk of streamAi(
         tool,
         userMessage,
@@ -262,6 +264,10 @@ export function AiPanel() {
         signal,
       )) {
         if (signal.aborted) break;
+        if (chunk.type === "stop") {
+          streamFinishReason = chunk.finishReason;
+          continue;
+        }
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
@@ -284,7 +290,11 @@ export function AiPanel() {
       setMessages((prev) => {
         const updated = [...prev];
         const last = updated[updated.length - 1];
-        updated[updated.length - 1] = { ...last, durationMs: elapsed };
+        updated[updated.length - 1] = {
+          ...last,
+          durationMs: elapsed,
+          finishReason: streamFinishReason,
+        };
         return updated;
       });
     } else {
@@ -307,6 +317,7 @@ export function AiPanel() {
           timestamp: new Date().toISOString(),
           promptMessages: capturedPrompt,
           durationMs: Date.now() - startTime,
+          finishReason: response.finishReason,
         },
       ]);
     }

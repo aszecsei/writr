@@ -75,6 +75,8 @@ export interface AiContext {
   selectedText?: string;
 }
 
+export type FinishReason = "stop" | "length" | "content_filter" | "unknown";
+
 export interface AiResponse {
   content: string;
   reasoning?: string;
@@ -84,9 +86,10 @@ export interface AiResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  finishReason?: FinishReason;
 }
 
-export interface AiStreamChunk {
-  type: "reasoning" | "content";
-  text: string;
-}
+export type AiStreamChunk =
+  | { type: "reasoning"; text: string }
+  | { type: "content"; text: string }
+  | { type: "stop"; finishReason: FinishReason };

@@ -38,6 +38,21 @@ type ParsedMessage = z.infer<typeof AiRequestSchema>["messages"][number];
 
 // ─── Anthropic helpers ──────────────────────────────────────────────
 
+function normalizeAnthropicStopReason(
+  stopReason: string | null | undefined,
+): string {
+  switch (stopReason) {
+    case "end_turn":
+      return "stop";
+    case "max_tokens":
+      return "length";
+    case "stop_sequence":
+      return "stop";
+    default:
+      return stopReason ?? "stop";
+  }
+}
+
 interface AnthropicSystemBlock {
   type: "text";
   text: string;
@@ -141,7 +156,9 @@ function anthropicToOpenAiJson(data: Record<string, unknown>) {
           content: text,
           ...(reasoning ? { reasoning } : {}),
         },
-        finish_reason: data.stop_reason ?? "stop",
+        finish_reason: normalizeAnthropicStopReason(
+          data.stop_reason as string | null | undefined,
+        ),
       },
     ],
     usage: data.usage,
@@ -195,6 +212,21 @@ function anthropicStreamAdapter(upstreamBody: ReadableStream): ReadableStream {
               } else if (delta?.type === "thinking_delta" && delta.thinking) {
                 const chunk = {
                   choices: [{ delta: { reasoning: delta.thinking } }],
+                };
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
+                );
+              }
+            } else if (event.type === "message_delta") {
+              const stopReason = event.delta?.stop_reason;
+              if (stopReason) {
+                const chunk = {
+                  choices: [
+                    {
+                      delta: {},
+                      finish_reason: normalizeAnthropicStopReason(stopReason),
+                    },
+                  ],
                 };
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
