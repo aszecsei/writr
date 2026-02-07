@@ -32,6 +32,7 @@ interface AiSettingsProps {
   debugMode: boolean;
   postChatInstructions: string;
   postChatInstructionsDepth: number;
+  assistantPrefill: string;
   onEnableAiFeaturesChange: (enabled: boolean) => void;
   onAiProviderChange: (provider: AiProvider) => void;
   onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
@@ -41,6 +42,7 @@ interface AiSettingsProps {
   onDebugModeChange: (enabled: boolean) => void;
   onPostChatInstructionsChange: (value: string) => void;
   onPostChatInstructionsDepthChange: (value: number) => void;
+  onAssistantPrefillChange: (value: string) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -92,6 +94,7 @@ export function AiSettings({
   debugMode,
   postChatInstructions,
   postChatInstructionsDepth,
+  assistantPrefill,
   onEnableAiFeaturesChange,
   onAiProviderChange,
   onProviderApiKeyChange,
@@ -101,6 +104,7 @@ export function AiSettings({
   onDebugModeChange,
   onPostChatInstructionsChange,
   onPostChatInstructionsDepthChange,
+  onAssistantPrefillChange,
   inputClass,
   labelClass,
 }: AiSettingsProps) {
@@ -249,6 +253,25 @@ export function AiSettings({
                   </span>
                 </label>
               </div>
+            </fieldset>
+            <fieldset className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
+              <legend className="px-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                Assistant Prefill
+              </legend>
+              <label className={labelClass}>
+                Prefill Text
+                <textarea
+                  value={assistantPrefill}
+                  onChange={(e) => onAssistantPrefillChange(e.target.value)}
+                  className={`${inputClass} min-h-[80px] resize-y`}
+                  placeholder="Text the assistant begins its response with..."
+                  rows={3}
+                />
+                <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                  Appended as a final assistant message so the model continues
+                  from this text. Useful for guiding output format or style.
+                </span>
+              </label>
             </fieldset>
           </>
         )}

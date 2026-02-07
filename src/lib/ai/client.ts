@@ -16,6 +16,7 @@ interface AiSettings {
   reasoningEffort?: ReasoningEffort;
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
+  assistantPrefill?: string;
 }
 
 function buildRequestBody(
@@ -33,6 +34,7 @@ function buildRequestBody(
     messages: buildMessages(tool, userPrompt, context, history, {
       postChatInstructions: settings.postChatInstructions,
       postChatInstructionsDepth: settings.postChatInstructionsDepth,
+      assistantPrefill: settings.assistantPrefill,
     }),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,

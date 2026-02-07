@@ -328,6 +328,7 @@ export const AppSettingsSchema = z.object({
   autoFocusModeOnSprint: z.boolean().default(false),
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
+  assistantPrefill: z.string().default(""),
   lastExportedAt: z.string().datetime().nullable().default(null),
   updatedAt: timestamp,
 });

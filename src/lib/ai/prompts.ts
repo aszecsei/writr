@@ -133,6 +133,7 @@ const TOOL_INSTRUCTIONS: Record<AiTool, string> = {
 interface BuildMessagesOptions {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
+  assistantPrefill?: string;
 }
 
 export function buildMessages(
@@ -219,6 +220,10 @@ export function buildMessages(
         };
       }
     }
+  }
+
+  if (options?.assistantPrefill) {
+    messages.push({ role: "assistant", content: options.assistantPrefill });
   }
 
   return messages;

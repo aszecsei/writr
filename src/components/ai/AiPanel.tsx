@@ -157,6 +157,7 @@ export function AiPanel() {
         {
           postChatInstructions: settings.postChatInstructions,
           postChatInstructionsDepth: settings.postChatInstructionsDepth,
+          assistantPrefill: settings.assistantPrefill,
         },
       );
       setMessages((prev) => [
@@ -191,6 +192,7 @@ export function AiPanel() {
       reasoningEffort: settings.reasoningEffort,
       postChatInstructions: settings.postChatInstructions,
       postChatInstructionsDepth: settings.postChatInstructionsDepth,
+      assistantPrefill: settings.assistantPrefill,
     };
 
     const capturedPrompt = buildMessages(
@@ -201,6 +203,7 @@ export function AiPanel() {
       {
         postChatInstructions: settings.postChatInstructions,
         postChatInstructionsDepth: settings.postChatInstructionsDepth,
+        assistantPrefill: settings.assistantPrefill,
       },
     );
     const startTime = Date.now();

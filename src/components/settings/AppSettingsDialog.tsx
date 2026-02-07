@@ -87,6 +87,7 @@ export function AppSettingsDialog() {
     useState<ReasoningEffort>("medium");
   const [postChatInstructions, setPostChatInstructions] = useState("");
   const [postChatInstructionsDepth, setPostChatInstructionsDepth] = useState(2);
+  const [assistantPrefill, setAssistantPrefill] = useState("");
 
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
@@ -133,6 +134,7 @@ export function AppSettingsDialog() {
       setReasoningEffort(settings.reasoningEffort);
       setPostChatInstructions(settings.postChatInstructions);
       setPostChatInstructionsDepth(settings.postChatInstructionsDepth);
+      setAssistantPrefill(settings.assistantPrefill);
     }
   }, [settings, modal.id]);
 
@@ -193,7 +195,8 @@ export function AppSettingsDialog() {
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
       postChatInstructions !== settings.postChatInstructions ||
-      postChatInstructionsDepth !== settings.postChatInstructionsDepth);
+      postChatInstructionsDepth !== settings.postChatInstructionsDepth ||
+      assistantPrefill !== settings.assistantPrefill);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -217,6 +220,7 @@ export function AppSettingsDialog() {
       reasoningEffort,
       postChatInstructions,
       postChatInstructionsDepth,
+      assistantPrefill,
     });
     closeModal();
   }
@@ -301,6 +305,8 @@ export function AppSettingsDialog() {
             onDebugModeChange={setDebugMode}
             onPostChatInstructionsChange={setPostChatInstructions}
             onPostChatInstructionsDepthChange={setPostChatInstructionsDepth}
+            assistantPrefill={assistantPrefill}
+            onAssistantPrefillChange={setAssistantPrefill}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />
