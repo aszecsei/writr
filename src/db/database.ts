@@ -320,6 +320,19 @@ export class WritrDatabase extends Dexie {
           if (s.uiDensity === undefined) s.uiDensity = "comfortable";
         }),
     );
+
+    this.version(16).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.aiProvider === undefined) s.aiProvider = "openrouter";
+          if (s.anthropicApiKey === undefined) s.anthropicApiKey = "";
+          if (s.openAiApiKey === undefined) s.openAiApiKey = "";
+          if (s.grokApiKey === undefined) s.grokApiKey = "";
+          if (s.zaiApiKey === undefined) s.zaiApiKey = "";
+        }),
+    );
   }
 }
 

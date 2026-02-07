@@ -2,7 +2,8 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import type { ReasoningEffort } from "@/db/schemas";
+import type { AiProvider, ReasoningEffort } from "@/db/schemas";
+import { PROVIDERS } from "@/lib/ai/providers";
 
 const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
   { value: "xhigh", label: "Extra High" },
@@ -13,15 +14,33 @@ const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
+const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
+  { value: "openrouter", label: "OpenRouter" },
+  { value: "anthropic", label: "Anthropic" },
+  { value: "openai", label: "OpenAI" },
+  { value: "grok", label: "Grok (xAI)" },
+  { value: "zai", label: "z.ai (Zhipu AI)" },
+];
+
 interface AiSettingsProps {
   enableAiFeatures: boolean;
+  aiProvider: AiProvider;
   openRouterApiKey: string;
+  anthropicApiKey: string;
+  openAiApiKey: string;
+  grokApiKey: string;
+  zaiApiKey: string;
   preferredModel: string;
   streamResponses: boolean;
   reasoningEffort: ReasoningEffort;
   debugMode: boolean;
   onEnableAiFeaturesChange: (enabled: boolean) => void;
+  onAiProviderChange: (provider: AiProvider) => void;
   onOpenRouterApiKeyChange: (key: string) => void;
+  onAnthropicApiKeyChange: (key: string) => void;
+  onOpenAiApiKeyChange: (key: string) => void;
+  onGrokApiKeyChange: (key: string) => void;
+  onZaiApiKeyChange: (key: string) => void;
   onPreferredModelChange: (model: string) => void;
   onStreamResponsesChange: (enabled: boolean) => void;
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
@@ -30,15 +49,62 @@ interface AiSettingsProps {
   labelClass: string;
 }
 
+function ApiKeyInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  inputClass,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  inputClass: string;
+}) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div className="relative mt-1">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${inputClass} mt-0 pr-10`}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        title={show ? "Hide API key" : "Show API key"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-neutral-500 transition-colors hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:text-neutral-200"
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
 export function AiSettings({
   enableAiFeatures,
+  aiProvider,
   openRouterApiKey,
+  anthropicApiKey,
+  openAiApiKey,
+  grokApiKey,
+  zaiApiKey,
   preferredModel,
   streamResponses,
   reasoningEffort,
   debugMode,
   onEnableAiFeaturesChange,
+  onAiProviderChange,
   onOpenRouterApiKeyChange,
+  onAnthropicApiKeyChange,
+  onOpenAiApiKeyChange,
+  onGrokApiKeyChange,
+  onZaiApiKeyChange,
   onPreferredModelChange,
   onStreamResponsesChange,
   onReasoningEffortChange,
@@ -46,7 +112,23 @@ export function AiSettings({
   inputClass,
   labelClass,
 }: AiSettingsProps) {
-  const [showApiKey, setShowApiKey] = useState(false);
+  const providerConfig = PROVIDERS[aiProvider];
+
+  const apiKeyValue = {
+    openrouter: openRouterApiKey,
+    anthropic: anthropicApiKey,
+    openai: openAiApiKey,
+    grok: grokApiKey,
+    zai: zaiApiKey,
+  }[aiProvider];
+
+  const apiKeyHandler = {
+    openrouter: onOpenRouterApiKeyChange,
+    anthropic: onAnthropicApiKeyChange,
+    openai: onOpenAiApiKeyChange,
+    grok: onGrokApiKeyChange,
+    zai: onZaiApiKeyChange,
+  }[aiProvider];
 
   return (
     <fieldset>
@@ -69,24 +151,30 @@ export function AiSettings({
         {enableAiFeatures && (
           <>
             <label className={labelClass}>
-              OpenRouter API Key
-              <div className="relative mt-1">
-                <input
-                  type={showApiKey ? "text" : "password"}
-                  value={openRouterApiKey}
-                  onChange={(e) => onOpenRouterApiKeyChange(e.target.value)}
-                  className={`${inputClass} mt-0 pr-10`}
-                  placeholder="sk-or-..."
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  title={showApiKey ? "Hide API key" : "Show API key"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-neutral-500 transition-colors hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:text-neutral-200"
-                >
-                  {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+              Provider
+              <select
+                value={aiProvider}
+                onChange={(e) =>
+                  onAiProviderChange(e.target.value as AiProvider)
+                }
+                className={inputClass}
+              >
+                {PROVIDER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="ai-api-key" className={labelClass}>
+              {providerConfig.label} API Key
+              <ApiKeyInput
+                id="ai-api-key"
+                value={apiKeyValue}
+                onChange={apiKeyHandler}
+                placeholder={providerConfig.apiKeyPrefix}
+                inputClass={inputClass}
+              />
             </label>
             <label className={labelClass}>
               Preferred Model
@@ -95,7 +183,7 @@ export function AiSettings({
                 value={preferredModel}
                 onChange={(e) => onPreferredModelChange(e.target.value)}
                 className={inputClass}
-                placeholder="openai/gpt-4o"
+                placeholder={providerConfig.defaultModel}
               />
             </label>
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">

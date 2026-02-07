@@ -26,6 +26,7 @@ import {
 import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
+import { getApiKeyField, PROVIDERS } from "@/lib/ai/providers";
 import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -166,15 +167,21 @@ export function AiPanel() {
       return;
     }
 
-    if (!settings.openRouterApiKey) {
+    const provider = settings.aiProvider;
+    const providerConfig = PROVIDERS[provider];
+    const apiKeyField = getApiKeyField(provider);
+    const apiKey = settings[apiKeyField] as string;
+
+    if (!apiKey) {
       throw new Error(
-        "No API key configured. Add your OpenRouter API key in App Settings.",
+        `No API key configured. Add your ${providerConfig.label} API key in App Settings.`,
       );
     }
 
     const aiSettings = {
-      apiKey: settings.openRouterApiKey,
+      apiKey,
       model: settings.preferredModel,
+      provider,
       reasoningEffort: settings.reasoningEffort,
     };
 

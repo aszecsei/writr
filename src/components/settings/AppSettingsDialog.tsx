@@ -18,6 +18,7 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type {
+  AiProvider,
   EditorWidth,
   NeutralColor,
   PrimaryColor,
@@ -66,7 +67,12 @@ export function AppSettingsDialog() {
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
   const [enableAiFeatures, setEnableAiFeatures] = useState(false);
+  const [aiProvider, setAiProvider] = useState<AiProvider>("openrouter");
   const [openRouterApiKey, setOpenRouterApiKey] = useState("");
+  const [anthropicApiKey, setAnthropicApiKey] = useState("");
+  const [openAiApiKey, setOpenAiApiKey] = useState("");
+  const [grokApiKey, setGrokApiKey] = useState("");
+  const [zaiApiKey, setZaiApiKey] = useState("");
   const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
   const [debugMode, setDebugMode] = useState(false);
   const [streamResponses, setStreamResponses] = useState(true);
@@ -110,7 +116,12 @@ export function AppSettingsDialog() {
       setReadingSpeedWpm(settings.readingSpeedWpm);
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
       setEnableAiFeatures(settings.enableAiFeatures);
+      setAiProvider(settings.aiProvider);
       setOpenRouterApiKey(settings.openRouterApiKey);
+      setAnthropicApiKey(settings.anthropicApiKey);
+      setOpenAiApiKey(settings.openAiApiKey);
+      setGrokApiKey(settings.grokApiKey);
+      setZaiApiKey(settings.zaiApiKey);
       setPreferredModel(settings.preferredModel);
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
@@ -166,7 +177,12 @@ export function AppSettingsDialog() {
       readingSpeedWpm !== settings.readingSpeedWpm ||
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
       enableAiFeatures !== settings.enableAiFeatures ||
+      aiProvider !== settings.aiProvider ||
       openRouterApiKey !== settings.openRouterApiKey ||
+      anthropicApiKey !== settings.anthropicApiKey ||
+      openAiApiKey !== settings.openAiApiKey ||
+      grokApiKey !== settings.grokApiKey ||
+      zaiApiKey !== settings.zaiApiKey ||
       preferredModel !== settings.preferredModel ||
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
@@ -186,7 +202,12 @@ export function AppSettingsDialog() {
       readingSpeedWpm,
       autoFocusModeOnSprint,
       enableAiFeatures,
+      aiProvider,
       openRouterApiKey,
+      anthropicApiKey,
+      openAiApiKey,
+      grokApiKey,
+      zaiApiKey,
       preferredModel,
       debugMode,
       streamResponses,
@@ -254,13 +275,23 @@ export function AppSettingsDialog() {
         {tab === "ai" && (
           <AiSettings
             enableAiFeatures={enableAiFeatures}
+            aiProvider={aiProvider}
             openRouterApiKey={openRouterApiKey}
+            anthropicApiKey={anthropicApiKey}
+            openAiApiKey={openAiApiKey}
+            grokApiKey={grokApiKey}
+            zaiApiKey={zaiApiKey}
             preferredModel={preferredModel}
             streamResponses={streamResponses}
             reasoningEffort={reasoningEffort}
             debugMode={debugMode}
             onEnableAiFeaturesChange={setEnableAiFeatures}
+            onAiProviderChange={setAiProvider}
             onOpenRouterApiKeyChange={setOpenRouterApiKey}
+            onAnthropicApiKeyChange={setAnthropicApiKey}
+            onOpenAiApiKeyChange={setOpenAiApiKey}
+            onGrokApiKeyChange={setGrokApiKey}
+            onZaiApiKeyChange={setZaiApiKey}
             onPreferredModelChange={setPreferredModel}
             onStreamResponsesChange={setStreamResponses}
             onReasoningEffortChange={setReasoningEffort}

@@ -241,6 +241,17 @@ export const OutlineGridCellSchema = z.object({
 });
 export type OutlineGridCell = z.infer<typeof OutlineGridCellSchema>;
 
+// ─── AI Provider ────────────────────────────────────────────────────
+
+export const AiProviderEnum = z.enum([
+  "openrouter",
+  "anthropic",
+  "openai",
+  "grok",
+  "zai",
+]);
+export type AiProvider = z.infer<typeof AiProviderEnum>;
+
 // ─── Reasoning Effort ────────────────────────────────────────────────
 
 export const ReasoningEffortEnum = z.enum([
@@ -287,7 +298,12 @@ export type UiDensity = z.infer<typeof UiDensityEnum>;
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
+  aiProvider: AiProviderEnum.default("openrouter"),
   openRouterApiKey: z.string().default(""),
+  anthropicApiKey: z.string().default(""),
+  openAiApiKey: z.string().default(""),
+  grokApiKey: z.string().default(""),
+  zaiApiKey: z.string().default(""),
   preferredModel: z.string().default("openai/gpt-4o"),
   theme: z.enum(["light", "dark", "system"]).default("system"),
   primaryColor: PrimaryColorEnum.default("blue"),

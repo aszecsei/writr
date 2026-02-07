@@ -25,6 +25,7 @@ export interface AiMessage {
 }
 
 import type {
+  AiProvider,
   Chapter,
   Character,
   CharacterRelationship,
@@ -38,7 +39,7 @@ import type {
   WorldbuildingDoc,
 } from "@/db/schemas";
 
-export type { ReasoningEffort };
+export type { AiProvider, ReasoningEffort };
 
 export interface AiContext {
   projectTitle: string;

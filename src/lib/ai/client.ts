@@ -2,6 +2,7 @@ import { buildMessages } from "./prompts";
 import type {
   AiContext,
   AiMessage,
+  AiProvider,
   AiResponse,
   AiStreamChunk,
   AiTool,
@@ -11,6 +12,7 @@ import type {
 interface AiSettings {
   apiKey: string;
   model: string;
+  provider: AiProvider;
   reasoningEffort?: ReasoningEffort;
 }
 
@@ -25,6 +27,7 @@ function buildRequestBody(
   const body: Record<string, unknown> = {
     apiKey: settings.apiKey,
     model: settings.model,
+    provider: settings.provider,
     messages: buildMessages(tool, userPrompt, context, history),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,
