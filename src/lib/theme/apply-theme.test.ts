@@ -109,17 +109,17 @@ describe("applyEditorWidth", () => {
 
   it("sets --editor-content-width CSS variable", () => {
     applyEditorWidth("wide");
-    expect(styleProps.get("--editor-content-width")).toBe("900px");
+    expect(styleProps.get("--editor-content-width")).toBe("1200px");
   });
 
   it("handles narrow width", () => {
     applyEditorWidth("narrow");
-    expect(styleProps.get("--editor-content-width")).toBe("600px");
+    expect(styleProps.get("--editor-content-width")).toBe("720px");
   });
 
   it("handles medium width (default)", () => {
     applyEditorWidth("medium");
-    expect(styleProps.get("--editor-content-width")).toBe("720px");
+    expect(styleProps.get("--editor-content-width")).toBe("900px");
   });
 
   it("stores width in localStorage", () => {

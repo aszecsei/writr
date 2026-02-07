@@ -81,15 +81,24 @@ export function AppSettingsDialog() {
   // Snapshot of saved settings at dialog open, used to revert on cancel
   const savedSettingsRef = useRef(settings);
 
-  // Sync local state from DB settings — runs when settings change OR dialog opens.
-  // The modal.id dep ensures state resets from DB when re-opening after cancel,
-  // even if `settings` reference is unchanged (no DB write happened).
+  // Track whether we've initialized state for this dialog session
+  const initializedRef = useRef(false);
+
+  // Reset initialization flag when dialog closes
   useEffect(() => {
-    if (settings) {
-      if (modal.id === "app-settings") {
-        savedSettingsRef.current = settings;
-        setTab("general");
-      }
+    if (modal.id !== "app-settings") {
+      initializedRef.current = false;
+    }
+  }, [modal.id]);
+
+  // Sync local state from DB settings — only once when dialog opens.
+  // The initializedRef prevents re-syncing (and wiping user changes)
+  // if settings reference changes while the dialog is open.
+  useEffect(() => {
+    if (settings && modal.id === "app-settings" && !initializedRef.current) {
+      initializedRef.current = true;
+      savedSettingsRef.current = settings;
+      setTab("general");
       setTheme(settings.theme);
       setPrimaryColor(settings.primaryColor);
       setNeutralColor(settings.neutralColor);
