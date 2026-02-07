@@ -14,7 +14,6 @@ import {
   createStyleGuideEntry,
   createTimelineEvent,
   createWorldbuildingDoc,
-  deleteChapter,
   deleteComment,
   deleteProject,
   deleteSprint,
@@ -939,32 +938,6 @@ describe("comments", () => {
 
     const deleted = await getComment(comment.id);
     expect(deleted).toBeUndefined();
-  });
-
-  it("deleteChapter cascades to comments", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 0,
-      toOffset: 10,
-    });
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 20,
-      toOffset: 30,
-    });
-
-    await deleteChapter(chapter.id);
-
-    const comments = await getCommentsByChapter(chapter.id);
-    expect(comments).toHaveLength(0);
   });
 
   it("deleteProject cascades to comments", async () => {

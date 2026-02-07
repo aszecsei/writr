@@ -231,7 +231,13 @@ export async function syncDeleteChapter(
 ): Promise<void> {
   await db.transaction(
     "rw",
-    [db.chapters, db.outlineGridRows, db.outlineGridCells],
+    [
+      db.chapters,
+      db.outlineGridRows,
+      db.outlineGridCells,
+      db.comments,
+      db.chapterSnapshots,
+    ],
     async () => {
       const row = await db.outlineGridRows
         .where({ linkedChapterId: chapterId })
@@ -253,6 +259,8 @@ export async function syncDeleteChapter(
         }
       }
 
+      await db.comments.where({ chapterId }).delete();
+      await db.chapterSnapshots.where({ chapterId }).delete();
       await db.chapters.delete(chapterId);
     },
   );
@@ -268,12 +276,22 @@ export async function syncDeleteOutlineRow(
 ): Promise<void> {
   await db.transaction(
     "rw",
-    [db.outlineGridRows, db.outlineGridCells, db.chapters],
+    [
+      db.outlineGridRows,
+      db.outlineGridCells,
+      db.chapters,
+      db.comments,
+      db.chapterSnapshots,
+    ],
     async () => {
       const row = await db.outlineGridRows.get(rowId);
       if (!row) return;
 
       if (row.linkedChapterId && cascade) {
+        await db.comments.where({ chapterId: row.linkedChapterId }).delete();
+        await db.chapterSnapshots
+          .where({ chapterId: row.linkedChapterId })
+          .delete();
         await db.chapters.delete(row.linkedChapterId);
       }
 

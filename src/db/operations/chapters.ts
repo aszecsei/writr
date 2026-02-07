@@ -64,15 +64,3 @@ export async function updateChapterContent(
 export async function reorderChapters(orderedIds: string[]): Promise<void> {
   return reorderEntities(db.chapters, orderedIds);
 }
-
-export async function deleteChapter(id: string): Promise<void> {
-  await db.transaction(
-    "rw",
-    [db.chapters, db.comments, db.chapterSnapshots],
-    async () => {
-      await db.comments.where({ chapterId: id }).delete();
-      await db.chapterSnapshots.where({ chapterId: id }).delete();
-      await db.chapters.delete(id);
-    },
-  );
-}

@@ -14,8 +14,10 @@ import {
 import { db } from "./database";
 import {
   createChapter,
+  createComment,
   createOutlineGridRow,
   createProject,
+  createSnapshot,
   getChaptersByProject,
   getOutlineGridRowsByProject,
 } from "./operations";
@@ -25,6 +27,8 @@ beforeEach(async () => {
   await db.chapters.clear();
   await db.outlineGridRows.clear();
   await db.outlineGridCells.clear();
+  await db.comments.clear();
+  await db.chapterSnapshots.clear();
 });
 
 describe("linkChapterToRow", () => {
@@ -362,6 +366,40 @@ describe("syncDeleteChapter", () => {
     const deletedChapter = await db.chapters.get(chapter.id);
     expect(deletedChapter).toBeUndefined();
   });
+
+  it("cascades to comments and snapshots", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+    await createSnapshot({
+      projectId: project.id,
+      chapterId: chapter.id,
+      name: "v1",
+      content: "hello",
+      wordCount: 1,
+    });
+
+    await syncDeleteChapter(chapter.id, false);
+
+    const comments = await db.comments
+      .where({ chapterId: chapter.id })
+      .toArray();
+    expect(comments).toHaveLength(0);
+
+    const snapshots = await db.chapterSnapshots
+      .where({ chapterId: chapter.id })
+      .toArray();
+    expect(snapshots).toHaveLength(0);
+  });
 });
 
 describe("syncDeleteOutlineRow", () => {
@@ -416,6 +454,44 @@ describe("syncDeleteOutlineRow", () => {
 
     const deletedRow = await db.outlineGridRows.get(row.id);
     expect(deletedRow).toBeUndefined();
+  });
+
+  it("cascades to comments and snapshots when deleting linked chapter", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+    const row = await createOutlineGridRow({
+      projectId: project.id,
+      linkedChapterId: chapter.id,
+    });
+
+    await createComment({
+      projectId: project.id,
+      chapterId: chapter.id,
+      fromOffset: 0,
+      toOffset: 10,
+    });
+    await createSnapshot({
+      projectId: project.id,
+      chapterId: chapter.id,
+      name: "v1",
+      content: "hello",
+      wordCount: 1,
+    });
+
+    await syncDeleteOutlineRow(row.id, true);
+
+    const comments = await db.comments
+      .where({ chapterId: chapter.id })
+      .toArray();
+    expect(comments).toHaveLength(0);
+
+    const snapshots = await db.chapterSnapshots
+      .where({ chapterId: chapter.id })
+      .toArray();
+    expect(snapshots).toHaveLength(0);
   });
 });
 
