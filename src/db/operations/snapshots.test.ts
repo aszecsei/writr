@@ -3,7 +3,6 @@ import { db } from "../database";
 import {
   createSnapshot,
   deleteSnapshot,
-  deleteSnapshotsByChapter,
   getSnapshot,
   getSnapshotsByChapter,
 } from "./snapshots";
@@ -101,27 +100,6 @@ describe("snapshot operations", () => {
     expect(fetched).toBeUndefined();
   });
 
-  it("should delete all snapshots for a chapter", async () => {
-    await createSnapshot({
-      chapterId: chapterId1,
-      projectId,
-      name: "One",
-      content: "1",
-      wordCount: 1,
-    });
-    await createSnapshot({
-      chapterId: chapterId1,
-      projectId,
-      name: "Two",
-      content: "2",
-      wordCount: 1,
-    });
-
-    await deleteSnapshotsByChapter(chapterId1);
-    const snaps = await getSnapshotsByChapter(chapterId1);
-    expect(snaps).toHaveLength(0);
-  });
-
   it("should isolate snapshots between chapters", async () => {
     await createSnapshot({
       chapterId: chapterId1,
@@ -147,27 +125,4 @@ describe("snapshot operations", () => {
     expect(snaps2[0].name).toBe("Ch2 Snap");
   });
 
-  it("should delete by chapter without affecting other chapters", async () => {
-    await createSnapshot({
-      chapterId: chapterId1,
-      projectId,
-      name: "Ch1",
-      content: "1",
-      wordCount: 1,
-    });
-    await createSnapshot({
-      chapterId: chapterId2,
-      projectId,
-      name: "Ch2",
-      content: "2",
-      wordCount: 1,
-    });
-
-    await deleteSnapshotsByChapter(chapterId1);
-
-    const snaps1 = await getSnapshotsByChapter(chapterId1);
-    const snaps2 = await getSnapshotsByChapter(chapterId2);
-    expect(snaps1).toHaveLength(0);
-    expect(snaps2).toHaveLength(1);
-  });
 });

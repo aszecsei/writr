@@ -39,8 +39,3 @@ export async function deleteSnapshot(id: string): Promise<void> {
   await db.chapterSnapshots.delete(id);
 }
 
-export async function deleteSnapshotsByChapter(
-  chapterId: string,
-): Promise<void> {
-  await db.chapterSnapshots.where({ chapterId }).delete();
-}
