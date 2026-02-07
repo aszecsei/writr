@@ -1,5 +1,7 @@
 "use client";
 
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
+
 export interface ProjectFormData {
   title: string;
   description: string;
@@ -12,9 +14,6 @@ interface ProjectFormFieldsProps {
   onChange: (values: ProjectFormData) => void;
 }
 
-const inputClassName =
-  "mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
-
 export function ProjectFormFields({
   values,
   onChange,
@@ -22,31 +21,31 @@ export function ProjectFormFields({
   return (
     <>
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className={LABEL_CLASS}>
           Title
           <input
             type="text"
             value={values.title}
             onChange={(e) => onChange({ ...values, title: e.target.value })}
-            className={inputClassName}
+            className={INPUT_CLASS}
             placeholder="My Novel"
           />
         </label>
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className={LABEL_CLASS}>
           Genre
           <input
             type="text"
             value={values.genre}
             onChange={(e) => onChange({ ...values, genre: e.target.value })}
-            className={inputClassName}
+            className={INPUT_CLASS}
             placeholder="Fantasy, Sci-Fi, etc."
           />
         </label>
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className={LABEL_CLASS}>
           Description
           <textarea
             value={values.description}
@@ -54,13 +53,13 @@ export function ProjectFormFields({
               onChange({ ...values, description: e.target.value })
             }
             rows={3}
-            className={inputClassName}
+            className={INPUT_CLASS}
             placeholder="A brief description of your project..."
           />
         </label>
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className={LABEL_CLASS}>
           Target Word Count
           <input
             type="number"
@@ -72,7 +71,7 @@ export function ProjectFormFields({
               })
             }
             min={0}
-            className={inputClassName}
+            className={INPUT_CLASS}
             placeholder="0"
           />
         </label>

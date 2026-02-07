@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/Badge";
 import type { ChapterStatus } from "@/db/schemas";
 
 type Status = ChapterStatus | "unlinked";
@@ -30,12 +31,5 @@ const statusConfig: Record<Status, { label: string; className: string }> = {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const { label, className } = statusConfig[status];
-
-  return (
-    <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${className}`}
-    >
-      {label}
-    </span>
-  );
+  return <Badge label={label} className={className} />;
 }

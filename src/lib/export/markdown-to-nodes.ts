@@ -122,6 +122,68 @@ function parseInlineTokens(
   return spans;
 }
 
+function parseHtmlImage(raw: string): DocNode | null {
+  const imgMatch = raw.match(
+    /<img[^>]+src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*\/?>/i,
+  );
+  if (!imgMatch) return null;
+  return { type: "image", src: imgMatch[1], alt: imgMatch[2] || undefined };
+}
+
+function parseHtmlAlignmentAndIndent(raw: string): {
+  alignment?: TextAlignment;
+  indent?: number;
+} {
+  const alignMatch = raw.match(
+    /style="[^"]*text-align:\s*(left|center|right|justify)[^"]*"/i,
+  );
+  const alignment = alignMatch?.[1] as TextAlignment | undefined;
+
+  const indentAttrMatch = raw.match(/data-indent="(\d+)"/i);
+  const marginMatch = raw.match(/margin-left:\s*(\d+)em/i);
+  const indent = indentAttrMatch
+    ? Number.parseInt(indentAttrMatch[1], 10)
+    : marginMatch
+      ? Math.round(Number.parseInt(marginMatch[1], 10) / 2)
+      : undefined;
+
+  return { alignment, indent };
+}
+
+function parseHtmlHeading(
+  raw: string,
+  alignment?: TextAlignment,
+  indent?: number,
+): DocNode | null {
+  const headingMatch = raw.match(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/i);
+  if (!headingMatch) return null;
+  const level = Number.parseInt(headingMatch[1], 10) as 1 | 2 | 3 | 4 | 5 | 6;
+  const content = headingMatch[2].replace(/<[^>]+>/g, "");
+  return {
+    type: "heading",
+    level,
+    spans: [{ text: content, styles: [] }],
+    alignment,
+    indent,
+  };
+}
+
+function parseHtmlParagraph(
+  raw: string,
+  alignment?: TextAlignment,
+  indent?: number,
+): DocNode | null {
+  const pMatch = raw.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (!pMatch) return null;
+  const content = pMatch[1].replace(/<[^>]+>/g, "");
+  return {
+    type: "paragraph",
+    spans: [{ text: content, styles: [] }],
+    alignment,
+    indent,
+  };
+}
+
 function walkTokens(tokens: Token[]): DocNode[] {
   const nodes: DocNode[] = [];
 
@@ -165,68 +227,25 @@ function walkTokens(tokens: Token[]): DocNode[] {
         nodes.push({ type: "hr" });
       })
       .with({ type: "html" }, (t) => {
-        const htmlToken = t as Tokens.HTML;
-        const raw = htmlToken.raw;
+        const raw = (t as Tokens.HTML).raw;
 
-        // Handle image tags: <img src="..." alt="...">
-        const imgMatch = raw.match(
-          /<img[^>]+src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*\/?>/i,
-        );
-        if (imgMatch) {
-          nodes.push({
-            type: "image",
-            src: imgMatch[1],
-            alt: imgMatch[2] || undefined,
-          });
+        const image = parseHtmlImage(raw);
+        if (image) {
+          nodes.push(image);
           return;
         }
 
-        // Handle paragraphs/headings with alignment: style="text-align: center"
-        const alignMatch = raw.match(
-          /style="[^"]*text-align:\s*(left|center|right|justify)[^"]*"/i,
-        );
-        const alignment = alignMatch?.[1] as TextAlignment | undefined;
+        const { alignment, indent } = parseHtmlAlignmentAndIndent(raw);
 
-        // Handle indent: data-indent="N" or margin-left
-        const indentAttrMatch = raw.match(/data-indent="(\d+)"/i);
-        const marginMatch = raw.match(/margin-left:\s*(\d+)em/i);
-        const indent = indentAttrMatch
-          ? Number.parseInt(indentAttrMatch[1], 10)
-          : marginMatch
-            ? Math.round(Number.parseInt(marginMatch[1], 10) / 2)
-            : undefined;
-
-        // Handle heading tags with alignment/indent
-        const headingMatch = raw.match(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/i);
-        if (headingMatch) {
-          const level = Number.parseInt(headingMatch[1], 10) as
-            | 1
-            | 2
-            | 3
-            | 4
-            | 5
-            | 6;
-          const content = headingMatch[2].replace(/<[^>]+>/g, "");
-          nodes.push({
-            type: "heading",
-            level,
-            spans: [{ text: content, styles: [] }],
-            alignment,
-            indent,
-          });
+        const heading = parseHtmlHeading(raw, alignment, indent);
+        if (heading) {
+          nodes.push(heading);
           return;
         }
 
-        // Handle paragraph tags with alignment/indent
-        const pMatch = raw.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-        if (pMatch) {
-          const content = pMatch[1].replace(/<[^>]+>/g, "");
-          nodes.push({
-            type: "paragraph",
-            spans: [{ text: content, styles: [] }],
-            alignment,
-            indent,
-          });
+        const paragraph = parseHtmlParagraph(raw, alignment, indent);
+        if (paragraph) {
+          nodes.push(paragraph);
           return;
         }
 

@@ -9,6 +9,35 @@ import {
 } from "../schemas";
 import { now } from "./helpers";
 
+// ─── Shared helper ──────────────────────────────────────────────────
+
+async function modifyDictionaryWords(
+  getDict: () => Promise<{ words: string[] } | undefined>,
+  updateFn: (data: { words: string[]; updatedAt: string }) => Promise<unknown>,
+  word: string,
+  action: "add" | "remove",
+): Promise<void> {
+  const normalized = word.toLowerCase().trim();
+  if (!normalized) return;
+
+  const dict = await getDict();
+  if (!dict) return;
+
+  const wordSet = new Set(dict.words);
+  if (action === "add") {
+    if (wordSet.has(normalized)) return;
+    wordSet.add(normalized);
+  } else {
+    if (!wordSet.has(normalized)) return;
+    wordSet.delete(normalized);
+  }
+
+  await updateFn({
+    words: Array.from(wordSet).sort(),
+    updatedAt: now(),
+  });
+}
+
 // ─── App Dictionary ─────────────────────────────────────────────────
 
 export async function getAppDictionary(): Promise<AppDictionary> {
@@ -24,33 +53,21 @@ export async function getAppDictionary(): Promise<AppDictionary> {
 }
 
 export async function addWordToAppDictionary(word: string): Promise<void> {
-  const normalized = word.toLowerCase().trim();
-  if (!normalized) return;
-
-  const dict = await getAppDictionary();
-  const wordSet = new Set(dict.words);
-  if (wordSet.has(normalized)) return;
-
-  wordSet.add(normalized);
-  await db.appDictionary.update(APP_DICTIONARY_ID, {
-    words: Array.from(wordSet).sort(),
-    updatedAt: now(),
-  });
+  return modifyDictionaryWords(
+    getAppDictionary,
+    (data) => db.appDictionary.update(APP_DICTIONARY_ID, data),
+    word,
+    "add",
+  );
 }
 
 export async function removeWordFromAppDictionary(word: string): Promise<void> {
-  const normalized = word.toLowerCase().trim();
-  if (!normalized) return;
-
-  const dict = await getAppDictionary();
-  const wordSet = new Set(dict.words);
-  if (!wordSet.has(normalized)) return;
-
-  wordSet.delete(normalized);
-  await db.appDictionary.update(APP_DICTIONARY_ID, {
-    words: Array.from(wordSet).sort(),
-    updatedAt: now(),
-  });
+  return modifyDictionaryWords(
+    getAppDictionary,
+    (data) => db.appDictionary.update(APP_DICTIONARY_ID, data),
+    word,
+    "remove",
+  );
 }
 
 // ─── Project Dictionary ─────────────────────────────────────────────
@@ -83,36 +100,25 @@ export async function addWordToProjectDictionary(
   projectId: string,
   word: string,
 ): Promise<void> {
-  const normalized = word.toLowerCase().trim();
-  if (!normalized) return;
-
   const dict = await getOrCreateProjectDictionary(projectId);
-  const wordSet = new Set(dict.words);
-  if (wordSet.has(normalized)) return;
-
-  wordSet.add(normalized);
-  await db.projectDictionaries.update(dict.id, {
-    words: Array.from(wordSet).sort(),
-    updatedAt: now(),
-  });
+  return modifyDictionaryWords(
+    () => Promise.resolve(dict),
+    (data) => db.projectDictionaries.update(dict.id, data),
+    word,
+    "add",
+  );
 }
 
 export async function removeWordFromProjectDictionary(
   projectId: string,
   word: string,
 ): Promise<void> {
-  const normalized = word.toLowerCase().trim();
-  if (!normalized) return;
-
   const dict = await getProjectDictionary(projectId);
   if (!dict) return;
-
-  const wordSet = new Set(dict.words);
-  if (!wordSet.has(normalized)) return;
-
-  wordSet.delete(normalized);
-  await db.projectDictionaries.update(dict.id, {
-    words: Array.from(wordSet).sort(),
-    updatedAt: now(),
-  });
+  return modifyDictionaryWords(
+    () => Promise.resolve(dict),
+    (data) => db.projectDictionaries.update(dict.id, data),
+    word,
+    "remove",
+  );
 }

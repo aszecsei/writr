@@ -35,33 +35,26 @@ const ALIGNMENT_MAP: Record<
   justify: AlignmentType.JUSTIFIED,
 };
 
+function spanToRunOptions(span: TextSpan) {
+  return {
+    bold: span.styles.includes("bold"),
+    italics: span.styles.includes("italic"),
+    strike: span.styles.includes("strikethrough"),
+    font: span.styles.includes("code") ? "Courier New" : "Calibri",
+  };
+}
+
 function spansToRuns(spans: TextSpan[]): TextRun[] {
   const runs: TextRun[] = [];
   for (const span of spans) {
+    runs.push(new TextRun({ text: span.text, ...spanToRunOptions(span) }));
     // For ruby text, render as "base(annotation)" since DOCX ruby support is complex
     if (span.ruby) {
       runs.push(
         new TextRun({
-          text: span.text,
-          bold: span.styles.includes("bold"),
-          italics: span.styles.includes("italic"),
-          strike: span.styles.includes("strikethrough"),
-          font: span.styles.includes("code") ? "Courier New" : "Calibri",
-        }),
-        new TextRun({
           text: `(${span.ruby})`,
           size: 16, // Smaller size for annotation
           color: "666666",
-        }),
-      );
-    } else {
-      runs.push(
-        new TextRun({
-          text: span.text,
-          bold: span.styles.includes("bold"),
-          italics: span.styles.includes("italic"),
-          strike: span.styles.includes("strikethrough"),
-          font: span.styles.includes("code") ? "Courier New" : "Calibri",
         }),
       );
     }

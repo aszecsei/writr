@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useEffect, useState } from "react";
 import { db } from "@/db/database";
 import { AppSettingsSchema } from "@/db/schemas";
 import { APP_SETTINGS_ID } from "@/lib/constants";
@@ -28,17 +28,26 @@ export function useAppStats(): AppStats | undefined {
   }, []);
 
   const stats = useLiveQuery(async () => {
-    const [projectCount, chapterCount, characterCount, locationCount, chapters, rawSettings] =
-      await Promise.all([
-        db.projects.count(),
-        db.chapters.count(),
-        db.characters.count(),
-        db.locations.count(),
-        db.chapters.toArray(),
-        db.appSettings.get(APP_SETTINGS_ID),
-      ]);
+    const [
+      projectCount,
+      chapterCount,
+      characterCount,
+      locationCount,
+      chapters,
+      rawSettings,
+    ] = await Promise.all([
+      db.projects.count(),
+      db.chapters.count(),
+      db.characters.count(),
+      db.locations.count(),
+      db.chapters.toArray(),
+      db.appSettings.get(APP_SETTINGS_ID),
+    ]);
 
-    const totalWordCount = chapters.reduce((sum, ch) => sum + (ch.wordCount ?? 0), 0);
+    const totalWordCount = chapters.reduce(
+      (sum, ch) => sum + (ch.wordCount ?? 0),
+      0,
+    );
     const settings = rawSettings ? AppSettingsSchema.parse(rawSettings) : null;
 
     return {

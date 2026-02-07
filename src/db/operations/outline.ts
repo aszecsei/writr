@@ -9,6 +9,17 @@ import {
 } from "../schemas";
 import { generateId, now, reorderEntities } from "./helpers";
 
+// ─── Shared helper ──────────────────────────────────────────────────
+
+async function shiftOrdersUp(
+  entities: { id: string; order: number }[],
+  updateFn: (id: string, order: number) => Promise<unknown>,
+): Promise<void> {
+  for (const entity of entities) {
+    await updateFn(entity.id, entity.order + 1);
+  }
+}
+
 // ─── Outline Grid Columns ────────────────────────────────────────────
 
 export async function getOutlineGridColumnsByProject(
@@ -61,15 +72,13 @@ export async function insertOutlineGridColumnAt(
   atOrder: number,
 ): Promise<OutlineGridColumn> {
   return db.transaction("rw", db.outlineGridColumns, async () => {
-    // Shift existing columns at and after atOrder
-    const columnsToShift = await db.outlineGridColumns
+    const toShift = await db.outlineGridColumns
       .where({ projectId })
       .filter((c) => c.order >= atOrder)
       .toArray();
-    for (const col of columnsToShift) {
-      await db.outlineGridColumns.update(col.id, { order: col.order + 1 });
-    }
-    // Create new column at the position
+    await shiftOrdersUp(toShift, (id, order) =>
+      db.outlineGridColumns.update(id, { order }),
+    );
     const column = OutlineGridColumnSchema.parse({
       id: generateId(),
       projectId,
@@ -149,15 +158,13 @@ export async function insertOutlineGridRowAt(
   linkedChapterId: string | null = null,
 ): Promise<OutlineGridRow> {
   return db.transaction("rw", db.outlineGridRows, async () => {
-    // Shift existing rows at and after atOrder
-    const rowsToShift = await db.outlineGridRows
+    const toShift = await db.outlineGridRows
       .where({ projectId })
       .filter((r) => r.order >= atOrder)
       .toArray();
-    for (const row of rowsToShift) {
-      await db.outlineGridRows.update(row.id, { order: row.order + 1 });
-    }
-    // Create new row at the position
+    await shiftOrdersUp(toShift, (id, order) =>
+      db.outlineGridRows.update(id, { order }),
+    );
     const row = OutlineGridRowSchema.parse({
       id: generateId(),
       projectId,

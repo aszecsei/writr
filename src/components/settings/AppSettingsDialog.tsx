@@ -1,13 +1,14 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
+import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
-  BUTTON_CANCEL,
-  BUTTON_PRIMARY,
+  INPUT_CLASS,
+  LABEL_CLASS,
   RADIO_ACTIVE,
   RADIO_BASE,
   RADIO_INACTIVE,
-} from "@/components/ui/button-styles";
+} from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type { ReasoningEffort } from "@/db/schemas";
@@ -19,12 +20,6 @@ import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
 import { GeneralTabContent } from "./GeneralTabContent";
 import { ImportBackupDialog } from "./ImportBackupDialog";
-
-const INPUT_CLASS =
-  "mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
-
-const LABEL_CLASS =
-  "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
 type SettingsTab = "general" | "editor" | "ai" | "data";
 
@@ -163,9 +158,7 @@ export function AppSettingsDialog() {
             onAutoSaveSecondsChange={setAutoSaveSeconds}
             onReadingSpeedWpmChange={setReadingSpeedWpm}
             onAutoFocusModeOnSprintChange={setAutoFocusModeOnSprint}
-            onManageDictionaries={() =>
-              openModal({ id: "dictionary-manager" })
-            }
+            onManageDictionaries={() => openModal({ id: "dictionary-manager" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />
@@ -198,18 +191,11 @@ export function AppSettingsDialog() {
           />
         )}
 
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!isDirty}
-            className={BUTTON_PRIMARY}
-          >
-            Save
-          </button>
-        </div>
+        <DialogFooter
+          onCancel={closeModal}
+          submitLabel="Save"
+          submitDisabled={!isDirty}
+        />
       </form>
 
       {pendingImport && (

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
 import { Modal } from "@/components/ui/Modal";
 import { createProject } from "@/db/operations";
 import { useUiStore } from "@/store/uiStore";
@@ -46,18 +46,11 @@ export function CreateProjectDialog() {
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <ProjectFormFields values={values} onChange={setValues} />
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!values.title.trim()}
-            className={BUTTON_PRIMARY}
-          >
-            Create
-          </button>
-        </div>
+        <DialogFooter
+          onCancel={closeModal}
+          submitLabel="Create"
+          submitDisabled={!values.title.trim()}
+        />
       </form>
     </Modal>
   );

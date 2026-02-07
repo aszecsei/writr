@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/Badge";
 import type { CharacterRole } from "@/db/schemas";
 
 const roleStyles: Record<CharacterRole, string> = {
@@ -17,11 +18,5 @@ const roleLabels: Record<CharacterRole, string> = {
 };
 
 export function RoleBadge({ role }: { role: CharacterRole }) {
-  return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${roleStyles[role]}`}
-    >
-      {roleLabels[role]}
-    </span>
-  );
+  return <Badge label={roleLabels[role]} className={roleStyles[role]} />;
 }

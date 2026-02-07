@@ -3,7 +3,8 @@
 import { AlertTriangle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { BUTTON_CANCEL, BUTTON_DANGER } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteProject } from "@/db/operations";
 import { useProject } from "@/hooks/useProject";
@@ -63,7 +64,7 @@ export function DeleteProjectDialog() {
       </div>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className={LABEL_CLASS}>
             Type{" "}
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
               {project?.title}
@@ -73,24 +74,18 @@ export function DeleteProjectDialog() {
               type="text"
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className={INPUT_CLASS}
               placeholder={project?.title}
               autoComplete="off"
             />
           </label>
         </div>
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={handleClose} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!nameMatches}
-            className={BUTTON_DANGER}
-          >
-            Delete Project
-          </button>
-        </div>
+        <DialogFooter
+          onCancel={handleClose}
+          submitLabel="Delete Project"
+          submitDisabled={!nameMatches}
+          variant="danger"
+        />
       </form>
     </Modal>
   );

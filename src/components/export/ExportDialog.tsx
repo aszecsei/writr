@@ -2,13 +2,12 @@
 
 import { Download, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
-  BUTTON_CANCEL,
-  BUTTON_PRIMARY,
   RADIO_ACTIVE,
   RADIO_BASE,
   RADIO_INACTIVE,
-} from "@/components/ui/button-styles";
+} from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import {
   type ExportFormat,
@@ -161,17 +160,14 @@ export function ExportDialog() {
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exporting}
-            className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
-          >
-            {exporting ? (
+        <DialogFooter
+          onCancel={closeModal}
+          submitDisabled={exporting}
+          submitType="button"
+          onSubmit={handleExport}
+          submitClassName="flex items-center gap-2"
+          submitChildren={
+            exporting ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
                 Exporting...
@@ -181,9 +177,9 @@ export function ExportDialog() {
                 <Download size={14} />
                 Export
               </>
-            )}
-          </button>
-        </div>
+            )
+          }
+        />
       </div>
     </Modal>
   );

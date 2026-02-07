@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
 import { Modal } from "@/components/ui/Modal";
 import { updateProject } from "@/db/operations";
 import { useProject } from "@/hooks/useProject";
@@ -58,18 +58,11 @@ export function EditProjectDialog() {
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <ProjectFormFields values={values} onChange={setValues} />
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!values.title.trim()}
-            className={BUTTON_PRIMARY}
-          >
-            Save
-          </button>
-        </div>
+        <DialogFooter
+          onCancel={closeModal}
+          submitLabel="Save"
+          submitDisabled={!values.title.trim()}
+        />
       </form>
     </Modal>
   );

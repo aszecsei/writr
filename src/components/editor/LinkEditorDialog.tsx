@@ -2,6 +2,8 @@
 
 import { Link2Off } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { isLinkEditorModal, useUiStore } from "@/store/uiStore";
 
@@ -62,10 +64,7 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
       </h3>
 
       <div className="mt-4">
-        <label
-          htmlFor="link-url"
-          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
+        <label htmlFor="link-url" className={LABEL_CLASS}>
           URL
         </label>
         <input
@@ -76,7 +75,7 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="https://example.com"
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -92,18 +91,14 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
           </button>
         )}
         <div className="flex-1" />
-        <button
-          type="button"
-          onClick={handleClose}
-          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus-visible:ring-offset-zinc-900"
-        >
+        <button type="button" onClick={handleClose} className={BUTTON_CANCEL}>
           Cancel
         </button>
         <button
           type="button"
           onClick={handleApply}
           disabled={!url.trim()}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:focus-visible:ring-offset-zinc-900"
+          className={BUTTON_PRIMARY}
         >
           Apply
         </button>

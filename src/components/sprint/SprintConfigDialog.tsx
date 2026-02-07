@@ -2,12 +2,13 @@
 
 import { History, Play, Timer } from "lucide-react";
 import { useState } from "react";
+import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
-  BUTTON_CANCEL,
-  BUTTON_PRIMARY,
+  INPUT_CLASS,
   RADIO_ACTIVE,
+  RADIO_BASE,
   RADIO_INACTIVE,
-} from "@/components/ui/button-styles";
+} from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useWritingSprint } from "@/hooks/useWritingSprint";
 import { useProjectStore } from "@/store/projectStore";
@@ -72,9 +73,6 @@ export function SprintConfigDialog() {
     openHistoryModal();
   }
 
-  const radioClass =
-    "flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm font-medium transition-colors";
-
   return (
     <Modal onClose={closeConfigModal}>
       <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -103,7 +101,7 @@ export function SprintConfigDialog() {
                   setSelectedDuration(preset.ms);
                   setUseCustom(false);
                 }}
-                className={`${radioClass} ${!useCustom && selectedDuration === preset.ms ? RADIO_ACTIVE : RADIO_INACTIVE}`}
+                className={`${RADIO_BASE} ${!useCustom && selectedDuration === preset.ms ? RADIO_ACTIVE : RADIO_INACTIVE}`}
               >
                 {preset.label}
               </button>
@@ -111,7 +109,7 @@ export function SprintConfigDialog() {
             <button
               type="button"
               onClick={() => setUseCustom(true)}
-              className={`${radioClass} ${useCustom ? RADIO_ACTIVE : RADIO_INACTIVE}`}
+              className={`${RADIO_BASE} ${useCustom ? RADIO_ACTIVE : RADIO_INACTIVE}`}
             >
               Custom
             </button>
@@ -125,7 +123,7 @@ export function SprintConfigDialog() {
                 value={customMinutes}
                 onChange={(e) => setCustomMinutes(e.target.value)}
                 placeholder="Minutes"
-                className="w-24 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className={`w-24 ${INPUT_CLASS}`}
               />
               <span className="text-sm text-zinc-500 dark:text-zinc-400">
                 minutes
@@ -146,7 +144,7 @@ export function SprintConfigDialog() {
               value={wordGoal}
               onChange={(e) => setWordGoal(e.target.value)}
               placeholder="e.g., 500"
-              className="w-32 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+              className={`w-32 ${INPUT_CLASS}`}
             />
           </div>
         </fieldset>
@@ -157,34 +155,29 @@ export function SprintConfigDialog() {
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleViewHistory}
-            className="flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-          >
-            <History size={14} />
-            View History
-          </button>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={closeConfigModal}
-              className={BUTTON_CANCEL}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={!isValidDuration}
-              className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
-            >
+        <DialogFooter
+          onCancel={closeConfigModal}
+          submitDisabled={!isValidDuration}
+          submitType="button"
+          onSubmit={handleStart}
+          submitClassName="flex items-center gap-2"
+          submitChildren={
+            <>
               <Play size={14} />
               Start Sprint
+            </>
+          }
+          left={
+            <button
+              type="button"
+              onClick={handleViewHistory}
+              className="flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+            >
+              <History size={14} />
+              View History
             </button>
-          </div>
-        </div>
+          }
+        />
       </div>
     </Modal>
   );
