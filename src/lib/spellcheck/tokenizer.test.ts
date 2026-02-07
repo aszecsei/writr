@@ -24,10 +24,18 @@ describe("tokenizer", () => {
     });
 
     it("should handle smart quotes in contractions", () => {
-      const tokens = tokenizeText("don't won't", 0);
+      const tokens = tokenizeText("don\u2019t won\u2019t", 0);
       expect(tokens).toHaveLength(2);
       expect(tokens[0].word).toBe("don't");
       expect(tokens[1].word).toBe("won't");
+    });
+
+    it("should normalize all apostrophe variants in contractions", () => {
+      // U+2018 LEFT SINGLE QUOTATION MARK, U+02BC MODIFIER LETTER APOSTROPHE
+      const tokens = tokenizeText("wouldn\u2018t could\u02BCve", 0);
+      expect(tokens).toHaveLength(2);
+      expect(tokens[0].word).toBe("wouldn't");
+      expect(tokens[1].word).toBe("could've");
     });
 
     it("should strip punctuation from word boundaries", () => {

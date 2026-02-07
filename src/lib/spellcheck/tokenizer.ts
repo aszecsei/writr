@@ -15,6 +15,9 @@ const NUMBER_PATTERN = /^[\d.,]+$/;
 const BOUNDARY_CHARS =
   /^[""''„‚«»‹›—–\-:;.,!?()[\]{}<>…]+|[""''„‚«»‹›—–\-:;.,!?()[\]{}<>…]+$/g;
 
+// Smart/curly apostrophes and modifier letter apostrophe → straight apostrophe
+const SMART_APOSTROPHES = /[\u2018\u2019\u02BC]/g;
+
 /**
  * Extract words from a ProseMirror document for spellchecking.
  * Returns an array of word tokens with their positions in the document.
@@ -44,13 +47,14 @@ export function extractWords(doc: ProseMirrorNode): WordToken[] {
  */
 export function tokenizeText(text: string, startPos: number): WordToken[] {
   const tokens: WordToken[] = [];
+  const normalized = text.replace(SMART_APOSTROPHES, "'");
 
   // Match word-like sequences including contractions
-  const wordPattern = /[\p{L}\p{M}]+(?:[''][\p{L}\p{M}]+)*/gu;
+  const wordPattern = /[\p{L}\p{M}]+(?:'[\p{L}\p{M}]+)*/gu;
   let match: RegExpExecArray | null;
 
   // biome-ignore lint/suspicious/noAssignInExpressions: standard regex iteration pattern
-  while ((match = wordPattern.exec(text)) !== null) {
+  while ((match = wordPattern.exec(normalized)) !== null) {
     const rawWord = match[0];
     const from = startPos + match.index;
     const to = from + rawWord.length;
