@@ -25,6 +25,7 @@ import { getSpellcheckService, type SpellcheckService } from "@/lib/spellcheck";
 import { combineCustomWords } from "@/lib/spellcheck/auto-populate";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
+import { useFindReplaceStore } from "@/store/findReplaceStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
@@ -36,6 +37,7 @@ import {
   getCommentPositions,
 } from "./extensions/Comments";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
+import { FindReplacePanel } from "./FindReplacePanel";
 import { SpellcheckContextMenu } from "./SpellcheckContextMenu";
 import { SpellcheckScannerModal } from "./SpellcheckScannerModal";
 
@@ -76,6 +78,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const marginVisible = useCommentStore((s) => s.marginVisible);
+  const closeFindReplace = useFindReplaceStore((s) => s.close);
   const initializedRef = useRef(false);
   const reconcileRunRef = useRef(false);
 
@@ -243,6 +246,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       clearActiveDocument();
     };
   }, [chapterId, setActiveDocument, clearActiveDocument]);
+
+  // Close find/replace panel when chapter changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: chapterId intentionally triggers close on chapter switch
+  useEffect(() => {
+    closeFindReplace();
+  }, [chapterId, closeFindReplace]);
 
   // Load content from Dexie into the editor once
   useEffect(() => {
@@ -426,31 +435,34 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   return (
     <div className="flex h-full flex-col">
       {!focusModeEnabled && <EditorToolbar editor={editor} />}
-      <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
-        <div
-          className="mx-auto max-w-editor px-8"
-          style={{
-            // Add top/bottom padding in focus mode to allow cursor to always be centered
-            paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
-            paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
-          }}
-        >
-          <EditorContent
-            editor={editor}
-            className="prose prose-neutral dark:prose-invert max-w-none"
-            style={{ fontFamily: editorFont.cssFamily }}
-          />
+      <div className="relative flex-1 overflow-hidden">
+        {!focusModeEnabled && <FindReplacePanel editor={editor} />}
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto">
+          <div
+            className="mx-auto max-w-editor px-8"
+            style={{
+              // Add top/bottom padding in focus mode to allow cursor to always be centered
+              paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
+              paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
+            }}
+          >
+            <EditorContent
+              editor={editor}
+              className="prose prose-neutral dark:prose-invert max-w-none"
+              style={{ fontFamily: editorFont.cssFamily }}
+            />
+          </div>
+          {!focusModeEnabled && (
+            <CommentMargin
+              editor={editor}
+              comments={activeComments}
+              expanded={marginVisible}
+            />
+          )}
+          {!focusModeEnabled && !marginVisible && (
+            <CommentPopover editor={editor} comments={activeComments} />
+          )}
         </div>
-        {!focusModeEnabled && (
-          <CommentMargin
-            editor={editor}
-            comments={activeComments}
-            expanded={marginVisible}
-          />
-        )}
-        {!focusModeEnabled && !marginVisible && (
-          <CommentPopover editor={editor} comments={activeComments} />
-        )}
       </div>
       {/* Spellcheck context menu */}
       {contextMenu && activeProjectId && (

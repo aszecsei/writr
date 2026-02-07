@@ -280,3 +280,22 @@ ruby rt {
   background-color: rgba(239, 68, 68, 0.2);
   border-radius: 2px;
 }
+
+/* Search and replace highlights */
+.search-match {
+  background-color: rgba(250, 204, 21, 0.4);
+  border-radius: 2px;
+}
+.search-match-current {
+  background-color: var(--primary-500);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.dark .search-match {
+  background-color: rgba(250, 204, 21, 0.25);
+}
+.dark .search-match-current {
+  background-color: var(--primary-400);
+  color: #000;
+}

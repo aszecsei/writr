@@ -27,6 +27,7 @@ import { FontSelector } from "./FontSelector";
 import { InsertImageDialog } from "./InsertImageDialog";
 import { LinkEditorDialog } from "./LinkEditorDialog";
 import { RubyDialog } from "./RubyDialog";
+import { TextToolsMenu } from "./TextToolsMenu";
 import { actions, groups } from "./toolbar-actions";
 
 interface EditorToolbarProps {
@@ -230,6 +231,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <History size={16} />
           </button>
           <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
+          <TextToolsMenu editor={editor} />
           <button
             type="button"
             title="Preview Card (Ctrl+Shift+P)"

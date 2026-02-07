@@ -12,6 +12,7 @@ import type { SpellcheckService } from "@/lib/spellcheck";
 import { Comments } from "./Comments";
 import { Indent } from "./Indent";
 import { Ruby } from "./Ruby";
+import { SearchAndReplace } from "./SearchAndReplace";
 import { SelectionPreserver } from "./SelectionPreserver";
 import { Spellcheck } from "./Spellcheck";
 import { TypewriterScrolling } from "./TypewriterScrolling";
@@ -82,5 +83,6 @@ export function createExtensions(options?: ExtensionOptions) {
       onSelectionChange: options?.onSelectionChange,
       onSelectionClear: options?.onSelectionClear,
     }),
+    SearchAndReplace,
   ];
 }
