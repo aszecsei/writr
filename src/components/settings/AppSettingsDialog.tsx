@@ -26,6 +26,7 @@ import type {
   UiDensity,
 } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { getDefaultProviderModels } from "@/lib/ai/providers";
 import type { Backup } from "@/lib/backup";
 import {
   applyEditorWidth,
@@ -68,12 +69,18 @@ export function AppSettingsDialog() {
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
   const [enableAiFeatures, setEnableAiFeatures] = useState(false);
   const [aiProvider, setAiProvider] = useState<AiProvider>("openrouter");
-  const [openRouterApiKey, setOpenRouterApiKey] = useState("");
-  const [anthropicApiKey, setAnthropicApiKey] = useState("");
-  const [openAiApiKey, setOpenAiApiKey] = useState("");
-  const [grokApiKey, setGrokApiKey] = useState("");
-  const [zaiApiKey, setZaiApiKey] = useState("");
-  const [preferredModel, setPreferredModel] = useState("openai/gpt-4o");
+  const emptyKeys: Record<AiProvider, string> = {
+    openrouter: "",
+    anthropic: "",
+    openai: "",
+    grok: "",
+    zai: "",
+  };
+  const [providerApiKeys, setProviderApiKeys] =
+    useState<Record<AiProvider, string>>(emptyKeys);
+  const [providerModels, setProviderModels] = useState<
+    Record<AiProvider, string>
+  >(getDefaultProviderModels);
   const [debugMode, setDebugMode] = useState(false);
   const [streamResponses, setStreamResponses] = useState(true);
   const [reasoningEffort, setReasoningEffort] =
@@ -117,12 +124,8 @@ export function AppSettingsDialog() {
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
       setEnableAiFeatures(settings.enableAiFeatures);
       setAiProvider(settings.aiProvider);
-      setOpenRouterApiKey(settings.openRouterApiKey);
-      setAnthropicApiKey(settings.anthropicApiKey);
-      setOpenAiApiKey(settings.openAiApiKey);
-      setGrokApiKey(settings.grokApiKey);
-      setZaiApiKey(settings.zaiApiKey);
-      setPreferredModel(settings.preferredModel);
+      setProviderApiKeys(settings.providerApiKeys);
+      setProviderModels(settings.providerModels);
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
@@ -178,12 +181,10 @@ export function AppSettingsDialog() {
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
       enableAiFeatures !== settings.enableAiFeatures ||
       aiProvider !== settings.aiProvider ||
-      openRouterApiKey !== settings.openRouterApiKey ||
-      anthropicApiKey !== settings.anthropicApiKey ||
-      openAiApiKey !== settings.openAiApiKey ||
-      grokApiKey !== settings.grokApiKey ||
-      zaiApiKey !== settings.zaiApiKey ||
-      preferredModel !== settings.preferredModel ||
+      JSON.stringify(providerApiKeys) !==
+        JSON.stringify(settings.providerApiKeys) ||
+      JSON.stringify(providerModels) !==
+        JSON.stringify(settings.providerModels) ||
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort);
@@ -203,12 +204,8 @@ export function AppSettingsDialog() {
       autoFocusModeOnSprint,
       enableAiFeatures,
       aiProvider,
-      openRouterApiKey,
-      anthropicApiKey,
-      openAiApiKey,
-      grokApiKey,
-      zaiApiKey,
-      preferredModel,
+      providerApiKeys,
+      providerModels,
       debugMode,
       streamResponses,
       reasoningEffort,
@@ -276,23 +273,19 @@ export function AppSettingsDialog() {
           <AiSettings
             enableAiFeatures={enableAiFeatures}
             aiProvider={aiProvider}
-            openRouterApiKey={openRouterApiKey}
-            anthropicApiKey={anthropicApiKey}
-            openAiApiKey={openAiApiKey}
-            grokApiKey={grokApiKey}
-            zaiApiKey={zaiApiKey}
-            preferredModel={preferredModel}
+            providerApiKeys={providerApiKeys}
+            providerModels={providerModels}
             streamResponses={streamResponses}
             reasoningEffort={reasoningEffort}
             debugMode={debugMode}
             onEnableAiFeaturesChange={setEnableAiFeatures}
             onAiProviderChange={setAiProvider}
-            onOpenRouterApiKeyChange={setOpenRouterApiKey}
-            onAnthropicApiKeyChange={setAnthropicApiKey}
-            onOpenAiApiKeyChange={setOpenAiApiKey}
-            onGrokApiKeyChange={setGrokApiKey}
-            onZaiApiKeyChange={setZaiApiKey}
-            onPreferredModelChange={setPreferredModel}
+            onProviderApiKeyChange={(provider, key) =>
+              setProviderApiKeys((prev) => ({ ...prev, [provider]: key }))
+            }
+            onProviderModelChange={(provider, model) =>
+              setProviderModels((prev) => ({ ...prev, [provider]: model }))
+            }
             onStreamResponsesChange={setStreamResponses}
             onReasoningEffortChange={setReasoningEffort}
             onDebugModeChange={setDebugMode}

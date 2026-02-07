@@ -26,7 +26,7 @@ import {
 import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
-import { getApiKeyField, PROVIDERS } from "@/lib/ai/providers";
+import { PROVIDERS } from "@/lib/ai/providers";
 import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -160,7 +160,10 @@ export function AiPanel() {
         {
           id: generateId(),
           role: "assistant",
-          content: formatDebugMessages(debugMessages, settings.preferredModel),
+          content: formatDebugMessages(
+            debugMessages,
+            settings.providerModels[settings.aiProvider],
+          ),
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -169,8 +172,7 @@ export function AiPanel() {
 
     const provider = settings.aiProvider;
     const providerConfig = PROVIDERS[provider];
-    const apiKeyField = getApiKeyField(provider);
-    const apiKey = settings[apiKeyField] as string;
+    const apiKey = settings.providerApiKeys[provider];
 
     if (!apiKey) {
       throw new Error(
@@ -180,7 +182,7 @@ export function AiPanel() {
 
     const aiSettings = {
       apiKey,
-      model: settings.preferredModel,
+      model: settings.providerModels[provider],
       provider,
       reasoningEffort: settings.reasoningEffort,
     };

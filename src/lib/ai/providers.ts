@@ -1,4 +1,4 @@
-import type { AiProvider, AppSettings } from "@/db/schemas";
+import type { AiProvider } from "@/db/schemas";
 
 export interface ProviderConfig {
   id: AiProvider;
@@ -71,14 +71,8 @@ export const PROVIDERS: Record<AiProvider, ProviderConfig> = {
   },
 };
 
-const API_KEY_FIELDS: Record<AiProvider, keyof AppSettings> = {
-  openrouter: "openRouterApiKey",
-  anthropic: "anthropicApiKey",
-  openai: "openAiApiKey",
-  grok: "grokApiKey",
-  zai: "zaiApiKey",
-};
-
-export function getApiKeyField(provider: AiProvider): keyof AppSettings {
-  return API_KEY_FIELDS[provider];
+export function getDefaultProviderModels(): Record<AiProvider, string> {
+  return Object.fromEntries(
+    Object.values(PROVIDERS).map((p) => [p.id, p.defaultModel]),
+  ) as Record<AiProvider, string>;
 }

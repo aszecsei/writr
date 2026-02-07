@@ -25,23 +25,15 @@ const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
 interface AiSettingsProps {
   enableAiFeatures: boolean;
   aiProvider: AiProvider;
-  openRouterApiKey: string;
-  anthropicApiKey: string;
-  openAiApiKey: string;
-  grokApiKey: string;
-  zaiApiKey: string;
-  preferredModel: string;
+  providerApiKeys: Record<AiProvider, string>;
+  providerModels: Record<AiProvider, string>;
   streamResponses: boolean;
   reasoningEffort: ReasoningEffort;
   debugMode: boolean;
   onEnableAiFeaturesChange: (enabled: boolean) => void;
   onAiProviderChange: (provider: AiProvider) => void;
-  onOpenRouterApiKeyChange: (key: string) => void;
-  onAnthropicApiKeyChange: (key: string) => void;
-  onOpenAiApiKeyChange: (key: string) => void;
-  onGrokApiKeyChange: (key: string) => void;
-  onZaiApiKeyChange: (key: string) => void;
-  onPreferredModelChange: (model: string) => void;
+  onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
+  onProviderModelChange: (provider: AiProvider, model: string) => void;
   onStreamResponsesChange: (enabled: boolean) => void;
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
@@ -89,23 +81,15 @@ function ApiKeyInput({
 export function AiSettings({
   enableAiFeatures,
   aiProvider,
-  openRouterApiKey,
-  anthropicApiKey,
-  openAiApiKey,
-  grokApiKey,
-  zaiApiKey,
-  preferredModel,
+  providerApiKeys,
+  providerModels,
   streamResponses,
   reasoningEffort,
   debugMode,
   onEnableAiFeaturesChange,
   onAiProviderChange,
-  onOpenRouterApiKeyChange,
-  onAnthropicApiKeyChange,
-  onOpenAiApiKeyChange,
-  onGrokApiKeyChange,
-  onZaiApiKeyChange,
-  onPreferredModelChange,
+  onProviderApiKeyChange,
+  onProviderModelChange,
   onStreamResponsesChange,
   onReasoningEffortChange,
   onDebugModeChange,
@@ -113,22 +97,6 @@ export function AiSettings({
   labelClass,
 }: AiSettingsProps) {
   const providerConfig = PROVIDERS[aiProvider];
-
-  const apiKeyValue = {
-    openrouter: openRouterApiKey,
-    anthropic: anthropicApiKey,
-    openai: openAiApiKey,
-    grok: grokApiKey,
-    zai: zaiApiKey,
-  }[aiProvider];
-
-  const apiKeyHandler = {
-    openrouter: onOpenRouterApiKeyChange,
-    anthropic: onAnthropicApiKeyChange,
-    openai: onOpenAiApiKeyChange,
-    grok: onGrokApiKeyChange,
-    zai: onZaiApiKeyChange,
-  }[aiProvider];
 
   return (
     <fieldset>
@@ -170,8 +138,8 @@ export function AiSettings({
               {providerConfig.label} API Key
               <ApiKeyInput
                 id="ai-api-key"
-                value={apiKeyValue}
-                onChange={apiKeyHandler}
+                value={providerApiKeys[aiProvider]}
+                onChange={(key) => onProviderApiKeyChange(aiProvider, key)}
                 placeholder={providerConfig.apiKeyPrefix}
                 inputClass={inputClass}
               />
@@ -180,8 +148,10 @@ export function AiSettings({
               Preferred Model
               <input
                 type="text"
-                value={preferredModel}
-                onChange={(e) => onPreferredModelChange(e.target.value)}
+                value={providerModels[aiProvider]}
+                onChange={(e) =>
+                  onProviderModelChange(aiProvider, e.target.value)
+                }
                 className={inputClass}
                 placeholder={providerConfig.defaultModel}
               />

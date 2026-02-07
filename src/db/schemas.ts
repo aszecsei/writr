@@ -299,12 +299,20 @@ export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
   aiProvider: AiProviderEnum.default("openrouter"),
-  openRouterApiKey: z.string().default(""),
-  anthropicApiKey: z.string().default(""),
-  openAiApiKey: z.string().default(""),
-  grokApiKey: z.string().default(""),
-  zaiApiKey: z.string().default(""),
-  preferredModel: z.string().default("openai/gpt-4o"),
+  providerApiKeys: z.record(AiProviderEnum, z.string()).default({
+    openrouter: "",
+    anthropic: "",
+    openai: "",
+    grok: "",
+    zai: "",
+  }),
+  providerModels: z.record(AiProviderEnum, z.string()).default({
+    openrouter: "openai/gpt-4o",
+    anthropic: "claude-sonnet-4-5-20250929",
+    openai: "gpt-4o",
+    grok: "grok-3",
+    zai: "glm-4.7",
+  }),
   theme: z.enum(["light", "dark", "system"]).default("system"),
   primaryColor: PrimaryColorEnum.default("blue"),
   neutralColor: NeutralColorEnum.default("zinc"),
@@ -428,3 +436,43 @@ export const CommentSchema = z.object({
   updatedAt: timestamp,
 });
 export type Comment = z.infer<typeof CommentSchema>;
+
+// ─── Settings Normalization ─────────────────────────────────────────
+
+/** Convert old per-provider API key fields to the new record format. */
+export function normalizeAppSettings(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  if (data.providerApiKeys && data.providerModels) return data;
+
+  const result = { ...data };
+
+  if (!result.providerApiKeys) {
+    result.providerApiKeys = {
+      openrouter: (result.openRouterApiKey as string) ?? "",
+      anthropic: (result.anthropicApiKey as string) ?? "",
+      openai: (result.openAiApiKey as string) ?? "",
+      grok: (result.grokApiKey as string) ?? "",
+      zai: (result.zaiApiKey as string) ?? "",
+    };
+  }
+
+  if (!result.providerModels) {
+    result.providerModels = {
+      openrouter: (result.preferredModel as string) ?? "openai/gpt-4o",
+      anthropic: "claude-sonnet-4-5-20250929",
+      openai: "gpt-4o",
+      grok: "grok-3",
+      zai: "glm-4.7",
+    };
+  }
+
+  delete result.openRouterApiKey;
+  delete result.anthropicApiKey;
+  delete result.openAiApiKey;
+  delete result.grokApiKey;
+  delete result.zaiApiKey;
+  delete result.preferredModel;
+
+  return result;
+}

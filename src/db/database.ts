@@ -333,6 +333,38 @@ export class WritrDatabase extends Dexie {
           if (s.zaiApiKey === undefined) s.zaiApiKey = "";
         }),
     );
+
+    this.version(17).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.providerApiKeys === undefined) {
+            s.providerApiKeys = {
+              openrouter: s.openRouterApiKey ?? "",
+              anthropic: s.anthropicApiKey ?? "",
+              openai: s.openAiApiKey ?? "",
+              grok: s.grokApiKey ?? "",
+              zai: s.zaiApiKey ?? "",
+            };
+          }
+          if (s.providerModels === undefined) {
+            s.providerModels = {
+              openrouter: s.preferredModel ?? "openai/gpt-4o",
+              anthropic: "claude-sonnet-4-5-20250929",
+              openai: "gpt-4o",
+              grok: "grok-3",
+              zai: "glm-4.7",
+            };
+          }
+          delete s.openRouterApiKey;
+          delete s.anthropicApiKey;
+          delete s.openAiApiKey;
+          delete s.grokApiKey;
+          delete s.zaiApiKey;
+          delete s.preferredModel;
+        }),
+    );
   }
 }
 

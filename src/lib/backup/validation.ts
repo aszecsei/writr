@@ -8,6 +8,7 @@ import {
   CharacterSchema,
   CommentSchema,
   LocationSchema,
+  normalizeAppSettings,
   OutlineGridCellSchema,
   OutlineGridColumnSchema,
   OutlineGridRowSchema,
@@ -71,6 +72,15 @@ export const BackupSchema = z.union([FullBackupSchema, ProjectBackupSchema]);
 export type BackupType = z.infer<typeof BackupSchema>;
 
 export function validateBackup(data: unknown) {
+  // Normalize old-format appSettings (individual API key fields → records)
+  if (data && typeof data === "object" && "appSettings" in data) {
+    const raw = data as Record<string, unknown>;
+    if (raw.appSettings && typeof raw.appSettings === "object") {
+      raw.appSettings = normalizeAppSettings(
+        raw.appSettings as Record<string, unknown>,
+      );
+    }
+  }
   return BackupSchema.safeParse(data);
 }
 
