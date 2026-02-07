@@ -437,7 +437,10 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       {!focusModeEnabled && <EditorToolbar editor={editor} />}
       <div className="relative flex-1 overflow-hidden">
         {!focusModeEnabled && <FindReplacePanel editor={editor} />}
-        <div ref={scrollContainerRef} className="relative h-full overflow-y-auto">
+        <div
+          ref={scrollContainerRef}
+          className="relative h-full overflow-y-auto"
+        >
           <div
             className="mx-auto max-w-editor px-8"
             style={{
