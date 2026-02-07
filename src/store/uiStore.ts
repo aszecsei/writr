@@ -25,7 +25,8 @@ export type ModalState =
     }
   | { id: "link-editor"; currentHref?: string }
   | { id: "insert-image" }
-  | { id: "ruby-editor"; currentAnnotation?: string };
+  | { id: "ruby-editor"; currentAnnotation?: string }
+  | { id: "dictionary-manager" };
 
 export type ModalId = ModalState["id"];
 

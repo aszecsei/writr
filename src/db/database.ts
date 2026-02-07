@@ -269,6 +269,15 @@ export class WritrDatabase extends Dexie {
       appDictionary: "id",
       projectDictionaries: "id, projectId",
     });
+
+    this.version(13).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.lastExportedAt === undefined) s.lastExportedAt = null;
+        }),
+    );
   }
 }
 

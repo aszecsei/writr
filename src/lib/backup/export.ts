@@ -1,4 +1,5 @@
 import { db } from "@/db/database";
+import { updateAppSettings } from "@/db/operations";
 import { triggerDownload } from "@/lib/export/download";
 import {
   BACKUP_VERSION,
@@ -144,6 +145,7 @@ export async function downloadFullBackup(): Promise<void> {
   const blob = createBackupBlob(backup);
   const filename = generateBackupFilename(backup);
   triggerDownload(blob, filename);
+  await updateAppSettings({ lastExportedAt: new Date().toISOString() });
 }
 
 export async function downloadProjectBackup(projectId: string): Promise<void> {
@@ -154,4 +156,5 @@ export async function downloadProjectBackup(projectId: string): Promise<void> {
   const blob = createBackupBlob(backup);
   const filename = generateBackupFilename(backup);
   triggerDownload(blob, filename);
+  await updateAppSettings({ lastExportedAt: new Date().toISOString() });
 }

@@ -26,6 +26,7 @@ interface EditorSettingsProps {
   onAutoSaveSecondsChange: (seconds: number) => void;
   onReadingSpeedWpmChange: (wpm: number) => void;
   onAutoFocusModeOnSprintChange: (enabled: boolean) => void;
+  onManageDictionaries?: () => void;
   inputClass: string;
   labelClass: string;
 }
@@ -41,6 +42,7 @@ export function EditorSettings({
   onAutoSaveSecondsChange,
   onReadingSpeedWpmChange,
   onAutoFocusModeOnSprintChange,
+  onManageDictionaries,
   inputClass,
   labelClass,
 }: EditorSettingsProps) {
@@ -114,6 +116,15 @@ export function EditorSettings({
             — distraction-free writing
           </span>
         </label>
+        {onManageDictionaries && (
+          <button
+            type="button"
+            onClick={onManageDictionaries}
+            className="text-sm font-medium text-zinc-700 underline underline-offset-2 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+          >
+            Manage Dictionaries
+          </button>
+        )}
       </div>
     </fieldset>
   );

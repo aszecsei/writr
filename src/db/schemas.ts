@@ -269,6 +269,7 @@ export const AppSettingsSchema = z.object({
   reasoningEffort: ReasoningEffortEnum.default("medium"),
   readingSpeedWpm: z.number().int().positive().default(200),
   autoFocusModeOnSprint: z.boolean().default(false),
+  lastExportedAt: z.string().datetime().nullable().default(null),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
