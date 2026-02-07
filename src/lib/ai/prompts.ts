@@ -130,11 +130,17 @@ const TOOL_INSTRUCTIONS: Record<AiTool, string> = {
     "Be thorough but avoid false positives.",
 };
 
+interface BuildMessagesOptions {
+  postChatInstructions?: string;
+  postChatInstructionsDepth?: number;
+}
+
 export function buildMessages(
   tool: AiTool,
   userPrompt: string,
   context: AiContext,
   history: AiMessage[] = [],
+  options?: BuildMessagesOptions,
 ): AiMessage[] {
   const systemContent: ContentPart[] = [
     {
@@ -179,6 +185,40 @@ export function buildMessages(
     });
   } else {
     messages.push({ role: "user", content: userPrompt });
+  }
+
+  // Inject post-chat instructions into the Nth-last user message
+  const instructions = options?.postChatInstructions;
+  const depth = options?.postChatInstructionsDepth ?? 2;
+  if (instructions && depth > 0) {
+    // Collect indices of real user messages (exclude synthetic chapter-context message)
+    const hasChapterContext = !!context.currentChapterContent;
+    const userIndices: number[] = [];
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].role !== "user") continue;
+      // Skip the first user message when it's the synthetic chapter context
+      if (hasChapterContext && userIndices.length === 0) continue;
+      userIndices.push(i);
+    }
+
+    if (userIndices.length > 0) {
+      const targetIdx = userIndices[Math.max(0, userIndices.length - depth)];
+      const msg = messages[targetIdx];
+      if (typeof msg.content === "string") {
+        messages[targetIdx] = {
+          ...msg,
+          content: `${msg.content}\n\n${instructions}`,
+        };
+      } else if (Array.isArray(msg.content)) {
+        messages[targetIdx] = {
+          ...msg,
+          content: [
+            ...msg.content,
+            { type: "text" as const, text: instructions },
+          ],
+        };
+      }
+    }
   }
 
   return messages;

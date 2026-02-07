@@ -154,6 +154,10 @@ export function AiPanel() {
         userMessage,
         context,
         aiHistory,
+        {
+          postChatInstructions: settings.postChatInstructions,
+          postChatInstructionsDepth: settings.postChatInstructionsDepth,
+        },
       );
       setMessages((prev) => [
         ...prev,
@@ -185,9 +189,20 @@ export function AiPanel() {
       model: settings.providerModels[provider],
       provider,
       reasoningEffort: settings.reasoningEffort,
+      postChatInstructions: settings.postChatInstructions,
+      postChatInstructionsDepth: settings.postChatInstructionsDepth,
     };
 
-    const capturedPrompt = buildMessages(tool, userMessage, context, aiHistory);
+    const capturedPrompt = buildMessages(
+      tool,
+      userMessage,
+      context,
+      aiHistory,
+      {
+        postChatInstructions: settings.postChatInstructions,
+        postChatInstructionsDepth: settings.postChatInstructionsDepth,
+      },
+    );
     const startTime = Date.now();
     requestStartRef.current = startTime;
     setElapsedMs(0);

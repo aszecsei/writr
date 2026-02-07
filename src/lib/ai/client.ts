@@ -14,6 +14,8 @@ interface AiSettings {
   model: string;
   provider: AiProvider;
   reasoningEffort?: ReasoningEffort;
+  postChatInstructions?: string;
+  postChatInstructionsDepth?: number;
 }
 
 function buildRequestBody(
@@ -28,7 +30,10 @@ function buildRequestBody(
     apiKey: settings.apiKey,
     model: settings.model,
     provider: settings.provider,
-    messages: buildMessages(tool, userPrompt, context, history),
+    messages: buildMessages(tool, userPrompt, context, history, {
+      postChatInstructions: settings.postChatInstructions,
+      postChatInstructionsDepth: settings.postChatInstructionsDepth,
+    }),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,
     stream,

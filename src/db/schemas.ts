@@ -326,6 +326,8 @@ export const AppSettingsSchema = z.object({
   reasoningEffort: ReasoningEffortEnum.default("medium"),
   readingSpeedWpm: z.number().int().positive().default(200),
   autoFocusModeOnSprint: z.boolean().default(false),
+  postChatInstructions: z.string().default(""),
+  postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   lastExportedAt: z.string().datetime().nullable().default(null),
   updatedAt: timestamp,
 });
