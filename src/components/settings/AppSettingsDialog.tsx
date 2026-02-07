@@ -85,10 +85,6 @@ export function AppSettingsDialog() {
   const [streamResponses, setStreamResponses] = useState(true);
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
-  const [postChatInstructions, setPostChatInstructions] = useState("");
-  const [postChatInstructionsDepth, setPostChatInstructionsDepth] = useState(2);
-  const [assistantPrefill, setAssistantPrefill] = useState("");
-
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
     filename: string;
@@ -132,9 +128,6 @@ export function AppSettingsDialog() {
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
-      setPostChatInstructions(settings.postChatInstructions);
-      setPostChatInstructionsDepth(settings.postChatInstructionsDepth);
-      setAssistantPrefill(settings.assistantPrefill);
     }
   }, [settings, modal.id]);
 
@@ -193,10 +186,7 @@ export function AppSettingsDialog() {
         JSON.stringify(settings.providerModels) ||
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
-      reasoningEffort !== settings.reasoningEffort ||
-      postChatInstructions !== settings.postChatInstructions ||
-      postChatInstructionsDepth !== settings.postChatInstructionsDepth ||
-      assistantPrefill !== settings.assistantPrefill);
+      reasoningEffort !== settings.reasoningEffort);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -218,9 +208,6 @@ export function AppSettingsDialog() {
       debugMode,
       streamResponses,
       reasoningEffort,
-      postChatInstructions,
-      postChatInstructionsDepth,
-      assistantPrefill,
     });
     closeModal();
   }
@@ -290,8 +277,6 @@ export function AppSettingsDialog() {
             streamResponses={streamResponses}
             reasoningEffort={reasoningEffort}
             debugMode={debugMode}
-            postChatInstructions={postChatInstructions}
-            postChatInstructionsDepth={postChatInstructionsDepth}
             onEnableAiFeaturesChange={setEnableAiFeatures}
             onAiProviderChange={setAiProvider}
             onProviderApiKeyChange={(provider, key) =>
@@ -303,10 +288,7 @@ export function AppSettingsDialog() {
             onStreamResponsesChange={setStreamResponses}
             onReasoningEffortChange={setReasoningEffort}
             onDebugModeChange={setDebugMode}
-            onPostChatInstructionsChange={setPostChatInstructions}
-            onPostChatInstructionsDepthChange={setPostChatInstructionsDepth}
-            assistantPrefill={assistantPrefill}
-            onAssistantPrefillChange={setAssistantPrefill}
+            onConfigureAi={() => openModal({ id: "ai-config" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />

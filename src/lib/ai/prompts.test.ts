@@ -11,8 +11,18 @@ import {
   makeTimelineEvent,
   makeWorldbuildingDoc,
 } from "@/test/helpers";
-import { buildMessages } from "./prompts";
-import type { AiContext, AiMessage, AiTool, ContentPart } from "./types";
+import {
+  buildMessages,
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_TOOL_INSTRUCTIONS,
+} from "./prompts";
+import type {
+  AiContext,
+  AiMessage,
+  AiTool,
+  AiToolId,
+  ContentPart,
+} from "./types";
 
 const pid = "00000000-0000-4000-8000-000000000001";
 
@@ -346,6 +356,60 @@ describe("buildMessages", () => {
       expect((chapterMsg?.content as ContentPart[])[0].cache_control).toEqual({
         type: "ephemeral",
       });
+    });
+  });
+
+  describe("custom system prompt", () => {
+    it("uses default system prompt when customSystemPrompt is not provided", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      const text = getSystemText(msgs);
+      expect(text).toContain(DEFAULT_SYSTEM_PROMPT);
+    });
+
+    it("uses default system prompt when customSystemPrompt is null", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext(), [], {
+        customSystemPrompt: null,
+      });
+      const text = getSystemText(msgs);
+      expect(text).toContain(DEFAULT_SYSTEM_PROMPT);
+    });
+
+    it("replaces system prompt when customSystemPrompt is a string", () => {
+      const custom = "You are a sci-fi writing expert.";
+      const msgs = buildMessages("brainstorm", "test", emptyContext(), [], {
+        customSystemPrompt: custom,
+      });
+      const text = getSystemText(msgs);
+      expect(text).toContain(custom);
+      expect(text).not.toContain(DEFAULT_SYSTEM_PROMPT);
+    });
+  });
+
+  describe("tool prompt override", () => {
+    it("uses default tool instruction for built-in tools", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      const text = getSystemText(msgs);
+      expect(text).toContain(DEFAULT_TOOL_INSTRUCTIONS.brainstorm);
+    });
+
+    it("uses toolPromptOverride when provided", () => {
+      const override = "Do something completely custom.";
+      const msgs = buildMessages("brainstorm", "test", emptyContext(), [], {
+        toolPromptOverride: override,
+      });
+      const text = getSystemText(msgs);
+      expect(text).toContain(override);
+      expect(text).not.toContain(DEFAULT_TOOL_INSTRUCTIONS.brainstorm);
+    });
+
+    it("uses fallback instruction for unknown tool ids", () => {
+      const msgs = buildMessages(
+        "custom-tool-uuid" as AiToolId,
+        "test",
+        emptyContext(),
+      );
+      const text = getSystemText(msgs);
+      expect(text).toContain("Follow the user's instructions.");
     });
   });
 });

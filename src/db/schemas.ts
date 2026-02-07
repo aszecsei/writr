@@ -329,6 +329,18 @@ export const AppSettingsSchema = z.object({
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),
+  customSystemPrompt: z.string().nullable().default(null),
+  disabledBuiltinTools: z.array(z.string()).default([]),
+  builtinToolOverrides: z.record(z.string(), z.string()).default({}),
+  customTools: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1),
+        prompt: z.string().min(1),
+      }),
+    )
+    .default([]),
   lastExportedAt: z.string().datetime().nullable().default(null),
   updatedAt: timestamp,
 });

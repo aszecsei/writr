@@ -1,4 +1,4 @@
-export type AiTool =
+export type BuiltinAiTool =
   | "generate-prose"
   | "review-text"
   | "suggest-edits"
@@ -6,6 +6,22 @@ export type AiTool =
   | "brainstorm"
   | "summarize"
   | "consistency-check";
+
+export const BUILTIN_TOOL_IDS: BuiltinAiTool[] = [
+  "generate-prose",
+  "review-text",
+  "suggest-edits",
+  "character-dialogue",
+  "brainstorm",
+  "summarize",
+  "consistency-check",
+];
+
+/** Tool ID that can be either a built-in tool or a custom tool UUID */
+export type AiToolId = BuiltinAiTool | (string & {});
+
+/** @deprecated Use BuiltinAiTool for built-in tools or AiToolId for all tools */
+export type AiTool = BuiltinAiTool;
 
 export interface CacheControl {
   type: "ephemeral";

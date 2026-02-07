@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { getAppSettings } from "@/db/operations";
+import type { AppSettings } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -27,7 +28,13 @@ import { useProject } from "@/hooks/useProject";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
 import { PROVIDERS } from "@/lib/ai/providers";
-import type { AiContext, AiMessage, AiTool } from "@/lib/ai/types";
+import type {
+  AiContext,
+  AiMessage,
+  AiToolId,
+  BuiltinAiTool,
+} from "@/lib/ai/types";
+import { BUILTIN_TOOL_IDS } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import type { Message } from "./MessageList";
@@ -47,6 +54,19 @@ function formatDebugMessages(messages: AiMessage[], model: string): string {
     })
     .join("\n\n");
   return `[DRY-RUN] Prompt that would be sent to ${model}:\n\n${formatted}`;
+}
+
+function resolveToolPrompt(
+  toolId: AiToolId,
+  settings: AppSettings,
+): string | undefined {
+  // Check built-in tool overrides
+  if (BUILTIN_TOOL_IDS.includes(toolId as BuiltinAiTool)) {
+    return settings.builtinToolOverrides[toolId];
+  }
+  // Check custom tools
+  const custom = settings.customTools.find((t) => t.id === toolId);
+  return custom?.prompt;
 }
 
 export function AiPanel() {
@@ -70,7 +90,7 @@ export function AiPanel() {
     activeDocumentType === "chapter" ? activeDocumentId : null,
   );
 
-  const [tool, setTool] = useState<AiTool>("generate-prose");
+  const [tool, setTool] = useState<AiToolId>("generate-prose");
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -148,6 +168,9 @@ export function AiPanel() {
       content: m.content,
     }));
 
+    // Resolve tool prompt override
+    const toolPromptOverride = resolveToolPrompt(tool, settings);
+
     if (settings.debugMode) {
       const debugMessages = buildMessages(
         tool,
@@ -158,6 +181,8 @@ export function AiPanel() {
           postChatInstructions: settings.postChatInstructions,
           postChatInstructionsDepth: settings.postChatInstructionsDepth,
           assistantPrefill: settings.assistantPrefill,
+          customSystemPrompt: settings.customSystemPrompt,
+          toolPromptOverride,
         },
       );
       setMessages((prev) => [
@@ -193,6 +218,8 @@ export function AiPanel() {
       postChatInstructions: settings.postChatInstructions,
       postChatInstructionsDepth: settings.postChatInstructionsDepth,
       assistantPrefill: settings.assistantPrefill,
+      customSystemPrompt: settings.customSystemPrompt,
+      toolPromptOverride,
     };
 
     const capturedPrompt = buildMessages(
@@ -204,6 +231,8 @@ export function AiPanel() {
         postChatInstructions: settings.postChatInstructions,
         postChatInstructionsDepth: settings.postChatInstructionsDepth,
         assistantPrefill: settings.assistantPrefill,
+        customSystemPrompt: settings.customSystemPrompt,
+        toolPromptOverride,
       },
     );
     const startTime = Date.now();

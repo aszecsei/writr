@@ -8,6 +8,7 @@ import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
+import { AiConfigDialog } from "@/components/settings/AiConfigDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import {
@@ -89,6 +90,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="h-full overflow-y-auto">{children}</main>
         <SprintWidget />
         <AppSettingsDialog />
+        <AiConfigDialog />
         <DictionaryManagerDialog />
         <VersionHistoryDialog />
         <SprintConfigDialog />
@@ -122,6 +124,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       </Group>
       <AppSettingsDialog />
+      <AiConfigDialog />
       <DictionaryManagerDialog />
       <VersionHistoryDialog />
       <ExportDialog />

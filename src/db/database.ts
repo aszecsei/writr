@@ -374,6 +374,18 @@ export class WritrDatabase extends Dexie {
           if (s.assistantPrefill === undefined) s.assistantPrefill = "";
         }),
     );
+
+    this.version(19).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.customSystemPrompt === undefined) s.customSystemPrompt = null;
+          if (s.disabledBuiltinTools === undefined) s.disabledBuiltinTools = [];
+          if (s.builtinToolOverrides === undefined) s.builtinToolOverrides = {};
+          if (s.customTools === undefined) s.customTools = [];
+        }),
+    );
   }
 }
 

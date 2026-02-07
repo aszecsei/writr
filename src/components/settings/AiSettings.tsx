@@ -1,7 +1,8 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Settings2 } from "lucide-react";
 import { useState } from "react";
+import { BUTTON_CANCEL } from "@/components/ui/form-styles";
 import type { AiProvider, ReasoningEffort } from "@/db/schemas";
 import { PROVIDERS } from "@/lib/ai/providers";
 
@@ -30,9 +31,6 @@ interface AiSettingsProps {
   streamResponses: boolean;
   reasoningEffort: ReasoningEffort;
   debugMode: boolean;
-  postChatInstructions: string;
-  postChatInstructionsDepth: number;
-  assistantPrefill: string;
   onEnableAiFeaturesChange: (enabled: boolean) => void;
   onAiProviderChange: (provider: AiProvider) => void;
   onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
@@ -40,9 +38,7 @@ interface AiSettingsProps {
   onStreamResponsesChange: (enabled: boolean) => void;
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
-  onPostChatInstructionsChange: (value: string) => void;
-  onPostChatInstructionsDepthChange: (value: number) => void;
-  onAssistantPrefillChange: (value: string) => void;
+  onConfigureAi: () => void;
   inputClass: string;
   labelClass: string;
 }
@@ -92,9 +88,6 @@ export function AiSettings({
   streamResponses,
   reasoningEffort,
   debugMode,
-  postChatInstructions,
-  postChatInstructionsDepth,
-  assistantPrefill,
   onEnableAiFeaturesChange,
   onAiProviderChange,
   onProviderApiKeyChange,
@@ -102,9 +95,7 @@ export function AiSettings({
   onStreamResponsesChange,
   onReasoningEffortChange,
   onDebugModeChange,
-  onPostChatInstructionsChange,
-  onPostChatInstructionsDepthChange,
-  onAssistantPrefillChange,
+  onConfigureAi,
   inputClass,
   labelClass,
 }: AiSettingsProps) {
@@ -212,67 +203,14 @@ export function AiSettings({
                 — show prompt instead of calling AI
               </span>
             </label>
-            <fieldset className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
-              <legend className="px-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                Post-Chat Instructions
-              </legend>
-              <div className="space-y-3">
-                <label className={labelClass}>
-                  Instructions
-                  <textarea
-                    value={postChatInstructions}
-                    onChange={(e) =>
-                      onPostChatInstructionsChange(e.target.value)
-                    }
-                    className={`${inputClass} min-h-[80px] resize-y`}
-                    placeholder="Custom instructions appended to your messages..."
-                    rows={3}
-                  />
-                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
-                    Injected into your messages before sending to the AI. Not
-                    visible in chat history.
-                  </span>
-                </label>
-                <label className={labelClass}>
-                  Injection Depth
-                  <input
-                    type="number"
-                    value={postChatInstructionsDepth}
-                    onChange={(e) =>
-                      onPostChatInstructionsDepthChange(
-                        Math.max(0, Math.round(Number(e.target.value))),
-                      )
-                    }
-                    className={inputClass}
-                    min={0}
-                    max={10}
-                  />
-                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
-                    Which user message to append to, counting from the end. 1 =
-                    latest message, 2 = second-to-last. 0 = disabled.
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-            <fieldset className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-700">
-              <legend className="px-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                Assistant Prefill
-              </legend>
-              <label className={labelClass}>
-                Prefill Text
-                <textarea
-                  value={assistantPrefill}
-                  onChange={(e) => onAssistantPrefillChange(e.target.value)}
-                  className={`${inputClass} min-h-[80px] resize-y`}
-                  placeholder="Text the assistant begins its response with..."
-                  rows={3}
-                />
-                <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
-                  Appended as a final assistant message so the model continues
-                  from this text. Useful for guiding output format or style.
-                </span>
-              </label>
-            </fieldset>
+            <button
+              type="button"
+              onClick={onConfigureAi}
+              className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
+            >
+              <Settings2 size={14} />
+              Configure AI Prompts &amp; Tools
+            </button>
           </>
         )}
       </div>

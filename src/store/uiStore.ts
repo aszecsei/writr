@@ -27,7 +27,8 @@ export type ModalState =
   | { id: "insert-image" }
   | { id: "ruby-editor"; currentAnnotation?: string }
   | { id: "dictionary-manager" }
-  | { id: "version-history"; chapterId: string; projectId: string };
+  | { id: "version-history"; chapterId: string; projectId: string }
+  | { id: "ai-config" };
 
 export type ModalId = ModalState["id"];
 

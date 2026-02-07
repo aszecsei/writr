@@ -5,7 +5,7 @@ import type {
   AiProvider,
   AiResponse,
   AiStreamChunk,
-  AiTool,
+  AiToolId,
   ReasoningEffort,
 } from "./types";
 
@@ -17,10 +17,12 @@ interface AiSettings {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
+  customSystemPrompt?: string | null;
+  toolPromptOverride?: string;
 }
 
 function buildRequestBody(
-  tool: AiTool,
+  tool: AiToolId,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
@@ -35,6 +37,8 @@ function buildRequestBody(
       postChatInstructions: settings.postChatInstructions,
       postChatInstructionsDepth: settings.postChatInstructionsDepth,
       assistantPrefill: settings.assistantPrefill,
+      customSystemPrompt: settings.customSystemPrompt,
+      toolPromptOverride: settings.toolPromptOverride,
     }),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,
@@ -65,7 +69,7 @@ async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
 }
 
 export async function callAi(
-  tool: AiTool,
+  tool: AiToolId,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
@@ -87,7 +91,7 @@ export async function callAi(
 }
 
 export async function* streamAi(
-  tool: AiTool,
+  tool: AiToolId,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,

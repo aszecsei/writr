@@ -9,11 +9,23 @@ import {
   serializeTimelineEvent,
   serializeWorldbuildingTree,
 } from "./serialize";
-import type { AiContext, AiMessage, AiTool, ContentPart } from "./types";
+import type {
+  AiContext,
+  AiMessage,
+  AiToolId,
+  BuiltinAiTool,
+  ContentPart,
+} from "./types";
 
-function buildSystemContext(context: AiContext): string {
+export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
+
+function buildSystemContext(
+  context: AiContext,
+  customSystemPrompt?: string | null,
+): string {
+  const preamble = customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
-  let system = `You are a creative writing assistant.\n\n<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
+  let system = `${preamble}\n\n<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
 
   const charMap = buildCharacterNameMap(context.characters);
 
@@ -78,7 +90,7 @@ function buildSystemContext(context: AiContext): string {
   return system;
 }
 
-const TOOL_INSTRUCTIONS: Record<AiTool, string> = {
+export const DEFAULT_TOOL_INSTRUCTIONS: Record<BuiltinAiTool, string> = {
   "generate-prose":
     "Continue writing prose in the style and voice of this novel. " +
     "Match the existing tone, tense, and POV. Output only the new prose, no commentary.",
@@ -134,24 +146,32 @@ interface BuildMessagesOptions {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
+  customSystemPrompt?: string | null;
+  toolPromptOverride?: string;
 }
 
 export function buildMessages(
-  tool: AiTool,
+  tool: AiToolId,
   userPrompt: string,
   context: AiContext,
   history: AiMessage[] = [],
   options?: BuildMessagesOptions,
 ): AiMessage[] {
+  const toolInstruction =
+    options?.toolPromptOverride ??
+    (tool in DEFAULT_TOOL_INSTRUCTIONS
+      ? DEFAULT_TOOL_INSTRUCTIONS[tool as BuiltinAiTool]
+      : "Follow the user's instructions.");
+
   const systemContent: ContentPart[] = [
     {
       type: "text",
-      text: buildSystemContext(context),
+      text: buildSystemContext(context, options?.customSystemPrompt),
       cache_control: { type: "ephemeral" },
     },
     {
       type: "text",
-      text: `<task>\n${TOOL_INSTRUCTIONS[tool]}\n</task>`,
+      text: `<task>\n${toolInstruction}\n</task>`,
     },
   ];
 
