@@ -137,7 +137,7 @@ export function CommentMargin({
         style={{
           zIndex: 10,
           height: "100%",
-          left: "calc(50% + 24rem + 1rem)",
+          left: "calc(50% + var(--editor-content-width) / 2 + 1rem)",
           width: "16rem",
         }}
       >
@@ -161,7 +161,7 @@ export function CommentMargin({
       style={{
         zIndex: 10,
         height: "100%",
-        left: "calc(50% + 24rem + 0.5rem)",
+        left: "calc(50% + var(--editor-content-width) / 2 + 0.5rem)",
         width: "2rem",
       }}
     >
@@ -170,13 +170,13 @@ export function CommentMargin({
           key={pos.id}
           type="button"
           onClick={() => selectComment(pos.id)}
-          className={`pointer-events-auto absolute flex items-center justify-center transition-transform hover:scale-110 h-4 w-5 rounded border-l-2 bg-zinc-100 dark:bg-zinc-800 ${CARD_BORDER_COLOR[pos.comment.color]} ${selectedId === pos.id ? "ring-2 ring-zinc-900 dark:ring-white" : ""}`}
+          className={`pointer-events-auto absolute flex items-center justify-center transition-transform hover:scale-110 h-4 w-5 rounded border-l-2 bg-neutral-100 dark:bg-neutral-800 ${CARD_BORDER_COLOR[pos.comment.color]} ${selectedId === pos.id ? "ring-2 ring-neutral-900 dark:ring-white" : ""}`}
           style={{ top: pos.top - 8 }}
           title="Comment"
         >
           <MessageSquare
             size={10}
-            className="text-zinc-500 dark:text-zinc-400"
+            className="text-neutral-500 dark:text-neutral-400"
           />
         </button>
       ))}
@@ -235,19 +235,19 @@ function ExpandedCard({
     onDeselect();
   }, [comment.id, onDeselect]);
 
-  const sharedClassName = `pointer-events-auto absolute w-full rounded border-l-2 bg-white text-left shadow-sm transition-shadow dark:bg-zinc-800 ${
+  const sharedClassName = `pointer-events-auto absolute w-full rounded border-l-2 bg-white text-left shadow-sm transition-shadow dark:bg-neutral-800 ${
     CARD_BORDER_COLOR[comment.color]
   }`;
 
   if (isSelected) {
     return (
       <div
-        className={`${sharedClassName} border border-l-2 border-zinc-300 shadow-md dark:border-zinc-600`}
+        className={`${sharedClassName} border border-l-2 border-neutral-300 shadow-md dark:border-neutral-600`}
         style={{ top: top - 10, zIndex: 10 }}
       >
         <div className="p-2">
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
               Comment
             </span>
             <button
@@ -256,7 +256,7 @@ function ExpandedCard({
                 handleSaveContent();
                 onDeselect();
               }}
-              className="rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+              className="rounded p-0.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
             >
               <X size={12} />
             </button>
@@ -268,7 +268,7 @@ function ExpandedCard({
             onChange={(e) => setEditContent(e.target.value)}
             onBlur={handleSaveContent}
             placeholder="Add a comment..."
-            className="mb-2 h-16 w-full resize-none rounded border border-zinc-200 bg-zinc-50 p-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500"
+            className="mb-2 h-16 w-full resize-none rounded border border-neutral-200 bg-neutral-50 p-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-500"
           />
 
           {/* Color picker */}
@@ -282,7 +282,7 @@ function ExpandedCard({
                   COLOR_BUTTON_CLASSES[color]
                 } ${
                   comment.color === color
-                    ? "ring-2 ring-zinc-900 ring-offset-1 dark:ring-white"
+                    ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
                     : ""
                 }`}
                 title={color.charAt(0).toUpperCase() + color.slice(1)}
@@ -291,11 +291,11 @@ function ExpandedCard({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between border-t border-zinc-200 pt-1.5 dark:border-zinc-700">
+          <div className="flex items-center justify-between border-t border-neutral-200 pt-1.5 dark:border-neutral-700">
             <button
               type="button"
               onClick={handleResolve}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700"
             >
               <Check size={12} />
               Resolve
@@ -317,17 +317,17 @@ function ExpandedCard({
   return (
     <button
       type="button"
-      className={`${sharedClassName} cursor-pointer border border-l-2 border-zinc-200 hover:shadow dark:border-zinc-700`}
+      className={`${sharedClassName} cursor-pointer border border-l-2 border-neutral-200 hover:shadow dark:border-neutral-700`}
       style={{ top: top - 10, zIndex: 1 }}
       onClick={onSelect}
     >
       <div className="px-2 py-1.5">
         {comment.content ? (
-          <p className="line-clamp-2 text-xs text-zinc-700 dark:text-zinc-300">
+          <p className="line-clamp-2 text-xs text-neutral-700 dark:text-neutral-300">
             {comment.content}
           </p>
         ) : (
-          <p className="text-xs italic text-zinc-400 dark:text-zinc-500">
+          <p className="text-xs italic text-neutral-400 dark:text-neutral-500">
             Empty comment
           </p>
         )}

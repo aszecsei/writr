@@ -57,7 +57,7 @@ export function BackupSettings({ onImportReady }: BackupSettingsProps) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
         Backup & Restore
       </h3>
 
@@ -66,7 +66,7 @@ export function BackupSettings({ onImportReady }: BackupSettingsProps) {
           type="button"
           onClick={handleExport}
           disabled={isExporting}
-          className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
         >
           <Download size={16} />
           {isExporting ? "Exporting..." : "Export All Data"}
@@ -75,7 +75,7 @@ export function BackupSettings({ onImportReady }: BackupSettingsProps) {
         <button
           type="button"
           onClick={handleImportClick}
-          className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
         >
           <Upload size={16} />
           Import Backup
@@ -94,7 +94,7 @@ export function BackupSettings({ onImportReady }: BackupSettingsProps) {
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
         Export creates a JSON file with all your projects and settings. You can
         import this backup to restore your data.
       </p>

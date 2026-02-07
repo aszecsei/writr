@@ -255,12 +255,45 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 
 // ─── App Settings (singleton) ────────────────────────────────────────
 
+export const PrimaryColorEnum = z.enum([
+  "blue",
+  "indigo",
+  "violet",
+  "rose",
+  "emerald",
+  "amber",
+  "teal",
+  "orange",
+  "cyan",
+  "pink",
+]);
+export type PrimaryColor = z.infer<typeof PrimaryColorEnum>;
+
+export const NeutralColorEnum = z.enum([
+  "zinc",
+  "slate",
+  "gray",
+  "stone",
+  "neutral",
+]);
+export type NeutralColor = z.infer<typeof NeutralColorEnum>;
+
+export const EditorWidthEnum = z.enum(["narrow", "medium", "wide"]);
+export type EditorWidth = z.infer<typeof EditorWidthEnum>;
+
+export const UiDensityEnum = z.enum(["compact", "comfortable"]);
+export type UiDensity = z.infer<typeof UiDensityEnum>;
+
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
   openRouterApiKey: z.string().default(""),
   preferredModel: z.string().default("openai/gpt-4o"),
   theme: z.enum(["light", "dark", "system"]).default("system"),
+  primaryColor: PrimaryColorEnum.default("blue"),
+  neutralColor: NeutralColorEnum.default("zinc"),
+  editorWidth: EditorWidthEnum.default("medium"),
+  uiDensity: UiDensityEnum.default("comfortable"),
   autoSaveIntervalMs: z.number().int().positive().default(3000),
   editorFontSize: z.number().int().positive().default(16),
   editorFont: z.string().default("literata"),

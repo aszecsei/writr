@@ -133,8 +133,8 @@ export default function WorldbuildingListPage() {
         <div
           className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 ${
             isHeading
-              ? "border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50"
-              : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+              ? "border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800/50"
+              : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
           }`}
           style={{ marginLeft: `${node.depth * 24}px` }}
         >
@@ -142,12 +142,12 @@ export default function WorldbuildingListPage() {
             <button
               type="button"
               onClick={() => toggleExpand(node.doc.id)}
-              className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+              className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
               {isExpanded ? "\u25BC" : "\u25B6"}
             </button>
           ) : (
-            <span className="w-4 text-center text-zinc-300 dark:text-zinc-600">
+            <span className="w-4 text-center text-neutral-300 dark:text-neutral-600">
               {isHeading ? "\u25CB" : "\u25CF"}
             </span>
           )}
@@ -161,7 +161,7 @@ export default function WorldbuildingListPage() {
                 if (e.key === "Enter") handleRenameDoc(node.doc.id);
                 if (e.key === "Escape") setEditingDocId(null);
               }}
-              className="flex-1 rounded border border-zinc-300 bg-white px-2 py-0.5 text-sm font-semibold dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+              className="flex-1 rounded border border-neutral-300 bg-white px-2 py-0.5 text-sm font-semibold dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
               ref={(el) => el?.focus()}
             />
           ) : (
@@ -171,7 +171,7 @@ export default function WorldbuildingListPage() {
               className="flex-1 text-left"
             >
               <span
-                className={`text-sm ${isHeading ? "font-semibold" : "font-medium"} text-zinc-900 dark:text-zinc-100`}
+                className={`text-sm ${isHeading ? "font-semibold" : "font-medium"} text-neutral-900 dark:text-neutral-100`}
               >
                 {node.doc.title}
               </span>
@@ -180,7 +180,7 @@ export default function WorldbuildingListPage() {
                   {node.doc.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                      className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
                     >
                       {tag}
                     </span>
@@ -195,7 +195,7 @@ export default function WorldbuildingListPage() {
               setEditingDocId(node.doc.id);
               setEditingTitle(node.doc.title);
             }}
-            className="rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
             title="Rename"
           >
             Rename
@@ -203,7 +203,7 @@ export default function WorldbuildingListPage() {
           <button
             type="button"
             onClick={() => handleAddDoc(node.doc.id)}
-            className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            className="rounded px-1.5 py-0.5 text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
             title="Add child document"
           >
             + Child
@@ -213,7 +213,7 @@ export default function WorldbuildingListPage() {
             onChange={(e) =>
               handleMoveToParent(node.doc.id, e.target.value || null)
             }
-            className="rounded border border-zinc-200 bg-transparent px-2 py-1 text-xs text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
+            className="rounded border border-neutral-200 bg-transparent px-2 py-1 text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400"
             title="Move to parent"
           >
             <option value="">Root</option>
@@ -233,7 +233,7 @@ export default function WorldbuildingListPage() {
             type="button"
             onClick={() => handleMoveUp(node, siblings)}
             disabled={isFirst}
-            className="px-1 text-zinc-400 hover:text-zinc-700 disabled:opacity-30 dark:text-zinc-500 dark:hover:text-zinc-300"
+            className="px-1 text-neutral-400 hover:text-neutral-700 disabled:opacity-30 dark:text-neutral-500 dark:hover:text-neutral-300"
             title="Move up"
           >
             {"\u2191"}
@@ -242,7 +242,7 @@ export default function WorldbuildingListPage() {
             type="button"
             onClick={() => handleMoveDown(node, siblings)}
             disabled={isLast}
-            className="px-1 text-zinc-400 hover:text-zinc-700 disabled:opacity-30 dark:text-zinc-500 dark:hover:text-zinc-300"
+            className="px-1 text-neutral-400 hover:text-neutral-700 disabled:opacity-30 dark:text-neutral-500 dark:hover:text-neutral-300"
             title="Move down"
           >
             {"\u2193"}
@@ -250,7 +250,7 @@ export default function WorldbuildingListPage() {
           <button
             type="button"
             onClick={() => deleteWorldbuildingDoc(node.doc.id)}
-            className="px-1 text-xs text-zinc-400 hover:text-red-500 dark:text-zinc-500"
+            className="px-1 text-xs text-neutral-400 hover:text-red-500 dark:text-neutral-500"
             title="Delete (children will be re-parented)"
           >
             Delete
@@ -270,27 +270,27 @@ export default function WorldbuildingListPage() {
   return (
     <div className="mx-auto max-w-4xl px-8 py-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
           Worldbuilding
         </h2>
         <button
           type="button"
           onClick={() => handleAddDoc(null)}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
         >
           Add Document
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 flex border-b border-zinc-200 dark:border-zinc-800">
+      <div className="mt-6 flex border-b border-neutral-200 dark:border-neutral-800">
         <button
           type="button"
           onClick={() => setTab("tree")}
           className={`px-4 py-2 text-sm font-medium ${
             tab === "tree"
-              ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-              : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+              ? "border-b-2 border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400"
+              : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
           }`}
         >
           Tree
@@ -300,8 +300,8 @@ export default function WorldbuildingListPage() {
           onClick={() => setTab("compiled")}
           className={`px-4 py-2 text-sm font-medium ${
             tab === "compiled"
-              ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-              : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+              ? "border-b-2 border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400"
+              : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
           }`}
         >
           Compiled
@@ -312,7 +312,7 @@ export default function WorldbuildingListPage() {
       <div className="mt-6">
         {tab === "tree" ? (
           isEmpty ? (
-            <p className="py-12 text-center text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="py-12 text-center text-sm text-neutral-400 dark:text-neutral-500">
               No worldbuilding content yet.
             </p>
           ) : (

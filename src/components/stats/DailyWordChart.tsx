@@ -25,8 +25,8 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
   const maxWords = Math.max(1, ...filledData.map((d) => d.wordsWritten));
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <h3 className="mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <h3 className="mb-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
         Daily Words (Last {days} Days)
       </h3>
       <div className="flex h-32 gap-[2px]">
@@ -49,8 +49,8 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
                   day.wordsWritten > 0
                     ? "bg-blue-500 group-hover:bg-blue-400 dark:bg-blue-600 dark:group-hover:bg-blue-500"
                     : isWeekend
-                      ? "bg-zinc-100 dark:bg-zinc-800"
-                      : "bg-zinc-50 dark:bg-zinc-800/50"
+                      ? "bg-neutral-100 dark:bg-neutral-800"
+                      : "bg-neutral-50 dark:bg-neutral-800/50"
                 }`}
                 style={{
                   height: `${height}%`,
@@ -58,11 +58,11 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
                 }}
               />
               {/* Tooltip on hover */}
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 rounded bg-zinc-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-zinc-700">
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 rounded bg-neutral-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-neutral-700">
                 <div className="font-medium">
                   {day.wordsWritten.toLocaleString()}
                 </div>
-                <div className="text-zinc-400">
+                <div className="text-neutral-400">
                   {date.toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -73,7 +73,7 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="mt-2 flex justify-between text-xs text-neutral-400 dark:text-neutral-500">
         <span>
           {new Date(today.getTime() - (days - 1) * 86400000).toLocaleDateString(
             undefined,

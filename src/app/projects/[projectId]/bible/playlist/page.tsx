@@ -115,13 +115,13 @@ export default function PlaylistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
+    <div className="mx-auto max-w-editor px-8 py-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
             Playlist
           </h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             Add YouTube tracks to listen to while writing.
           </p>
         </div>
@@ -129,7 +129,7 @@ export default function PlaylistPage() {
           <button
             type="button"
             onClick={handlePlayAll}
-            className="flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
           >
             <Play size={14} />
             Play All
@@ -144,12 +144,12 @@ export default function PlaylistPage() {
             value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}
             placeholder="Paste YouTube URL..."
-            className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
           />
           <button
             type="submit"
             disabled={!newUrl.trim() || isAdding}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
           >
             {isAdding ? "Adding..." : "Add"}
           </button>
@@ -162,10 +162,10 @@ export default function PlaylistPage() {
       <div className="mt-6 space-y-2">
         {localTracks?.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-              <Music size={24} className="text-zinc-400" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+              <Music size={24} className="text-neutral-400" />
             </div>
-            <p className="text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="text-sm text-neutral-400 dark:text-neutral-500">
               No tracks yet. Add a YouTube URL above.
             </p>
           </div>
@@ -235,11 +235,13 @@ function SortableTrackCard({
     <div
       ref={ref}
       className={`group flex items-center gap-2 rounded-lg border px-3 py-3 transition-colors ${
-        isDragSource ? "opacity-50 ring-2 ring-zinc-300 dark:ring-zinc-600" : ""
+        isDragSource
+          ? "opacity-50 ring-2 ring-neutral-300 dark:ring-neutral-600"
+          : ""
       } ${
         isCurrent
-          ? "border-zinc-400 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800"
-          : "border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/50"
+          ? "border-neutral-400 bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800"
+          : "border-neutral-200 bg-white hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/50"
       }`}
     >
       {/* Drag Handle */}
@@ -249,7 +251,7 @@ function SortableTrackCard({
       <button
         type="button"
         onClick={onClick}
-        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded bg-zinc-200 dark:bg-zinc-700"
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded bg-neutral-200 dark:bg-neutral-700"
       >
         {track.thumbnailUrl ? (
           <Image
@@ -260,7 +262,7 @@ function SortableTrackCard({
             unoptimized
           />
         ) : (
-          <Music size={20} className="text-zinc-400" />
+          <Music size={20} className="text-neutral-400" />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
           {isPlaying ? (
@@ -278,10 +280,10 @@ function SortableTrackCard({
           onClick={onClick}
           className="block w-full text-left"
         >
-          <h3 className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <h3 className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {track.title}
           </h3>
-          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
             YouTube
           </p>
         </button>
@@ -294,7 +296,7 @@ function SortableTrackCard({
           e.stopPropagation();
           onDelete();
         }}
-        className="rounded p-1.5 text-zinc-400 opacity-0 transition-all hover:bg-zinc-200 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-zinc-700"
+        className="rounded p-1.5 text-neutral-400 opacity-0 transition-all hover:bg-neutral-200 hover:text-red-500 group-hover:opacity-100 dark:hover:bg-neutral-700"
         title="Delete track"
       >
         <Trash2 size={14} />

@@ -24,7 +24,7 @@ const COLORS: { value: OutlineCardColor; label: string; className: string }[] =
     {
       value: "white",
       label: "White",
-      className: "bg-white border border-zinc-300",
+      className: "bg-white border border-neutral-300",
     },
     { value: "yellow", label: "Yellow", className: "bg-amber-200" },
     { value: "pink", label: "Pink", className: "bg-pink-200" },
@@ -135,7 +135,7 @@ export function OutlineGridContextMenu({
                   ))}
                 </div>
               ) : (
-                <div className="px-3 py-1.5 text-sm text-zinc-400">
+                <div className="px-3 py-1.5 text-sm text-neutral-400">
                   No chapters available
                 </div>
               )}
@@ -180,7 +180,7 @@ export function OutlineGridContextMenu({
                 type="button"
                 className={`h-5 w-5 rounded-sm ${color.className} ${
                   currentColor === color.value
-                    ? "ring-2 ring-zinc-400 ring-offset-1"
+                    ? "ring-2 ring-neutral-400 ring-offset-1"
                     : ""
                 }`}
                 onClick={() => {

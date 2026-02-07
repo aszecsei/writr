@@ -25,7 +25,7 @@ export function PromptInput({
   return (
     <form
       onSubmit={onSubmit}
-      className="border-t border-zinc-200 p-3 dark:border-zinc-800"
+      className="border-t border-neutral-200 p-3 dark:border-neutral-800"
     >
       {selectedText && (
         <div className="mb-2 flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-300">
@@ -52,7 +52,7 @@ export function PromptInput({
             selectedText ? "Ask about the selected text..." : "Ask the AI..."
           }
           disabled={loading}
-          className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
         {loading ? (
           <button
@@ -68,7 +68,7 @@ export function PromptInput({
             type="submit"
             disabled={!value.trim()}
             title="Send message"
-            className="rounded-md bg-zinc-900 p-2 text-white transition-all duration-150 hover:bg-zinc-800 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="rounded-md bg-primary-600 p-2 text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
           >
             <ArrowUp size={16} />
           </button>

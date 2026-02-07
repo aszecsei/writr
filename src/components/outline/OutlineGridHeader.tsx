@@ -62,7 +62,7 @@ export function OutlineGridHeader({
 
   return (
     <th
-      className="border border-zinc-200 bg-zinc-100 px-3 py-2 text-left font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+      className="border border-neutral-200 bg-neutral-100 px-3 py-2 text-left font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
       style={{ minWidth: column.width }}
       onContextMenu={onContextMenu}
     >

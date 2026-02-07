@@ -22,7 +22,7 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as AiTool)}
-      className="mt-2 block w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+      className="mt-2 block w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-xs dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
     >
       {AI_TOOLS.map((t) => (
         <option key={t.id} value={t.id}>

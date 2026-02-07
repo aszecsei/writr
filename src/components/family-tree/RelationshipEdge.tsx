@@ -61,7 +61,7 @@ export function RelationshipEdge({
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: "all",
           }}
-          className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:bg-zinc-900/90 dark:text-zinc-400"
+          className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-900/90 dark:text-neutral-400"
         >
           {label}
         </div>

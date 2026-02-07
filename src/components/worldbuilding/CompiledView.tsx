@@ -19,17 +19,17 @@ export function CompiledView({ markdown }: { markdown: string }) {
         <button
           type="button"
           onClick={handleCopy}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
           {copied ? "Copied!" : "Copy Markdown"}
         </button>
       </div>
       {markdown ? (
-        <div className="prose prose-zinc dark:prose-invert max-w-none">
+        <div className="prose prose-neutral dark:prose-invert max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
         </div>
       ) : (
-        <p className="py-12 text-center text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="py-12 text-center text-sm text-neutral-400 dark:text-neutral-500">
           No worldbuilding content to compile.
         </p>
       )}

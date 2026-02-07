@@ -7,7 +7,8 @@ const roleStyles: Record<CharacterRole, string> = {
   antagonist: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   supporting:
     "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  minor: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  minor:
+    "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
 };
 
 const roleLabels: Record<CharacterRole, string> = {

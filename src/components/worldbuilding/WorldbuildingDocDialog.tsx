@@ -104,18 +104,18 @@ export function WorldbuildingDocDialog({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
         <form
           onSubmit={handleSave}
           className="flex flex-1 flex-col overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-700">
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="flex-1 bg-transparent text-lg font-bold text-zinc-900 outline-none dark:text-zinc-100"
+              className="flex-1 bg-transparent text-lg font-bold text-neutral-900 outline-none dark:text-neutral-100"
               placeholder="Document Title"
             />
             <div className="ml-4 flex gap-2">
@@ -129,13 +129,13 @@ export function WorldbuildingDocDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                className="rounded-md bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
               >
                 Save
               </button>
@@ -145,12 +145,12 @@ export function WorldbuildingDocDialog({
           {/* Body */}
           <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
             <div className="flex gap-4">
-              <label className="flex-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Parent
                 <select
                   value={parentDocId ?? ""}
                   onChange={(e) => handleParentChange(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                 >
                   <option value="">None (root level)</option>
                   {selectableDocs.map(({ doc: d, depth }) => (
@@ -161,24 +161,24 @@ export function WorldbuildingDocDialog({
                   ))}
                 </select>
               </label>
-              <label className="flex-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 Tags
                 <input
                   type="text"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                   placeholder="comma-separated"
                 />
               </label>
             </div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
               Content
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={16}
-                className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-mono dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-mono dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                 placeholder="Write your worldbuilding content here (Markdown supported)... Leave empty to use as a section heading."
               />
             </label>

@@ -35,33 +35,33 @@ export function SearchResultItem({
       onClick={onClick}
       className={`block rounded-md px-3 py-2 transition-colors ${
         isSelected
-          ? "bg-zinc-100 dark:bg-zinc-800"
-          : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+          ? "bg-neutral-100 dark:bg-neutral-800"
+          : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
       }`}
     >
       <div className="flex items-start gap-2">
         <Icon
           size={14}
-          className="mt-0.5 shrink-0 text-zinc-400 dark:text-zinc-500"
+          className="mt-0.5 shrink-0 text-neutral-400 dark:text-neutral-500"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <span className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {title}
             </span>
             {subtitle && (
-              <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              <span className="shrink-0 rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
                 {subtitle}
               </span>
             )}
           </div>
-          <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
             {parts.map((part, i) => {
               const key = `${i}-${part.isMatch ? "m" : "t"}`;
               return part.isMatch ? (
                 <mark
                   key={key}
-                  className="bg-yellow-200 text-zinc-900 dark:bg-yellow-500/30 dark:text-zinc-100"
+                  className="bg-yellow-200 text-neutral-900 dark:bg-yellow-500/30 dark:text-neutral-100"
                 >
                   {part.text}
                 </mark>
@@ -70,7 +70,7 @@ export function SearchResultItem({
               );
             })}
           </p>
-          <span className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+          <span className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
             in {matchField}
           </span>
         </div>

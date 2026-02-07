@@ -116,7 +116,7 @@ export function SpellcheckContextMenu({
     <div
       ref={menuRef}
       style={style}
-      className="min-w-48 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
+      className="min-w-48 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
     >
       {/* Suggestions */}
       {contextMenu.suggestions.length > 0 && (
@@ -126,23 +126,23 @@ export function SpellcheckContextMenu({
               key={suggestion}
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
-              className="flex w-full items-center px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              className="flex w-full items-center px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
             >
-              <span className="mr-2 text-xs text-zinc-400">{index + 1}</span>
+              <span className="mr-2 text-xs text-neutral-400">{index + 1}</span>
               {suggestion}
             </button>
           ))}
-          <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </>
       )}
 
       {/* No suggestions message */}
       {contextMenu.suggestions.length === 0 && (
         <>
-          <div className="px-3 py-1.5 text-sm italic text-zinc-500">
+          <div className="px-3 py-1.5 text-sm italic text-neutral-500">
             No suggestions
           </div>
-          <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
         </>
       )}
 
@@ -150,25 +150,25 @@ export function SpellcheckContextMenu({
       <button
         type="button"
         onClick={handleAddToAppDictionary}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
       >
-        <BookType size={14} className="text-zinc-500" />
+        <BookType size={14} className="text-neutral-500" />
         Add to App Dictionary
       </button>
       <button
         type="button"
         onClick={handleAddToProjectDictionary}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
       >
-        <BookPlus size={14} className="text-zinc-500" />
+        <BookPlus size={14} className="text-neutral-500" />
         Add to Project Dictionary
       </button>
       <button
         type="button"
         onClick={handleIgnore}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
       >
-        <Eye size={14} className="text-zinc-500" />
+        <Eye size={14} className="text-neutral-500" />
         Ignore (this session)
       </button>
     </div>,

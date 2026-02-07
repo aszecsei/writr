@@ -24,7 +24,7 @@ export function FontSelector({ currentFont }: FontSelectorProps) {
       <select
         value={currentFont}
         onChange={handleFontChange}
-        className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+        className="rounded border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
       >
         {(["serif", "sans", "accessible"] as const).map((cat) => (
           <optgroup key={cat} label={CATEGORY_LABELS[cat]}>

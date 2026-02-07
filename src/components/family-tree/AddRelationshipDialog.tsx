@@ -47,14 +47,14 @@ export function AddRelationshipDialog({
 
   return (
     <Modal onClose={onClose}>
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Add Relationship
       </h3>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
           <label
             htmlFor="rel-source"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             From Character
           </label>
@@ -62,7 +62,7 @@ export function AddRelationshipDialog({
             id="rel-source"
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="">Select character...</option>
             {characters.map((c) => (
@@ -76,7 +76,7 @@ export function AddRelationshipDialog({
         <div>
           <label
             htmlFor="rel-target"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             To Character
           </label>
@@ -84,7 +84,7 @@ export function AddRelationshipDialog({
             id="rel-target"
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="">Select character...</option>
             {characters
@@ -100,7 +100,7 @@ export function AddRelationshipDialog({
         <div>
           <label
             htmlFor="rel-type"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             Relationship Type
           </label>
@@ -108,7 +108,7 @@ export function AddRelationshipDialog({
             id="rel-type"
             value={type}
             onChange={(e) => setType(e.target.value as RelationshipType)}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
           >
             {relationshipTypeList.map((rt) => (
               <option key={rt.value} value={rt.value}>
@@ -122,7 +122,7 @@ export function AddRelationshipDialog({
           <div>
             <label
               htmlFor="rel-custom-label"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               Custom Label
             </label>
@@ -132,7 +132,7 @@ export function AddRelationshipDialog({
               value={customLabel}
               onChange={(e) => setCustomLabel(e.target.value)}
               placeholder="e.g. Mentor, Rival..."
-              className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+              className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
             />
           </div>
         )}

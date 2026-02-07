@@ -50,19 +50,19 @@ export function AiSettings({
 
   return (
     <fieldset>
-      <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
         AI Integration
       </legend>
       <div className="mt-2 space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
             checked={enableAiFeatures}
             onChange={(e) => onEnableAiFeaturesChange(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+            className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           Enable AI features
-          <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
             — show AI panel and tools
           </span>
         </label>
@@ -82,7 +82,7 @@ export function AiSettings({
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
                   title={showApiKey ? "Hide API key" : "Show API key"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-neutral-500 transition-colors hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:text-neutral-200"
                 >
                   {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -98,15 +98,15 @@ export function AiSettings({
                 placeholder="openai/gpt-4o"
               />
             </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={streamResponses}
                 onChange={(e) => onStreamResponsesChange(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Stream responses
-              <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
                 — show text as it generates
               </span>
             </label>
@@ -125,20 +125,20 @@ export function AiSettings({
                   </option>
                 ))}
               </select>
-              <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
                 Controls how much the model reasons before responding. Requires
                 a reasoning-capable model.
               </span>
             </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={debugMode}
                 onChange={(e) => onDebugModeChange(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Debug mode (dry-run)
-              <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
                 — show prompt instead of calling AI
               </span>
             </label>

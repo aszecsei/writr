@@ -80,11 +80,11 @@ export default function BibleOverviewPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+    <div className="mx-auto max-w-editor px-8 py-8">
+      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
         Story Bible
       </h2>
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
         Track characters, locations, events, relationships, style rules, and
         worldbuilding details.
       </p>
@@ -95,18 +95,18 @@ export default function BibleOverviewPage() {
             <Link
               key={section.key}
               href={`/projects/${params.projectId}/${section.path}`}
-              className="group rounded-xl border border-zinc-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
+              className="group rounded-xl border border-neutral-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
             >
-              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
                 <Icon size={16} />
               </div>
-              <h3 className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-700 dark:text-zinc-100 dark:group-hover:text-zinc-300">
+              <h3 className="text-sm font-semibold text-neutral-900 group-hover:text-neutral-700 dark:text-neutral-100 dark:group-hover:text-neutral-300">
                 {section.label}
               </h3>
-              <p className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 {counts[section.key] ?? 0}
               </p>
-              <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+              <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
                 {section.key === "family-tree"
                   ? counts[section.key] === 1
                     ? "relationship"

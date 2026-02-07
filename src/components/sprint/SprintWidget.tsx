@@ -35,7 +35,7 @@ export function SprintWidget() {
 
   return (
     <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2">
-      <div className="flex items-center gap-4 rounded-full border border-zinc-200 bg-white px-5 py-3 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="flex items-center gap-4 rounded-full border border-neutral-200 bg-white px-5 py-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
         {/* Timer */}
         <div className="flex items-center gap-2">
           <div
@@ -44,23 +44,23 @@ export function SprintWidget() {
                 ? "animate-pulse bg-green-500"
                 : isPaused
                   ? "bg-yellow-500"
-                  : "bg-zinc-400"
+                  : "bg-neutral-400"
             }`}
           />
-          <span className="font-mono text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+          <span className="font-mono text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
             {formatTime(remainingMs)}
           </span>
         </div>
 
         {/* Separator */}
-        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-700" />
 
         {/* Words written */}
         <div className="flex flex-col items-center">
-          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {wordsWritten.toLocaleString()}
           </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
             {activeSprint.wordCountGoal
               ? `/ ${activeSprint.wordCountGoal} words`
               : "words"}
@@ -70,15 +70,15 @@ export function SprintWidget() {
         {/* Progress bar */}
         <div className="flex w-24 flex-col gap-1">
           {/* Time progress */}
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
             <div
-              className="h-full rounded-full bg-zinc-900 transition-all duration-300 dark:bg-zinc-100"
+              className="h-full rounded-full bg-primary-600 transition-all duration-300 dark:bg-primary-500"
               style={{ width: `${progress}%` }}
             />
           </div>
           {/* Goal progress */}
           {goalProgress !== null && (
-            <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   goalProgress >= 100 ? "bg-green-500" : "bg-blue-500"
@@ -90,7 +90,7 @@ export function SprintWidget() {
         </div>
 
         {/* Separator */}
-        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700" />
+        <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-700" />
 
         {/* Controls */}
         <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export function SprintWidget() {
             <button
               type="button"
               onClick={pause}
-              className="rounded-full p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              className="rounded-full p-2 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
               aria-label="Pause sprint"
             >
               <Pause size={18} />
@@ -107,7 +107,7 @@ export function SprintWidget() {
             <button
               type="button"
               onClick={resume}
-              className="rounded-full p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              className="rounded-full p-2 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
               aria-label="Resume sprint"
             >
               <Play size={18} />
@@ -116,7 +116,7 @@ export function SprintWidget() {
           <button
             type="button"
             onClick={() => end(true)}
-            className="rounded-full p-2 text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            className="rounded-full p-2 text-neutral-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
             aria-label="End sprint"
           >
             <Square size={18} />

@@ -13,13 +13,16 @@ export function ProjectGrid({ projects, onContextMenu }: ProjectGridProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-          <BookOpen size={24} className="text-zinc-400 dark:text-zinc-500" />
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+          <BookOpen
+            size={24}
+            className="text-neutral-400 dark:text-neutral-500"
+          />
         </div>
-        <p className="text-lg text-zinc-500 dark:text-zinc-400">
+        <p className="text-lg text-neutral-500 dark:text-neutral-400">
           No projects yet
         </p>
-        <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">
+        <p className="mt-1 text-sm text-neutral-400 dark:text-neutral-500">
           Create your first project to get started.
         </p>
       </div>

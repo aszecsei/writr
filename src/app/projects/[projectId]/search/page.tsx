@@ -75,11 +75,11 @@ export default function SearchPage() {
 
   if (!query.trim()) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="mx-auto max-w-editor p-8">
+        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
           Search
         </h1>
-        <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+        <p className="mt-4 text-neutral-500 dark:text-neutral-400">
           Enter a search term to find content across your project.
         </p>
       </div>
@@ -87,12 +87,12 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <div className="mx-auto max-w-editor p-8">
       <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
           Search Results for &quot;{query}&quot;
         </h1>
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+        <span className="text-sm text-neutral-500 dark:text-neutral-400">
           {results.totalCount} {results.totalCount === 1 ? "result" : "results"}
         </span>
       </div>
@@ -105,8 +105,8 @@ export default function SearchPage() {
       </div>
 
       {results.results.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-zinc-500 dark:text-zinc-400">
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-neutral-500 dark:text-neutral-400">
             No results found for &quot;{query}&quot;
             {selectedTypes.length > 0 && " with the selected filters"}.
           </p>
@@ -118,7 +118,7 @@ export default function SearchPage() {
             return (
               <div
                 key={`${result.entityType}-${result.id}`}
-                className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
               >
                 <SearchResultItem
                   icon={config.icon}

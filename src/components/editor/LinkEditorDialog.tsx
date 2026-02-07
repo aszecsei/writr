@@ -59,7 +59,7 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
 
   return (
     <Modal onClose={handleClose} maxWidth="max-w-sm">
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         {currentHref ? "Edit Link" : "Insert Link"}
       </h3>
 
@@ -84,7 +84,7 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
           <button
             type="button"
             onClick={handleRemove}
-            className="flex items-center gap-1.5 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:focus-visible:ring-offset-zinc-900"
+            className="flex items-center gap-1.5 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:focus-visible:ring-offset-neutral-900"
           >
             <Link2Off size={14} />
             Remove

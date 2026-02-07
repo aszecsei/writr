@@ -24,7 +24,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
   if (project === undefined) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
       </div>
     );
   }
@@ -32,7 +32,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
   if (project === null) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-zinc-500">Project not found.</p>
+        <p className="text-neutral-500">Project not found.</p>
       </div>
     );
   }

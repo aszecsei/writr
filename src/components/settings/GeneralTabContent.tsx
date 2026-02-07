@@ -1,5 +1,11 @@
 "use client";
 
+import type {
+  EditorWidth,
+  NeutralColor,
+  PrimaryColor,
+  UiDensity,
+} from "@/db/schemas";
 import { useAppStats } from "@/hooks/useAppStats";
 import { AppearanceSettings } from "./AppearanceSettings";
 
@@ -28,9 +34,9 @@ function formatRelativeDate(iso: string): string {
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800/50">
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800/50">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
         {value}
       </p>
     </div>
@@ -40,6 +46,14 @@ function StatItem({ label, value }: { label: string; value: string }) {
 interface GeneralTabContentProps {
   theme: "light" | "dark" | "system";
   onThemeChange: (theme: "light" | "dark" | "system") => void;
+  primaryColor: PrimaryColor;
+  onPrimaryColorChange: (color: PrimaryColor) => void;
+  neutralColor: NeutralColor;
+  onNeutralColorChange: (color: NeutralColor) => void;
+  editorWidth: EditorWidth;
+  onEditorWidthChange: (width: EditorWidth) => void;
+  uiDensity: UiDensity;
+  onUiDensityChange: (density: UiDensity) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -47,6 +61,14 @@ interface GeneralTabContentProps {
 export function GeneralTabContent({
   theme,
   onThemeChange,
+  primaryColor,
+  onPrimaryColorChange,
+  neutralColor,
+  onNeutralColorChange,
+  editorWidth,
+  onEditorWidthChange,
+  uiDensity,
+  onUiDensityChange,
   inputClass,
   labelClass,
 }: GeneralTabContentProps) {
@@ -55,7 +77,7 @@ export function GeneralTabContent({
   return (
     <div className="space-y-6">
       <fieldset>
-        <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
           Statistics
         </legend>
         <div className="mt-2 grid grid-cols-3 gap-2">
@@ -103,6 +125,14 @@ export function GeneralTabContent({
       <AppearanceSettings
         theme={theme}
         onThemeChange={onThemeChange}
+        primaryColor={primaryColor}
+        onPrimaryColorChange={onPrimaryColorChange}
+        neutralColor={neutralColor}
+        onNeutralColorChange={onNeutralColorChange}
+        editorWidth={editorWidth}
+        onEditorWidthChange={onEditorWidthChange}
+        uiDensity={uiDensity}
+        onUiDensityChange={onUiDensityChange}
         inputClass={inputClass}
         labelClass={labelClass}
       />

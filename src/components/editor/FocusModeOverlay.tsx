@@ -25,7 +25,7 @@ export function FocusModeOverlay() {
   const hasActiveSprint = activeSprintId !== null;
 
   return (
-    <div className="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-lg border border-zinc-200/50 bg-white/80 px-4 py-2 shadow-sm backdrop-blur-sm transition-opacity hover:opacity-100 dark:border-zinc-700/50 dark:bg-zinc-900/80">
+    <div className="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-lg border border-neutral-200/50 bg-white/80 px-4 py-2 shadow-sm backdrop-blur-sm transition-opacity hover:opacity-100 dark:border-neutral-700/50 dark:bg-neutral-900/80">
       {/* Sprint info (if active) */}
       {hasActiveSprint && (
         <>
@@ -36,23 +36,23 @@ export function FocusModeOverlay() {
                   ? "animate-pulse bg-green-500"
                   : isPaused
                     ? "bg-yellow-500"
-                    : "bg-zinc-400"
+                    : "bg-neutral-400"
               }`}
             />
-            <span className="font-mono text-sm font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+            <span className="font-mono text-sm font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
               {formatTime(remainingMs)}
             </span>
           </div>
-          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+          <span className="text-sm text-neutral-600 dark:text-neutral-400">
             +{wordsWritten} words
           </span>
-          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
         </>
       )}
 
       {/* Word count */}
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+      <span className="text-sm text-neutral-600 dark:text-neutral-400">
         {wordCount.toLocaleString()} words
       </span>
 
@@ -60,7 +60,7 @@ export function FocusModeOverlay() {
       <button
         type="button"
         onClick={() => setFocusMode(false)}
-        className="ml-1 rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+        className="ml-1 rounded p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
         aria-label="Exit focus mode"
         title="Exit focus mode (Esc)"
       >

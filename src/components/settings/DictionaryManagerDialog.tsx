@@ -68,7 +68,7 @@ export function DictionaryManagerDialog() {
 
   return (
     <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Dictionary Manager
       </h2>
 
@@ -105,7 +105,7 @@ export function DictionaryManagerDialog() {
             }
           }}
           placeholder="Add a word..."
-          className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
         <button
           type="button"
@@ -121,19 +121,19 @@ export function DictionaryManagerDialog() {
       <div className="relative mt-3">
         <Search
           size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
         />
         <input
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter words..."
-          className="w-full rounded-md border border-zinc-300 bg-white py-2 pl-8 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="w-full rounded-md border border-neutral-300 bg-white py-2 pl-8 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
       </div>
 
       {/* Word count */}
-      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
         {filteredWords.length} word{filteredWords.length !== 1 && "s"}
         {filter && ` matching "${filter}"`}
         {!filter &&
@@ -141,9 +141,9 @@ export function DictionaryManagerDialog() {
       </p>
 
       {/* Word list */}
-      <div className="mt-2 max-h-[400px] overflow-y-auto rounded-md border border-zinc-200 dark:border-zinc-700">
+      <div className="mt-2 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700">
         {filteredWords.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
+          <p className="px-4 py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
             {filter
               ? "No words match your filter."
               : "No words in this dictionary yet."}
@@ -153,15 +153,15 @@ export function DictionaryManagerDialog() {
             {filteredWords.map((word) => (
               <li
                 key={word}
-                className="flex items-center justify-between border-b border-zinc-100 px-4 py-2 last:border-b-0 dark:border-zinc-800"
+                className="flex items-center justify-between border-b border-neutral-100 px-4 py-2 last:border-b-0 dark:border-neutral-800"
               >
-                <span className="text-sm text-zinc-900 dark:text-zinc-100">
+                <span className="text-sm text-neutral-900 dark:text-neutral-100">
                   {word}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleRemove(word)}
-                  className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-950 dark:hover:text-red-400"
+                  className="rounded-md p-1 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-500 dark:hover:bg-red-950 dark:hover:text-red-400"
                   aria-label={`Remove "${word}"`}
                 >
                   <X size={14} />

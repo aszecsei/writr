@@ -34,10 +34,10 @@ export function BibleNav({
     <div className="space-y-1">
       <Link
         href={`/projects/${projectId}/bible`}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm font-medium transition-colors ${
           pathname === `/projects/${projectId}/bible`
-            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
         }`}
       >
         <LayoutGrid size={14} />
@@ -51,10 +51,10 @@ export function BibleNav({
           <Link
             key={link.path}
             href={href}
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors ${
               isActive
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
             }`}
           >
             <Icon size={14} />

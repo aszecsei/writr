@@ -64,12 +64,12 @@ export function OutlineGridRow({
     <tr ref={ref} className={isDragSource ? "opacity-50" : ""}>
       {/* Row header: drag handle + number + title */}
       <th
-        className="sticky left-0 z-10 min-w-[180px] border border-zinc-200 bg-zinc-50 px-1 py-2 text-left font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+        className="sticky left-0 z-10 min-w-[180px] border border-neutral-200 bg-neutral-50 px-1 py-2 text-left font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400"
         onContextMenu={onRowContextMenu}
       >
         <div className="flex items-center gap-1">
           <DragHandle ref={handleRef} />
-          <span className="w-6 shrink-0 text-center text-xs text-zinc-400 dark:text-zinc-500">
+          <span className="w-6 shrink-0 text-center text-xs text-neutral-400 dark:text-neutral-500">
             {row.order + 1}
           </span>
           {isEditingLabel ? (
@@ -95,7 +95,7 @@ export function OutlineGridRow({
               }
             >
               {displayLabel || (
-                <span className="text-zinc-400 dark:text-zinc-500">
+                <span className="text-neutral-400 dark:text-neutral-500">
                   Untitled
                 </span>
               )}
@@ -105,7 +105,7 @@ export function OutlineGridRow({
       </th>
 
       {/* Status cell (fixed, non-editable) */}
-      <td className="border border-zinc-200 bg-white px-2 py-2 text-center dark:border-zinc-700 dark:bg-zinc-900">
+      <td className="border border-neutral-200 bg-white px-2 py-2 text-center dark:border-neutral-700 dark:bg-neutral-900">
         <StatusBadge
           status={
             row.linkedChapterId

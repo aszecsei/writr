@@ -10,7 +10,7 @@ export function DragHandle({ ref, ...props }: DragHandleProps) {
       ref={ref}
       type="button"
       aria-label="Drag to reorder"
-      className="flex cursor-grab items-center justify-center rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 active:cursor-grabbing dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+      className="flex cursor-grab items-center justify-center rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 active:cursor-grabbing dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
       {...props}
     >
       <svg

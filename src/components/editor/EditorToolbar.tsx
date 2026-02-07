@@ -147,9 +147,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   if (!editor) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 bg-white px-4 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex flex-wrap items-center gap-density border-b border-neutral-200 bg-white px-4 py-density-button dark:border-neutral-800 dark:bg-neutral-900">
       <FontSelector currentFont={currentFont} />
-      <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
       {groups.map((group, gi) => {
         const groupActions = actions.filter((a) => a.group === group);
         if (groupActions.length === 0) return null;
@@ -159,7 +159,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           return (
             <div key={group} className="flex items-center">
               {gi > 0 && (
-                <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
               )}
               <AlignmentDropdown editor={editor} />
             </div>
@@ -169,7 +169,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         return (
           <div key={group} className="flex items-center">
             {gi > 0 && (
-              <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+              <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
             )}
             {groupActions.map((action) => {
               const active = activeStates[action.label] ?? false;
@@ -184,10 +184,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                       ? handleModalAction(action.label)
                       : action.action(editor)
                   }
-                  className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                  className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
                     active
-                      ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
-                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                      ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
                   }`}
                 >
                   <Icon size={16} />
@@ -199,7 +199,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       })}
       {activeProjectId && activeDocumentId && (
         <>
-          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
           <button
             type="button"
             title="Export"
@@ -211,7 +211,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 scope: "chapter",
               })
             }
-            className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
           >
             <Download size={16} />
           </button>
@@ -225,7 +225,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 projectId: activeProjectId,
               })
             }
-            className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
           >
             <History size={16} />
           </button>
@@ -242,15 +242,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               })
             }
             disabled={!hasSelection}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               hasSelection
-                ? "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                : "cursor-not-allowed text-zinc-300 dark:text-zinc-600"
+                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
             }`}
           >
             <ImagePlus size={16} />
           </button>
-          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
           <CreateCommentButton
             editor={editor}
             projectId={activeProjectId}
@@ -260,23 +260,23 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             type="button"
             title="Toggle comment margin"
             onClick={toggleMargin}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               marginVisible
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             }`}
           >
             <PanelRight size={16} />
           </button>
-          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
           <button
             type="button"
             title="Toggle spellcheck"
             onClick={toggleSpellcheck}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               spellcheckEnabled
-                ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             }`}
           >
             <SpellCheck size={16} />
@@ -286,22 +286,22 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             title="Open spellcheck scanner"
             onClick={handleOpenScanner}
             disabled={!spellcheckEnabled}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               spellcheckEnabled
-                ? "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                : "cursor-not-allowed text-zinc-300 dark:text-zinc-600"
+                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
             }`}
           >
             <ScanSearch size={16} />
           </button>
         </>
       )}
-      <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-700" />
+      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
       <button
         type="button"
         title="Focus mode (Ctrl+Shift+F)"
         onClick={toggleFocusMode}
-        className="rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
       >
         <Maximize2 size={16} />
       </button>

@@ -60,12 +60,15 @@ export function RubyDialog({ onApply, onRemove }: RubyDialogProps) {
   return (
     <Modal onClose={handleClose} maxWidth="max-w-sm">
       <div className="flex items-center gap-2">
-        <Languages size={20} className="text-zinc-600 dark:text-zinc-400" />
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+        <Languages
+          size={20}
+          className="text-neutral-600 dark:text-neutral-400"
+        />
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           {currentAnnotation ? "Edit Ruby Text" : "Insert Ruby Text"}
         </h3>
       </div>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
         Add reading guides or annotations above selected text
       </p>
 
@@ -90,7 +93,7 @@ export function RubyDialog({ onApply, onRemove }: RubyDialogProps) {
           <button
             type="button"
             onClick={handleRemove}
-            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:focus-visible:ring-offset-zinc-900"
+            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:focus-visible:ring-offset-neutral-900"
           >
             Remove
           </button>

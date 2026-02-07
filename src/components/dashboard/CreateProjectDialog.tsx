@@ -41,7 +41,7 @@ export function CreateProjectDialog() {
 
   return (
     <Modal onClose={closeModal}>
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         New Project
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">

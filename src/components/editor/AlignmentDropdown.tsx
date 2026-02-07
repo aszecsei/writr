@@ -76,14 +76,14 @@ export function AlignmentDropdown({ editor }: AlignmentDropdownProps) {
         type="button"
         title="Text alignment"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-0.5 rounded p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="flex items-center gap-0.5 rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
       >
         <CurrentIcon size={16} />
         <ChevronDown size={12} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
           {alignments.map((alignment) => {
             const Icon = alignment.icon;
             const isActive = currentAlignment === alignment.value;
@@ -94,8 +94,8 @@ export function AlignmentDropdown({ editor }: AlignmentDropdownProps) {
                 onClick={() => handleSelect(alignment.value)}
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors ${
                   isActive
-                    ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100"
-                    : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                    ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+                    : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700"
                 }`}
               >
                 <Icon size={14} />

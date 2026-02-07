@@ -72,11 +72,11 @@ export default function OutlinePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-zinc-200 px-8 py-4 dark:border-zinc-800">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+      <div className="border-b border-neutral-200 px-8 py-4 dark:border-neutral-800">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
           Outline
         </h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           Organize your story in a spreadsheet-style grid.
         </p>
       </div>

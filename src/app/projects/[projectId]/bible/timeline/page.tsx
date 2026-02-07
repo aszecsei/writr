@@ -39,11 +39,11 @@ export default function TimelinePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
-      <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+    <div className="mx-auto max-w-editor px-8 py-8">
+      <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
         Timeline
       </h2>
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
         Track in-universe events in chronological order.
       </p>
 
@@ -53,12 +53,12 @@ export default function TimelinePage() {
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="New event title..."
-          className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
         <button
           type="submit"
           disabled={!newTitle.trim()}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
         >
           Add
         </button>
@@ -84,7 +84,7 @@ export default function TimelinePage() {
       >
         <div className="mt-6 space-y-4">
           {localEvents.length === 0 && (
-            <p className="py-12 text-center text-sm text-zinc-400 dark:text-zinc-500">
+            <p className="py-12 text-center text-sm text-neutral-400 dark:text-neutral-500">
               No timeline events yet.
             </p>
           )}

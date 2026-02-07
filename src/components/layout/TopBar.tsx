@@ -33,27 +33,27 @@ export function TopBar() {
   const settings = useAppSettings();
 
   return (
-    <header className="grid h-12 shrink-0 grid-cols-[1fr_minmax(0,768px)_1fr] items-center gap-4 border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <header className="grid h-12 shrink-0 grid-cols-[1fr_minmax(0,768px)_1fr] items-center gap-4 border-b border-neutral-200 bg-white px-4 dark:border-neutral-800 dark:bg-neutral-900">
       {/* Left section - branding */}
       <div className="flex items-center gap-3 justify-self-start">
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
           aria-label="Toggle sidebar"
         >
           <Menu size={18} />
         </button>
         <Link
           href="/"
-          className="text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+          className="text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
         >
           writr
         </Link>
         {projectTitle && (
           <>
-            <span className="text-zinc-300 dark:text-zinc-600">/</span>
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <span className="text-neutral-300 dark:text-neutral-600">/</span>
+            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {projectTitle}
             </span>
           </>
@@ -73,7 +73,7 @@ export function TopBar() {
       <div className="flex items-center gap-4 justify-self-end">
         {activeDocumentId && (
           <>
-            <span className="whitespace-nowrap text-xs text-zinc-400 dark:text-zinc-500">
+            <span className="whitespace-nowrap text-xs text-neutral-400 dark:text-neutral-500">
               {wordCount.toLocaleString()} words ·{" "}
               {formatReadingTime(wordCount, settings?.readingSpeedWpm)}
             </span>
@@ -91,7 +91,7 @@ export function TopBar() {
                   scope: "book",
                 })
               }
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-150 hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-neutral-600 transition-all duration-150 hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
             >
               <Download size={14} />
               Export
@@ -100,10 +100,10 @@ export function TopBar() {
               type="button"
               onClick={openSprintConfig}
               disabled={!!activeSprintId}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-neutral-400 ${
                 activeSprintId
                   ? "cursor-not-allowed opacity-50"
-                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
               }`}
             >
               <Timer size={14} />
@@ -115,10 +115,10 @@ export function TopBar() {
           <button
             type="button"
             onClick={toggleAiPanel}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               aiPanelOpen
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                ? "bg-primary-600 text-white dark:bg-primary-500 dark:text-white"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             }`}
           >
             <Sparkles size={14} />
@@ -140,7 +140,9 @@ function SaveStatusIndicator({
   return (
     <span
       className={`flex items-center gap-1 text-xs ${
-        status === "error" ? "text-red-500" : "text-zinc-400 dark:text-zinc-500"
+        status === "error"
+          ? "text-red-500"
+          : "text-neutral-400 dark:text-neutral-500"
       }`}
     >
       {status === "saving" && <Loader2 size={12} className="animate-spin" />}

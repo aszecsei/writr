@@ -5,6 +5,46 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Primary color (default: blue) */
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --primary-950: #172554;
+
+  /* Neutral color (default: zinc) */
+  --neutral-50: #fafafa;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
+  --neutral-950: #09090b;
+
+  /* Editor content width */
+  --editor-content-width: 720px;
+
+  /* Density variables (comfortable defaults) */
+  --density-item-py: 0.5rem;
+  --density-button-py: 0.5rem;
+  --density-gap: 0.5rem;
+}
+
+[data-density="compact"] {
+  --density-item-py: 0.25rem;
+  --density-button-py: 0.25rem;
+  --density-gap: 0.25rem;
 }
 
 @theme inline {
@@ -12,6 +52,49 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Primary color scale */
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+
+  /* Neutral color scale */
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  /* Editor max-width (--container-* maps to max-w-*) */
+  --container-editor: var(--editor-content-width);
+}
+
+@utility py-density-item {
+  padding-top: var(--density-item-py);
+  padding-bottom: var(--density-item-py);
+}
+
+@utility py-density-button {
+  padding-top: var(--density-button-py);
+  padding-bottom: var(--density-button-py);
+}
+
+@utility gap-density {
+  gap: var(--density-gap);
 }
 
 .dark {
@@ -91,12 +174,12 @@ select:disabled {
 
 .resize-handle:hover::before,
 .resize-handle:active::before {
-  background-color: var(--color-zinc-400);
+  background-color: var(--color-neutral-400);
 }
 
 .dark .resize-handle:hover::before,
 .dark .resize-handle:active::before {
-  background-color: var(--color-zinc-600);
+  background-color: var(--color-neutral-600);
 }
 
 /* Comment highlights */
@@ -177,12 +260,12 @@ ruby {
 
 ruby rt {
   font-size: 0.5em;
-  /* Use explicit RGB to avoid html2canvas issues with lab() colors */
-  color: rgb(113, 113, 122);
+  /* Use neutral variable with explicit RGB fallback for html2canvas */
+  color: var(--neutral-500, rgb(113, 113, 122));
 }
 
 .dark ruby rt {
-  color: rgb(161, 161, 170);
+  color: var(--neutral-400, rgb(161, 161, 170));
 }
 
 /* Spellcheck styling */

@@ -54,7 +54,7 @@ export function InsertImageDialog({ onInsert }: InsertImageDialogProps) {
 
   return (
     <Modal onClose={handleClose} maxWidth="max-w-sm">
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Insert Image
       </h3>
 

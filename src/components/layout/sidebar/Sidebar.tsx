@@ -22,8 +22,8 @@ export function Sidebar() {
   const openModal = useUiStore((s) => s.openModal);
 
   return (
-    <aside className="flex h-full flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-      <nav className="flex border-b border-zinc-200 dark:border-zinc-800">
+    <aside className="flex h-full flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950">
+      <nav className="flex border-b border-neutral-200 dark:border-neutral-800">
         {panels.map((panel) => {
           const Icon = panel.icon;
           return (
@@ -33,8 +33,8 @@ export function Sidebar() {
               onClick={() => setSidebarPanel(panel.id)}
               className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors ${
                 sidebarPanel === panel.id
-                  ? "border-b-2 border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                  ? "border-b-2 border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400"
+                  : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
               }`}
             >
               <Icon size={14} />
@@ -51,12 +51,12 @@ export function Sidebar() {
           <BibleNav projectId={projectId} pathname={pathname} />
         )}
       </div>
-      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
         <MusicControlBar />
         <button
           type="button"
           onClick={() => openModal({ id: "app-settings" })}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          className="flex w-full items-center gap-2 rounded-md px-3 py-density-item text-left text-sm text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
         >
           <Settings size={14} />
           App Settings

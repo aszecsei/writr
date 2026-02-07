@@ -115,7 +115,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   if (!columns || !rows || !cellsMap) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-zinc-500">Loading...</div>
+        <div className="text-neutral-500">Loading...</div>
       </div>
     );
   }
@@ -123,7 +123,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-2 dark:border-zinc-700">
+      <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-700">
         <OutlineGridToolbar
           onAddRow={operations.handleAddRow}
           onAddColumn={operations.handleAddColumn}
@@ -141,11 +141,11 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
             <thead className="sticky top-0 z-20">
               <tr>
                 {/* Row number/title header */}
-                <th className="sticky left-0 z-30 min-w-[180px] border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                <th className="sticky left-0 z-30 min-w-[180px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
                   Chapter
                 </th>
                 {/* Status column header (fixed, non-editable) */}
-                <th className="min-w-[90px] border border-zinc-200 bg-zinc-100 px-3 py-2 text-left text-sm font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                <th className="min-w-[90px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
                   Status
                 </th>
                 {columns.map((column) => (
@@ -212,7 +212,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
 
         {/* Empty state */}
         {localRows.length === 0 && columns.length === 0 && (
-          <div className="flex h-64 items-center justify-center text-zinc-500">
+          <div className="flex h-64 items-center justify-center text-neutral-500">
             <p>
               Click "Add Row" and "Add Column" to start building your outline.
             </p>

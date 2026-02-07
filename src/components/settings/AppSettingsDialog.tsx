@@ -1,6 +1,12 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
   INPUT_CLASS,
@@ -11,9 +17,21 @@ import {
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
-import type { ReasoningEffort } from "@/db/schemas";
+import type {
+  EditorWidth,
+  NeutralColor,
+  PrimaryColor,
+  ReasoningEffort,
+  UiDensity,
+} from "@/db/schemas";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import type { Backup } from "@/lib/backup";
+import {
+  applyEditorWidth,
+  applyNeutralColor,
+  applyPrimaryColor,
+  applyUiDensity,
+} from "@/lib/theme/apply-theme";
 import { useUiStore } from "@/store/uiStore";
 import { AiSettings } from "./AiSettings";
 import { BackupSettings } from "./BackupSettings";
@@ -38,6 +56,10 @@ export function AppSettingsDialog() {
 
   const [tab, setTab] = useState<SettingsTab>("general");
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [primaryColor, setPrimaryColor] = useState<PrimaryColor>("blue");
+  const [neutralColor, setNeutralColor] = useState<NeutralColor>("zinc");
+  const [editorWidth, setEditorWidth] = useState<EditorWidth>("medium");
+  const [uiDensity, setUiDensity] = useState<UiDensity>("comfortable");
   const [editorFont, setEditorFont] = useState("literata");
   const [editorFontSize, setEditorFontSize] = useState(16);
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
@@ -56,16 +78,23 @@ export function AppSettingsDialog() {
     filename: string;
   } | null>(null);
 
-  // Reset tab when dialog opens
-  useEffect(() => {
-    if (modal.id === "app-settings") {
-      setTab("general");
-    }
-  }, [modal.id]);
+  // Snapshot of saved settings at dialog open, used to revert on cancel
+  const savedSettingsRef = useRef(settings);
 
+  // Sync local state from DB settings — runs when settings change OR dialog opens.
+  // The modal.id dep ensures state resets from DB when re-opening after cancel,
+  // even if `settings` reference is unchanged (no DB write happened).
   useEffect(() => {
     if (settings) {
+      if (modal.id === "app-settings") {
+        savedSettingsRef.current = settings;
+        setTab("general");
+      }
       setTheme(settings.theme);
+      setPrimaryColor(settings.primaryColor);
+      setNeutralColor(settings.neutralColor);
+      setEditorWidth(settings.editorWidth);
+      setUiDensity(settings.uiDensity);
       setEditorFont(settings.editorFont);
       setEditorFontSize(settings.editorFontSize);
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
@@ -78,13 +107,50 @@ export function AppSettingsDialog() {
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
     }
-  }, [settings]);
+  }, [settings, modal.id]);
+
+  // Live preview: apply theme changes immediately
+  const handlePrimaryColorChange = useCallback((color: PrimaryColor) => {
+    setPrimaryColor(color);
+    applyPrimaryColor(color);
+  }, []);
+
+  const handleNeutralColorChange = useCallback((color: NeutralColor) => {
+    setNeutralColor(color);
+    applyNeutralColor(color);
+  }, []);
+
+  const handleEditorWidthChange = useCallback((width: EditorWidth) => {
+    setEditorWidth(width);
+    applyEditorWidth(width);
+  }, []);
+
+  const handleUiDensityChange = useCallback((density: UiDensity) => {
+    setUiDensity(density);
+    applyUiDensity(density);
+  }, []);
+
+  // Revert live preview on cancel using the snapshot taken at dialog open
+  const handleCancel = useCallback(() => {
+    const saved = savedSettingsRef.current;
+    if (saved) {
+      applyPrimaryColor(saved.primaryColor);
+      applyNeutralColor(saved.neutralColor);
+      applyEditorWidth(saved.editorWidth);
+      applyUiDensity(saved.uiDensity);
+    }
+    closeModal();
+  }, [closeModal]);
 
   if (modal.id !== "app-settings") return null;
 
   const isDirty =
     settings != null &&
     (theme !== settings.theme ||
+      primaryColor !== settings.primaryColor ||
+      neutralColor !== settings.neutralColor ||
+      editorWidth !== settings.editorWidth ||
+      uiDensity !== settings.uiDensity ||
       editorFont !== settings.editorFont ||
       editorFontSize !== settings.editorFontSize ||
       autoSaveSeconds !== Math.round(settings.autoSaveIntervalMs / 1000) ||
@@ -101,6 +167,10 @@ export function AppSettingsDialog() {
     e.preventDefault();
     await updateAppSettings({
       theme,
+      primaryColor,
+      neutralColor,
+      editorWidth,
+      uiDensity,
       editorFont,
       editorFontSize,
       autoSaveIntervalMs: autoSaveSeconds * 1000,
@@ -117,8 +187,8 @@ export function AppSettingsDialog() {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-2xl">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+    <Modal onClose={handleCancel} maxWidth="max-w-2xl">
+      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         App Settings
       </h2>
 
@@ -141,6 +211,14 @@ export function AppSettingsDialog() {
           <GeneralTabContent
             theme={theme}
             onThemeChange={setTheme}
+            primaryColor={primaryColor}
+            onPrimaryColorChange={handlePrimaryColorChange}
+            neutralColor={neutralColor}
+            onNeutralColorChange={handleNeutralColorChange}
+            editorWidth={editorWidth}
+            onEditorWidthChange={handleEditorWidthChange}
+            uiDensity={uiDensity}
+            onUiDensityChange={handleUiDensityChange}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />
@@ -192,7 +270,7 @@ export function AppSettingsDialog() {
         )}
 
         <DialogFooter
-          onCancel={closeModal}
+          onCancel={handleCancel}
           submitLabel="Save"
           submitDisabled={!isDirty}
         />

@@ -71,20 +71,20 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
         type="button"
         title="Copy to clipboard"
         onClick={() => setCopyMenuOpen(!copyMenuOpen)}
-        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
           copiedType
             ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
         }`}
       >
         {copiedType ? <Check size={16} /> : <Copy size={16} />}
       </button>
       {copyMenuOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
           <button
             type="button"
             onClick={handleCopyMarkdown}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
           >
             <FileText size={14} />
             Copy Markdown
@@ -92,7 +92,7 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
           <button
             type="button"
             onClick={handleCopyAo3Html}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
           >
             <FileCode2 size={14} />
             Copy AO3 HTML

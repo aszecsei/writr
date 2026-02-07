@@ -57,11 +57,11 @@ export function PreviewCardDialog() {
   if (!selectedHtml) {
     return (
       <Modal onClose={closeModal}>
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           <ImagePlus size={18} />
           Preview Card
         </h2>
-        <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
           Select some text in the editor to create a preview card.
         </p>
         <div className="mt-5 flex justify-end">
@@ -92,13 +92,13 @@ export function PreviewCardDialog() {
 
   return (
     <Modal onClose={closeModal} maxWidth="max-w-2xl">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         <ImagePlus size={18} />
         Preview Card
       </h2>
 
       <div className="mt-5 space-y-5">
-        <div className="flex justify-center rounded-lg bg-zinc-100 p-4 dark:bg-zinc-800">
+        <div className="flex justify-center rounded-lg bg-neutral-100 p-4 dark:bg-neutral-800">
           <PreviewCardCanvas
             ref={canvasRef}
             selectedHtml={selectedHtml}
@@ -113,7 +113,7 @@ export function PreviewCardDialog() {
         </div>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Template
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Aspect Ratio
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -149,25 +149,25 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Attribution
           </legend>
           <div className="mt-2 flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={showWorkTitle}
                 onChange={(e) => setShowWorkTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Work title
             </label>
-            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={showChapterTitle}
                 onChange={(e) => setShowChapterTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Chapter title
             </label>

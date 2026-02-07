@@ -75,13 +75,13 @@ export function SprintConfigDialog() {
 
   return (
     <Modal onClose={closeConfigModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         <Timer size={18} />
         Start Writing Sprint
       </h2>
 
       {projectTitle && (
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           Project: {projectTitle}
         </p>
       )}
@@ -89,7 +89,7 @@ export function SprintConfigDialog() {
       <div className="mt-5 space-y-5">
         {/* Duration */}
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Duration
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -125,7 +125,7 @@ export function SprintConfigDialog() {
                 placeholder="Minutes"
                 className={`w-24 ${INPUT_CLASS}`}
               />
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">
+              <span className="text-sm text-neutral-500 dark:text-neutral-400">
                 minutes
               </span>
             </div>
@@ -134,7 +134,7 @@ export function SprintConfigDialog() {
 
         {/* Word Goal */}
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Word Goal (optional)
           </legend>
           <div className="mt-2">
@@ -171,7 +171,7 @@ export function SprintConfigDialog() {
             <button
               type="button"
               onClick={handleViewHistory}
-              className="flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+              className="flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
             >
               <History size={14} />
               View History

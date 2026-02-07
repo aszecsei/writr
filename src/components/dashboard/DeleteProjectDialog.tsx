@@ -50,12 +50,12 @@ export function DeleteProjectDialog() {
           <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             Delete Project
           </h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             This will permanently delete{" "}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            <span className="font-medium text-neutral-900 dark:text-neutral-100">
               {project?.title}
             </span>{" "}
             and all its chapters, characters, locations, and other data.
@@ -66,7 +66,7 @@ export function DeleteProjectDialog() {
         <div>
           <label className={LABEL_CLASS}>
             Type{" "}
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
               {project?.title}
             </span>{" "}
             to confirm

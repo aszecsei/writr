@@ -27,16 +27,16 @@ export function SearchDropdown({
   const hasResults = flatResults.length > 0;
 
   return (
-    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[400px] overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[400px] overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
       {isSearching && (
-        <div className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500">
+        <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-500">
           <Loader2 size={12} className="animate-spin" />
           Searching...
         </div>
       )}
 
       {!isSearching && !hasResults && (
-        <div className="px-3 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="px-3 py-4 text-center text-sm text-neutral-500 dark:text-neutral-400">
           No results found for &quot;{query}&quot;
         </div>
       )}
@@ -47,7 +47,7 @@ export function SearchDropdown({
             const GroupIcon = group.icon;
             return (
               <div key={group.entityType}>
-                <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
                   <GroupIcon size={12} />
                   {group.labelPlural}
                 </div>
@@ -74,7 +74,7 @@ export function SearchDropdown({
               </div>
             );
           })}
-          <div className="border-t border-zinc-100 px-3 py-2 text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
+          <div className="border-t border-neutral-100 px-3 py-2 text-xs text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
             Press Enter to see all results
           </div>
         </>

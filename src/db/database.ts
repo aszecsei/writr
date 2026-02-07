@@ -308,6 +308,18 @@ export class WritrDatabase extends Dexie {
       appDictionary: "id",
       projectDictionaries: "id, projectId",
     });
+
+    this.version(15).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.primaryColor === undefined) s.primaryColor = "blue";
+          if (s.neutralColor === undefined) s.neutralColor = "zinc";
+          if (s.editorWidth === undefined) s.editorWidth = "medium";
+          if (s.uiDensity === undefined) s.uiDensity = "comfortable";
+        }),
+    );
   }
 }
 

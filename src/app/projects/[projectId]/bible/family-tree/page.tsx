@@ -97,12 +97,12 @@ function FamilyTreeCanvas() {
   if (characters && characters.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           No characters yet. Add characters to start building your family tree.
         </p>
         <Link
           href={`/projects/${params.projectId}/bible/characters`}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
         >
           Go to Characters
         </Link>
@@ -121,7 +121,7 @@ function FamilyTreeCanvas() {
         fitView
         colorMode="dark"
         proOptions={{ hideAttribution: true }}
-        className="bg-zinc-50 dark:bg-zinc-950"
+        className="bg-neutral-50 dark:bg-neutral-950"
       >
         <Background gap={20} size={1} />
         <Controls showInteractive={false} />
@@ -162,7 +162,7 @@ function FamilyTreeCanvas() {
         <button
           type="button"
           onClick={() => setShowDialog(true)}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
         >
           Add Relationship
         </button>

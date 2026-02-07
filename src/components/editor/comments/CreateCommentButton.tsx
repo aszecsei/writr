@@ -117,7 +117,7 @@ export function CreateCommentButton({
             e.preventDefault();
             handleCreateComment();
           }}
-          className="rounded-l p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="rounded-l p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
         >
           <MessageSquarePlus size={16} />
         </button>
@@ -128,15 +128,15 @@ export function CreateCommentButton({
             e.preventDefault();
             setMenuOpen(!menuOpen);
           }}
-          className="rounded-r border-l border-zinc-200 p-1.5 text-zinc-600 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="rounded-r border-l border-neutral-200 p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
         >
           <ChevronDown size={12} />
         </button>
       </div>
 
       {menuOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 rounded-md border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
-          <div className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        <div className="absolute left-0 top-full z-50 mt-1 rounded-md border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
+          <div className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
             Color
           </div>
           <div className="flex gap-1.5">
@@ -151,7 +151,7 @@ export function CreateCommentButton({
                   COLOR_BUTTON_CLASSES[color]
                 } ${
                   selectedColor === color
-                    ? "ring-2 ring-zinc-900 ring-offset-1 dark:ring-white"
+                    ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
                     : ""
                 }`}
                 title={color.charAt(0).toUpperCase() + color.slice(1)}
@@ -164,7 +164,7 @@ export function CreateCommentButton({
               e.preventDefault();
               handleCreateComment();
             }}
-            className="mt-2 w-full rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600"
+            className="mt-2 w-full rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
           >
             Add Comment
           </button>

@@ -79,7 +79,7 @@ export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[160px] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+      className="fixed z-50 min-w-[160px] rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
       style={{
         left: adjustedPosition?.x ?? position.x,
         top: adjustedPosition?.y ?? position.y,
@@ -107,7 +107,7 @@ export function ContextMenuItem({
   const styles =
     variant === "danger"
       ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-      : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800";
+      : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800";
 
   return (
     <button
@@ -122,7 +122,9 @@ export function ContextMenuItem({
 }
 
 export function ContextMenuSeparator() {
-  return <div className="my-1 border-t border-zinc-200 dark:border-zinc-700" />;
+  return (
+    <div className="my-1 border-t border-neutral-200 dark:border-neutral-700" />
+  );
 }
 
 interface ContextMenuLabelProps {
@@ -131,7 +133,7 @@ interface ContextMenuLabelProps {
 
 export function ContextMenuLabel({ children }: ContextMenuLabelProps) {
   return (
-    <div className="px-3 py-1 text-xs font-medium text-zinc-400 dark:text-zinc-500">
+    <div className="px-3 py-1 text-xs font-medium text-neutral-400 dark:text-neutral-500">
       {children}
     </div>
   );

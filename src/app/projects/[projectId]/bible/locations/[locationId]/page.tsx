@@ -78,19 +78,19 @@ export default function LocationDetailPage() {
   const characterMap = new Map((characters ?? []).map((c) => [c.id, c]));
 
   const inputClass =
-    "mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100";
+    "mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100";
   const labelClass =
-    "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
+    "block text-sm font-medium text-neutral-700 dark:text-neutral-300";
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
+    <div className="mx-auto max-w-editor px-8 py-8">
       <form onSubmit={handleSave} className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href={`/projects/${params.projectId}/bible/locations`}
-              className="rounded-md p-1 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+              className="rounded-md p-1 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
             >
               <ChevronLeft size={20} />
             </Link>
@@ -98,7 +98,7 @@ export default function LocationDetailPage() {
               type="text"
               value={form.name}
               onChange={(e) => setField("name", e.target.value)}
-              className="text-2xl font-bold text-zinc-900 bg-transparent border-none outline-none dark:text-zinc-100"
+              className="text-2xl font-bold text-neutral-900 bg-transparent border-none outline-none dark:text-neutral-100"
               placeholder="Location Name"
             />
           </div>
@@ -113,7 +113,7 @@ export default function LocationDetailPage() {
             <button
               type="submit"
               disabled={!isDirty}
-              className="rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="rounded-md bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
             >
               Save
             </button>

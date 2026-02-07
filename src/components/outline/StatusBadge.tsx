@@ -10,7 +10,8 @@ interface StatusBadgeProps {
 const statusConfig: Record<Status, { label: string; className: string }> = {
   unlinked: {
     label: "Unlinked",
-    className: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400",
+    className:
+      "bg-neutral-200 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400",
   },
   draft: {
     label: "Draft",

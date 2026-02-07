@@ -21,8 +21,8 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
   const periods = ["Morning", "Afternoon", "Evening", "Night"];
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <h3 className="mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+      <h3 className="mb-4 text-sm font-medium text-neutral-900 dark:text-neutral-100">
         Writing by Time of Day
       </h3>
       <div className="flex h-32 gap-1">
@@ -48,7 +48,7 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
                       : intensity > 0.4
                         ? "bg-emerald-400 group-hover:bg-emerald-300 dark:bg-emerald-500"
                         : "bg-emerald-300 group-hover:bg-emerald-200 dark:bg-emerald-400"
-                    : "bg-zinc-50 dark:bg-zinc-800/50"
+                    : "bg-neutral-50 dark:bg-neutral-800/50"
                 }`}
                 style={{
                   height: `${height}%`,
@@ -56,17 +56,17 @@ export function TimeOfDayChart({ timeOfDay }: TimeOfDayChartProps) {
                 }}
               />
               {/* Tooltip */}
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-zinc-700">
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900 px-2 py-1 text-xs text-white group-hover:block dark:bg-neutral-700">
                 <div className="font-medium">
                   {stat.wordsWritten.toLocaleString()} words
                 </div>
-                <div className="text-zinc-400">{formatHour(stat.hour)}</div>
+                <div className="text-neutral-400">{formatHour(stat.hour)}</div>
               </div>
             </div>
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-zinc-400 dark:text-zinc-500">
+      <div className="mt-2 flex justify-between text-xs text-neutral-400 dark:text-neutral-500">
         {periods.map((label) => (
           <span key={label}>{label}</span>
         ))}

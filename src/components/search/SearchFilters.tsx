@@ -28,14 +28,16 @@ export function SearchFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">Filter:</span>
+      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+        Filter:
+      </span>
       <button
         type="button"
         onClick={handleSelectAll}
         className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
           allSelected
-            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            ? "bg-primary-600 text-white dark:bg-primary-500 dark:text-white"
+            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
         }`}
       >
         All
@@ -52,8 +54,8 @@ export function SearchFilters({
             onClick={() => handleToggleType(type)}
             className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               isSelected
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                ? "bg-primary-600 text-white dark:bg-primary-500 dark:text-white"
+                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
             }`}
           >
             <Icon size={12} />

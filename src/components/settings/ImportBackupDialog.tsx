@@ -76,10 +76,10 @@ export function ImportBackupDialog({
               />
             )}
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {result.success ? "Import Complete" : "Import Failed"}
               </h2>
-              <div className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+              <div className="mt-2 space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
                 {result.projectsImported > 0 && (
                   <p>
                     {result.projectsImported} project
@@ -117,20 +117,20 @@ export function ImportBackupDialog({
 
   return (
     <Modal onClose={onClose} maxWidth="max-w-md">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Import Backup
       </h2>
 
       <div className="mt-4 space-y-4">
-        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
+          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
             {filename}
           </p>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             {isFull ? "Full backup" : "Project backup"} from{" "}
             {new Date(backup.metadata.exportedAt).toLocaleDateString()}
           </p>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
             {projectCount} project{projectCount !== 1 ? "s" : ""}
             {projectTitle && `: "${projectTitle}"`}
             {hasSettings && " + settings"}
@@ -140,7 +140,7 @@ export function ImportBackupDialog({
         <div>
           <label
             htmlFor="conflict-resolution"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             If a project already exists:
           </label>
@@ -150,7 +150,7 @@ export function ImportBackupDialog({
             onChange={(e) =>
               setConflictResolution(e.target.value as ConflictResolution)
             }
-            className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="skip">Skip (keep existing)</option>
             <option value="duplicate">Create a copy (new IDs)</option>
@@ -177,9 +177,9 @@ export function ImportBackupDialog({
               type="checkbox"
               checked={restoreSettings}
               onChange={(e) => setRestoreSettings(e.target.checked)}
-              className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-700 dark:focus:ring-zinc-500"
+              className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500 dark:border-neutral-600 dark:bg-neutral-700 dark:focus:ring-neutral-500"
             />
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="text-sm text-neutral-700 dark:text-neutral-300">
               Restore app settings
             </span>
           </label>

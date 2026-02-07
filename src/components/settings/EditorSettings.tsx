@@ -48,7 +48,7 @@ export function EditorSettings({
 }: EditorSettingsProps) {
   return (
     <fieldset>
-      <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
         Editor
       </legend>
       <div className="mt-2 space-y-4">
@@ -100,19 +100,19 @@ export function EditorSettings({
             onChange={(e) => onReadingSpeedWpmChange(Number(e.target.value))}
             className={inputClass}
           />
-          <span className="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">
+          <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
             Words per minute for reading time estimates (default: 200)
           </span>
         </label>
-        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
             checked={autoFocusModeOnSprint}
             onChange={(e) => onAutoFocusModeOnSprintChange(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+            className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           Auto-enable focus mode when starting a sprint
-          <span className="font-normal text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
             — distraction-free writing
           </span>
         </label>
@@ -120,7 +120,7 @@ export function EditorSettings({
           <button
             type="button"
             onClick={onManageDictionaries}
-            className="text-sm font-medium text-zinc-700 underline underline-offset-2 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+            className="text-sm font-medium text-neutral-700 underline underline-offset-2 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
           >
             Manage Dictionaries
           </button>

@@ -182,10 +182,10 @@ export function ChapterList({
     <div className="space-y-1">
       <Link
         href={overviewHref}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors ${
           isOverviewActive
-            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
         }`}
       >
         <FolderOpen size={14} />
@@ -194,10 +194,10 @@ export function ChapterList({
 
       <Link
         href={`/projects/${projectId}/outline`}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors ${
           pathname.startsWith(`/projects/${projectId}/outline`)
-            ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
+            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
         }`}
       >
         <Columns3 size={14} />
@@ -251,7 +251,7 @@ export function ChapterList({
       <button
         type="button"
         onClick={handleAddChapter}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-density-item text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-300"
       >
         <Plus size={14} />
         Add Chapter
@@ -294,9 +294,9 @@ export function ChapterList({
                 type="button"
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${
                   isCurrent
-                    ? "font-medium text-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-700 dark:text-zinc-300"
-                } hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                    ? "font-medium text-neutral-900 dark:text-neutral-100"
+                    : "text-neutral-700 dark:text-neutral-300"
+                } hover:bg-neutral-100 dark:hover:bg-neutral-800`}
                 onClick={() => handleSetStatus(menuChapterId, opt.value)}
               >
                 {isCurrent ? <CheckCircle2 size={14} /> : <Circle size={14} />}

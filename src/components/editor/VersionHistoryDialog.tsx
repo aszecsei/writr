@@ -51,7 +51,7 @@ function InlineDiff({
   });
 
   return (
-    <div className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+    <div className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
       {parts.map((part) => {
         if (part.added) {
           return (
@@ -204,7 +204,7 @@ function VersionHistoryContent({
 
   return (
     <Modal onClose={closeModal} maxWidth="max-w-2xl">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Version History
       </h2>
 
@@ -223,7 +223,7 @@ function VersionHistoryContent({
                 }
               }}
               placeholder="Snapshot name..."
-              className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             />
             <button
               type="button"
@@ -236,9 +236,9 @@ function VersionHistoryContent({
           </div>
 
           {/* Snapshot list */}
-          <div className="mt-4 max-h-[400px] overflow-y-auto rounded-md border border-zinc-200 dark:border-zinc-700">
+          <div className="mt-4 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700">
             {!snapshots || snapshots.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
+              <p className="px-4 py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
                 No snapshots yet. Save one to create a checkpoint.
               </p>
             ) : (
@@ -246,14 +246,14 @@ function VersionHistoryContent({
                 {snapshots.map((snap) => (
                   <li
                     key={snap.id}
-                    className="border-b border-zinc-100 px-4 py-3 last:border-b-0 dark:border-zinc-800"
+                    className="border-b border-neutral-100 px-4 py-3 last:border-b-0 dark:border-neutral-800"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
                           {snap.name}
                         </p>
-                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
                           {formatRelativeTime(snap.createdAt)} &middot;{" "}
                           {snap.wordCount.toLocaleString()} words
                         </p>
@@ -263,7 +263,7 @@ function VersionHistoryContent({
                           type="button"
                           title="Compare with current"
                           onClick={() => handleCompare(snap)}
-                          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                          className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
                         >
                           <GitCompare size={14} />
                         </button>
@@ -279,7 +279,7 @@ function VersionHistoryContent({
                             <button
                               type="button"
                               onClick={() => setConfirmRestore(null)}
-                              className="rounded-md px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
                             >
                               Cancel
                             </button>
@@ -289,7 +289,7 @@ function VersionHistoryContent({
                             type="button"
                             title="Restore this snapshot"
                             onClick={() => setConfirmRestore(snap.id)}
-                            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                            className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
                           >
                             <RotateCcw size={14} />
                           </button>
@@ -306,7 +306,7 @@ function VersionHistoryContent({
                             <button
                               type="button"
                               onClick={() => setConfirmDelete(null)}
-                              className="rounded-md px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
                             >
                               Cancel
                             </button>
@@ -316,7 +316,7 @@ function VersionHistoryContent({
                             type="button"
                             title="Delete this snapshot"
                             onClick={() => setConfirmDelete(snap.id)}
-                            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-950 dark:hover:text-red-400"
+                            className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-950 dark:hover:text-red-400"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -329,7 +329,7 @@ function VersionHistoryContent({
             )}
           </div>
 
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             {snapshots?.length ?? 0} snapshot
             {(snapshots?.length ?? 0) !== 1 && "s"}
           </p>
@@ -347,7 +347,7 @@ function VersionHistoryContent({
               <ArrowLeft size={14} className="mr-1 inline" />
               Back
             </button>
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
               Comparing &ldquo;{diffSnapshot.name}&rdquo; with current
             </span>
           </div>
@@ -356,20 +356,20 @@ function VersionHistoryContent({
           <div className="mt-3 flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1">
               <span className="inline-block h-3 w-3 rounded bg-red-100 dark:bg-red-900/40" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-neutral-600 dark:text-neutral-400">
                 Removed from snapshot
               </span>
             </span>
             <span className="flex items-center gap-1">
               <span className="inline-block h-3 w-3 rounded bg-green-100 dark:bg-green-900/40" />
-              <span className="text-zinc-600 dark:text-zinc-400">
+              <span className="text-neutral-600 dark:text-neutral-400">
                 Added in current
               </span>
             </span>
           </div>
 
           {/* Diff content */}
-          <div className="mt-3 max-h-[400px] overflow-y-auto rounded-md border border-zinc-200 p-4 dark:border-zinc-700">
+          <div className="mt-3 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 p-4 dark:border-neutral-700">
             <InlineDiff
               oldText={diffSnapshot.content}
               newText={chapter?.content ?? ""}

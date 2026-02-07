@@ -32,7 +32,7 @@ export function WritingStatsDashboard({
           {["streak", "words", "avg", "best"].map((id) => (
             <div
               key={id}
-              className="h-28 rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
+              className="h-28 rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900"
             />
           ))}
         </div>
@@ -44,12 +44,12 @@ export function WritingStatsDashboard({
 
   if (!hasData) {
     return (
-      <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-        <BarChart3 className="mx-auto mb-3 h-8 w-8 text-zinc-400 dark:text-zinc-500" />
-        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+      <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900/50">
+        <BarChart3 className="mx-auto mb-3 h-8 w-8 text-neutral-400 dark:text-neutral-500" />
+        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
           No writing activity yet
         </p>
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
           Start writing to see your statistics here
         </p>
       </div>

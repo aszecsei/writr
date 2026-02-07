@@ -21,9 +21,9 @@ export default function ProjectOverviewPage() {
   const totalWords = chapters?.reduce((sum, ch) => sum + ch.wordCount, 0) ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
+    <div className="mx-auto max-w-editor px-8 py-8">
       <div className="flex items-center gap-2">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
           {project.title}
         </h2>
         <button
@@ -31,19 +31,19 @@ export default function ProjectOverviewPage() {
           onClick={() =>
             openModal({ id: "edit-project", projectId: params.projectId })
           }
-          className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          className="rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
           aria-label="Edit project"
         >
           <Pencil size={16} />
         </button>
       </div>
       {project.genre && (
-        <span className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+        <span className="mt-2 inline-block rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
           {project.genre}
         </span>
       )}
       {project.description && (
-        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
           {project.description}
         </p>
       )}
@@ -74,7 +74,7 @@ export default function ProjectOverviewPage() {
 
       {/* Writing Statistics Dashboard */}
       <div className="mt-8">
-        <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+        <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           Writing Activity
         </h3>
         <WritingStatsDashboard projectId={params.projectId} />
@@ -95,14 +95,14 @@ function StatCard({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 transition-all duration-150 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 transition-all duration-150 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
         <Icon size={16} />
       </div>
-      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <p className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
         {value}
       </p>
     </div>

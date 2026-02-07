@@ -68,7 +68,7 @@ export function ExportDialog() {
 
   return (
     <Modal onClose={closeModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         <Download size={18} />
         Export
       </h2>
@@ -76,7 +76,7 @@ export function ExportDialog() {
       <div className="mt-5 space-y-5">
         {/* Format */}
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Format
           </legend>
           <div className="mt-2 flex gap-2">
@@ -96,7 +96,7 @@ export function ExportDialog() {
         {/* Scope */}
         {hasChapter && (
           <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               Scope
             </legend>
             <div className="mt-2 flex gap-2">
@@ -116,37 +116,37 @@ export function ExportDialog() {
 
         {/* Options */}
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Options
           </legend>
           <div className="mt-2 space-y-2">
             {effectiveScope === "book" && (
-              <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={includeTitlePage}
                   onChange={(e) => setIncludeTitlePage(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                 />
                 Include title page
               </label>
             )}
-            <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={includeChapterHeadings}
                 onChange={(e) => setIncludeChapterHeadings(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Include chapter headings
             </label>
             {format !== "markdown" && effectiveScope === "book" && (
-              <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={pageBreaks}
                   onChange={(e) => setPageBreaks(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
+                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                 />
                 Page breaks between chapters
               </label>

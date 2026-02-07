@@ -418,7 +418,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   if (!chapter) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
       </div>
     );
   }
@@ -428,7 +428,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       {!focusModeEnabled && <EditorToolbar editor={editor} />}
       <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
         <div
-          className="mx-auto max-w-3xl px-8"
+          className="mx-auto max-w-editor px-8"
           style={{
             // Add top/bottom padding in focus mode to allow cursor to always be centered
             paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
@@ -437,7 +437,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         >
           <EditorContent
             editor={editor}
-            className="prose prose-zinc dark:prose-invert max-w-none"
+            className="prose prose-neutral dark:prose-invert max-w-none"
             style={{ fontFamily: editorFont.cssFamily }}
           />
         </div>
