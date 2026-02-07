@@ -38,4 +38,3 @@ export async function createSnapshot(
 export async function deleteSnapshot(id: string): Promise<void> {
   await db.chapterSnapshots.delete(id);
 }
-

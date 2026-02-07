@@ -3,6 +3,7 @@ import {
   AppDictionarySchema,
   AppSettingsSchema,
   ChapterSchema,
+  ChapterSnapshotSchema,
   CharacterRelationshipSchema,
   CharacterSchema,
   CommentSchema,
@@ -45,6 +46,7 @@ export const ProjectBackupDataSchema = z.object({
   writingSessions: z.array(WritingSessionSchema),
   playlistTracks: z.array(PlaylistTrackSchema),
   comments: z.array(CommentSchema),
+  chapterSnapshots: z.array(ChapterSnapshotSchema).default([]),
   projectDictionary: ProjectDictionarySchema.optional(),
 });
 

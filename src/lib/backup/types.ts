@@ -2,6 +2,7 @@ import type {
   AppDictionary,
   AppSettings,
   Chapter,
+  ChapterSnapshot,
   Character,
   CharacterRelationship,
   Comment,
@@ -45,6 +46,7 @@ export interface ProjectBackupData {
   writingSessions: WritingSession[];
   playlistTracks: PlaylistTrack[];
   comments: Comment[];
+  chapterSnapshots: ChapterSnapshot[];
   projectDictionary?: ProjectDictionary;
 }
 

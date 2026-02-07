@@ -30,6 +30,7 @@ export async function gatherProjectData(
     writingSessions,
     playlistTracks,
     comments,
+    chapterSnapshots,
     projectDictionary,
   ] = await Promise.all([
     db.chapters.where({ projectId }).toArray(),
@@ -46,6 +47,7 @@ export async function gatherProjectData(
     db.writingSessions.where({ projectId }).toArray(),
     db.playlistTracks.where({ projectId }).toArray(),
     db.comments.where({ projectId }).toArray(),
+    db.chapterSnapshots.where({ projectId }).toArray(),
     db.projectDictionaries.where({ projectId }).first(),
   ]);
 
@@ -65,6 +67,7 @@ export async function gatherProjectData(
     writingSessions,
     playlistTracks,
     comments,
+    chapterSnapshots,
     projectDictionary,
   };
 }

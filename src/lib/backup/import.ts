@@ -112,6 +112,9 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   for (const comment of data.comments) {
     idMap.set(comment.id, generateId());
   }
+  for (const snapshot of data.chapterSnapshots) {
+    idMap.set(snapshot.id, generateId());
+  }
   if (data.projectDictionary) {
     idMap.set(data.projectDictionary.id, generateId());
   }
@@ -236,6 +239,14 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     chapterId: mustGetId(idMap, c.chapterId),
   }));
 
+  // Remap chapter snapshots
+  const chapterSnapshots = data.chapterSnapshots.map((s) => ({
+    ...s,
+    id: mustGetId(idMap, s.id),
+    chapterId: mustGetId(idMap, s.chapterId),
+    projectId: newProjectId,
+  }));
+
   // Remap project dictionary
   const projectDictionary = data.projectDictionary
     ? {
@@ -261,6 +272,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     writingSessions,
     playlistTracks,
     comments,
+    chapterSnapshots,
     projectDictionary,
   };
 }
@@ -280,6 +292,7 @@ async function deleteProjectData(projectId: string): Promise<void> {
   await db.writingSessions.where({ projectId }).delete();
   await db.playlistTracks.where({ projectId }).delete();
   await db.comments.where({ projectId }).delete();
+  await db.chapterSnapshots.where({ projectId }).delete();
   await db.projectDictionaries.where({ projectId }).delete();
   await db.projects.delete(projectId);
 }
@@ -300,6 +313,7 @@ async function insertProjectData(data: ProjectBackupData): Promise<void> {
   await db.writingSessions.bulkAdd(data.writingSessions);
   await db.playlistTracks.bulkAdd(data.playlistTracks);
   await db.comments.bulkAdd(data.comments);
+  await db.chapterSnapshots.bulkAdd(data.chapterSnapshots);
   if (data.projectDictionary) {
     await db.projectDictionaries.add(data.projectDictionary);
   }
@@ -365,6 +379,7 @@ export async function importBackup(
         db.writingSessions,
         db.playlistTracks,
         db.comments,
+        db.chapterSnapshots,
         db.projectDictionaries,
         db.appSettings,
         db.appDictionary,

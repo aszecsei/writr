@@ -124,5 +124,4 @@ describe("snapshot operations", () => {
     expect(snaps2).toHaveLength(1);
     expect(snaps2[0].name).toBe("Ch2 Snap");
   });
-
 });
