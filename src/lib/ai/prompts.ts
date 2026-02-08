@@ -9,30 +9,20 @@ import {
   serializeTimelineEvent,
   serializeWorldbuildingTree,
 } from "./serialize";
-import type {
-  AiContext,
-  AiMessage,
-  AiToolId,
-  BuiltinAiTool,
-  ContentPart,
-} from "./types";
+import type { AiContext, AiMessage, AiToolId, BuiltinAiTool } from "./types";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
 
-function buildSystemContext(
-  context: AiContext,
-  customSystemPrompt?: string | null,
-): string {
-  const preamble = customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
+function buildNovelContext(context: AiContext): string {
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
-  let system = `${preamble}\n\n<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
+  let novel = `<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
 
   const charMap = buildCharacterNameMap(context.characters);
 
   if (context.characters.length > 0) {
-    system += "<characters>\n";
-    system += context.characters.map(serializeCharacter).join("\n");
-    system += "\n</characters>\n\n";
+    novel += "<characters>\n";
+    novel += context.characters.map(serializeCharacter).join("\n");
+    novel += "\n</characters>\n\n";
   }
 
   if (context.relationships.length > 0) {
@@ -40,54 +30,54 @@ function buildSystemContext(
       .map((r) => serializeRelationship(r, charMap))
       .filter(Boolean);
     if (lines.length > 0) {
-      system += "<relationships>\n";
-      system += lines.join("\n");
-      system += "\n</relationships>\n\n";
+      novel += "<relationships>\n";
+      novel += lines.join("\n");
+      novel += "\n</relationships>\n\n";
     }
   }
 
   if (context.locations.length > 0) {
-    system += "<locations>\n";
-    system += context.locations
+    novel += "<locations>\n";
+    novel += context.locations
       .map((l) => serializeLocation(l, charMap))
       .join("\n");
-    system += "\n</locations>\n\n";
+    novel += "\n</locations>\n\n";
   }
 
   if (context.styleGuide.length > 0) {
-    system += "<style-guide>\n";
-    system += context.styleGuide.map(serializeStyleGuideEntry).join("\n");
-    system += "\n</style-guide>\n\n";
+    novel += "<style-guide>\n";
+    novel += context.styleGuide.map(serializeStyleGuideEntry).join("\n");
+    novel += "\n</style-guide>\n\n";
   }
 
   if (context.timelineEvents.length > 0) {
-    system += "<timeline>\n";
-    system += context.timelineEvents
+    novel += "<timeline>\n";
+    novel += context.timelineEvents
       .map((e) => serializeTimelineEvent(e, charMap))
       .join("\n");
-    system += "\n</timeline>\n\n";
+    novel += "\n</timeline>\n\n";
   }
 
   if (context.worldbuildingDocs.length > 0) {
-    system += "<worldbuilding>\n";
-    system += serializeWorldbuildingTree(context.worldbuildingDocs);
-    system += "\n</worldbuilding>\n\n";
+    novel += "<worldbuilding>\n";
+    novel += serializeWorldbuildingTree(context.worldbuildingDocs);
+    novel += "\n</worldbuilding>\n\n";
   }
 
   if (context.outlineGridColumns.length > 0) {
     const chapterMap = buildChapterNameMap(context.chapters);
-    system += "<outline>\n";
-    system += serializeOutlineGrid(
+    novel += "<outline>\n";
+    novel += serializeOutlineGrid(
       context.outlineGridColumns,
       context.outlineGridRows,
       context.outlineGridCells,
       chapterMap,
     );
-    system += "\n</outline>\n\n";
+    novel += "\n</outline>\n\n";
   }
 
-  system += "</novel>\n\n";
-  return system;
+  novel += "</novel>";
+  return novel;
 }
 
 export const DEFAULT_TOOL_INSTRUCTIONS: Record<BuiltinAiTool, string> = {
@@ -168,19 +158,27 @@ export function buildMessages(
       ? DEFAULT_TOOL_INSTRUCTIONS[tool as BuiltinAiTool]
       : "Follow the user's instructions.");
 
-  const systemContent: ContentPart[] = [
+  const preamble = options?.customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
+
+  const messages: AiMessage[] = [
     {
-      type: "text",
-      text: buildSystemContext(context, options?.customSystemPrompt),
-      cache_control: { type: "ephemeral" },
-    },
-    {
-      type: "text",
-      text: `<task>\n${toolInstruction}\n</task>`,
+      role: "system",
+      content: `${preamble}\n\n<task>\n${toolInstruction}\n</task>`,
     },
   ];
 
-  const messages: AiMessage[] = [{ role: "system", content: systemContent }];
+  // Story bible context as a user message (cacheable)
+  messages.push({
+    role: "user",
+    content: [
+      {
+        type: "text",
+        text: buildNovelContext(context),
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+  });
+  messages.push({ role: "assistant", content: "Understood." });
 
   if (context.currentChapterContent) {
     const title = context.currentChapterTitle ?? "Untitled";
@@ -194,10 +192,7 @@ export function buildMessages(
         },
       ],
     });
-    messages.push({
-      role: "assistant",
-      content: "I've read the chapter. What would you like me to help with?",
-    });
+    messages.push({ role: "assistant", content: "Understood." });
   }
 
   for (const msg of history) {
@@ -240,13 +235,16 @@ export function buildMessages(
   const instructions = options?.postChatInstructions;
   const depth = options?.postChatInstructionsDepth ?? 2;
   if (instructions && depth > 0) {
-    // Collect indices of real user messages (exclude synthetic chapter-context message)
-    const hasChapterContext = !!context.currentChapterContent;
+    // Collect indices of real user messages (exclude synthetic story-bible and chapter-context messages)
+    const syntheticUserCount = 1 + (context.currentChapterContent ? 1 : 0);
     const userIndices: number[] = [];
+    let skipped = 0;
     for (let i = 0; i < messages.length; i++) {
       if (messages[i].role !== "user") continue;
-      // Skip the first user message when it's the synthetic chapter context
-      if (hasChapterContext && userIndices.length === 0) continue;
+      if (skipped < syntheticUserCount) {
+        skipped++;
+        continue;
+      }
       userIndices.push(i);
     }
 

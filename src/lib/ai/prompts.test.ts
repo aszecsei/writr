@@ -51,11 +51,20 @@ function getSystemText(messages: AiMessage[]): string {
   return (sys.content as ContentPart[]).map((p) => p.text).join("");
 }
 
+/** Extract text from the story bible user message (first user message). */
+function getNovelContextText(messages: AiMessage[]): string {
+  const userMsgs = messages.filter((m) => m.role === "user");
+  if (userMsgs.length === 0) return "";
+  const first = userMsgs[0];
+  if (typeof first.content === "string") return first.content;
+  return (first.content as ContentPart[]).map((p) => p.text).join("");
+}
+
 describe("buildMessages", () => {
-  describe("system message structure", () => {
+  describe("novel context in user message", () => {
     it("wraps with <novel> tag including title", () => {
       const msgs = buildMessages("brainstorm", "test", emptyContext());
-      const text = getSystemText(msgs);
+      const text = getNovelContextText(msgs);
       expect(text).toContain('<novel title="Test Novel"');
       expect(text).toContain("</novel>");
     });
@@ -66,19 +75,19 @@ describe("buildMessages", () => {
         "test",
         emptyContext({ genre: "fantasy" }),
       );
-      const text = getSystemText(msgs);
+      const text = getNovelContextText(msgs);
       expect(text).toContain('genre="fantasy"');
     });
 
     it("omits genre attribute when empty", () => {
       const msgs = buildMessages("brainstorm", "test", emptyContext());
-      const text = getSystemText(msgs);
+      const text = getNovelContextText(msgs);
       expect(text).not.toContain("genre=");
     });
 
     it("includes <characters> section only when non-empty", () => {
       const noChars = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noChars)).not.toContain("<characters>");
+      expect(getNovelContextText(noChars)).not.toContain("<characters>");
 
       const withChars = buildMessages(
         "brainstorm",
@@ -87,13 +96,13 @@ describe("buildMessages", () => {
           characters: [makeCharacter({ projectId: pid, name: "Hero" })],
         }),
       );
-      expect(getSystemText(withChars)).toContain("<characters>");
-      expect(getSystemText(withChars)).toContain("</characters>");
+      expect(getNovelContextText(withChars)).toContain("<characters>");
+      expect(getNovelContextText(withChars)).toContain("</characters>");
     });
 
     it("includes <locations> section only when non-empty", () => {
       const noLocs = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noLocs)).not.toContain("<locations>");
+      expect(getNovelContextText(noLocs)).not.toContain("<locations>");
 
       const withLocs = buildMessages(
         "brainstorm",
@@ -102,12 +111,12 @@ describe("buildMessages", () => {
           locations: [makeLocation({ projectId: pid, name: "Town" })],
         }),
       );
-      expect(getSystemText(withLocs)).toContain("<locations>");
+      expect(getNovelContextText(withLocs)).toContain("<locations>");
     });
 
     it("includes <style-guide> section only when non-empty", () => {
       const noSg = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noSg)).not.toContain("<style-guide>");
+      expect(getNovelContextText(noSg)).not.toContain("<style-guide>");
 
       const withSg = buildMessages(
         "brainstorm",
@@ -122,12 +131,12 @@ describe("buildMessages", () => {
           ],
         }),
       );
-      expect(getSystemText(withSg)).toContain("<style-guide>");
+      expect(getNovelContextText(withSg)).toContain("<style-guide>");
     });
 
     it("includes <timeline> section only when non-empty", () => {
       const noTl = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noTl)).not.toContain("<timeline>");
+      expect(getNovelContextText(noTl)).not.toContain("<timeline>");
 
       const withTl = buildMessages(
         "brainstorm",
@@ -138,12 +147,12 @@ describe("buildMessages", () => {
           ],
         }),
       );
-      expect(getSystemText(withTl)).toContain("<timeline>");
+      expect(getNovelContextText(withTl)).toContain("<timeline>");
     });
 
     it("includes <worldbuilding> section only when non-empty", () => {
       const noWb = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noWb)).not.toContain("<worldbuilding>");
+      expect(getNovelContextText(noWb)).not.toContain("<worldbuilding>");
 
       const withWb = buildMessages(
         "brainstorm",
@@ -154,12 +163,12 @@ describe("buildMessages", () => {
           ],
         }),
       );
-      expect(getSystemText(withWb)).toContain("<worldbuilding>");
+      expect(getNovelContextText(withWb)).toContain("<worldbuilding>");
     });
 
     it("includes <outline> section only when columns exist", () => {
       const noOutline = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noOutline)).not.toContain("<outline>");
+      expect(getNovelContextText(noOutline)).not.toContain("<outline>");
 
       const col = makeOutlineGridColumn({ projectId: pid, title: "Act I" });
       const chapter = makeChapter({ projectId: pid, title: "Chapter 1" });
@@ -183,7 +192,7 @@ describe("buildMessages", () => {
           outlineGridCells: [cell],
         }),
       );
-      const text = getSystemText(withOutline);
+      const text = getNovelContextText(withOutline);
       expect(text).toContain("<outline>");
       expect(text).toContain("<column>Act I</column>");
       expect(text).toContain('row label="Chapter 1"');
@@ -194,7 +203,7 @@ describe("buildMessages", () => {
 
     it("includes <relationships> section only when non-empty and valid", () => {
       const noRel = buildMessages("brainstorm", "test", emptyContext());
-      expect(getSystemText(noRel)).not.toContain("<relationships>");
+      expect(getNovelContextText(noRel)).not.toContain("<relationships>");
 
       const char1 = makeCharacter({ projectId: pid, name: "A" });
       const char2 = makeCharacter({ projectId: pid, name: "B" });
@@ -213,7 +222,24 @@ describe("buildMessages", () => {
           ],
         }),
       );
-      expect(getSystemText(withRel)).toContain("<relationships>");
+      expect(getNovelContextText(withRel)).toContain("<relationships>");
+    });
+
+    it("does not include novel context in the system message", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      const text = getSystemText(msgs);
+      expect(text).not.toContain("<novel");
+      expect(text).not.toContain("</novel>");
+    });
+  });
+
+  describe("story bible prefill", () => {
+    it("includes assistant 'Understood.' after story bible user message", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      // Story bible user message is at index 1, prefill at index 2
+      expect(msgs[1].role).toBe("user");
+      expect(msgs[2].role).toBe("assistant");
+      expect(msgs[2].content).toBe("Understood.");
     });
   });
 
@@ -244,14 +270,17 @@ describe("buildMessages", () => {
         currentChapterTitle: "Chapter 1",
       });
       const msgs = buildMessages("brainstorm", "test", ctx);
-      const chapterMsg = msgs.find(
+      // Chapter message is the second user message (after story bible)
+      const userMsgs = msgs.filter(
         (m) =>
           m.role === "user" &&
           typeof m.content !== "string" &&
           Array.isArray(m.content),
       );
-      expect(chapterMsg).toBeDefined();
-      const text = (chapterMsg?.content as ContentPart[])[0].text;
+      // First is story bible, second is chapter
+      expect(userMsgs.length).toBeGreaterThanOrEqual(2);
+      const chapterMsg = userMsgs[1];
+      const text = (chapterMsg.content as ContentPart[])[0].text;
       expect(text).toContain('<chapter title="Chapter 1">');
       expect(text).toContain("Once upon a time...");
       expect(text).toContain("</chapter>");
@@ -260,33 +289,38 @@ describe("buildMessages", () => {
     it("uses 'Untitled' when no chapter title", () => {
       const ctx = emptyContext({ currentChapterContent: "text" });
       const msgs = buildMessages("brainstorm", "test", ctx);
-      const chapterMsg = msgs.find(
+      const userMsgs = msgs.filter(
         (m) =>
           m.role === "user" &&
           typeof m.content !== "string" &&
           Array.isArray(m.content),
       );
-      const text = (chapterMsg?.content as ContentPart[])[0].text;
+      const chapterMsg = userMsgs[1];
+      const text = (chapterMsg.content as ContentPart[])[0].text;
       expect(text).toContain('<chapter title="Untitled">');
     });
 
-    it("includes assistant acknowledgment after chapter", () => {
+    it("includes assistant 'Understood.' after chapter", () => {
       const ctx = emptyContext({ currentChapterContent: "text" });
       const msgs = buildMessages("brainstorm", "test", ctx);
-      const ack = msgs.find(
+      // Find the chapter user message, then the next assistant message
+      const chapterIdx = msgs.findIndex(
         (m) =>
-          m.role === "assistant" &&
-          typeof m.content === "string" &&
-          m.content.includes("I've read the chapter"),
+          m.role === "user" &&
+          typeof m.content !== "string" &&
+          Array.isArray(m.content) &&
+          (m.content as ContentPart[])[0].text.includes("<chapter"),
       );
-      expect(ack).toBeDefined();
+      expect(chapterIdx).toBeGreaterThan(0);
+      expect(msgs[chapterIdx + 1].role).toBe("assistant");
+      expect(msgs[chapterIdx + 1].content).toBe("Understood.");
     });
 
     it("omits chapter message when no chapter content", () => {
       const msgs = buildMessages("brainstorm", "test", emptyContext());
       const userMsgs = msgs.filter((m) => m.role === "user");
-      // Should be only one user message (the final prompt)
-      expect(userMsgs).toHaveLength(1);
+      // Story bible + final prompt = 2 user messages
+      expect(userMsgs).toHaveLength(2);
     });
   });
 
@@ -319,43 +353,55 @@ describe("buildMessages", () => {
       const ctx = emptyContext({ currentChapterContent: "chapter text" });
       const msgs = buildMessages("brainstorm", "follow up", ctx, history);
 
-      // Find indices
-      const ackIdx = msgs.findIndex(
-        (m) =>
+      // Find the chapter ack (second "Understood.")
+      const chapterAckIdx = msgs.findIndex(
+        (m, i) =>
+          i > 2 && // Skip story bible prefill at index 2
           m.role === "assistant" &&
           typeof m.content === "string" &&
-          m.content.includes("I've read the chapter"),
+          m.content === "Understood.",
       );
       const historyStartIdx = msgs.findIndex(
         (m) => m.content === "first question",
       );
       const finalIdx = msgs.findIndex((m) => m.content === "follow up");
 
-      expect(ackIdx).toBeLessThan(historyStartIdx);
+      expect(chapterAckIdx).toBeLessThan(historyStartIdx);
       expect(historyStartIdx).toBeLessThan(finalIdx);
     });
   });
 
   describe("cache control", () => {
-    it("sets ephemeral cache_control on system context", () => {
+    it("sets ephemeral cache_control on story bible user message", () => {
       const msgs = buildMessages("brainstorm", "test", emptyContext());
-      const sys = msgs.find((m) => m.role === "system");
-      const parts = sys?.content as ContentPart[];
+      // Story bible is the first user message (index 1)
+      const novelMsg = msgs[1];
+      expect(novelMsg.role).toBe("user");
+      const parts = novelMsg.content as ContentPart[];
       expect(parts[0].cache_control).toEqual({ type: "ephemeral" });
     });
 
     it("sets ephemeral cache_control on chapter content", () => {
       const ctx = emptyContext({ currentChapterContent: "text" });
       const msgs = buildMessages("brainstorm", "test", ctx);
+      // Chapter message is the second user message with ContentPart[] content
       const chapterMsg = msgs.find(
         (m) =>
           m.role === "user" &&
           typeof m.content !== "string" &&
-          Array.isArray(m.content),
+          Array.isArray(m.content) &&
+          (m.content as ContentPart[])[0].text.includes("<chapter"),
       );
+      expect(chapterMsg).toBeDefined();
       expect((chapterMsg?.content as ContentPart[])[0].cache_control).toEqual({
         type: "ephemeral",
       });
+    });
+
+    it("system message does not have cache_control", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      const sys = msgs.find((m) => m.role === "system");
+      expect(typeof sys?.content).toBe("string");
     });
   });
 

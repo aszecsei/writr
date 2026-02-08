@@ -62,7 +62,7 @@ interface AnthropicSystemBlock {
 }
 
 type AnthropicContentBlock =
-  | { type: "text"; text: string }
+  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
   | {
       type: "image";
       source:
@@ -85,7 +85,11 @@ function toAnthropicContentBlocks(
   const blocks: AnthropicContentBlock[] = [];
   for (const part of parts) {
     if (part.type === "text") {
-      blocks.push({ type: "text", text: part.text });
+      blocks.push({
+        type: "text",
+        text: part.text,
+        ...(part.cache_control ? { cache_control: part.cache_control } : {}),
+      });
     } else if (part.type === "image_url") {
       const parsed = parseDataUrl(part.image_url.url);
       if (parsed) {
@@ -144,7 +148,10 @@ function buildAnthropicBody(
       nonSystemMessages.push({ role: msg.role, content: msg.content });
     } else {
       const hasImages = msg.content.some((p) => p.type === "image_url");
-      if (hasImages) {
+      const hasCacheControl = msg.content.some(
+        (p) => p.type === "text" && p.cache_control,
+      );
+      if (hasImages || hasCacheControl) {
         nonSystemMessages.push({
           role: msg.role,
           content: toAnthropicContentBlocks(msg.content),
