@@ -31,9 +31,9 @@
   const ew = localStorage.getItem("writr-editor-width");
   if (ew) {
     const map = {
-      narrow: "600px",
-      medium: "720px",
-      wide: "900px",
+      narrow: "720px",
+      medium: "900px",
+      wide: "1200px",
     };
     const css = map[ew];
     if (css)
