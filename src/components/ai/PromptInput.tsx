@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowUp, ImagePlus, Square, X } from "lucide-react";
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
+import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 
 export interface PendingImage {
   url: string;
@@ -91,14 +92,23 @@ export function PromptInput({
         >
           <ImagePlus size={16} />
         </button>
-        <input
-          type="text"
+        <AutoResizeTextarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          minRows={1}
+          maxRows={10}
           placeholder={
             selectedText ? "Ask about the selected text..." : "Ask the AI..."
           }
           disabled={loading}
+          onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (value.trim() || pendingImages.length > 0) {
+                onSubmit(e as unknown as FormEvent);
+              }
+            }
+          }}
           className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
         />
         {loading ? (
