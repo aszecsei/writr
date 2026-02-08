@@ -54,8 +54,7 @@ export async function getAppDictionary(): Promise<AppDictionary> {
 export async function addWordToAppDictionary(word: string): Promise<void> {
   return modifyDictionaryWords(
     getAppDictionary,
-    (data) =>
-      db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
+    (data) => db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
     word,
     "add",
   );
@@ -64,8 +63,7 @@ export async function addWordToAppDictionary(word: string): Promise<void> {
 export async function removeWordFromAppDictionary(word: string): Promise<void> {
   return modifyDictionaryWords(
     getAppDictionary,
-    (data) =>
-      db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
+    (data) => db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
     word,
     "remove",
   );

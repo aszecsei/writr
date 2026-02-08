@@ -31,7 +31,7 @@ export interface WritingStats {
   bestHour: number | null;
 }
 
-function aggregateDailyStats(sessions: WritingSession[]): DailyStats[] {
+export function aggregateDailyStats(sessions: WritingSession[]): DailyStats[] {
   const byDate = new Map<string, { wordsWritten: number; sessions: number }>();
 
   for (const session of sessions) {
@@ -54,7 +54,9 @@ function aggregateDailyStats(sessions: WritingSession[]): DailyStats[] {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function aggregateTimeOfDayStats(sessions: WritingSession[]): TimeOfDayStats[] {
+export function aggregateTimeOfDayStats(
+  sessions: WritingSession[],
+): TimeOfDayStats[] {
   const byHour = new Map<number, { wordsWritten: number; sessions: number }>();
 
   // Initialize all hours
@@ -80,7 +82,7 @@ function aggregateTimeOfDayStats(sessions: WritingSession[]): TimeOfDayStats[] {
     .sort((a, b) => a.hour - b.hour);
 }
 
-function calculateLongestStreak(activeDays: string[]): number {
+export function calculateLongestStreak(activeDays: string[]): number {
   let longest = 1;
   let currentRun = 1;
 
@@ -100,7 +102,7 @@ function calculateLongestStreak(activeDays: string[]): number {
   return longest;
 }
 
-function calculateCurrentStreak(
+export function calculateCurrentStreak(
   activeDays: string[],
   today: string,
   yesterday: string,
@@ -124,7 +126,7 @@ function calculateCurrentStreak(
   return streak;
 }
 
-function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
+export function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
   if (dailyStats.length === 0) {
     return { currentStreak: 0, longestStreak: 0, lastActiveDate: null };
   }
@@ -149,7 +151,7 @@ function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
   };
 }
 
-function findBestHour(timeOfDay: TimeOfDayStats[]): number | null {
+export function findBestHour(timeOfDay: TimeOfDayStats[]): number | null {
   const best = timeOfDay.reduce<TimeOfDayStats | null>((best, curr) => {
     if (!best || curr.wordsWritten > best.wordsWritten) {
       return curr;

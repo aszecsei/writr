@@ -254,9 +254,7 @@ export function MessageList({
               }
             >
               <ArrowRight size={12} />
-              {wasTruncated
-                ? "Continue (response was truncated)"
-                : "Continue"}
+              {wasTruncated ? "Continue (response was truncated)" : "Continue"}
             </button>
           );
         })()}
