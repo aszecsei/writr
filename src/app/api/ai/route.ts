@@ -3,6 +3,19 @@ import { z } from "zod/v4";
 import { AiProviderEnum } from "@/db/schemas";
 import { PROVIDERS } from "@/lib/ai/providers";
 
+const TextPartSchema = z.object({
+  type: z.literal("text"),
+  text: z.string(),
+  cache_control: z.object({ type: z.literal("ephemeral") }).optional(),
+});
+
+const ImageUrlPartSchema = z.object({
+  type: z.literal("image_url"),
+  image_url: z.object({ url: z.string() }),
+});
+
+const ContentPartSchema = z.union([TextPartSchema, ImageUrlPartSchema]);
+
 const AiRequestSchema = z.object({
   apiKey: z.string().min(1),
   model: z.string().min(1),
@@ -10,18 +23,7 @@ const AiRequestSchema = z.object({
   messages: z.array(
     z.object({
       role: z.enum(["system", "user", "assistant"]),
-      content: z.union([
-        z.string(),
-        z.array(
-          z.object({
-            type: z.literal("text"),
-            text: z.string(),
-            cache_control: z
-              .object({ type: z.literal("ephemeral") })
-              .optional(),
-          }),
-        ),
-      ]),
+      content: z.union([z.string(), z.array(ContentPartSchema)]),
     }),
   ),
   temperature: z.number().min(0).max(2).optional(),
@@ -59,6 +61,53 @@ interface AnthropicSystemBlock {
   cache_control?: { type: "ephemeral" };
 }
 
+type AnthropicContentBlock =
+  | { type: "text"; text: string }
+  | {
+      type: "image";
+      source:
+        | { type: "base64"; media_type: string; data: string }
+        | { type: "url"; url: string };
+    };
+
+function parseDataUrl(url: string): {
+  mediaType: string;
+  data: string;
+} | null {
+  const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+  if (!match) return null;
+  return { mediaType: match[1], data: match[2] };
+}
+
+function toAnthropicContentBlocks(
+  parts: z.infer<typeof ContentPartSchema>[],
+): AnthropicContentBlock[] {
+  const blocks: AnthropicContentBlock[] = [];
+  for (const part of parts) {
+    if (part.type === "text") {
+      blocks.push({ type: "text", text: part.text });
+    } else if (part.type === "image_url") {
+      const parsed = parseDataUrl(part.image_url.url);
+      if (parsed) {
+        blocks.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: parsed.mediaType,
+            data: parsed.data,
+          },
+        });
+      } else {
+        blocks.push({
+          type: "image",
+          source: { type: "url", url: part.image_url.url },
+        });
+      }
+    }
+  }
+  return blocks;
+}
+
 function buildAnthropicBody(
   model: string,
   messages: ParsedMessage[],
@@ -69,8 +118,10 @@ function buildAnthropicBody(
 ) {
   // Extract system messages into top-level system parameter
   const systemBlocks: AnthropicSystemBlock[] = [];
-  const nonSystemMessages: { role: "user" | "assistant"; content: string }[] =
-    [];
+  const nonSystemMessages: {
+    role: "user" | "assistant";
+    content: string | AnthropicContentBlock[];
+  }[] = [];
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -78,21 +129,32 @@ function buildAnthropicBody(
         systemBlocks.push({ type: "text", text: msg.content });
       } else {
         for (const part of msg.content) {
-          systemBlocks.push({
-            type: "text",
-            text: part.text,
-            ...(part.cache_control
-              ? { cache_control: part.cache_control }
-              : {}),
-          });
+          if (part.type === "text") {
+            systemBlocks.push({
+              type: "text",
+              text: part.text,
+              ...(part.cache_control
+                ? { cache_control: part.cache_control }
+                : {}),
+            });
+          }
         }
       }
+    } else if (typeof msg.content === "string") {
+      nonSystemMessages.push({ role: msg.role, content: msg.content });
     } else {
-      const text =
-        typeof msg.content === "string"
-          ? msg.content
-          : msg.content.map((p) => p.text).join("");
-      nonSystemMessages.push({ role: msg.role, content: text });
+      const hasImages = msg.content.some((p) => p.type === "image_url");
+      if (hasImages) {
+        nonSystemMessages.push({
+          role: msg.role,
+          content: toAnthropicContentBlocks(msg.content),
+        });
+      } else {
+        const text = msg.content
+          .map((p) => (p.type === "text" ? p.text : ""))
+          .join("");
+        nonSystemMessages.push({ role: msg.role, content: text });
+      }
     }
   }
 

@@ -39,6 +39,7 @@ export async function createCharacter(
         | "notes"
         | "linkedCharacterIds"
         | "linkedLocationIds"
+        | "images"
       >
     >,
 ): Promise<Character> {
@@ -61,6 +62,7 @@ export async function createCharacter(
     notes: data.notes ?? "",
     linkedCharacterIds: data.linkedCharacterIds ?? [],
     linkedLocationIds: data.linkedLocationIds ?? [],
+    images: data.images ?? [],
     createdAt: now(),
     updatedAt: now(),
   });

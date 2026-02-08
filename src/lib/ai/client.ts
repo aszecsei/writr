@@ -20,6 +20,7 @@ interface AiSettings {
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
   toolPromptOverride?: string;
+  images?: { url: string }[];
 }
 
 function buildRequestBody(
@@ -40,6 +41,7 @@ function buildRequestBody(
       assistantPrefill: settings.assistantPrefill,
       customSystemPrompt: settings.customSystemPrompt,
       toolPromptOverride: settings.toolPromptOverride,
+      images: settings.images,
     }),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,

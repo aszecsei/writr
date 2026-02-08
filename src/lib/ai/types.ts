@@ -33,7 +33,12 @@ export interface TextContentPart {
   cache_control?: CacheControl;
 }
 
-export type ContentPart = TextContentPart;
+export interface ImageUrlContentPart {
+  type: "image_url";
+  image_url: { url: string };
+}
+
+export type ContentPart = TextContentPart | ImageUrlContentPart;
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";

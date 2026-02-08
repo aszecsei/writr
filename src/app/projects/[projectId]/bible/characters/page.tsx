@@ -110,12 +110,23 @@ export default function CharacterListPage() {
           const aliases = character.aliases ?? [];
           const relCount = getRelationshipCount(character.id);
           const linkedLocCount = (character.linkedLocationIds ?? []).length;
+          const primaryImage = (character.images ?? []).find(
+            (img) => img.isPrimary,
+          );
 
           return (
             <div
               key={character.id}
               className={`flex items-start justify-between gap-4 rounded-lg border border-l-4 border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900 ${roleBorderColors[character.role]}`}
             >
+              {primaryImage && (
+                // biome-ignore lint/performance/noImgElement: external URLs
+                <img
+                  src={primaryImage.url}
+                  alt={character.name}
+                  className="h-12 w-12 shrink-0 rounded-md object-cover"
+                />
+              )}
               <button
                 type="button"
                 onClick={() =>

@@ -2,6 +2,7 @@
 
 import {
   ChevronLeft,
+  ImageIcon,
   Link as LinkIcon,
   MapPin,
   StickyNote,
@@ -11,6 +12,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import { CollapsibleSection } from "@/components/bible/CollapsibleSection";
+import { ImageGallery } from "@/components/bible/ImageGallery";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteLocation, updateLocation } from "@/db/operations";
@@ -34,6 +36,9 @@ export default function LocationDetailPage() {
     getUpdatePayload,
     addLinkedCharacterId,
     removeLinkedCharacterId,
+    addImage,
+    removeImage,
+    setPrimaryImage,
   } = useLocationForm(location);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -193,6 +198,20 @@ export default function LocationDetailPage() {
               </select>
             )}
           </div>
+        </CollapsibleSection>
+
+        {/* Images */}
+        <CollapsibleSection
+          title="Images"
+          icon={ImageIcon}
+          defaultOpen={form.images.length > 0}
+        >
+          <ImageGallery
+            images={form.images}
+            onAddImage={addImage}
+            onRemoveImage={removeImage}
+            onSetPrimary={setPrimaryImage}
+          />
         </CollapsibleSection>
 
         {/* Notes */}

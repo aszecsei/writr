@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   Eye,
   Heart,
+  ImageIcon,
   Link as LinkIcon,
   MessageSquare,
   StickyNote,
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { CollapsibleSection } from "@/components/bible/CollapsibleSection";
+import { ImageGallery } from "@/components/bible/ImageGallery";
 import { RoleBadge } from "@/components/bible/RoleBadge";
 import {
   AutoResizeTextarea,
@@ -47,6 +49,9 @@ export default function CharacterDetailPage() {
     removeLinkedCharacterId,
     addLinkedLocationId,
     removeLinkedLocationId,
+    addImage,
+    removeImage,
+    setPrimaryImage,
   } = useCharacterForm(character);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const personalitySync = useHeightSync();
@@ -396,6 +401,20 @@ export default function CharacterDetailPage() {
               </div>
             )}
           </div>
+        </CollapsibleSection>
+
+        {/* Images */}
+        <CollapsibleSection
+          title="Images"
+          icon={ImageIcon}
+          defaultOpen={form.images.length > 0}
+        >
+          <ImageGallery
+            images={form.images}
+            onAddImage={addImage}
+            onRemoveImage={removeImage}
+            onSetPrimary={setPrimaryImage}
+          />
         </CollapsibleSection>
 
         {/* Notes */}

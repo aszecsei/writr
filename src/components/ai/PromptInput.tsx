@@ -1,7 +1,12 @@
 "use client";
 
-import { ArrowUp, Square, X } from "lucide-react";
+import { ArrowUp, ImagePlus, Square, X } from "lucide-react";
 import type { FormEvent } from "react";
+
+export interface PendingImage {
+  url: string;
+  alt?: string;
+}
 
 interface PromptInputProps {
   value: string;
@@ -11,6 +16,10 @@ interface PromptInputProps {
   loading: boolean;
   selectedText?: string | null;
   onClearSelection?: () => void;
+  pendingImages: PendingImage[];
+  onAddImage: (image: PendingImage) => void;
+  onRemoveImage: (index: number) => void;
+  onOpenImagePicker: () => void;
 }
 
 export function PromptInput({
@@ -21,6 +30,9 @@ export function PromptInput({
   loading,
   selectedText,
   onClearSelection,
+  pendingImages,
+  onRemoveImage,
+  onOpenImagePicker,
 }: PromptInputProps) {
   return (
     <form
@@ -43,7 +55,42 @@ export function PromptInput({
           </button>
         </div>
       )}
+      {pendingImages.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {pendingImages.map((img, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: index needed for removal
+              key={i}
+              className="group relative overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-700"
+            >
+              {/* biome-ignore lint/performance/noImgElement: external/base64 URLs */}
+              <img
+                src={img.url}
+                alt={img.alt ?? "Attached"}
+                className="h-14 w-14 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => onRemoveImage(i)}
+                className="absolute -right-0.5 -top-0.5 rounded-full bg-neutral-800/70 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                title="Remove image"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onOpenImagePicker}
+          disabled={loading}
+          title="Attach image"
+          className="rounded-md border border-neutral-300 p-2 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+        >
+          <ImagePlus size={16} />
+        </button>
         <input
           type="text"
           value={value}
@@ -66,7 +113,7 @@ export function PromptInput({
         ) : (
           <button
             type="submit"
-            disabled={!value.trim()}
+            disabled={!value.trim() && pendingImages.length === 0}
             title="Send message"
             className="rounded-md bg-primary-600 p-2 text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
           >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Location } from "@/db/schemas";
+import type { EntityImage, Location } from "@/db/schemas";
 
 interface LocationFormState {
   name: string;
@@ -9,6 +9,7 @@ interface LocationFormState {
   notes: string;
   parentLocationId: string | null;
   linkedCharacterIds: string[];
+  images: EntityImage[];
 }
 
 type LocationFormField = keyof LocationFormState;
@@ -20,6 +21,7 @@ export function useLocationForm(location: Location | undefined) {
     notes: "",
     parentLocationId: null,
     linkedCharacterIds: [],
+    images: [],
   });
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function useLocationForm(location: Location | undefined) {
         notes: location.notes ?? "",
         parentLocationId: location.parentLocationId ?? null,
         linkedCharacterIds: location.linkedCharacterIds ?? [],
+        images: location.images ?? [],
       });
     }
   }, [location]);
@@ -43,7 +46,8 @@ export function useLocationForm(location: Location | undefined) {
       form.notes !== (location.notes ?? "") ||
       form.parentLocationId !== (location.parentLocationId ?? null) ||
       form.linkedCharacterIds.length !== locLinkedChars.length ||
-      form.linkedCharacterIds.some((id, i) => id !== locLinkedChars[i])
+      form.linkedCharacterIds.some((id, i) => id !== locLinkedChars[i]) ||
+      JSON.stringify(form.images) !== JSON.stringify(location.images ?? [])
     );
   }, [location, form]);
 
@@ -69,6 +73,30 @@ export function useLocationForm(location: Location | undefined) {
     }));
   }, []);
 
+  const addImage = useCallback((image: EntityImage) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: [...prev.images, image],
+    }));
+  }, []);
+
+  const removeImage = useCallback((imageId: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img.id !== imageId),
+    }));
+  }, []);
+
+  const setPrimaryImage = useCallback((imageId: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: prev.images.map((img) => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })),
+    }));
+  }, []);
+
   function getUpdatePayload() {
     return {
       name: form.name,
@@ -76,6 +104,7 @@ export function useLocationForm(location: Location | undefined) {
       notes: form.notes,
       parentLocationId: form.parentLocationId,
       linkedCharacterIds: form.linkedCharacterIds,
+      images: form.images,
     };
   }
 
@@ -86,5 +115,8 @@ export function useLocationForm(location: Location | undefined) {
     getUpdatePayload,
     addLinkedCharacterId,
     removeLinkedCharacterId,
+    addImage,
+    removeImage,
+    setPrimaryImage,
   };
 }

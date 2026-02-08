@@ -19,7 +19,11 @@ export async function createLocation(
     Partial<
       Pick<
         Location,
-        "description" | "parentLocationId" | "notes" | "linkedCharacterIds"
+        | "description"
+        | "parentLocationId"
+        | "notes"
+        | "linkedCharacterIds"
+        | "images"
       >
     >,
 ): Promise<Location> {
@@ -31,6 +35,7 @@ export async function createLocation(
     parentLocationId: data.parentLocationId ?? null,
     notes: data.notes ?? "",
     linkedCharacterIds: data.linkedCharacterIds ?? [],
+    images: data.images ?? [],
     createdAt: now(),
     updatedAt: now(),
   });

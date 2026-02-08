@@ -11,8 +11,15 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
+import { ImageLightbox } from "../bible/ImageLightbox";
 import { MarkdownMessage } from "./MarkdownMessage";
+
+interface MessageImage {
+  url: string;
+  alt?: string;
+}
 
 interface Message {
   id: string;
@@ -23,6 +30,7 @@ interface Message {
   promptMessages?: AiMessage[];
   durationMs?: number;
   finishReason?: FinishReason;
+  images?: MessageImage[];
 }
 
 function formatDuration(ms: number): string {
@@ -86,6 +94,8 @@ export function MessageList({
   onCancelEdit,
   onConfirmEdit,
 }: MessageListProps) {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.length === 0 && (
@@ -232,7 +242,28 @@ export function MessageList({
                 )}
               </>
             ) : (
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              <>
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.images && msg.images.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {msg.images.map((img) => (
+                      <button
+                        key={img.url}
+                        type="button"
+                        onClick={() => setLightboxUrl(img.url)}
+                        className="overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-700"
+                      >
+                        {/* biome-ignore lint/performance/noImgElement: external/base64 URLs */}
+                        <img
+                          src={img.url}
+                          alt={img.alt ?? "Attached image"}
+                          className="h-20 w-20 object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         );
@@ -268,6 +299,9 @@ export function MessageList({
           <AlertCircle size={14} className="mt-0.5 shrink-0" />
           <p>{error}</p>
         </div>
+      )}
+      {lightboxUrl && (
+        <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
       )}
     </div>
   );

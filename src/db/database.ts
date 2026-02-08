@@ -389,6 +389,21 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    this.version(20).upgrade(async (tx) => {
+      await tx
+        .table("characters")
+        .toCollection()
+        .modify((c) => {
+          if (c.images === undefined) c.images = [];
+        });
+      await tx
+        .table("locations")
+        .toCollection()
+        .modify((l) => {
+          if (l.images === undefined) l.images = [];
+        });
+    });
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

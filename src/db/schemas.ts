@@ -38,6 +38,16 @@ export const ChapterSchema = z.object({
 });
 export type Chapter = z.infer<typeof ChapterSchema>;
 
+// ─── Entity Image ───────────────────────────────────────────────────
+
+export const EntityImageSchema = z.object({
+  id: z.uuid(),
+  url: z.string().url(),
+  caption: z.string().default(""),
+  isPrimary: z.boolean().default(false),
+});
+export type EntityImage = z.infer<typeof EntityImageSchema>;
+
 // ─── Character ───────────────────────────────────────────────────────
 
 export const CharacterRoleEnum = z.enum([
@@ -67,6 +77,7 @@ export const CharacterSchema = z.object({
   notes: z.string().default(""),
   linkedCharacterIds: z.array(z.uuid()).default([]),
   linkedLocationIds: z.array(z.uuid()).default([]),
+  images: z.array(EntityImageSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -106,6 +117,7 @@ export const LocationSchema = z.object({
   parentLocationId: z.uuid().nullable().default(null),
   notes: z.string().default(""),
   linkedCharacterIds: z.array(z.uuid()).default([]),
+  images: z.array(EntityImageSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

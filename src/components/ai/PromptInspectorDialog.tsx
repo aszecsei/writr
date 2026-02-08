@@ -38,16 +38,26 @@ export function PromptInspectorDialog({
                   {msg.content}
                 </pre>
               ) : (
-                msg.content.map((part) => (
-                  <div key={part.text.slice(0, 64)} className="mt-1.5">
-                    {part.cache_control && (
-                      <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-700 dark:bg-amber-900 dark:text-amber-300 mb-1">
-                        cached
-                      </span>
+                msg.content.map((part, partIdx) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                  <div key={partIdx} className="mt-1.5">
+                    {part.type === "text" ? (
+                      <>
+                        {part.cache_control && (
+                          <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-700 dark:bg-amber-900 dark:text-amber-300 mb-1">
+                            cached
+                          </span>
+                        )}
+                        <pre className="whitespace-pre-wrap break-words rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                          {part.text}
+                        </pre>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
+                        [Image: {part.image_url.url.slice(0, 80)}
+                        {part.image_url.url.length > 80 ? "..." : ""}]
+                      </div>
                     )}
-                    <pre className="whitespace-pre-wrap break-words rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-                      {part.text}
-                    </pre>
                   </div>
                 ))
               )}

@@ -38,8 +38,10 @@ import type {
 import { BUILTIN_TOOL_IDS } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { ImageAttachmentPicker } from "./ImageAttachmentPicker";
 import type { Message } from "./MessageList";
 import { MessageList } from "./MessageList";
+import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
 import { ToolSelector } from "./ToolSelector";
@@ -50,7 +52,13 @@ function formatDebugMessages(messages: AiMessage[], model: string): string {
       const text =
         typeof m.content === "string"
           ? m.content
-          : m.content.map((p) => p.text).join("");
+          : m.content
+              .map((p) =>
+                p.type === "text"
+                  ? p.text
+                  : `[image: ${p.image_url.url.slice(0, 60)}...]`,
+              )
+              .join("");
       return `--- [${m.role.toUpperCase()}] ---\n${text}`;
     })
     .join("\n\n");
@@ -104,6 +112,8 @@ export function AiPanel() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -160,17 +170,31 @@ export function AiPanel() {
     userMessage: string,
     history: Message[],
     signal: AbortSignal,
+    images?: PendingImage[],
   ) {
     const settings = await getAppSettings();
     const context = buildContext();
 
-    const aiHistory: AiMessage[] = history.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const aiHistory: AiMessage[] = history.map((m) => {
+      if (m.images && m.images.length > 0) {
+        return {
+          role: m.role,
+          content: [
+            { type: "text" as const, text: m.content },
+            ...m.images.map((img) => ({
+              type: "image_url" as const,
+              image_url: { url: img.url },
+            })),
+          ],
+        };
+      }
+      return { role: m.role, content: m.content };
+    });
 
     // Resolve tool prompt override
     const toolPromptOverride = resolveToolPrompt(tool, settings);
+
+    const imageAttachments = images?.map((img) => ({ url: img.url }));
 
     if (settings.debugMode) {
       const debugMessages = buildMessages(
@@ -184,6 +208,7 @@ export function AiPanel() {
           assistantPrefill: settings.assistantPrefill,
           customSystemPrompt: settings.customSystemPrompt,
           toolPromptOverride,
+          images: imageAttachments,
         },
       );
       setMessages((prev) => [
@@ -221,6 +246,7 @@ export function AiPanel() {
       assistantPrefill: settings.assistantPrefill,
       customSystemPrompt: settings.customSystemPrompt,
       toolPromptOverride,
+      images: imageAttachments,
     };
 
     const capturedPrompt = buildMessages(
@@ -234,6 +260,7 @@ export function AiPanel() {
         assistantPrefill: settings.assistantPrefill,
         customSystemPrompt: settings.customSystemPrompt,
         toolPromptOverride,
+        images: imageAttachments,
       },
     );
     const startTime = Date.now();
@@ -325,10 +352,13 @@ export function AiPanel() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!prompt.trim() || loading) return;
+    if ((!prompt.trim() && pendingImages.length === 0) || loading) return;
 
     const userMessage = prompt.trim();
+    const attachedImages =
+      pendingImages.length > 0 ? [...pendingImages] : undefined;
     setPrompt("");
+    setPendingImages([]);
 
     const userMsgId = generateId();
     setMessages((prev) => [
@@ -338,6 +368,7 @@ export function AiPanel() {
         role: "user",
         content: userMessage,
         timestamp: new Date().toISOString(),
+        images: attachedImages,
       },
     ]);
     setLoading(true);
@@ -349,7 +380,12 @@ export function AiPanel() {
     try {
       // Get current messages for history (before adding user message)
       const history = messages;
-      await generateAiResponse(userMessage, history, controller.signal);
+      await generateAiResponse(
+        userMessage,
+        history,
+        controller.signal,
+        attachedImages,
+      );
 
       // Selection is consumed once per submit
       if (selectedText) {
@@ -561,7 +597,21 @@ export function AiPanel() {
         loading={loading}
         selectedText={selectedText}
         onClearSelection={clearSelection}
+        pendingImages={pendingImages}
+        onAddImage={(img) => setPendingImages((prev) => [...prev, img])}
+        onRemoveImage={(i) =>
+          setPendingImages((prev) => prev.filter((_, idx) => idx !== i))
+        }
+        onOpenImagePicker={() => setShowImagePicker(true)}
       />
+      {showImagePicker && (
+        <ImageAttachmentPicker
+          characters={characters ?? []}
+          locations={locations ?? []}
+          onSelect={(img) => setPendingImages((prev) => [...prev, img])}
+          onClose={() => setShowImagePicker(false)}
+        />
+      )}
       {inspectingPrompt && (
         <PromptInspectorDialog
           promptMessages={inspectingPrompt}

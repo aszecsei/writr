@@ -142,12 +142,17 @@ export const DEFAULT_TOOL_INSTRUCTIONS: Record<BuiltinAiTool, string> = {
     "Be thorough but avoid false positives.",
 };
 
+interface ImageAttachment {
+  url: string;
+}
+
 interface BuildMessagesOptions {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
   toolPromptOverride?: string;
+  images?: ImageAttachment[];
 }
 
 export function buildMessages(
@@ -199,10 +204,33 @@ export function buildMessages(
     messages.push({ role: msg.role, content: msg.content });
   }
 
+  const imageAttachments = options?.images;
   if (context.selectedText) {
+    const text = `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`;
+    if (imageAttachments && imageAttachments.length > 0) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text },
+          ...imageAttachments.map((img) => ({
+            type: "image_url" as const,
+            image_url: { url: img.url },
+          })),
+        ],
+      });
+    } else {
+      messages.push({ role: "user", content: text });
+    }
+  } else if (imageAttachments && imageAttachments.length > 0) {
     messages.push({
       role: "user",
-      content: `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`,
+      content: [
+        { type: "text", text: userPrompt },
+        ...imageAttachments.map((img) => ({
+          type: "image_url" as const,
+          image_url: { url: img.url },
+        })),
+      ],
     });
   } else {
     messages.push({ role: "user", content: userPrompt });

@@ -119,6 +119,21 @@ export default function LocationListPage() {
             />
           )}
 
+          {/* Thumbnail */}
+          {(() => {
+            const primaryImg = (node.location.images ?? []).find(
+              (img) => img.isPrimary,
+            );
+            return primaryImg ? (
+              // biome-ignore lint/performance/noImgElement: external URLs
+              <img
+                src={primaryImg.url}
+                alt={node.location.name}
+                className="h-10 w-10 shrink-0 rounded object-cover"
+              />
+            ) : null;
+          })()}
+
           {/* Content */}
           <button
             type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Character, CharacterRole } from "@/db/schemas";
+import type { Character, CharacterRole, EntityImage } from "@/db/schemas";
 
 interface CharacterFormState {
   name: string;
@@ -20,6 +20,7 @@ interface CharacterFormState {
   notes: string;
   linkedCharacterIds: string[];
   linkedLocationIds: string[];
+  images: EntityImage[];
 }
 
 type CharacterFormField = keyof CharacterFormState;
@@ -42,6 +43,7 @@ export function useCharacterForm(character: Character | undefined) {
     notes: "",
     linkedCharacterIds: [],
     linkedLocationIds: [],
+    images: [],
   });
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export function useCharacterForm(character: Character | undefined) {
         notes: character.notes ?? "",
         linkedCharacterIds: character.linkedCharacterIds ?? [],
         linkedLocationIds: character.linkedLocationIds ?? [],
+        images: character.images ?? [],
       });
     }
   }, [character]);
@@ -89,7 +92,8 @@ export function useCharacterForm(character: Character | undefined) {
       form.linkedCharacterIds.length !== charLinkedChars.length ||
       form.linkedCharacterIds.some((id, i) => id !== charLinkedChars[i]) ||
       form.linkedLocationIds.length !== charLinkedLocs.length ||
-      form.linkedLocationIds.some((id, i) => id !== charLinkedLocs[i])
+      form.linkedLocationIds.some((id, i) => id !== charLinkedLocs[i]) ||
+      JSON.stringify(form.images) !== JSON.stringify(character.images ?? [])
     );
   }, [character, form]);
 
@@ -130,6 +134,30 @@ export function useCharacterForm(character: Character | undefined) {
     }));
   }, []);
 
+  const addImage = useCallback((image: EntityImage) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: [...prev.images, image],
+    }));
+  }, []);
+
+  const removeImage = useCallback((imageId: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img.id !== imageId),
+    }));
+  }, []);
+
+  const setPrimaryImage = useCallback((imageId: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      images: prev.images.map((img) => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })),
+    }));
+  }, []);
+
   function getUpdatePayload() {
     const aliases = form.aliasesInput
       .split(",")
@@ -152,6 +180,7 @@ export function useCharacterForm(character: Character | undefined) {
       notes: form.notes,
       linkedCharacterIds: form.linkedCharacterIds,
       linkedLocationIds: form.linkedLocationIds,
+      images: form.images,
     };
   }
 
@@ -164,5 +193,8 @@ export function useCharacterForm(character: Character | undefined) {
     removeLinkedCharacterId,
     addLinkedLocationId,
     removeLinkedLocationId,
+    addImage,
+    removeImage,
+    setPrimaryImage,
   };
 }
