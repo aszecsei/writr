@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
+import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
 import type {
   AppDictionary,
   AppSettings,
@@ -20,6 +21,7 @@ import type {
   WritingSession,
   WritingSprint,
 } from "./schemas";
+import { AppDictionarySchema, AppSettingsSchema } from "./schemas";
 
 export class WritrDatabase extends Dexie {
   projects!: EntityTable<Project, "id">;
@@ -386,6 +388,37 @@ export class WritrDatabase extends Dexie {
           if (s.customTools === undefined) s.customTools = [];
         }),
     );
+
+    // Seed singleton rows so liveQuery hooks never need to write
+    this.on("ready", () => {
+      return this.transaction(
+        "rw",
+        this.appSettings,
+        this.appDictionary,
+        async () => {
+          const timestamp = new Date().toISOString();
+          const settings = await this.appSettings.get(APP_SETTINGS_ID);
+          if (!settings) {
+            await this.appSettings.add(
+              AppSettingsSchema.parse({
+                id: APP_SETTINGS_ID,
+                updatedAt: timestamp,
+              }),
+            );
+          }
+          const dict = await this.appDictionary.get(APP_DICTIONARY_ID);
+          if (!dict) {
+            await this.appDictionary.add(
+              AppDictionarySchema.parse({
+                id: APP_DICTIONARY_ID,
+                words: [],
+                updatedAt: timestamp,
+              }),
+            );
+          }
+        },
+      );
+    });
   }
 }
 

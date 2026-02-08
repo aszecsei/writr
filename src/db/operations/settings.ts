@@ -8,19 +8,27 @@ import { now } from "./helpers";
 export async function getAppSettings(): Promise<AppSettings> {
   const existing = await db.appSettings.get(APP_SETTINGS_ID);
   if (existing) return AppSettingsSchema.parse(existing);
-  const defaults = AppSettingsSchema.parse({
+  // Row should exist via on('ready') seed; return in-memory defaults as fallback
+  return AppSettingsSchema.parse({
     id: APP_SETTINGS_ID,
     updatedAt: now(),
   });
-  await db.appSettings.add(defaults);
-  return defaults;
 }
 
 export async function updateAppSettings(
   data: Partial<Omit<AppSettings, "id">>,
 ): Promise<void> {
-  await db.appSettings.update(APP_SETTINGS_ID, {
-    ...data,
-    updatedAt: now(),
-  });
+  const timestamp = now();
+  const existing = await db.appSettings.get(APP_SETTINGS_ID);
+  if (existing) {
+    await db.appSettings.put({ ...existing, ...data, updatedAt: timestamp });
+  } else {
+    await db.appSettings.add(
+      AppSettingsSchema.parse({
+        id: APP_SETTINGS_ID,
+        ...data,
+        updatedAt: timestamp,
+      }),
+    );
+  }
 }

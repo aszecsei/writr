@@ -43,19 +43,19 @@ async function modifyDictionaryWords(
 export async function getAppDictionary(): Promise<AppDictionary> {
   const existing = await db.appDictionary.get(APP_DICTIONARY_ID);
   if (existing) return AppDictionarySchema.parse(existing);
-  const defaults = AppDictionarySchema.parse({
+  // Row should exist via on('ready') seed; return in-memory defaults as fallback
+  return AppDictionarySchema.parse({
     id: APP_DICTIONARY_ID,
     words: [],
     updatedAt: now(),
   });
-  await db.appDictionary.add(defaults);
-  return defaults;
 }
 
 export async function addWordToAppDictionary(word: string): Promise<void> {
   return modifyDictionaryWords(
     getAppDictionary,
-    (data) => db.appDictionary.update(APP_DICTIONARY_ID, data),
+    (data) =>
+      db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
     word,
     "add",
   );
@@ -64,7 +64,8 @@ export async function addWordToAppDictionary(word: string): Promise<void> {
 export async function removeWordFromAppDictionary(word: string): Promise<void> {
   return modifyDictionaryWords(
     getAppDictionary,
-    (data) => db.appDictionary.update(APP_DICTIONARY_ID, data),
+    (data) =>
+      db.appDictionary.put({ id: APP_DICTIONARY_ID, ...data }),
     word,
     "remove",
   );
