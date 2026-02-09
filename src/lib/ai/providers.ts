@@ -30,7 +30,7 @@ export const PROVIDERS: Record<AiProvider, ProviderConfig> = {
     baseUrl: "https://api.anthropic.com/v1/messages",
     headers: (apiKey) => ({
       "x-api-key": apiKey,
-      "anthropic-version": "2024-10-22",
+      "anthropic-version": "2023-06-01",
     }),
     defaultModel: "claude-sonnet-4-5-20250929",
     apiKeyPrefix: "sk-ant-...",
