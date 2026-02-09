@@ -431,6 +431,36 @@ describe("buildMessages", () => {
     });
   });
 
+  describe("suggest-edits context-aware instruction", () => {
+    it("uses selection-focused instruction when selectedText is present", () => {
+      const ctx = emptyContext({ selectedText: "some highlighted text" });
+      const msgs = buildMessages("suggest-edits", "improve this", ctx);
+      const text = getSystemText(msgs);
+      expect(text).toContain("selected text");
+    });
+
+    it("uses chapter-focused instruction when no selectedText", () => {
+      const msgs = buildMessages(
+        "suggest-edits",
+        "improve this",
+        emptyContext(),
+      );
+      const text = getSystemText(msgs);
+      expect(text).toContain("current chapter");
+      expect(text).not.toContain("selected text");
+    });
+
+    it("toolPromptOverride takes priority over context-aware instruction", () => {
+      const override = "My custom suggest-edits instruction.";
+      const msgs = buildMessages("suggest-edits", "test", emptyContext(), [], {
+        toolPromptOverride: override,
+      });
+      const text = getSystemText(msgs);
+      expect(text).toContain(override);
+      expect(text).not.toContain("current chapter");
+    });
+  });
+
   describe("tool prompt override", () => {
     it("uses default tool instruction for built-in tools", () => {
       const msgs = buildMessages("brainstorm", "test", emptyContext());

@@ -145,6 +145,23 @@ interface BuildMessagesOptions {
   images?: ImageAttachment[];
 }
 
+function resolveDefaultToolInstruction(
+  tool: AiToolId,
+  hasSelectedText: boolean,
+): string {
+  if (tool === "suggest-edits" && !hasSelectedText) {
+    return (
+      "Suggest concrete line edits to improve the current chapter. " +
+      "Focus on the weakest passages. " +
+      "Format as a numbered list with the original text and your suggested replacement."
+    );
+  }
+  if (tool in DEFAULT_TOOL_INSTRUCTIONS) {
+    return DEFAULT_TOOL_INSTRUCTIONS[tool as BuiltinAiTool];
+  }
+  return "Follow the user's instructions.";
+}
+
 export function buildMessages(
   tool: AiToolId,
   userPrompt: string,
@@ -154,9 +171,7 @@ export function buildMessages(
 ): AiMessage[] {
   const toolInstruction =
     options?.toolPromptOverride ??
-    (tool in DEFAULT_TOOL_INSTRUCTIONS
-      ? DEFAULT_TOOL_INSTRUCTIONS[tool as BuiltinAiTool]
-      : "Follow the user's instructions.");
+    resolveDefaultToolInstruction(tool, !!context.selectedText);
 
   const preamble = options?.customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
 
