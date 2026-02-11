@@ -1,6 +1,7 @@
 import type { AiProvider } from "@/db/schemas";
 import {
   createAnthropicAdapter,
+  createGoogleAdapter,
   createOpenAiAdapter,
   type ProviderAdapter,
 } from "./adapters";
@@ -56,6 +57,20 @@ export const PROVIDERS: Record<AiProvider, ProviderConfig> = {
     adapter: createOpenAiAdapter({
       baseURL: "https://api.z.ai/api/paas/v4",
     }),
+  },
+  google: {
+    id: "google",
+    label: "Google AI Studio",
+    defaultModel: "gemini-2.5-flash",
+    apiKeyPrefix: "AIza...",
+    adapter: createGoogleAdapter({ mode: "api-key" }),
+  },
+  vertex: {
+    id: "vertex",
+    label: "Vertex AI",
+    defaultModel: "gemini-2.5-flash",
+    apiKeyPrefix: "project-id:location",
+    adapter: createGoogleAdapter({ mode: "vertex" }),
   },
 };
 

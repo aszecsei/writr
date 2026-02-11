@@ -261,6 +261,8 @@ export const AiProviderEnum = z.enum([
   "openai",
   "grok",
   "zai",
+  "google",
+  "vertex",
 ]);
 export type AiProvider = z.infer<typeof AiProviderEnum>;
 
@@ -317,6 +319,8 @@ export const AppSettingsSchema = z.object({
     openai: "",
     grok: "",
     zai: "",
+    google: "",
+    vertex: "",
   }),
   providerModels: z.record(AiProviderEnum, z.string()).default({
     openrouter: "openai/gpt-4o",
@@ -324,6 +328,8 @@ export const AppSettingsSchema = z.object({
     openai: "gpt-4o",
     grok: "grok-3",
     zai: "glm-4.7",
+    google: "gemini-2.5-flash",
+    vertex: "gemini-2.5-flash",
   }),
   theme: z.enum(["light", "dark", "system"]).default("system"),
   primaryColor: PrimaryColorEnum.default("blue"),

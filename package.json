@@ -15,6 +15,7 @@
     "@anthropic-ai/sdk": "^0.74.0",
     "@dnd-kit/helpers": "^0.2.3",
     "@dnd-kit/react": "^0.2.3",
+    "@google/genai": "^1.40.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-character-count": "^3.19.0",
     "@tiptap/extension-image": "^3.19.0",

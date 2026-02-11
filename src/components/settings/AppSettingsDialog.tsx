@@ -75,6 +75,8 @@ export function AppSettingsDialog() {
     openai: "",
     grok: "",
     zai: "",
+    google: "",
+    vertex: "",
   };
   const [providerApiKeys, setProviderApiKeys] =
     useState<Record<AiProvider, string>>(emptyKeys);

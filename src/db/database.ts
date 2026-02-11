@@ -404,6 +404,22 @@ export class WritrDatabase extends Dexie {
         });
     });
 
+    this.version(21).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.providerApiKeys && !("google" in s.providerApiKeys)) {
+            s.providerApiKeys.google = "";
+            s.providerApiKeys.vertex = "";
+          }
+          if (s.providerModels && !("google" in s.providerModels)) {
+            s.providerModels.google = "gemini-2.5-flash";
+            s.providerModels.vertex = "gemini-2.5-flash";
+          }
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

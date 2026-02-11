@@ -21,6 +21,8 @@ const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
   { value: "openai", label: "OpenAI" },
   { value: "grok", label: "Grok (xAI)" },
   { value: "zai", label: "z.ai (Zhipu AI)" },
+  { value: "google", label: "Google AI Studio" },
+  { value: "vertex", label: "Vertex AI" },
 ];
 
 interface AiSettingsProps {
