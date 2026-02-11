@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/react";
 import {
   ALargeSmall,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Regex,
   WholeWord,
@@ -23,6 +24,7 @@ interface FindReplacePanelProps {
 export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   const isOpen = useFindReplaceStore((s) => s.isOpen);
   const mode = useFindReplaceStore((s) => s.mode);
+  const focusTrigger = useFindReplaceStore((s) => s.focusTrigger);
   const searchTerm = useFindReplaceStore((s) => s.searchTerm);
   const replaceTerm = useFindReplaceStore((s) => s.replaceTerm);
   const caseSensitive = useFindReplaceStore((s) => s.caseSensitive);
@@ -36,19 +38,28 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   const toggleCaseSensitive = useFindReplaceStore((s) => s.toggleCaseSensitive);
   const toggleWholeWord = useFindReplaceStore((s) => s.toggleWholeWord);
   const toggleUseRegex = useFindReplaceStore((s) => s.toggleUseRegex);
+  const toggleMode = useFindReplaceStore((s) => s.toggleMode);
   const setMatchInfo = useFindReplaceStore((s) => s.setMatchInfo);
+  const openFindReplace = useFindReplaceStore((s) => s.openFindReplace);
   const close = useFindReplaceStore((s) => s.close);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Focus search input when panel opens
+  // Focus search input when panel opens or re-triggered.
+  // focusTrigger is intentionally in the dep array to re-fire the effect
+  // even when isOpen is already true (e.g. Ctrl+F pressed twice).
   useEffect(() => {
+    // Reference focusTrigger so the linter sees it used in the body
+    void focusTrigger;
     if (isOpen) {
       // Small delay to let the panel render
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }, 50);
     }
-  }, [isOpen]);
+  }, [focusTrigger, isOpen]);
 
   // Dispatch search to the ProseMirror plugin
   const dispatchSearch = useCallback(
@@ -255,9 +266,15 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       } else if (e.key === "Escape") {
         e.preventDefault();
         handleClose();
+      } else if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchInputRef.current?.select();
+      } else if (e.key === "h" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        openFindReplace();
       }
     },
-    [findNext, findPrevious, handleClose],
+    [findNext, findPrevious, handleClose, openFindReplace],
   );
 
   const handleReplaceKeyDown = useCallback(
@@ -265,6 +282,12 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       if (e.key === "Escape") {
         e.preventDefault();
         handleClose();
+      } else if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (e.key === "h" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
       }
     },
     [handleClose],
@@ -280,106 +303,124 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
     "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-500 dark:hover:bg-neutral-800";
 
   return (
-    <div className="absolute right-4 top-2 z-30 w-80 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-      {/* Row 1: Search */}
-      <div className="flex items-center gap-1.5">
-        <input
-          ref={searchInputRef}
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="Find..."
-          className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-900 placeholder-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
-        />
-        <span className="shrink-0 text-[10px] text-neutral-500 dark:text-neutral-400">
-          {searchTerm
-            ? matchCount > 0
-              ? `${currentMatch + 1}/${matchCount}`
-              : "0"
-            : ""}
-        </span>
+    <div className="absolute right-4 top-2 z-30 w-84 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="flex gap-1">
+        {/* Chevron toggle for find/replace mode */}
         <button
           type="button"
-          title="Previous match (Shift+Enter)"
-          onClick={findPrevious}
-          disabled={matchCount === 0}
-          className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:disabled:text-neutral-600"
+          title="Toggle Replace (Ctrl+H)"
+          onClick={toggleMode}
+          className="mt-0.5 shrink-0 rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
         >
-          <ChevronUp size={12} />
+          {mode === "find-replace" ? (
+            <ChevronDown size={14} />
+          ) : (
+            <ChevronRight size={14} />
+          )}
         </button>
-        <button
-          type="button"
-          title="Next match (Enter)"
-          onClick={findNext}
-          disabled={matchCount === 0}
-          className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:disabled:text-neutral-600"
-        >
-          <ChevronDown size={12} />
-        </button>
-        <button
-          type="button"
-          title="Case sensitive"
-          onClick={toggleCaseSensitive}
-          className={`${toggleBtnBase} ${caseSensitive ? toggleBtnActive : toggleBtnInactive}`}
-        >
-          <ALargeSmall size={12} />
-        </button>
-        <button
-          type="button"
-          title="Whole word"
-          onClick={toggleWholeWord}
-          className={`${toggleBtnBase} ${wholeWord ? toggleBtnActive : toggleBtnInactive}`}
-        >
-          <WholeWord size={12} />
-        </button>
-        <button
-          type="button"
-          title="Regular expression"
-          onClick={toggleUseRegex}
-          className={`${toggleBtnBase} ${useRegex ? toggleBtnActive : toggleBtnInactive}`}
-        >
-          <Regex size={12} />
-        </button>
-        <button
-          type="button"
-          title="Close (Escape)"
-          onClick={handleClose}
-          className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        >
-          <X size={12} />
-        </button>
-      </div>
 
-      {/* Row 2: Replace (find-replace mode only) */}
-      {mode === "find-replace" && (
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <input
-            type="text"
-            value={replaceTerm}
-            onChange={(e) => setReplaceTerm(e.target.value)}
-            onKeyDown={handleReplaceKeyDown}
-            placeholder="Replace..."
-            className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-900 placeholder-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
-          />
-          <button
-            type="button"
-            onClick={replaceCurrent}
-            disabled={matchCount === 0}
-            className="shrink-0 rounded border border-neutral-300 px-1.5 py-0.5 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:disabled:text-neutral-600"
-          >
-            Replace
-          </button>
-          <button
-            type="button"
-            onClick={replaceAll}
-            disabled={matchCount === 0}
-            className="shrink-0 rounded border border-neutral-300 px-1.5 py-0.5 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:disabled:text-neutral-600"
-          >
-            All
-          </button>
+        <div className="min-w-0 flex-1">
+          {/* Row 1: Search */}
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Find..."
+              className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-900 placeholder-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+            />
+            <span className="shrink-0 text-[10px] text-neutral-500 dark:text-neutral-400">
+              {searchTerm
+                ? matchCount > 0
+                  ? `${currentMatch + 1}/${matchCount}`
+                  : "0"
+                : ""}
+            </span>
+            <button
+              type="button"
+              title="Previous match (Shift+Enter)"
+              onClick={findPrevious}
+              disabled={matchCount === 0}
+              className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:disabled:text-neutral-600"
+            >
+              <ChevronUp size={12} />
+            </button>
+            <button
+              type="button"
+              title="Next match (Enter)"
+              onClick={findNext}
+              disabled={matchCount === 0}
+              className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:disabled:text-neutral-600"
+            >
+              <ChevronDown size={12} />
+            </button>
+            <button
+              type="button"
+              title="Case sensitive"
+              onClick={toggleCaseSensitive}
+              className={`${toggleBtnBase} ${caseSensitive ? toggleBtnActive : toggleBtnInactive}`}
+            >
+              <ALargeSmall size={12} />
+            </button>
+            <button
+              type="button"
+              title="Whole word"
+              onClick={toggleWholeWord}
+              className={`${toggleBtnBase} ${wholeWord ? toggleBtnActive : toggleBtnInactive}`}
+            >
+              <WholeWord size={12} />
+            </button>
+            <button
+              type="button"
+              title="Regular expression"
+              onClick={toggleUseRegex}
+              className={`${toggleBtnBase} ${useRegex ? toggleBtnActive : toggleBtnInactive}`}
+            >
+              <Regex size={12} />
+            </button>
+            <button
+              type="button"
+              title="Close (Escape)"
+              onClick={handleClose}
+              className="rounded p-0.5 text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            >
+              <X size={12} />
+            </button>
+          </div>
+
+          {/* Row 2: Replace (find-replace mode only) */}
+          {mode === "find-replace" && (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <input
+                type="text"
+                value={replaceTerm}
+                onChange={(e) => setReplaceTerm(e.target.value)}
+                onKeyDown={handleReplaceKeyDown}
+                placeholder="Replace..."
+                className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-900 placeholder-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+              />
+              <button
+                type="button"
+                onClick={replaceCurrent}
+                disabled={matchCount === 0}
+                className="shrink-0 rounded border border-neutral-300 px-1.5 py-0.5 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:disabled:text-neutral-600"
+              >
+                Replace
+              </button>
+              <button
+                type="button"
+                onClick={replaceAll}
+                disabled={matchCount === 0}
+                className="shrink-0 rounded border border-neutral-300 px-1.5 py-0.5 text-[10px] text-neutral-700 transition-colors hover:bg-neutral-100 disabled:text-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:disabled:text-neutral-600"
+              >
+                All
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

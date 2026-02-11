@@ -6,6 +6,7 @@ type FindReplaceMode = "find" | "find-replace";
 interface FindReplaceState {
   isOpen: boolean;
   mode: FindReplaceMode;
+  focusTrigger: number;
   searchTerm: string;
   replaceTerm: string;
   caseSensitive: boolean;
@@ -18,6 +19,7 @@ interface FindReplaceState {
   openFind: () => void;
   openFindReplace: () => void;
   close: () => void;
+  toggleMode: () => void;
   setSearchTerm: (term: string) => void;
   setReplaceTerm: (term: string) => void;
   toggleCaseSensitive: () => void;
@@ -30,6 +32,7 @@ export const useFindReplaceStore = create<FindReplaceState>()(
   immer((set) => ({
     isOpen: false,
     mode: "find" as FindReplaceMode,
+    focusTrigger: 0,
     searchTerm: "",
     replaceTerm: "",
     caseSensitive: false,
@@ -42,12 +45,14 @@ export const useFindReplaceStore = create<FindReplaceState>()(
       set((s) => {
         s.isOpen = true;
         s.mode = "find";
+        s.focusTrigger += 1;
       }),
 
     openFindReplace: () =>
       set((s) => {
         s.isOpen = true;
         s.mode = "find-replace";
+        s.focusTrigger += 1;
       }),
 
     close: () =>
@@ -57,6 +62,11 @@ export const useFindReplaceStore = create<FindReplaceState>()(
         s.replaceTerm = "";
         s.matchCount = 0;
         s.currentMatch = 0;
+      }),
+
+    toggleMode: () =>
+      set((s) => {
+        s.mode = s.mode === "find" ? "find-replace" : "find";
       }),
 
     setSearchTerm: (term) =>
