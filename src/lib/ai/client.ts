@@ -2,26 +2,11 @@ import { buildMessages } from "./prompts";
 import type {
   AiContext,
   AiMessage,
-  AiProvider,
   AiResponse,
+  AiSettings,
   AiStreamChunk,
   AiToolId,
-  FinishReason,
-  ReasoningEffort,
 } from "./types";
-
-interface AiSettings {
-  apiKey: string;
-  model: string;
-  provider: AiProvider;
-  reasoningEffort?: ReasoningEffort;
-  postChatInstructions?: string;
-  postChatInstructionsDepth?: number;
-  assistantPrefill?: string;
-  customSystemPrompt?: string | null;
-  toolPromptOverride?: string;
-  images?: { url: string }[];
-}
 
 function buildRequestBody(
   tool: AiToolId,
@@ -71,19 +56,6 @@ async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
   return response;
 }
 
-function normalizeFinishReason(raw: string | null | undefined): FinishReason {
-  switch (raw) {
-    case "stop":
-      return "stop";
-    case "length":
-      return "length";
-    case "content_filter":
-      return "content_filter";
-    default:
-      return raw ? "unknown" : "stop";
-  }
-}
-
 export async function callAi(
   tool: AiToolId,
   userPrompt: string,
@@ -96,15 +68,7 @@ export async function callAi(
     buildRequestBody(tool, userPrompt, context, settings, false, history),
     signal,
   );
-  const data = await response.json();
-
-  return {
-    content: data.choices[0].message.content,
-    reasoning: data.choices[0].message.reasoning,
-    model: data.model,
-    usage: data.usage,
-    finishReason: normalizeFinishReason(data.choices[0].finish_reason),
-  };
+  return await response.json();
 }
 
 export async function* streamAi(
@@ -145,38 +109,8 @@ export async function* streamAi(
       if (json === "[DONE]") return;
 
       try {
-        const parsed = JSON.parse(json);
-        const choice = parsed.choices?.[0];
-        const delta = choice?.delta;
-
-        if (delta) {
-          // Reasoning tokens from OpenRouter
-          const reasoningDetails = delta.reasoning_details;
-          if (Array.isArray(reasoningDetails)) {
-            for (const detail of reasoningDetails) {
-              if (detail?.text) {
-                yield { type: "reasoning", text: detail.text };
-              }
-            }
-          }
-          // Fallback: handle reasoning as a direct string field
-          else if (delta.reasoning) {
-            yield { type: "reasoning", text: delta.reasoning };
-          }
-
-          if (delta.content) {
-            yield { type: "content", text: delta.content };
-          }
-        }
-
-        if (choice?.finish_reason) {
-          yield {
-            type: "stop",
-            finishReason: normalizeFinishReason(choice.finish_reason),
-          };
-        }
+        yield JSON.parse(json) as AiStreamChunk;
       } catch (error) {
-        // Log malformed chunks in development for debugging
         if (process.env.NODE_ENV === "development") {
           console.warn("[AI Stream] Skipping malformed chunk:", json, error);
         }

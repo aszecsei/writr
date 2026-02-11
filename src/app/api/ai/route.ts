@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { AiProviderEnum } from "@/db/schemas";
+import type { CompletionParams } from "@/lib/ai/adapters";
 import { PROVIDERS } from "@/lib/ai/providers";
 
 const TextPartSchema = z.object({
@@ -36,289 +37,7 @@ const AiRequestSchema = z.object({
     .optional(),
 });
 
-type ParsedMessage = z.infer<typeof AiRequestSchema>["messages"][number];
-
-// ─── Anthropic helpers ──────────────────────────────────────────────
-
-function normalizeAnthropicStopReason(
-  stopReason: string | null | undefined,
-): string {
-  switch (stopReason) {
-    case "end_turn":
-      return "stop";
-    case "max_tokens":
-      return "length";
-    case "stop_sequence":
-      return "stop";
-    default:
-      return stopReason ?? "stop";
-  }
-}
-
-interface AnthropicSystemBlock {
-  type: "text";
-  text: string;
-  cache_control?: { type: "ephemeral" };
-}
-
-type AnthropicContentBlock =
-  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
-  | {
-      type: "image";
-      source:
-        | { type: "base64"; media_type: string; data: string }
-        | { type: "url"; url: string };
-    };
-
-function parseDataUrl(url: string): {
-  mediaType: string;
-  data: string;
-} | null {
-  const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
-  if (!match) return null;
-  return { mediaType: match[1], data: match[2] };
-}
-
-function toAnthropicContentBlocks(
-  parts: z.infer<typeof ContentPartSchema>[],
-): AnthropicContentBlock[] {
-  const blocks: AnthropicContentBlock[] = [];
-  for (const part of parts) {
-    if (part.type === "text") {
-      blocks.push({
-        type: "text",
-        text: part.text,
-        ...(part.cache_control ? { cache_control: part.cache_control } : {}),
-      });
-    } else if (part.type === "image_url") {
-      const parsed = parseDataUrl(part.image_url.url);
-      if (parsed) {
-        blocks.push({
-          type: "image",
-          source: {
-            type: "base64",
-            media_type: parsed.mediaType,
-            data: parsed.data,
-          },
-        });
-      } else {
-        blocks.push({
-          type: "image",
-          source: { type: "url", url: part.image_url.url },
-        });
-      }
-    }
-  }
-  return blocks;
-}
-
-function buildAnthropicBody(
-  model: string,
-  messages: ParsedMessage[],
-  temperature: number,
-  maxTokens: number,
-  stream: boolean,
-  reasoning?: { effort: string },
-) {
-  // Extract system messages into top-level system parameter
-  const systemBlocks: AnthropicSystemBlock[] = [];
-  const nonSystemMessages: {
-    role: "user" | "assistant";
-    content: string | AnthropicContentBlock[];
-  }[] = [];
-
-  for (const msg of messages) {
-    if (msg.role === "system") {
-      if (typeof msg.content === "string") {
-        systemBlocks.push({ type: "text", text: msg.content });
-      } else {
-        for (const part of msg.content) {
-          if (part.type === "text") {
-            systemBlocks.push({
-              type: "text",
-              text: part.text,
-              ...(part.cache_control
-                ? { cache_control: part.cache_control }
-                : {}),
-            });
-          }
-        }
-      }
-    } else if (typeof msg.content === "string") {
-      nonSystemMessages.push({ role: msg.role, content: msg.content });
-    } else {
-      const hasImages = msg.content.some((p) => p.type === "image_url");
-      const hasCacheControl = msg.content.some(
-        (p) => p.type === "text" && p.cache_control,
-      );
-      if (hasImages || hasCacheControl) {
-        nonSystemMessages.push({
-          role: msg.role,
-          content: toAnthropicContentBlocks(msg.content),
-        });
-      } else {
-        const text = msg.content
-          .map((p) => (p.type === "text" ? p.text : ""))
-          .join("");
-        nonSystemMessages.push({ role: msg.role, content: text });
-      }
-    }
-  }
-
-  const body: Record<string, unknown> = {
-    model,
-    messages: nonSystemMessages,
-    max_tokens: maxTokens,
-    stream,
-  };
-
-  if (systemBlocks.length > 0) {
-    body.system = systemBlocks;
-  }
-
-  // Only set temperature for non-thinking requests
-  if (!reasoning || reasoning.effort === "none") {
-    body.temperature = temperature;
-  }
-
-  if (reasoning && reasoning.effort !== "none") {
-    // Map reasoning effort to Anthropic's thinking parameter
-    const budgetMap: Record<string, number> = {
-      minimal: 1024,
-      low: 4096,
-      medium: 10240,
-      high: 20480,
-      xhigh: 32768,
-    };
-    body.thinking = {
-      type: "enabled",
-      budget_tokens: budgetMap[reasoning.effort] ?? 10240,
-    };
-  }
-
-  return body;
-}
-
-function anthropicToOpenAiJson(data: Record<string, unknown>) {
-  // Convert Anthropic Messages response to OpenAI-compatible format
-  const content = Array.isArray(data.content)
-    ? (data.content as { type: string; text?: string; thinking?: string }[])
-    : [];
-
-  let text = "";
-  let reasoning = "";
-  for (const block of content) {
-    if (block.type === "text" && block.text) {
-      text += block.text;
-    } else if (block.type === "thinking" && block.thinking) {
-      reasoning += block.thinking;
-    }
-  }
-
-  return {
-    id: data.id,
-    model: data.model,
-    choices: [
-      {
-        message: {
-          role: "assistant",
-          content: text,
-          ...(reasoning ? { reasoning } : {}),
-        },
-        finish_reason: normalizeAnthropicStopReason(
-          data.stop_reason as string | null | undefined,
-        ),
-      },
-    ],
-    usage: data.usage,
-  };
-}
-
-function anthropicStreamAdapter(upstreamBody: ReadableStream): ReadableStream {
-  const reader = upstreamBody.getReader();
-  const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
-
-  let buffer = "";
-
-  return new ReadableStream({
-    async pull(controller) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-          return;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-
-          const json = trimmed.slice(6);
-          if (json === "[DONE]") {
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-            return;
-          }
-
-          try {
-            const event = JSON.parse(json);
-
-            if (event.type === "content_block_delta") {
-              const delta = event.delta;
-              if (delta?.type === "text_delta" && delta.text) {
-                const chunk = {
-                  choices: [{ delta: { content: delta.text } }],
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
-                );
-              } else if (delta?.type === "thinking_delta" && delta.thinking) {
-                const chunk = {
-                  choices: [{ delta: { reasoning: delta.thinking } }],
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
-                );
-              }
-            } else if (event.type === "message_delta") {
-              const stopReason = event.delta?.stop_reason;
-              if (stopReason) {
-                const chunk = {
-                  choices: [
-                    {
-                      delta: {},
-                      finish_reason: normalizeAnthropicStopReason(stopReason),
-                    },
-                  ],
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
-                );
-              }
-            } else if (event.type === "message_stop") {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              controller.close();
-              return;
-            }
-          } catch {
-            // Skip malformed chunks
-          }
-        }
-      }
-    },
-    cancel() {
-      reader.cancel();
-    },
-  });
-}
-
-// ─── Route handler ──────────────────────────────────────────────────
+const encoder = new TextEncoder();
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -342,62 +61,43 @@ export async function POST(request: NextRequest) {
     reasoning,
   } = parsed.data;
 
-  const providerConfig = PROVIDERS[provider];
-  const isAnthropic = providerConfig.format === "anthropic";
+  const { adapter } = PROVIDERS[provider];
 
-  const effectiveTemp = temperature ?? 0.7;
-  const effectiveMaxTokens = max_tokens ?? 2048;
-  const effectiveStream = stream ?? false;
+  const params: CompletionParams = {
+    model,
+    messages,
+    temperature: temperature ?? 0.7,
+    maxTokens: max_tokens ?? 2048,
+    ...(reasoning ? { reasoning } : {}),
+  };
 
-  let requestBody: string;
-  if (isAnthropic) {
-    requestBody = JSON.stringify(
-      buildAnthropicBody(
-        model,
-        messages,
-        effectiveTemp,
-        effectiveMaxTokens,
-        effectiveStream,
-        reasoning,
-      ),
-    );
-  } else {
-    requestBody = JSON.stringify({
-      model,
-      messages,
-      temperature: effectiveTemp,
-      max_tokens: effectiveMaxTokens,
-      stream: effectiveStream,
-      ...(reasoning ? { reasoning } : {}),
-    });
-  }
+  try {
+    if (!stream) {
+      const response = await adapter.complete(apiKey, params, request.signal);
+      return NextResponse.json(response);
+    }
 
-  const upstreamResponse = await fetch(providerConfig.baseUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...providerConfig.headers(apiKey),
-    },
-    body: requestBody,
-  });
-
-  if (!upstreamResponse.ok) {
-    const errorBody = await upstreamResponse.text();
-    return NextResponse.json(
-      {
-        error: `${providerConfig.label} API error`,
-        status: upstreamResponse.status,
-        details: errorBody,
+    const gen = adapter.stream(apiKey, params, request.signal);
+    const responseBody = new ReadableStream({
+      async pull(controller) {
+        try {
+          const { done, value } = await gen.next();
+          if (done) {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
+          }
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(value)}\n\n`),
+          );
+        } catch (error) {
+          controller.error(error);
+        }
       },
-      { status: upstreamResponse.status },
-    );
-  }
-
-  // Streaming response
-  if (effectiveStream && upstreamResponse.body) {
-    const responseBody = isAnthropic
-      ? anthropicStreamAdapter(upstreamResponse.body)
-      : upstreamResponse.body;
+      cancel() {
+        gen.return(undefined);
+      },
+    });
 
     return new NextResponse(responseBody, {
       headers: {
@@ -406,12 +106,15 @@ export async function POST(request: NextRequest) {
         Connection: "keep-alive",
       },
     });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown AI error";
+    const status =
+      error instanceof Error && "status" in error
+        ? (error as { status: number }).status
+        : 500;
+    return NextResponse.json(
+      { error: `${PROVIDERS[provider].label} API error`, details: message },
+      { status },
+    );
   }
-
-  // Non-streaming response
-  const data = await upstreamResponse.json();
-  if (isAnthropic) {
-    return NextResponse.json(anthropicToOpenAiJson(data));
-  }
-  return NextResponse.json(data);
 }

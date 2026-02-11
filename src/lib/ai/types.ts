@@ -98,3 +98,16 @@ export type AiStreamChunk =
   | { type: "reasoning"; text: string }
   | { type: "content"; text: string }
   | { type: "stop"; finishReason: FinishReason };
+
+export interface AiSettings {
+  apiKey: string;
+  model: string;
+  provider: AiProvider;
+  reasoningEffort?: ReasoningEffort;
+  postChatInstructions?: string;
+  postChatInstructionsDepth?: number;
+  assistantPrefill?: string;
+  customSystemPrompt?: string | null;
+  toolPromptOverride?: string;
+  images?: { url: string }[];
+}

@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.74.0",
     "@dnd-kit/helpers": "^0.2.3",
     "@dnd-kit/react": "^0.2.3",
     "@tailwindcss/typography": "^0.5.19",
@@ -36,6 +37,7 @@
     "marked": "^17.0.1",
     "next": "16.1.6",
     "nspell": "^2.1.5",
+    "openai": "^6.21.0",
     "pdfmake": "^0.3.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

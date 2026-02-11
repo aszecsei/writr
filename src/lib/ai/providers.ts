@@ -1,73 +1,61 @@
 import type { AiProvider } from "@/db/schemas";
+import {
+  createAnthropicAdapter,
+  createOpenAiAdapter,
+  type ProviderAdapter,
+} from "./adapters";
 
 export interface ProviderConfig {
   id: AiProvider;
   label: string;
-  baseUrl: string;
-  headers: (apiKey: string) => Record<string, string>;
   defaultModel: string;
   apiKeyPrefix: string;
-  format: "openai" | "anthropic";
+  adapter: ProviderAdapter;
 }
 
 export const PROVIDERS: Record<AiProvider, ProviderConfig> = {
   openrouter: {
     id: "openrouter",
     label: "OpenRouter",
-    baseUrl: "https://openrouter.ai/api/v1/chat/completions",
-    headers: (apiKey) => ({
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://writr.app",
-      "X-Title": "writr",
-    }),
     defaultModel: "openai/gpt-4o",
     apiKeyPrefix: "sk-or-...",
-    format: "openai",
+    adapter: createOpenAiAdapter({
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": "https://writr.app",
+        "X-Title": "writr",
+      },
+    }),
   },
   anthropic: {
     id: "anthropic",
     label: "Anthropic",
-    baseUrl: "https://api.anthropic.com/v1/messages",
-    headers: (apiKey) => ({
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    }),
     defaultModel: "claude-sonnet-4-5-20250929",
     apiKeyPrefix: "sk-ant-...",
-    format: "anthropic",
+    adapter: createAnthropicAdapter(),
   },
   openai: {
     id: "openai",
     label: "OpenAI",
-    baseUrl: "https://api.openai.com/v1/chat/completions",
-    headers: (apiKey) => ({
-      Authorization: `Bearer ${apiKey}`,
-    }),
     defaultModel: "gpt-4o",
     apiKeyPrefix: "sk-...",
-    format: "openai",
+    adapter: createOpenAiAdapter({ baseURL: "https://api.openai.com/v1" }),
   },
   grok: {
     id: "grok",
     label: "Grok (xAI)",
-    baseUrl: "https://api.x.ai/v1/chat/completions",
-    headers: (apiKey) => ({
-      Authorization: `Bearer ${apiKey}`,
-    }),
     defaultModel: "grok-3",
     apiKeyPrefix: "xai-...",
-    format: "openai",
+    adapter: createOpenAiAdapter({ baseURL: "https://api.x.ai/v1" }),
   },
   zai: {
     id: "zai",
     label: "z.ai (Zhipu AI)",
-    baseUrl: "https://api.z.ai/api/paas/v4/chat/completions",
-    headers: (apiKey) => ({
-      Authorization: `Bearer ${apiKey}`,
-    }),
     defaultModel: "glm-4.7",
     apiKeyPrefix: "",
-    format: "openai",
+    adapter: createOpenAiAdapter({
+      baseURL: "https://api.z.ai/api/paas/v4",
+    }),
   },
 };
 
