@@ -1,6 +1,5 @@
 import {
-  buildChapterNameMap,
-  buildCharacterNameMap,
+  buildNameMap,
   serializeCharacter,
   serializeLocation,
   serializeOutlineGrid,
@@ -17,7 +16,7 @@ function buildNovelContext(context: AiContext): string {
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
   let novel = `<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
 
-  const charMap = buildCharacterNameMap(context.characters);
+  const charMap = buildNameMap(context.characters, (c) => c.name);
 
   if (context.characters.length > 0) {
     novel += "<characters>\n";
@@ -65,7 +64,7 @@ function buildNovelContext(context: AiContext): string {
   }
 
   if (context.outlineGridColumns.length > 0) {
-    const chapterMap = buildChapterNameMap(context.chapters);
+    const chapterMap = buildNameMap(context.chapters, (c) => c.title);
     novel += "<outline>\n";
     novel += serializeOutlineGrid(
       context.outlineGridColumns,

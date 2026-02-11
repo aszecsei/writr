@@ -21,7 +21,7 @@ import type {
   AiMessage,
   AiTool,
   AiToolId,
-  ContentPart,
+  TextContentPart,
 } from "./types";
 
 const pid = "00000000-0000-4000-8000-000000000001";
@@ -48,7 +48,7 @@ function getSystemText(messages: AiMessage[]): string {
   const sys = messages.find((m) => m.role === "system");
   if (!sys) return "";
   if (typeof sys.content === "string") return sys.content;
-  return (sys.content as ContentPart[]).map((p) => p.text).join("");
+  return (sys.content as TextContentPart[]).map((p) => p.text).join("");
 }
 
 /** Extract text from the story bible user message (first user message). */
@@ -57,7 +57,7 @@ function getNovelContextText(messages: AiMessage[]): string {
   if (userMsgs.length === 0) return "";
   const first = userMsgs[0];
   if (typeof first.content === "string") return first.content;
-  return (first.content as ContentPart[]).map((p) => p.text).join("");
+  return (first.content as TextContentPart[]).map((p) => p.text).join("");
 }
 
 describe("buildMessages", () => {
@@ -280,7 +280,7 @@ describe("buildMessages", () => {
       // First is story bible, second is chapter
       expect(userMsgs.length).toBeGreaterThanOrEqual(2);
       const chapterMsg = userMsgs[1];
-      const text = (chapterMsg.content as ContentPart[])[0].text;
+      const text = (chapterMsg.content as TextContentPart[])[0].text;
       expect(text).toContain('<chapter title="Chapter 1">');
       expect(text).toContain("Once upon a time...");
       expect(text).toContain("</chapter>");
@@ -296,7 +296,7 @@ describe("buildMessages", () => {
           Array.isArray(m.content),
       );
       const chapterMsg = userMsgs[1];
-      const text = (chapterMsg.content as ContentPart[])[0].text;
+      const text = (chapterMsg.content as TextContentPart[])[0].text;
       expect(text).toContain('<chapter title="Untitled">');
     });
 
@@ -309,7 +309,7 @@ describe("buildMessages", () => {
           m.role === "user" &&
           typeof m.content !== "string" &&
           Array.isArray(m.content) &&
-          (m.content as ContentPart[])[0].text.includes("<chapter"),
+          (m.content as TextContentPart[])[0].text.includes("<chapter"),
       );
       expect(chapterIdx).toBeGreaterThan(0);
       expect(msgs[chapterIdx + 1].role).toBe("assistant");
@@ -377,7 +377,7 @@ describe("buildMessages", () => {
       // Story bible is the first user message (index 1)
       const novelMsg = msgs[1];
       expect(novelMsg.role).toBe("user");
-      const parts = novelMsg.content as ContentPart[];
+      const parts = novelMsg.content as TextContentPart[];
       expect(parts[0].cache_control).toEqual({ type: "ephemeral" });
     });
 
@@ -390,10 +390,12 @@ describe("buildMessages", () => {
           m.role === "user" &&
           typeof m.content !== "string" &&
           Array.isArray(m.content) &&
-          (m.content as ContentPart[])[0].text.includes("<chapter"),
+          (m.content as TextContentPart[])[0].text.includes("<chapter"),
       );
       expect(chapterMsg).toBeDefined();
-      expect((chapterMsg?.content as ContentPart[])[0].cache_control).toEqual({
+      expect(
+        (chapterMsg?.content as TextContentPart[])[0].cache_control,
+      ).toEqual({
         type: "ephemeral",
       });
     });

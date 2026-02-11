@@ -1,4 +1,5 @@
 import { db } from "@/db/database";
+import { deleteAllProjectData } from "@/db/operations/projects";
 import { generateId } from "@/lib/id";
 import type {
   Backup,
@@ -63,6 +64,12 @@ function mustGetId(idMap: IdMap, oldId: string): string {
   return newId;
 }
 
+function mapEntityIds(idMap: IdMap, entities: { id: string }[]): void {
+  for (const entity of entities) {
+    idMap.set(entity.id, generateId());
+  }
+}
+
 export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   const idMap: IdMap = new Map();
 
@@ -70,51 +77,21 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   const newProjectId = generateId();
   idMap.set(data.project.id, newProjectId);
 
-  for (const chapter of data.chapters) {
-    idMap.set(chapter.id, generateId());
-  }
-  for (const character of data.characters) {
-    idMap.set(character.id, generateId());
-  }
-  for (const rel of data.characterRelationships) {
-    idMap.set(rel.id, generateId());
-  }
-  for (const location of data.locations) {
-    idMap.set(location.id, generateId());
-  }
-  for (const event of data.timelineEvents) {
-    idMap.set(event.id, generateId());
-  }
-  for (const entry of data.styleGuideEntries) {
-    idMap.set(entry.id, generateId());
-  }
-  for (const doc of data.worldbuildingDocs) {
-    idMap.set(doc.id, generateId());
-  }
-  for (const col of data.outlineGridColumns) {
-    idMap.set(col.id, generateId());
-  }
-  for (const row of data.outlineGridRows) {
-    idMap.set(row.id, generateId());
-  }
-  for (const cell of data.outlineGridCells) {
-    idMap.set(cell.id, generateId());
-  }
-  for (const sprint of data.writingSprints) {
-    idMap.set(sprint.id, generateId());
-  }
-  for (const session of data.writingSessions) {
-    idMap.set(session.id, generateId());
-  }
-  for (const track of data.playlistTracks) {
-    idMap.set(track.id, generateId());
-  }
-  for (const comment of data.comments) {
-    idMap.set(comment.id, generateId());
-  }
-  for (const snapshot of data.chapterSnapshots) {
-    idMap.set(snapshot.id, generateId());
-  }
+  mapEntityIds(idMap, data.chapters);
+  mapEntityIds(idMap, data.characters);
+  mapEntityIds(idMap, data.characterRelationships);
+  mapEntityIds(idMap, data.locations);
+  mapEntityIds(idMap, data.timelineEvents);
+  mapEntityIds(idMap, data.styleGuideEntries);
+  mapEntityIds(idMap, data.worldbuildingDocs);
+  mapEntityIds(idMap, data.outlineGridColumns);
+  mapEntityIds(idMap, data.outlineGridRows);
+  mapEntityIds(idMap, data.outlineGridCells);
+  mapEntityIds(idMap, data.writingSprints);
+  mapEntityIds(idMap, data.writingSessions);
+  mapEntityIds(idMap, data.playlistTracks);
+  mapEntityIds(idMap, data.comments);
+  mapEntityIds(idMap, data.chapterSnapshots);
   if (data.projectDictionary) {
     idMap.set(data.projectDictionary.id, generateId());
   }
@@ -278,22 +255,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
 }
 
 async function deleteProjectData(projectId: string): Promise<void> {
-  await db.chapters.where({ projectId }).delete();
-  await db.characters.where({ projectId }).delete();
-  await db.characterRelationships.where({ projectId }).delete();
-  await db.locations.where({ projectId }).delete();
-  await db.timelineEvents.where({ projectId }).delete();
-  await db.styleGuideEntries.where({ projectId }).delete();
-  await db.worldbuildingDocs.where({ projectId }).delete();
-  await db.outlineGridColumns.where({ projectId }).delete();
-  await db.outlineGridRows.where({ projectId }).delete();
-  await db.outlineGridCells.where({ projectId }).delete();
-  await db.writingSprints.where({ projectId }).delete();
-  await db.writingSessions.where({ projectId }).delete();
-  await db.playlistTracks.where({ projectId }).delete();
-  await db.comments.where({ projectId }).delete();
-  await db.chapterSnapshots.where({ projectId }).delete();
-  await db.projectDictionaries.where({ projectId }).delete();
+  await deleteAllProjectData(projectId);
   await db.projects.delete(projectId);
 }
 

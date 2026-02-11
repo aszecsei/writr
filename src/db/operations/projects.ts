@@ -30,6 +30,26 @@ export async function updateProject(
   await db.projects.update(id, { ...data, updatedAt: now() });
 }
 
+/** Delete all project-scoped data (but not the project row itself). */
+export async function deleteAllProjectData(projectId: string): Promise<void> {
+  await db.chapters.where({ projectId }).delete();
+  await db.characters.where({ projectId }).delete();
+  await db.locations.where({ projectId }).delete();
+  await db.timelineEvents.where({ projectId }).delete();
+  await db.styleGuideEntries.where({ projectId }).delete();
+  await db.worldbuildingDocs.where({ projectId }).delete();
+  await db.characterRelationships.where({ projectId }).delete();
+  await db.outlineGridColumns.where({ projectId }).delete();
+  await db.outlineGridRows.where({ projectId }).delete();
+  await db.outlineGridCells.where({ projectId }).delete();
+  await db.writingSprints.where({ projectId }).delete();
+  await db.writingSessions.where({ projectId }).delete();
+  await db.playlistTracks.where({ projectId }).delete();
+  await db.comments.where({ projectId }).delete();
+  await db.chapterSnapshots.where({ projectId }).delete();
+  await db.projectDictionaries.where({ projectId }).delete();
+}
+
 export async function deleteProject(id: string): Promise<void> {
   await db.transaction(
     "rw",
@@ -50,23 +70,10 @@ export async function deleteProject(id: string): Promise<void> {
       db.playlistTracks,
       db.comments,
       db.chapterSnapshots,
+      db.projectDictionaries,
     ],
     async () => {
-      await db.chapters.where({ projectId: id }).delete();
-      await db.characters.where({ projectId: id }).delete();
-      await db.locations.where({ projectId: id }).delete();
-      await db.timelineEvents.where({ projectId: id }).delete();
-      await db.styleGuideEntries.where({ projectId: id }).delete();
-      await db.worldbuildingDocs.where({ projectId: id }).delete();
-      await db.characterRelationships.where({ projectId: id }).delete();
-      await db.outlineGridColumns.where({ projectId: id }).delete();
-      await db.outlineGridRows.where({ projectId: id }).delete();
-      await db.outlineGridCells.where({ projectId: id }).delete();
-      await db.writingSprints.where({ projectId: id }).delete();
-      await db.writingSessions.where({ projectId: id }).delete();
-      await db.playlistTracks.where({ projectId: id }).delete();
-      await db.comments.where({ projectId: id }).delete();
-      await db.chapterSnapshots.where({ projectId: id }).delete();
+      await deleteAllProjectData(id);
       await db.projects.delete(id);
     },
   );

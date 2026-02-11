@@ -36,7 +36,7 @@ describe("deleteCharacter", () => {
       projectId: projectA,
       sourceCharacterId: alice.id,
       targetCharacterId: bob.id,
-      type: "friend",
+      type: "sibling",
     });
     await db.characterRelationships.add(rel);
 
@@ -55,7 +55,7 @@ describe("deleteCharacter", () => {
       projectId: projectA,
       sourceCharacterId: bob.id,
       targetCharacterId: alice.id,
-      type: "rival",
+      type: "spouse",
     });
     await db.characterRelationships.add(rel);
 
@@ -75,13 +75,13 @@ describe("deleteCharacter", () => {
       projectId: projectA,
       sourceCharacterId: alice.id,
       targetCharacterId: bob.id,
-      type: "friend",
+      type: "sibling",
     });
     const rel2 = makeRelationship({
       projectId: projectA,
       sourceCharacterId: carol.id,
       targetCharacterId: alice.id,
-      type: "rival",
+      type: "spouse",
     });
     await db.characterRelationships.bulkAdd([rel1, rel2]);
 
@@ -101,7 +101,7 @@ describe("deleteCharacter", () => {
       projectId: projectA,
       sourceCharacterId: alice.id,
       targetCharacterId: bob.id,
-      type: "friend",
+      type: "sibling",
     });
     const relToKeep = makeRelationship({
       projectId: projectA,
@@ -127,7 +127,7 @@ describe("deleteCharacter", () => {
       projectId: projectB,
       sourceCharacterId: otherChar.id,
       targetCharacterId: otherChar.id.replace(/1$/, "9"),
-      type: "friend",
+      type: "sibling",
     });
     await db.characterRelationships.add(otherRel);
 

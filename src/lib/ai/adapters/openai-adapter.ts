@@ -20,6 +20,10 @@ function normalizeFinishReason(raw: string | null | undefined): FinishReason {
   }
 }
 
+function isAnthropicModel(model: string): boolean {
+  return model.startsWith("anthropic/");
+}
+
 /**
  * Strip `cache_control` from content parts — OpenAI-compatible APIs don't
  * support it, and SDK types may reject it.
@@ -60,7 +64,9 @@ export function createOpenAiAdapter(
       const response = (await client.chat.completions.create(
         {
           model: params.model,
-          messages: stripCacheControl(params.messages),
+          messages: isAnthropicModel(params.model)
+            ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
+            : stripCacheControl(params.messages),
           temperature: params.temperature,
           max_tokens: params.maxTokens,
           ...(params.reasoning ? { reasoning: params.reasoning } : {}),
@@ -100,7 +106,9 @@ export function createOpenAiAdapter(
       const stream = await client.chat.completions.create(
         {
           model: params.model,
-          messages: stripCacheControl(params.messages),
+          messages: isAnthropicModel(params.model)
+            ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
+            : stripCacheControl(params.messages),
           temperature: params.temperature,
           max_tokens: params.maxTokens,
           stream: true,

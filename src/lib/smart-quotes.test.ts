@@ -1,4 +1,4 @@
-import { Schema } from "@tiptap/pm/model";
+import { type Node, Schema } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 import { convertToSmartQuotes } from "./smart-quotes";
 
@@ -22,7 +22,7 @@ const schema = new Schema({
   },
 });
 
-function makeDoc(...content: Parameters<typeof schema.node>[2]) {
+function makeDoc(...content: Node[]) {
   return schema.node("doc", null, content);
 }
 

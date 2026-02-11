@@ -1,5 +1,4 @@
 import type {
-  Chapter,
   Character,
   CharacterRelationship,
   Location,
@@ -11,30 +10,13 @@ import type {
   WorldbuildingDoc,
 } from "@/db/schemas";
 
-export function buildCharacterNameMap(
-  characters: Character[],
+export function buildNameMap<T extends { id: string }>(
+  items: T[],
+  getName: (item: T) => string,
 ): Map<string, string> {
   const map = new Map<string, string>();
-  for (const c of characters) {
-    map.set(c.id, c.name);
-  }
-  return map;
-}
-
-export function buildLocationNameMap(
-  locations: Location[],
-): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const l of locations) {
-    map.set(l.id, l.name);
-  }
-  return map;
-}
-
-export function buildChapterNameMap(chapters: Chapter[]): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const c of chapters) {
-    map.set(c.id, c.title);
+  for (const item of items) {
+    map.set(item.id, getName(item));
   }
   return map;
 }
