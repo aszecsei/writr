@@ -144,8 +144,6 @@ export function serializeRelationship(
   return `<relationship source="${sourceName}" target="${targetName}" type="${label}" />`;
 }
 
-const OUTLINE_CELL_TRUNCATE_LENGTH = 1024;
-
 export function serializeOutlineGrid(
   columns: OutlineGridColumn[],
   rows: OutlineGridRow[],
@@ -180,11 +178,7 @@ export function serializeOutlineGrid(
     for (const col of sortedColumns) {
       const cell = cellMap.get(`${row.id}:${col.id}`);
       if (cell?.content) {
-        const truncated =
-          cell.content.length > OUTLINE_CELL_TRUNCATE_LENGTH
-            ? `${cell.content.slice(0, OUTLINE_CELL_TRUNCATE_LENGTH)}...`
-            : cell.content;
-        lines.push(`<cell column="${col.title}">${truncated}</cell>`);
+        lines.push(`<cell column="${col.title}">${cell.content}</cell>`);
       }
     }
     lines.push("</row>");
