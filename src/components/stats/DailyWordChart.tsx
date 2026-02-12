@@ -49,7 +49,9 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
               <div
                 className={`w-full rounded-t transition-all ${
                   day.wordsWritten > 0
-                    ? "bg-blue-500 group-hover:bg-blue-400 dark:bg-blue-600 dark:group-hover:bg-blue-500"
+                    ? isWeekend
+                      ? "bg-violet-500 group-hover:bg-violet-400 dark:bg-violet-600 dark:group-hover:bg-violet-500"
+                      : "bg-blue-500 group-hover:bg-blue-400 dark:bg-blue-600 dark:group-hover:bg-blue-500"
                     : isWeekend
                       ? "bg-neutral-100 dark:bg-neutral-800"
                       : "bg-neutral-50 dark:bg-neutral-800/50"
