@@ -42,6 +42,7 @@ import {
   updateComment,
   updateWorldbuildingDoc,
 } from "./operations";
+import { toLocalDateString } from "./operations/helpers";
 
 beforeEach(async () => {
   clearSessionCache();
@@ -617,7 +618,7 @@ describe("writing sessions", () => {
     await recordWritingSession(project.id, chapter.id, 0, 50);
 
     const sessions = await getSessionsByProject(project.id);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString(new Date());
     const currentHour = new Date().getHours();
 
     expect(sessions[0].date).toBe(today);

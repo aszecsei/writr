@@ -1,5 +1,6 @@
 "use client";
 
+import { toLocalDateString } from "@/db/operations/helpers";
 import type { DailyStats } from "@/hooks/useWritingStats";
 
 interface DailyWordChartProps {
@@ -15,7 +16,7 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = toLocalDateString(date);
     const existing = daily.find((d) => d.date === dateStr);
     filledData.push(
       existing ?? { date: dateStr, wordsWritten: 0, sessions: 0 },
@@ -35,7 +36,8 @@ export function DailyWordChart({ daily, days = 30 }: DailyWordChartProps) {
             day.wordsWritten > 0
               ? Math.max(4, (day.wordsWritten / maxWords) * 100)
               : 0;
-          const date = new Date(day.date);
+          const [y, m, d] = day.date.split("-").map(Number);
+          const date = new Date(y, m - 1, d);
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           return (

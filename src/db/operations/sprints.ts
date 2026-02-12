@@ -5,7 +5,7 @@ import {
   type WritingSprint,
   WritingSprintSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, toLocalDateString } from "./helpers";
 
 // ─── Writing Sprints ────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ export async function recordWritingSession(
   newWordCount: number,
 ): Promise<void> {
   const timestamp = new Date();
-  const date = timestamp.toISOString().slice(0, 10); // YYYY-MM-DD
+  const date = toLocalDateString(timestamp); // YYYY-MM-DD
   const hourOfDay = timestamp.getHours();
   const cacheKey = `${chapterId}-${date}-${hourOfDay}`;
 
@@ -210,7 +210,7 @@ export async function getSessionsByProject(
 ): Promise<WritingSession[]> {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
-  const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+  const cutoffStr = toLocalDateString(cutoffDate);
 
   return db.writingSessions
     .where("[projectId+date]")
@@ -221,7 +221,7 @@ export async function getSessionsByProject(
 export async function getAllSessions(days = 30): Promise<WritingSession[]> {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
-  const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+  const cutoffStr = toLocalDateString(cutoffDate);
 
   return db.writingSessions.where("date").aboveOrEqual(cutoffStr).toArray();
 }

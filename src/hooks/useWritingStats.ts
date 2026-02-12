@@ -2,6 +2,7 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import { toLocalDateString } from "@/db/operations/helpers";
 import type { WritingSession } from "@/db/schemas";
 
 export interface DailyStats {
@@ -141,8 +142,8 @@ export function calculateStreak(dailyStats: DailyStats[]): StreakInfo {
   }
 
   const lastActiveDate = activeDays[activeDays.length - 1];
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const today = toLocalDateString(new Date());
+  const yesterday = toLocalDateString(new Date(Date.now() - 86400000));
 
   return {
     currentStreak: calculateCurrentStreak(activeDays, today, yesterday),
@@ -169,7 +170,7 @@ export function useWritingStats(
   return useLiveQuery(async () => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+    const cutoffStr = toLocalDateString(cutoffDate);
 
     let sessions: WritingSession[];
     if (projectId) {
