@@ -1,13 +1,21 @@
 "use client";
 
 import { type Editor, useEditorState } from "@tiptap/react";
+import type { LucideIcon } from "lucide-react";
 import {
+  AlignCenter,
+  ArrowRight,
+  Clapperboard,
   Download,
   History,
   Maximize2,
+  MessageSquare,
   PanelRight,
+  Parentheses,
   ScanSearch,
   SpellCheck,
+  User,
+  Zap,
 } from "lucide-react";
 import { useCallback } from "react";
 import { useCommentStore } from "@/store/commentStore";
@@ -19,15 +27,19 @@ import { CopyMenu } from "./CopyMenu";
 import { CreateCommentButton } from "./comments";
 import { getSpellcheckResults } from "./extensions/Spellcheck";
 
-const ELEMENT_TYPES = [
-  { name: "sceneHeading", label: "Scene" },
-  { name: "action", label: "Action" },
-  { name: "character", label: "Character" },
-  { name: "dialogue", label: "Dialogue" },
-  { name: "parenthetical", label: "Paren" },
-  { name: "transition", label: "Transition" },
-  { name: "centered", label: "Centered" },
-] as const;
+const ELEMENT_TYPES: readonly {
+  name: string;
+  label: string;
+  icon: LucideIcon;
+}[] = [
+  { name: "sceneHeading", label: "Scene", icon: Clapperboard },
+  { name: "action", label: "Action", icon: Zap },
+  { name: "character", label: "Character", icon: User },
+  { name: "dialogue", label: "Dialogue", icon: MessageSquare },
+  { name: "parenthetical", label: "Paren", icon: Parentheses },
+  { name: "transition", label: "Transition", icon: ArrowRight },
+  { name: "centered", label: "Centered", icon: AlignCenter },
+];
 
 interface ScreenplayToolbarProps {
   editor: Editor | null;
@@ -68,6 +80,7 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
       {/* Element type buttons */}
       {ELEMENT_TYPES.map((el) => {
         const isActive = editorState?.activeType === el.name;
+        const Icon = el.icon;
         return (
           <button
             key={el.name}
@@ -76,12 +89,13 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
             onClick={() => {
               editor.chain().focus().setNode(el.name).run();
             }}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               isActive
                 ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
                 : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             }`}
           >
+            <Icon size={14} />
             {el.label}
           </button>
         );
