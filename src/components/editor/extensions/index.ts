@@ -9,6 +9,7 @@ import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
+import { UndoRedo } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { Comment } from "@/db/schemas";
@@ -128,6 +129,8 @@ export function createScreenplayExtensions(options?: ExtensionOptions) {
     Bold,
     Italic,
     Underline,
+    // History (undo/redo)
+    UndoRedo,
     // Shared behavior
     Placeholder.configure({
       placeholder: ({ node }) =>

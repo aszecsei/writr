@@ -12,8 +12,10 @@ import {
   MessageSquare,
   PanelRight,
   Parentheses,
+  Redo2,
   ScanSearch,
   SpellCheck,
+  Undo2,
   User,
   Zap,
 } from "lucide-react";
@@ -65,11 +67,19 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
   const editorState = useEditorState({
     editor,
     selector: ({ editor: e }) => {
-      if (!e) return { activeType: null };
+      if (!e) return { activeType: null, canUndo: false, canRedo: false };
+      let activeType: string | null = null;
       for (const el of ELEMENT_TYPES) {
-        if (e.isActive(el.name)) return { activeType: el.name };
+        if (e.isActive(el.name)) {
+          activeType = el.name;
+          break;
+        }
       }
-      return { activeType: null };
+      return {
+        activeType,
+        canUndo: e.can().undo(),
+        canRedo: e.can().redo(),
+      };
     },
   });
 
@@ -100,6 +110,34 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
           </button>
         );
       })}
+
+      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+      <button
+        type="button"
+        title="Undo (Ctrl+Z)"
+        disabled={!editorState?.canUndo}
+        onClick={() => editor.chain().focus().undo().run()}
+        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+          editorState?.canUndo
+            ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
+        }`}
+      >
+        <Undo2 size={16} />
+      </button>
+      <button
+        type="button"
+        title="Redo (Ctrl+Y)"
+        disabled={!editorState?.canRedo}
+        onClick={() => editor.chain().focus().redo().run()}
+        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+          editorState?.canRedo
+            ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
+        }`}
+      >
+        <Redo2 size={16} />
+      </button>
 
       {activeProjectId && activeDocumentId && (
         <>
