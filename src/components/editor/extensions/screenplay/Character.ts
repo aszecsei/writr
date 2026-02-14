@@ -30,6 +30,10 @@ export const Character = Node.create({
           type: "dialogue",
         });
       },
+      Tab: ({ editor }) => {
+        if (!editor.isActive("character")) return false;
+        return editor.commands.setNode("transition");
+      },
     };
   },
 });

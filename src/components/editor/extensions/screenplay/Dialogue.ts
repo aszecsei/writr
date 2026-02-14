@@ -4,6 +4,7 @@ export const Dialogue = Node.create({
   name: "dialogue",
   group: "block",
   content: "inline*",
+  defining: true,
 
   parseHTML() {
     return [{ tag: 'p[data-type="dialogue"]' }];
@@ -25,10 +26,15 @@ export const Dialogue = Node.create({
     return {
       Enter: ({ editor }) => {
         if (!editor.isActive("dialogue")) return false;
-        // After dialogue, default to action (user can switch to character)
-        return editor.commands.insertContent({
-          type: "action",
-        });
+        const { $from } = editor.state.selection;
+        if ($from.parent.content.size === 0) {
+          return editor.commands.setNode("action");
+        }
+        return editor.chain().splitBlock().setNode("dialogue").run();
+      },
+      Tab: ({ editor }) => {
+        if (!editor.isActive("dialogue")) return false;
+        return editor.commands.setNode("parenthetical");
       },
     };
   },

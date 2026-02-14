@@ -40,6 +40,10 @@ export const Transition = Node.create({
           type: "sceneHeading",
         });
       },
+      Tab: ({ editor }) => {
+        if (!editor.isActive("transition")) return false;
+        return editor.commands.setNode("character");
+      },
     };
   },
 });

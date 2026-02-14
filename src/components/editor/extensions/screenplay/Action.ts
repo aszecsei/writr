@@ -21,4 +21,21 @@ export const Action = Node.create({
       0,
     ];
   },
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        if (!editor.isActive("action")) return false;
+        const { $from } = editor.state.selection;
+        if ($from.parent.content.size === 0) {
+          return editor.commands.setNode("sceneHeading");
+        }
+        return editor.chain().splitBlock().setNode("action").run();
+      },
+      Tab: ({ editor }) => {
+        if (!editor.isActive("action")) return false;
+        return editor.commands.setNode("character");
+      },
+    };
+  },
 });
