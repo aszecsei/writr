@@ -92,6 +92,83 @@ describe("serializeCharacter", () => {
     const xml = serializeCharacter(c);
     expect(xml).not.toContain("<aliases>");
   });
+
+  it("includes images block when images have captions", () => {
+    const c = makeCharacter({
+      projectId: pid,
+      name: "Illustrated",
+      images: [
+        {
+          id: "img-1",
+          url: "https://example.com/a.jpg",
+          caption: "A portrait",
+          isPrimary: true,
+        },
+        {
+          id: "img-2",
+          url: "https://example.com/b.jpg",
+          caption: "In battle",
+          isPrimary: false,
+        },
+      ],
+    });
+    const xml = serializeCharacter(c);
+    expect(xml).toContain("<images>");
+    expect(xml).toContain('<image caption="A portrait" />');
+    expect(xml).toContain('<image caption="In battle" />');
+    expect(xml).toContain("</images>");
+  });
+
+  it("omits images with empty captions", () => {
+    const c = makeCharacter({
+      projectId: pid,
+      name: "Partial",
+      images: [
+        {
+          id: "img-1",
+          url: "https://example.com/a.jpg",
+          caption: "Visible",
+          isPrimary: true,
+        },
+        {
+          id: "img-2",
+          url: "https://example.com/b.jpg",
+          caption: "",
+          isPrimary: false,
+        },
+      ],
+    });
+    const xml = serializeCharacter(c);
+    expect(xml).toContain('<image caption="Visible" />');
+    expect(xml).not.toContain('caption=""');
+  });
+
+  it("omits images block when no images have captions", () => {
+    const c = makeCharacter({
+      projectId: pid,
+      name: "NoCaptions",
+      images: [
+        {
+          id: "img-1",
+          url: "https://example.com/a.jpg",
+          caption: "",
+          isPrimary: true,
+        },
+      ],
+    });
+    const xml = serializeCharacter(c);
+    expect(xml).not.toContain("<images>");
+  });
+
+  it("omits images block when character has no images", () => {
+    const c = makeCharacter({
+      projectId: pid,
+      name: "NoImages",
+      images: [],
+    });
+    const xml = serializeCharacter(c);
+    expect(xml).not.toContain("<images>");
+  });
 });
 
 describe("serializeLocation", () => {
@@ -141,6 +218,52 @@ describe("serializeLocation", () => {
     expect(xml).toContain("<description>dark forest</description>");
     expect(xml).toContain("<notes>scary</notes>");
     expect(xml).toContain("</location>");
+  });
+
+  it("includes images block when images have captions", () => {
+    const loc = makeLocation({
+      projectId: pid,
+      name: "Castle",
+      images: [
+        {
+          id: "img-1",
+          url: "https://example.com/castle.jpg",
+          caption: "The main gate",
+          isPrimary: true,
+        },
+      ],
+    });
+    const xml = serializeLocation(loc, new Map());
+    expect(xml).toContain("<images>");
+    expect(xml).toContain('<image caption="The main gate" />');
+    expect(xml).toContain("</images>");
+  });
+
+  it("omits images with empty captions", () => {
+    const loc = makeLocation({
+      projectId: pid,
+      name: "Village",
+      images: [
+        {
+          id: "img-1",
+          url: "https://example.com/a.jpg",
+          caption: "",
+          isPrimary: false,
+        },
+      ],
+    });
+    const xml = serializeLocation(loc, new Map());
+    expect(xml).not.toContain("<images>");
+  });
+
+  it("omits images block when location has no images", () => {
+    const loc = makeLocation({
+      projectId: pid,
+      name: "Desert",
+      images: [],
+    });
+    const xml = serializeLocation(loc, new Map());
+    expect(xml).not.toContain("<images>");
   });
 });
 

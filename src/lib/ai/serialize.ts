@@ -49,6 +49,15 @@ export function serializeCharacter(c: Character): string {
     lines.push(`<dialogue-style>${c.dialogueStyle}</dialogue-style>`);
   if (c.backstory) lines.push(`<backstory>${c.backstory}</backstory>`);
 
+  const captionedImages = c.images.filter((img) => img.caption);
+  if (captionedImages.length > 0) {
+    lines.push("<images>");
+    for (const img of captionedImages) {
+      lines.push(`<image caption="${img.caption}" />`);
+    }
+    lines.push("</images>");
+  }
+
   lines.push("</character>");
   return lines.join("\n");
 }
@@ -65,6 +74,15 @@ export function serializeLocation(
   const charNames = resolveNames(l.linkedCharacterIds, charMap);
   if (charNames.length > 0)
     lines.push(`<characters-here>${charNames.join(", ")}</characters-here>`);
+
+  const captionedImages = l.images.filter((img) => img.caption);
+  if (captionedImages.length > 0) {
+    lines.push("<images>");
+    for (const img of captionedImages) {
+      lines.push(`<image caption="${img.caption}" />`);
+    }
+    lines.push("</images>");
+  }
 
   lines.push("</location>");
   return lines.join("\n");

@@ -71,6 +71,37 @@ export async function callAi(
   return await response.json();
 }
 
+export async function describeImage(
+  imageUrl: string,
+  settings: Pick<AiSettings, "apiKey" | "model" | "provider">,
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await fetchAi(
+    {
+      apiKey: settings.apiKey,
+      model: settings.model,
+      provider: settings.provider,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Describe the image concisely in 1-2 sentences, suitable for use as alt-text or a caption. Focus on the most visually important details.",
+        },
+        {
+          role: "user",
+          content: [{ type: "image_url", image_url: { url: imageUrl } }],
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 256,
+      stream: false,
+    },
+    signal,
+  );
+  const data: AiResponse = await response.json();
+  return data.content;
+}
+
 export async function* streamAi(
   tool: AiToolId,
   userPrompt: string,
