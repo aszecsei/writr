@@ -2,6 +2,7 @@
 
 import type {
   EditorWidth,
+  GoalCountdownDisplay,
   NeutralColor,
   PrimaryColor,
   UiDensity,
@@ -54,6 +55,8 @@ interface GeneralTabContentProps {
   onEditorWidthChange: (width: EditorWidth) => void;
   uiDensity: UiDensity;
   onUiDensityChange: (density: UiDensity) => void;
+  goalCountdownDisplay: GoalCountdownDisplay;
+  onGoalCountdownDisplayChange: (display: GoalCountdownDisplay) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -69,6 +72,8 @@ export function GeneralTabContent({
   onEditorWidthChange,
   uiDensity,
   onUiDensityChange,
+  goalCountdownDisplay,
+  onGoalCountdownDisplayChange,
   inputClass,
   labelClass,
 }: GeneralTabContentProps) {
@@ -119,6 +124,33 @@ export function GeneralTabContent({
                 : "\u2014"
             }
           />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+          Display
+        </legend>
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="goal-countdown" className={labelClass}>
+              Goal countdown
+            </label>
+            <select
+              id="goal-countdown"
+              className={inputClass}
+              value={goalCountdownDisplay}
+              onChange={(e) =>
+                onGoalCountdownDisplayChange(
+                  e.target.value as GoalCountdownDisplay,
+                )
+              }
+            >
+              <option value="estimated-date">Estimated completion date</option>
+              <option value="time-remaining">Time remaining</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
         </div>
       </fieldset>
 

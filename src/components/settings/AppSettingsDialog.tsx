@@ -20,6 +20,7 @@ import { updateAppSettings } from "@/db/operations";
 import type {
   AiProvider,
   EditorWidth,
+  GoalCountdownDisplay,
   NeutralColor,
   PrimaryColor,
   ReasoningEffort,
@@ -67,6 +68,8 @@ export function AppSettingsDialog() {
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
+  const [goalCountdownDisplay, setGoalCountdownDisplay] =
+    useState<GoalCountdownDisplay>("estimated-date");
   const [enableAiFeatures, setEnableAiFeatures] = useState(false);
   const [aiProvider, setAiProvider] = useState<AiProvider>("openrouter");
   const emptyKeys: Record<AiProvider, string> = {
@@ -123,6 +126,7 @@ export function AppSettingsDialog() {
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
       setReadingSpeedWpm(settings.readingSpeedWpm);
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
+      setGoalCountdownDisplay(settings.goalCountdownDisplay);
       setEnableAiFeatures(settings.enableAiFeatures);
       setAiProvider(settings.aiProvider);
       setProviderApiKeys(settings.providerApiKeys);
@@ -180,6 +184,7 @@ export function AppSettingsDialog() {
       autoSaveSeconds !== Math.round(settings.autoSaveIntervalMs / 1000) ||
       readingSpeedWpm !== settings.readingSpeedWpm ||
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
+      goalCountdownDisplay !== settings.goalCountdownDisplay ||
       enableAiFeatures !== settings.enableAiFeatures ||
       aiProvider !== settings.aiProvider ||
       JSON.stringify(providerApiKeys) !==
@@ -203,6 +208,7 @@ export function AppSettingsDialog() {
       autoSaveIntervalMs: autoSaveSeconds * 1000,
       readingSpeedWpm,
       autoFocusModeOnSprint,
+      goalCountdownDisplay,
       enableAiFeatures,
       aiProvider,
       providerApiKeys,
@@ -247,6 +253,8 @@ export function AppSettingsDialog() {
             onEditorWidthChange={handleEditorWidthChange}
             uiDensity={uiDensity}
             onUiDensityChange={handleUiDensityChange}
+            goalCountdownDisplay={goalCountdownDisplay}
+            onGoalCountdownDisplayChange={setGoalCountdownDisplay}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />

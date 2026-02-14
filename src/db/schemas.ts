@@ -309,6 +309,13 @@ export type EditorWidth = z.infer<typeof EditorWidthEnum>;
 export const UiDensityEnum = z.enum(["compact", "comfortable"]);
 export type UiDensity = z.infer<typeof UiDensityEnum>;
 
+export const GoalCountdownDisplayEnum = z.enum([
+  "estimated-date",
+  "time-remaining",
+  "off",
+]);
+export type GoalCountdownDisplay = z.infer<typeof GoalCountdownDisplayEnum>;
+
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
@@ -344,6 +351,7 @@ export const AppSettingsSchema = z.object({
   reasoningEffort: ReasoningEffortEnum.default("medium"),
   readingSpeedWpm: z.number().int().positive().default(200),
   autoFocusModeOnSprint: z.boolean().default(false),
+  goalCountdownDisplay: GoalCountdownDisplayEnum.default("estimated-date"),
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),

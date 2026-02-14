@@ -1,12 +1,14 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Clock, FileText, Pencil, Target, Type } from "lucide-react";
+import { Calendar, Clock, FileText, Pencil, Target, Type } from "lucide-react";
 import { useParams } from "next/navigation";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { WritingStatsDashboard } from "@/components/stats";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import { useChaptersByProject } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
+import { useWritingStats } from "@/hooks/useWritingStats";
 import { formatReadingTime } from "@/lib/reading-time";
 import { useUiStore } from "@/store/uiStore";
 
@@ -14,6 +16,8 @@ export default function ProjectOverviewPage() {
   const params = useParams<{ projectId: string }>();
   const project = useProject(params.projectId);
   const chapters = useChaptersByProject(params.projectId);
+  const stats = useWritingStats(params.projectId);
+  const appSettings = useAppSettings();
   const openModal = useUiStore((s) => s.openModal);
 
   if (!project) return null;
@@ -70,6 +74,29 @@ export default function ProjectOverviewPage() {
             icon={Target}
           />
         )}
+        {project.targetWordCount > 0 &&
+          totalWords < project.targetWordCount &&
+          stats?.averageWordsPerDay != null &&
+          stats.averageWordsPerDay > 0 &&
+          appSettings?.goalCountdownDisplay !== "off" && (
+            <StatCard
+              label={
+                appSettings?.goalCountdownDisplay === "time-remaining"
+                  ? "Est. Time to Goal"
+                  : "Est. Completion"
+              }
+              value={(() => {
+                const days =
+                  (project.targetWordCount - totalWords) /
+                  stats.averageWordsPerDay;
+                if (appSettings?.goalCountdownDisplay === "time-remaining") {
+                  return formatEstimatedTime(days);
+                }
+                return formatEstimatedDate(days);
+              })()}
+              icon={Calendar}
+            />
+          )}
       </div>
 
       {/* Writing Statistics Dashboard */}
@@ -83,6 +110,29 @@ export default function ProjectOverviewPage() {
       <EditProjectDialog />
     </div>
   );
+}
+
+function formatEstimatedDate(days: number): string {
+  const target = new Date(Date.now() + days * 86_400_000);
+  return target.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatEstimatedTime(days: number): string {
+  if (days < 1) return "< 1 day";
+  if (days < 61) {
+    const rounded = Math.round(days);
+    return rounded === 1 ? "~1 day" : `~${rounded} days`;
+  }
+  if (days < 365) {
+    const months = Math.round((days / 30.44) * 2) / 2;
+    return `~${months} months`;
+  }
+  const years = Math.round((days / 365.25) * 2) / 2;
+  return years === 1 ? "~1 year" : `~${years} years`;
 }
 
 function StatCard({

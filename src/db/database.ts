@@ -420,6 +420,17 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    this.version(22).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.goalCountdownDisplay === undefined) {
+            s.goalCountdownDisplay = "estimated-date";
+          }
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(
