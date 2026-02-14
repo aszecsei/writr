@@ -15,11 +15,17 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
 
   const isValidUrl = url.trim().length > 0;
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleAdd() {
     if (!isValidUrl) return;
     onAdd(url.trim(), caption.trim());
     onClose();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAdd();
+    }
   }
 
   return (
@@ -27,7 +33,7 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
       <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         Add Image
       </h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Image URL
           <input
@@ -37,6 +43,7 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
               setUrl(e.target.value);
               setPreviewError(false);
             }}
+            onKeyDown={handleKeyDown}
             placeholder="https://example.com/image.jpg"
             className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
           />
@@ -47,6 +54,7 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
             type="text"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Description of the image..."
             className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
           />
@@ -80,14 +88,15 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
             Cancel
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={handleAdd}
             disabled={!isValidUrl}
             className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
           >
             Add Image
           </button>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 }
