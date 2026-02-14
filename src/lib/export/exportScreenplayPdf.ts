@@ -92,10 +92,16 @@ export async function exportScreenplayPdf(
 ): Promise<Blob> {
   const pdfMakeModule = await import("pdfmake/build/pdfmake");
   const pdfFontsModule = await import("pdfmake/build/vfs_fonts");
+  const courierFontModule = await import(
+    "pdfmake/build/standard-fonts/Courier"
+  );
 
   const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
   const vfs = pdfFontsModule.default ?? pdfFontsModule;
   pdfMake.addVirtualFileSystem(vfs);
+
+  const courierFont = courierFontModule.default ?? courierFontModule;
+  pdfMake.addFontContainer(courierFont);
 
   const allContent: Content[] = [];
 
