@@ -30,6 +30,8 @@ import {
   updateChapter,
 } from "@/db/operations";
 import { useChaptersByProject } from "@/hooks/useChapter";
+import { getTerm } from "@/lib/terminology";
+import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 import { SortableChapterItem } from "./SortableChapterItem";
 
@@ -49,6 +51,7 @@ export function ChapterList({
   const chapters = useChaptersByProject(projectId);
   const router = useRouter();
   const openModal = useUiStore((s) => s.openModal);
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
 
   // Optimistic local state for drag reordering
   const [localChapters, setLocalChapters] = useState(chapters ?? []);
@@ -172,7 +175,10 @@ export function ChapterList({
   }
 
   async function handleAddChapter() {
-    await createChapter({ projectId, title: "Untitled Chapter" });
+    await createChapter({
+      projectId,
+      title: getTerm(activeProjectMode, "untitledChapter"),
+    });
   }
 
   const overviewHref = `/projects/${projectId}`;
@@ -254,7 +260,7 @@ export function ChapterList({
         className="flex w-full items-center gap-2 rounded-md px-3 py-density-item text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-300"
       >
         <Plus size={14} />
-        Add Chapter
+        {getTerm(activeProjectMode, "addChapter")}
       </button>
 
       {/* Context Menu */}

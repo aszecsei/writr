@@ -12,9 +12,25 @@ import type { AiContext, AiMessage, AiToolId, BuiltinAiTool } from "./types";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
 
+const SCREENPLAY_TOOL_INSTRUCTIONS: Partial<Record<BuiltinAiTool, string>> = {
+  "generate-prose":
+    "Continue writing in Fountain screenplay format. " +
+    "Match the existing tone and style. Output only the new Fountain-formatted content, no commentary.",
+
+  "character-dialogue":
+    "Write dialogue in Fountain screenplay format for the specified characters that is consistent with their " +
+    "established voices and personalities. Include character names (uppercase), parentheticals, and dialogue lines.",
+
+  "suggest-edits":
+    "Suggest concrete line edits to improve the selected screenplay text. " +
+    "Format as a numbered list with the original text and your suggested replacement in Fountain format.",
+};
+
 function buildNovelContext(context: AiContext): string {
+  const isScreenplay = context.projectMode === "screenplay";
+  const rootTag = isScreenplay ? "screenplay" : "novel";
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
-  let novel = `<novel title="${context.projectTitle}"${genreAttr}>\n\n`;
+  let novel = `<${rootTag} title="${context.projectTitle}"${genreAttr}>\n\n`;
 
   const charMap = buildNameMap(context.characters, (c) => c.name);
 
@@ -75,7 +91,7 @@ function buildNovelContext(context: AiContext): string {
     novel += "\n</outline>\n\n";
   }
 
-  novel += "</novel>";
+  novel += `</${rootTag}>`;
   return novel;
 }
 
@@ -147,7 +163,14 @@ interface BuildMessagesOptions {
 function resolveDefaultToolInstruction(
   tool: AiToolId,
   hasSelectedText: boolean,
+  isScreenplay?: boolean,
 ): string {
+  // Use screenplay-specific overrides when applicable
+  if (isScreenplay) {
+    const override = SCREENPLAY_TOOL_INSTRUCTIONS[tool as BuiltinAiTool];
+    if (override) return override;
+  }
+
   if (tool === "suggest-edits" && !hasSelectedText) {
     return (
       "Suggest concrete line edits to improve the current chapter. " +
@@ -170,7 +193,11 @@ export function buildMessages(
 ): AiMessage[] {
   const toolInstruction =
     options?.toolPromptOverride ??
-    resolveDefaultToolInstruction(tool, !!context.selectedText);
+    resolveDefaultToolInstruction(
+      tool,
+      !!context.selectedText,
+      context.projectMode === "screenplay",
+    );
 
   const preamble = options?.customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
 

@@ -130,10 +130,13 @@ export function AiPanel() {
 
   const generateId = () => crypto.randomUUID();
 
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+
   const buildContext = useCallback((): AiContext => {
     return {
       projectTitle: project?.title ?? "",
       genre: project?.genre ?? "",
+      projectMode: activeProjectMode ?? "prose",
       characters: characters ?? [],
       locations: locations ?? [],
       styleGuide: styleGuide ?? [],
@@ -164,6 +167,7 @@ export function AiPanel() {
     chapters,
     activeChapter,
     selectedText,
+    activeProjectMode,
   ]);
 
   async function generateAiResponse(

@@ -14,7 +14,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (project) {
-      setActiveProject(project.id, project.title);
+      setActiveProject(project.id, project.title, project.mode);
     }
     return () => {
       clearActiveProject();

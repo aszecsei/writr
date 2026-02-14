@@ -1,8 +1,10 @@
 import { match } from "ts-pattern";
 import { triggerDownload } from "./download";
 import { exportDocx } from "./exportDocx";
+import { exportFountain } from "./exportFountain";
 import { exportMarkdown } from "./exportMarkdown";
 import { exportPdf } from "./exportPdf";
+import { exportScreenplayPdf } from "./exportScreenplayPdf";
 import { gatherContent } from "./gather";
 import type { ExportOptions } from "./types";
 
@@ -19,6 +21,7 @@ const FORMAT_EXTENSIONS: Record<ExportOptions["format"], string> = {
   markdown: ".md",
   docx: ".docx",
   pdf: ".pdf",
+  fountain: ".fountain",
 };
 
 export async function performExport(options: ExportOptions): Promise<void> {
@@ -27,7 +30,12 @@ export async function performExport(options: ExportOptions): Promise<void> {
   const blob = await match(options.format)
     .with("markdown", () => exportMarkdown(content, options))
     .with("docx", () => exportDocx(content, options))
-    .with("pdf", () => exportPdf(content, options))
+    .with("pdf", () =>
+      options.projectMode === "screenplay"
+        ? exportScreenplayPdf(content, options)
+        : exportPdf(content, options),
+    )
+    .with("fountain", () => exportFountain(content, options))
     .exhaustive();
 
   const baseName =

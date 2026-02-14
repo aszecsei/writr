@@ -13,6 +13,7 @@ const initialValues: ProjectFormData = {
   description: "",
   genre: "",
   targetWordCount: 0,
+  mode: "prose",
 };
 
 export function EditProjectDialog() {
@@ -31,6 +32,7 @@ export function EditProjectDialog() {
         description: project.description,
         genre: project.genre,
         targetWordCount: project.targetWordCount,
+        mode: project.mode,
       });
     }
   }, [project]);
@@ -57,7 +59,7 @@ export function EditProjectDialog() {
         Edit Project
       </h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-        <ProjectFormFields values={values} onChange={setValues} />
+        <ProjectFormFields values={values} onChange={setValues} hideMode />
         <DialogFooter
           onCancel={closeModal}
           submitLabel="Save"

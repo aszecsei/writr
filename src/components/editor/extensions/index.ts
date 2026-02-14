@@ -1,7 +1,11 @@
+import Bold from "@tiptap/extension-bold";
 import CharacterCount from "@tiptap/extension-character-count";
+import Document from "@tiptap/extension-document";
 import Image from "@tiptap/extension-image";
+import Italic from "@tiptap/extension-italic";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
@@ -15,6 +19,16 @@ import { Ruby } from "./Ruby";
 import { SearchAndReplace } from "./SearchAndReplace";
 import { SelectionPreserver } from "./SelectionPreserver";
 import { Spellcheck } from "./Spellcheck";
+import {
+  Action,
+  Centered,
+  Character,
+  Dialogue,
+  Parenthetical,
+  SceneHeading,
+  ScreenplayPageBreak,
+  Transition,
+} from "./screenplay";
 import { TypewriterScrolling } from "./TypewriterScrolling";
 
 export interface ExtensionOptions {
@@ -66,6 +80,60 @@ export function createExtensions(options?: ExtensionOptions) {
       transformCopiedText: true,
       transformPastedText: true,
     }),
+    TypewriterScrolling.configure({
+      enabledRef: options?.typewriterScrollingRef ?? { current: false },
+    }),
+    Comments.configure({
+      commentsRef: options?.commentsRef ?? { current: [] },
+    }),
+    Spellcheck.configure({
+      spellcheckerRef: options?.spellcheckerRef,
+      customWordsRef: options?.customWordsRef,
+      enabledRef: options?.spellcheckEnabledRef,
+      ignoredWordsRef: options?.ignoredWordsRef,
+      onContextMenu: options?.onSpellcheckContextMenu,
+    }),
+    SelectionPreserver.configure({
+      onSelectionChange: options?.onSelectionChange,
+      onSelectionClear: options?.onSelectionClear,
+    }),
+    SearchAndReplace,
+  ];
+}
+
+const SCREENPLAY_PLACEHOLDERS: Record<string, string> = {
+  sceneHeading: "INT./EXT. LOCATION - TIME",
+  action: "Describe the action...",
+  character: "CHARACTER NAME",
+  dialogue: "Dialogue...",
+  parenthetical: "(parenthetical)",
+  transition: "TRANSITION:",
+  centered: "Centered text",
+};
+
+export function createScreenplayExtensions(options?: ExtensionOptions) {
+  return [
+    Document,
+    Text,
+    // Screenplay block nodes
+    SceneHeading,
+    Action,
+    Character,
+    Dialogue,
+    Parenthetical,
+    Transition,
+    Centered,
+    ScreenplayPageBreak,
+    // Inline formatting
+    Bold,
+    Italic,
+    Underline,
+    // Shared behavior
+    Placeholder.configure({
+      placeholder: ({ node }) =>
+        SCREENPLAY_PLACEHOLDERS[node.type.name] ?? "Start writing...",
+    }),
+    CharacterCount,
     TypewriterScrolling.configure({
       enabledRef: options?.typewriterScrollingRef ?? { current: false },
     }),

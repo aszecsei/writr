@@ -1,4 +1,6 @@
-export type ExportFormat = "markdown" | "docx" | "pdf";
+import type { ProjectMode } from "@/db/schemas";
+
+export type ExportFormat = "markdown" | "docx" | "pdf" | "fountain";
 export type ExportScope = "chapter" | "book";
 
 export interface ExportOptions {
@@ -9,6 +11,7 @@ export interface ExportOptions {
   includeTitlePage: boolean;
   includeChapterHeadings: boolean;
   pageBreaksBetweenChapters: boolean;
+  projectMode?: ProjectMode;
 }
 
 export interface ExportContent {

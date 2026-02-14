@@ -21,6 +21,11 @@ import { useCommentsByChapter } from "@/hooks/useComments";
 import { useCombinedDictionaryWords } from "@/hooks/useDictionary";
 import { reconcileComment } from "@/lib/comments/reconcile";
 import { getEditorFont } from "@/lib/fonts";
+import {
+  fountainToProseMirror,
+  parseFountain,
+  serializeFountain,
+} from "@/lib/fountain";
 import { getSpellcheckService, type SpellcheckService } from "@/lib/spellcheck";
 import { combineCustomWords } from "@/lib/spellcheck/auto-populate";
 import { useCommentStore } from "@/store/commentStore";
@@ -31,13 +36,14 @@ import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
 import { CommentMargin, CommentPopover } from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
-import { createExtensions } from "./extensions";
+import { createExtensions, createScreenplayExtensions } from "./extensions";
 import {
   COMMENTS_UPDATED_META,
   getCommentPositions,
 } from "./extensions/Comments";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
+import { ScreenplayToolbar } from "./ScreenplayToolbar";
 import { SpellcheckContextMenu } from "./SpellcheckContextMenu";
 import { SpellcheckScannerModal } from "./SpellcheckScannerModal";
 
@@ -77,6 +83,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const openModal = useUiStore((s) => s.openModal);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const isScreenplay = activeProjectMode === "screenplay";
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const closeFindReplace = useFindReplaceStore((s) => s.close);
   const initializedRef = useRef(false);
@@ -166,21 +174,22 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   // Memoize extensions to prevent recreation on every render
   // biome-ignore lint/correctness/useExhaustiveDependencies: refs and stable callbacks intentionally omitted to prevent editor recreation
-  const extensions = useMemo(
-    () =>
-      createExtensions({
-        typewriterScrollingRef,
-        commentsRef,
-        spellcheckerRef,
-        customWordsRef,
-        spellcheckEnabledRef,
-        ignoredWordsRef,
-        onSpellcheckContextMenu,
-        onSelectionChange,
-        onSelectionClear,
-      }),
-    [],
-  );
+  const extensions = useMemo(() => {
+    const opts = {
+      typewriterScrollingRef,
+      commentsRef,
+      spellcheckerRef,
+      customWordsRef,
+      spellcheckEnabledRef,
+      ignoredWordsRef,
+      onSpellcheckContextMenu,
+      onSelectionChange,
+      onSelectionClear,
+    };
+    return isScreenplay
+      ? createScreenplayExtensions(opts)
+      : createExtensions(opts);
+  }, [isScreenplay]);
 
   const editor = useEditor({
     extensions,
@@ -256,12 +265,19 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Load content from Dexie into the editor once
   useEffect(() => {
     if (editor && chapter && !editor.isDestroyed && !initializedRef.current) {
-      editor.commands.setContent(chapter.content || "");
+      if (isScreenplay) {
+        // Fountain → ProseMirror JSON
+        const elements = parseFountain(chapter.content || "");
+        const json = fountainToProseMirror(elements);
+        editor.commands.setContent(json);
+      } else {
+        editor.commands.setContent(chapter.content || "");
+      }
       const wc = getWordCount(editor.storage);
       setWordCount(wc);
       initializedRef.current = true;
     }
-  }, [editor, chapter, setWordCount]);
+  }, [editor, chapter, setWordCount, isScreenplay]);
 
   // Reset initialized flag when chapterId changes or content is restored
   const contentVersion = useEditorStore((s) => s.contentVersion);
@@ -308,11 +324,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   }, [editor, comments]);
 
   // Auto-save
+  const isScreenplayRef = useRef(isScreenplay);
+  isScreenplayRef.current = isScreenplay;
+
   const save = useCallback(async () => {
     if (!editor || editor.isDestroyed) return;
-    const markdown = getMarkdown(editor.storage);
+    const content = isScreenplayRef.current
+      ? serializeFountain(editor.state.doc)
+      : getMarkdown(editor.storage);
     const wordCount = getWordCount(editor.storage);
-    await updateChapterContent(chapterId, markdown, wordCount);
+    await updateChapterContent(chapterId, content, wordCount);
     // Persist tracked comment positions to IndexedDB
     const positions = getCommentPositions(editor.state);
     if (positions.size > 0) {
@@ -332,10 +353,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     return () => {
       const ed = editorRef.current;
       if (ed && !ed.isDestroyed) {
-        const markdown = getMarkdown(ed.storage);
+        const content = isScreenplayRef.current
+          ? serializeFountain(ed.state.doc)
+          : getMarkdown(ed.storage);
         const wc = getWordCount(ed.storage);
         // Fire-and-forget save on unmount
-        updateChapterContent(chapterIdRef.current, markdown, wc);
+        updateChapterContent(chapterIdRef.current, content, wc);
         // Persist tracked comment positions
         const positions = getCommentPositions(ed.state);
         if (positions.size > 0) {
@@ -434,7 +457,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {!focusModeEnabled && <EditorToolbar editor={editor} />}
+      {!focusModeEnabled &&
+        (isScreenplay ? (
+          <ScreenplayToolbar editor={editor} />
+        ) : (
+          <EditorToolbar editor={editor} />
+        ))}
       <div className="relative flex-1 overflow-hidden">
         {!focusModeEnabled && <FindReplacePanel editor={editor} />}
         <div
@@ -442,7 +470,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           className="relative h-full overflow-y-auto"
         >
           <div
-            className="mx-auto max-w-editor px-8"
+            className={`mx-auto px-8 ${isScreenplay ? "" : "max-w-editor"}`}
             style={{
               // Add top/bottom padding in focus mode to allow cursor to always be centered
               paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
@@ -451,11 +479,19 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           >
             <EditorContent
               editor={editor}
-              className="prose prose-neutral dark:prose-invert max-w-none"
-              style={{
-                fontFamily: editorFont.cssFamily,
-                fontSize: `${settings?.editorFontSize ?? 16}px`,
-              }}
+              className={
+                isScreenplay
+                  ? "screenplay-editor"
+                  : "prose prose-neutral dark:prose-invert max-w-none"
+              }
+              style={
+                isScreenplay
+                  ? undefined
+                  : {
+                      fontFamily: editorFont.cssFamily,
+                      fontSize: `${settings?.editorFontSize ?? 16}px`,
+                    }
+              }
             />
           </div>
           {!focusModeEnabled && (

@@ -431,6 +431,15 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    this.version(23).upgrade((tx) =>
+      tx
+        .table("projects")
+        .toCollection()
+        .modify((p) => {
+          if (p.mode === undefined) p.mode = "prose";
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

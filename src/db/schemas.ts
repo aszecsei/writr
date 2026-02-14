@@ -6,6 +6,11 @@ const id = z.uuid();
 const timestamp = z.iso.datetime();
 const projectFk = z.uuid();
 
+// ─── Project Mode ───────────────────────────────────────────────────
+
+export const ProjectModeEnum = z.enum(["prose", "screenplay"]);
+export type ProjectMode = z.infer<typeof ProjectModeEnum>;
+
 // ─── Project ─────────────────────────────────────────────────────────
 
 export const ProjectSchema = z.object({
@@ -14,6 +19,7 @@ export const ProjectSchema = z.object({
   description: z.string().default(""),
   genre: z.string().default(""),
   targetWordCount: z.number().int().nonnegative().default(0),
+  mode: ProjectModeEnum.default("prose"),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

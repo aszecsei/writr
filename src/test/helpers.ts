@@ -6,6 +6,7 @@ import type {
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
+  Project,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -22,6 +23,21 @@ function nextId(): string {
 
 export function resetIdCounter(): void {
   counter = 0;
+}
+
+export function makeProject(
+  overrides: Partial<Project> & { title: string },
+): Project {
+  return {
+    id: nextId(),
+    description: "",
+    genre: "",
+    targetWordCount: 0,
+    mode: "prose",
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
 }
 
 export function makeCharacter(

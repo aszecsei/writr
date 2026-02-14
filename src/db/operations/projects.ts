@@ -6,7 +6,9 @@ import { generateId, now } from "./helpers";
 
 export async function createProject(
   data: Pick<Project, "title"> &
-    Partial<Pick<Project, "description" | "genre" | "targetWordCount">>,
+    Partial<
+      Pick<Project, "description" | "genre" | "targetWordCount" | "mode">
+    >,
 ): Promise<Project> {
   const project = ProjectSchema.parse({
     id: generateId(),
@@ -14,6 +16,7 @@ export async function createProject(
     description: data.description ?? "",
     genre: data.genre ?? "",
     targetWordCount: data.targetWordCount ?? 0,
+    mode: data.mode ?? "prose",
     createdAt: now(),
     updatedAt: now(),
   });

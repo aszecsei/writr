@@ -10,6 +10,7 @@ import { useChaptersByProject } from "@/hooks/useChapter";
 import { useProject } from "@/hooks/useProject";
 import { useWritingStats } from "@/hooks/useWritingStats";
 import { formatReadingTime } from "@/lib/reading-time";
+import { getTerm } from "@/lib/terminology";
 import { useUiStore } from "@/store/uiStore";
 
 export default function ProjectOverviewPage() {
@@ -53,7 +54,7 @@ export default function ProjectOverviewPage() {
       )}
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Chapters"
+          label={getTerm(project.mode, "chapters")}
           value={chapters?.length ?? 0}
           icon={FileText}
         />

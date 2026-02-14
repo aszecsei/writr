@@ -54,6 +54,7 @@ import type {
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
+  ProjectMode,
   ReasoningEffort,
   StyleGuideEntry,
   TimelineEvent,
@@ -65,6 +66,7 @@ export type { AiProvider, ReasoningEffort };
 export interface AiContext {
   projectTitle: string;
   genre: string;
+  projectMode?: ProjectMode;
   characters: Character[];
   locations: Location[];
   styleGuide: StyleGuideEntry[];

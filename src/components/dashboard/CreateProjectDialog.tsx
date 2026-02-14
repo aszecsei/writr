@@ -13,6 +13,7 @@ const initialValues: ProjectFormData = {
   description: "",
   genre: "",
   targetWordCount: 0,
+  mode: "prose",
 };
 
 export function CreateProjectDialog() {
@@ -32,6 +33,7 @@ export function CreateProjectDialog() {
       description: values.description.trim(),
       genre: values.genre.trim(),
       targetWordCount: Math.max(0, values.targetWordCount),
+      mode: values.mode,
     });
 
     setValues(initialValues);

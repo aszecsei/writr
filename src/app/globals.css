@@ -333,3 +333,80 @@ ruby rt {
   background-color: var(--primary-400);
   color: #000;
 }
+
+/* ─── Screenplay Editor Styles ──────────────────────────────────────── */
+
+.screenplay-editor {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12pt;
+  line-height: 1;
+  max-width: 8.5in;
+  margin: 0 auto;
+}
+
+.screenplay-editor .screenplay-scene-heading {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.screenplay-editor .screenplay-action {
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-character {
+  text-transform: uppercase;
+  margin-left: 35%;
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-dialogue {
+  margin-left: 15%;
+  max-width: 60%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-parenthetical {
+  margin-left: 25%;
+  max-width: 35%;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-transition {
+  text-align: right;
+  text-transform: uppercase;
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-centered {
+  text-align: center;
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+
+.screenplay-editor .screenplay-page-break {
+  border: none;
+  border-top: 2px dashed var(--neutral-300);
+  margin: 1.5em 0;
+}
+.dark .screenplay-editor .screenplay-page-break {
+  border-top-color: var(--neutral-600);
+}
+
+/* Placeholder styling for screenplay nodes */
+.screenplay-editor .is-empty::before {
+  color: var(--neutral-400);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.dark .screenplay-editor .is-empty::before {
+  color: var(--neutral-500);
+}

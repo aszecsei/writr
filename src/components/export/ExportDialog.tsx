@@ -14,24 +14,30 @@ import {
   type ExportScope,
   performExport,
 } from "@/lib/export";
+import { getTerm } from "@/lib/terminology";
+import { useProjectStore } from "@/store/projectStore";
 import { isExportModal, useUiStore } from "@/store/uiStore";
 
-const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
+const PROSE_FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
   { value: "markdown", label: "Markdown (.md)" },
   { value: "docx", label: "Word Document (.docx)" },
   { value: "pdf", label: "PDF (.pdf)" },
 ];
 
-const SCOPE_OPTIONS: { value: ExportScope; label: string }[] = [
-  { value: "chapter", label: "Current Chapter" },
-  { value: "book", label: "Entire Book" },
+const SCREENPLAY_FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
+  { value: "fountain", label: "Fountain (.fountain)" },
+  { value: "pdf", label: "PDF (.pdf)" },
 ];
 
 export function ExportDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const isScreenplay = activeProjectMode === "screenplay";
 
-  const [format, setFormat] = useState<ExportFormat>("markdown");
+  const [format, setFormat] = useState<ExportFormat>(
+    isScreenplay ? "fountain" : "markdown",
+  );
   const [scope, setScope] = useState<ExportScope>("book");
   const [includeTitlePage, setIncludeTitlePage] = useState(true);
   const [includeChapterHeadings, setIncludeChapterHeadings] = useState(true);
@@ -57,6 +63,7 @@ export function ExportDialog() {
         includeTitlePage,
         includeChapterHeadings,
         pageBreaksBetweenChapters: pageBreaks,
+        projectMode: activeProjectMode ?? "prose",
       });
       closeModal();
     } catch (err) {
@@ -80,7 +87,10 @@ export function ExportDialog() {
             Format
           </legend>
           <div className="mt-2 flex gap-2">
-            {FORMAT_OPTIONS.map((opt) => (
+            {(isScreenplay
+              ? SCREENPLAY_FORMAT_OPTIONS
+              : PROSE_FORMAT_OPTIONS
+            ).map((opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -100,7 +110,18 @@ export function ExportDialog() {
               Scope
             </legend>
             <div className="mt-2 flex gap-2">
-              {SCOPE_OPTIONS.map((opt) => (
+              {(
+                [
+                  {
+                    value: "chapter" as ExportScope,
+                    label: getTerm(activeProjectMode, "currentChapter"),
+                  },
+                  {
+                    value: "book" as ExportScope,
+                    label: getTerm(activeProjectMode, "entireBook"),
+                  },
+                ] as const
+              ).map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
@@ -114,45 +135,49 @@ export function ExportDialog() {
           </fieldset>
         )}
 
-        {/* Options */}
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Options
-          </legend>
-          <div className="mt-2 space-y-2">
-            {effectiveScope === "book" && (
+        {/* Options (prose only — screenplay PDF uses standard formatting) */}
+        {!isScreenplay && (
+          <fieldset>
+            <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+              Options
+            </legend>
+            <div className="mt-2 space-y-2">
+              {effectiveScope === "book" && (
+                <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={includeTitlePage}
+                    onChange={(e) => setIncludeTitlePage(e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                  />
+                  Include title page
+                </label>
+              )}
               <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
-                  checked={includeTitlePage}
-                  onChange={(e) => setIncludeTitlePage(e.target.checked)}
+                  checked={includeChapterHeadings}
+                  onChange={(e) => setIncludeChapterHeadings(e.target.checked)}
                   className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                 />
-                Include title page
+                Include {getTerm(activeProjectMode, "chapter").toLowerCase()}{" "}
+                headings
               </label>
-            )}
-            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-              <input
-                type="checkbox"
-                checked={includeChapterHeadings}
-                onChange={(e) => setIncludeChapterHeadings(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
-              />
-              Include chapter headings
-            </label>
-            {format !== "markdown" && effectiveScope === "book" && (
-              <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                <input
-                  type="checkbox"
-                  checked={pageBreaks}
-                  onChange={(e) => setPageBreaks(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
-                />
-                Page breaks between chapters
-              </label>
-            )}
-          </div>
-        </fieldset>
+              {format !== "markdown" && effectiveScope === "book" && (
+                <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={pageBreaks}
+                    onChange={(e) => setPageBreaks(e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                  />
+                  Page breaks between{" "}
+                  {getTerm(activeProjectMode, "chapters").toLowerCase()}
+                </label>
+              )}
+            </div>
+          </fieldset>
+        )}
 
         {/* Error */}
         {error && (
