@@ -1,7 +1,7 @@
 export interface EditorFont {
   id: string;
   label: string;
-  category: "serif" | "sans" | "accessible";
+  category: "serif" | "sans" | "accessible" | "mono";
   cssFamily: string;
 }
 
@@ -31,6 +31,24 @@ export const EDITOR_FONTS: EditorFont[] = [
     category: "serif",
     cssFamily: "var(--font-merriweather), Georgia, serif",
   },
+  {
+    id: "eb-garamond",
+    label: "EB Garamond",
+    category: "serif",
+    cssFamily: "var(--font-eb-garamond), Georgia, serif",
+  },
+  {
+    id: "crimson-pro",
+    label: "Crimson Pro",
+    category: "serif",
+    cssFamily: "var(--font-crimson-pro), Georgia, serif",
+  },
+  {
+    id: "spectral",
+    label: "Spectral",
+    category: "serif",
+    cssFamily: "var(--font-spectral), Georgia, serif",
+  },
   // Sans-serif
   {
     id: "inter",
@@ -58,10 +76,29 @@ export const EDITOR_FONTS: EditorFont[] = [
     cssFamily: "var(--font-atkinson), system-ui, sans-serif",
   },
   {
+    id: "open-dyslexic",
+    label: "OpenDyslexic",
+    category: "accessible",
+    cssFamily: "'OpenDyslexic', Comic Sans MS, sans-serif",
+  },
+  {
     id: "comic-sans",
     label: "Comic Sans",
     category: "accessible",
     cssFamily: "'Comic Sans MS', 'Comic Sans', cursive",
+  },
+  // Monospace
+  {
+    id: "courier-prime",
+    label: "Courier Prime",
+    category: "mono",
+    cssFamily: "var(--font-courier-prime), 'Courier New', monospace",
+  },
+  {
+    id: "jetbrains-mono",
+    label: "JetBrains Mono",
+    category: "mono",
+    cssFamily: "var(--font-jetbrains-mono), 'Courier New', monospace",
   },
 ];
 

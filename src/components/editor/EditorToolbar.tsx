@@ -24,6 +24,7 @@ import { CopyMenu } from "./CopyMenu";
 import { CreateCommentButton } from "./comments";
 import { getSpellcheckResults } from "./extensions/Spellcheck";
 import { FontSelector } from "./FontSelector";
+import { FontSizeSelector } from "./FontSizeSelector";
 import { InsertImageDialog } from "./InsertImageDialog";
 import { LinkEditorDialog } from "./LinkEditorDialog";
 import { RubyDialog } from "./RubyDialog";
@@ -150,6 +151,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-density border-b border-neutral-200 bg-white px-4 py-density-button dark:border-neutral-800 dark:bg-neutral-900">
       <FontSelector currentFont={currentFont} />
+      <FontSizeSelector currentFontSize={settings?.editorFontSize ?? 16} />
       <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
       {groups.map((group, gi) => {
         const groupActions = actions.filter((a) => a.group === group);

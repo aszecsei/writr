@@ -452,7 +452,10 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
             <EditorContent
               editor={editor}
               className="prose prose-neutral dark:prose-invert max-w-none"
-              style={{ fontFamily: editorFont.cssFamily }}
+              style={{
+                fontFamily: editorFont.cssFamily,
+                fontSize: `${settings?.editorFontSize ?? 16}px`,
+              }}
             />
           </div>
           {!focusModeEnabled && (

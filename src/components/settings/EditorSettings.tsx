@@ -5,6 +5,9 @@ const FONT_OPTIONS = [
   { value: "lusitana", label: "Lusitana", style: "serif" },
   { value: "lora", label: "Lora", style: "serif" },
   { value: "merriweather", label: "Merriweather", style: "serif" },
+  { value: "eb-garamond", label: "EB Garamond", style: "serif" },
+  { value: "crimson-pro", label: "Crimson Pro", style: "serif" },
+  { value: "spectral", label: "Spectral", style: "serif" },
   { value: "inter", label: "Inter", style: "sans-serif" },
   { value: "source-sans-3", label: "Source Sans 3", style: "sans-serif" },
   { value: "lexend", label: "Lexend", style: "sans-serif" },
@@ -13,6 +16,9 @@ const FONT_OPTIONS = [
     label: "Atkinson Hyperlegible",
     style: "sans-serif",
   },
+  { value: "open-dyslexic", label: "OpenDyslexic", style: "accessible" },
+  { value: "courier-prime", label: "Courier Prime", style: "monospace" },
+  { value: "jetbrains-mono", label: "JetBrains Mono", style: "monospace" },
 ];
 
 interface EditorSettingsProps {

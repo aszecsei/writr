@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import {
   Atkinson_Hyperlegible_Next,
+  Courier_Prime,
+  Crimson_Pro,
+  EB_Garamond,
   Geist,
   Geist_Mono,
   Inter,
+  JetBrains_Mono,
   Lexend,
   Literata,
   Lora,
   Lusitana,
   Merriweather,
   Source_Sans_3,
+  Spectral,
 } from "next/font/google";
 import Script from "next/script";
 import { AppProviders } from "@/components/providers/AppProviders";
@@ -68,6 +73,33 @@ const atkinson = Atkinson_Hyperlegible_Next({
   subsets: ["latin"],
 });
 
+const courierPrime = Courier_Prime({
+  variable: "--font-courier-prime",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
+
+const ebGaramond = EB_Garamond({
+  variable: "--font-eb-garamond",
+  subsets: ["latin"],
+});
+
+const crimsonPro = Crimson_Pro({
+  variable: "--font-crimson-pro",
+  subsets: ["latin"],
+});
+
+const spectral = Spectral({
+  variable: "--font-spectral",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 const literaryFontVars = [
   literata.variable,
   lusitana.variable,
@@ -77,6 +109,11 @@ const literaryFontVars = [
   sourceSans.variable,
   lexend.variable,
   atkinson.variable,
+  courierPrime.variable,
+  jetbrainsMono.variable,
+  ebGaramond.variable,
+  crimsonPro.variable,
+  spectral.variable,
 ].join(" ");
 
 export const metadata: Metadata = {
