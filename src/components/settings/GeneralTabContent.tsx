@@ -132,13 +132,16 @@ export function GeneralTabContent({
           Display
         </legend>
         <div className="mt-2 space-y-2">
-          <div className="flex items-center justify-between">
-            <label htmlFor="goal-countdown" className={labelClass}>
+          <div className="flex items-center gap-4">
+            <label
+              htmlFor="goal-countdown"
+              className={`${labelClass} shrink-0`}
+            >
               Goal countdown
             </label>
             <select
               id="goal-countdown"
-              className={inputClass}
+              className={`${inputClass} w-full`}
               value={goalCountdownDisplay}
               onChange={(e) =>
                 onGoalCountdownDisplayChange(
