@@ -3,7 +3,7 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { describeImage } from "@/lib/ai/client";
 
 interface AddImageDialogProps {

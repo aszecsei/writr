@@ -30,8 +30,8 @@ import {
   useCharactersByProject,
   useLocationsByProject,
   useRelationshipsByProject,
-} from "@/hooks/useBibleEntries";
-import { useCharacterForm } from "@/hooks/useCharacterForm";
+} from "@/hooks/data/useBibleEntries";
+import { useCharacterForm } from "@/hooks/forms/useCharacterForm";
 
 export default function CharacterDetailPage() {
   const params = useParams<{ projectId: string; characterId: string }>();

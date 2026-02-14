@@ -5,7 +5,7 @@ import {
   createEntityHook,
   createProjectListHook,
   createProjectListUnsortedHook,
-} from "./factories";
+} from "../factories";
 
 export const useCharactersByProject = createProjectListHook(
   db.characters,

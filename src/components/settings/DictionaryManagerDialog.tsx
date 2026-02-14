@@ -15,7 +15,10 @@ import {
   removeWordFromAppDictionary,
   removeWordFromProjectDictionary,
 } from "@/db/operations/dictionary";
-import { useAppDictionary, useProjectDictionary } from "@/hooks/useDictionary";
+import {
+  useAppDictionary,
+  useProjectDictionary,
+} from "@/hooks/data/useDictionary";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 

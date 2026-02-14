@@ -1,6 +1,6 @@
 "use client";
 
-import type { TimeOfDayStats } from "@/hooks/useWritingStats";
+import type { TimeOfDayStats } from "@/hooks/editor/useWritingStats";
 
 interface TimeOfDayChartProps {
   timeOfDay: TimeOfDayStats[];

@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, Copy, FileCode2, FileText } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   copyChapterAo3HtmlToClipboard,
   copyChapterMarkdownToClipboard,
@@ -19,21 +20,7 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
   const [copiedType, setCopiedType] = useState<CopiedType>(null);
   const copyMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        copyMenuRef.current &&
-        !copyMenuRef.current.contains(event.target as Node)
-      ) {
-        setCopyMenuOpen(false);
-      }
-    }
-    if (copyMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [copyMenuOpen]);
+  useClickOutside(copyMenuRef, () => setCopyMenuOpen(false), copyMenuOpen);
 
   async function handleCopyMarkdown() {
     try {

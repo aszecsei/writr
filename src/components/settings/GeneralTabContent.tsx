@@ -7,7 +7,7 @@ import type {
   PrimaryColor,
   UiDensity,
 } from "@/db/schemas";
-import { useAppStats } from "@/hooks/useAppStats";
+import { useAppStats } from "@/hooks/editor/useAppStats";
 import { AppearanceSettings } from "./AppearanceSettings";
 
 function formatBytes(bytes: number): string {

@@ -7,7 +7,7 @@ import {
   type OutlineGridRow,
   OutlineGridRowSchema,
 } from "../schemas";
-import { generateId, now, reorderEntities } from "./helpers";
+import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Shared helper ──────────────────────────────────────────────────
 
@@ -32,9 +32,11 @@ export async function createOutlineGridColumn(
   data: Pick<OutlineGridColumn, "projectId" | "title"> &
     Partial<Pick<OutlineGridColumn, "order" | "width">>,
 ): Promise<OutlineGridColumn> {
-  const order =
-    data.order ??
-    (await db.outlineGridColumns.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.outlineGridColumns,
+    { projectId: data.projectId },
+    data.order,
+  );
   const column = OutlineGridColumnSchema.parse({
     id: generateId(),
     projectId: data.projectId,
@@ -111,9 +113,11 @@ export async function createOutlineGridRow(
   data: Pick<OutlineGridRow, "projectId"> &
     Partial<Pick<OutlineGridRow, "linkedChapterId" | "label" | "order">>,
 ): Promise<OutlineGridRow> {
-  const order =
-    data.order ??
-    (await db.outlineGridRows.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.outlineGridRows,
+    { projectId: data.projectId },
+    data.order,
+  );
   const row = OutlineGridRowSchema.parse({
     id: generateId(),
     projectId: data.projectId,

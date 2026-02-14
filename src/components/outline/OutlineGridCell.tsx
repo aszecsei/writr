@@ -6,8 +6,8 @@ import type {
   OutlineCardColor,
   OutlineGridCell as OutlineGridCellType,
 } from "@/db/schemas";
-import { useHighlightFade } from "@/hooks/useHighlightFade";
-import { useInlineEdit } from "@/hooks/useInlineEdit";
+import { useHighlightFade } from "@/hooks/editor/useHighlightFade";
+import { useInlineEdit } from "@/hooks/forms/useInlineEdit";
 
 const COLOR_CLASSES: Record<OutlineCardColor, string> = {
   white: "bg-white dark:bg-neutral-900",

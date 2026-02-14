@@ -1,6 +1,6 @@
 import { db } from "../database";
 import { type StyleGuideEntry, StyleGuideEntrySchema } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, getNextOrder, now } from "./helpers";
 
 // ─── Style Guide Entries ────────────────────────────────────────────
 
@@ -20,9 +20,11 @@ export async function createStyleGuideEntry(
   data: Pick<StyleGuideEntry, "projectId" | "title"> &
     Partial<Pick<StyleGuideEntry, "category" | "content" | "order">>,
 ): Promise<StyleGuideEntry> {
-  const order =
-    data.order ??
-    (await db.styleGuideEntries.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.styleGuideEntries,
+    { projectId: data.projectId },
+    data.order,
+  );
   const entry = StyleGuideEntrySchema.parse({
     id: generateId(),
     projectId: data.projectId,

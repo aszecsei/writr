@@ -6,7 +6,7 @@ import {
   updateWorldbuildingDoc,
 } from "@/db/operations";
 import type { WorldbuildingDoc } from "@/db/schemas";
-import { useWorldbuildingDoc } from "@/hooks/useBibleEntries";
+import { useWorldbuildingDoc } from "@/hooks/data/useBibleEntries";
 import { buildWorldbuildingTree, type DocNode } from "@/lib/worldbuilding-tree";
 
 export function WorldbuildingDocDialog({

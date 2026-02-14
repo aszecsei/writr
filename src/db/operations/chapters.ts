@@ -1,6 +1,6 @@
 import { db } from "../database";
 import { type Chapter, ChapterSchema } from "../schemas";
-import { generateId, now, reorderEntities } from "./helpers";
+import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 import { recordWritingSession } from "./sprints";
 
 // ─── Chapters ────────────────────────────────────────────────────────
@@ -19,9 +19,11 @@ export async function createChapter(
   data: Pick<Chapter, "projectId" | "title"> &
     Partial<Pick<Chapter, "order" | "content" | "synopsis">>,
 ): Promise<Chapter> {
-  const order =
-    data.order ??
-    (await db.chapters.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.chapters,
+    { projectId: data.projectId },
+    data.order,
+  );
   const chapter = ChapterSchema.parse({
     id: generateId(),
     projectId: data.projectId,

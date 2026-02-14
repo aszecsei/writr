@@ -99,51 +99,16 @@ export const useUiStore = create<UiState>()(
   })),
 );
 
-// Type guard helpers for narrowing modal state
-export function isEditProjectModal(
-  modal: ModalState,
-): modal is { id: "edit-project"; projectId: string } {
-  return modal.id === "edit-project";
+// Type guard factory for narrowing modal state by id
+function createModalGuard<Id extends ModalId>(id: Id) {
+  return (modal: ModalState): modal is Extract<ModalState, { id: Id }> =>
+    modal.id === id;
 }
 
-export function isDeleteProjectModal(
-  modal: ModalState,
-): modal is { id: "delete-project"; projectId: string } {
-  return modal.id === "delete-project";
-}
-
-export function isExportModal(modal: ModalState): modal is {
-  id: "export";
-  projectId: string;
-  chapterId?: string;
-  scope?: "book" | "chapter";
-} {
-  return modal.id === "export";
-}
-
-export function isPreviewCardModal(modal: ModalState): modal is {
-  id: "preview-card";
-  selectedHtml: string;
-  projectTitle: string;
-  chapterTitle: string;
-} {
-  return modal.id === "preview-card";
-}
-
-export function isLinkEditorModal(
-  modal: ModalState,
-): modal is { id: "link-editor"; currentHref?: string } {
-  return modal.id === "link-editor";
-}
-
-export function isRubyEditorModal(
-  modal: ModalState,
-): modal is { id: "ruby-editor"; currentAnnotation?: string } {
-  return modal.id === "ruby-editor";
-}
-
-export function isVersionHistoryModal(
-  modal: ModalState,
-): modal is { id: "version-history"; chapterId: string; projectId: string } {
-  return modal.id === "version-history";
-}
+export const isEditProjectModal = createModalGuard("edit-project");
+export const isDeleteProjectModal = createModalGuard("delete-project");
+export const isExportModal = createModalGuard("export");
+export const isPreviewCardModal = createModalGuard("preview-card");
+export const isLinkEditorModal = createModalGuard("link-editor");
+export const isRubyEditorModal = createModalGuard("ruby-editor");
+export const isVersionHistoryModal = createModalGuard("version-history");

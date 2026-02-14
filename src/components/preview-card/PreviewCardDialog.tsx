@@ -10,7 +10,7 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { getEditorFont } from "@/lib/fonts";
 import {
   downloadBlob,

@@ -9,11 +9,11 @@ import {
   OutlineTemplateDialog,
 } from "@/components/outline/OutlineTemplateDialog";
 import { createOutlineGridColumn, createOutlineGridRow } from "@/db/operations";
-import { useChaptersByProject } from "@/hooks/useChapter";
+import { useChaptersByProject } from "@/hooks/data/useChapter";
 import {
   useOutlineGridColumns,
   useOutlineGridRows,
-} from "@/hooks/useOutlineGrid";
+} from "@/hooks/outline/useOutlineGrid";
 
 export default function OutlinePage() {
   const params = useParams<{ projectId: string }>();

@@ -3,27 +3,12 @@ import type { EditorState } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import type { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import type { Comment, CommentColor } from "@/db/schemas";
+import type { Comment } from "@/db/schemas";
+import { HIGHLIGHT_CLASSES, MARKER_CLASSES } from "../comments/colors";
 
 export interface CommentsOptions {
   commentsRef: { current: Comment[] } | undefined;
 }
-
-const HIGHLIGHT_CLASSES: Record<CommentColor, string> = {
-  yellow: "comment-highlight-yellow",
-  blue: "comment-highlight-blue",
-  green: "comment-highlight-green",
-  red: "comment-highlight-red",
-  purple: "comment-highlight-purple",
-};
-
-const MARKER_CLASSES: Record<CommentColor, string> = {
-  yellow: "comment-marker-yellow",
-  blue: "comment-marker-blue",
-  green: "comment-marker-green",
-  red: "comment-marker-red",
-  purple: "comment-marker-purple",
-};
 
 export const commentsPluginKey = new PluginKey<CommentsPluginState>("comments");
 
@@ -115,6 +100,25 @@ export function getCommentPositions(
   return pluginState?.positionMap ?? new Map();
 }
 
+/**
+ * Comments TipTap extension.
+ *
+ * Tracks comment positions through document changes using ProseMirror's
+ * Mapping API. Each comment stores initial offsets (fromOffset/toOffset)
+ * in the database, and this plugin maps them forward as the user edits.
+ *
+ * Position mapping uses assoc=1 for `from` (grows rightward with
+ * insertions at the boundary) and assoc=-1 for `to` (grows leftward),
+ * keeping highlight ranges stable around the annotated text.
+ *
+ * The commentsRef option uses a ref (not a value) so the extension can
+ * read the latest comments without being reconfigured. This avoids
+ * recreating the editor when comments change — only a COMMENTS_UPDATED_META
+ * dispatch is needed to trigger decoration rebuild.
+ *
+ * Point comments (from === to) render as widget decorations (markers);
+ * selection comments (from < to) render as inline decorations (highlights).
+ */
 export const Comments = Extension.create<CommentsOptions>({
   name: "comments",
 

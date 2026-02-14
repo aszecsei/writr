@@ -34,44 +34,29 @@ function buildNovelContext(context: AiContext): string {
 
   const charMap = buildNameMap(context.characters, (c) => c.name);
 
-  if (context.characters.length > 0) {
-    novel += "<characters>\n";
-    novel += context.characters.map(serializeCharacter).join("\n");
-    novel += "\n</characters>\n\n";
+  /** Append a tagged section if `items` is non-empty. */
+  function addSection<T>(
+    tag: string,
+    items: T[],
+    serialize: (item: T) => string,
+  ) {
+    if (items.length === 0) return;
+    const lines = items.map(serialize).filter(Boolean);
+    if (lines.length === 0) return;
+    novel += `<${tag}>\n${lines.join("\n")}\n</${tag}>\n\n`;
   }
 
-  if (context.relationships.length > 0) {
-    const lines = context.relationships
-      .map((r) => serializeRelationship(r, charMap))
-      .filter(Boolean);
-    if (lines.length > 0) {
-      novel += "<relationships>\n";
-      novel += lines.join("\n");
-      novel += "\n</relationships>\n\n";
-    }
-  }
-
-  if (context.locations.length > 0) {
-    novel += "<locations>\n";
-    novel += context.locations
-      .map((l) => serializeLocation(l, charMap))
-      .join("\n");
-    novel += "\n</locations>\n\n";
-  }
-
-  if (context.styleGuide.length > 0) {
-    novel += "<style-guide>\n";
-    novel += context.styleGuide.map(serializeStyleGuideEntry).join("\n");
-    novel += "\n</style-guide>\n\n";
-  }
-
-  if (context.timelineEvents.length > 0) {
-    novel += "<timeline>\n";
-    novel += context.timelineEvents
-      .map((e) => serializeTimelineEvent(e, charMap))
-      .join("\n");
-    novel += "\n</timeline>\n\n";
-  }
+  addSection("characters", context.characters, serializeCharacter);
+  addSection("relationships", context.relationships, (r) =>
+    serializeRelationship(r, charMap),
+  );
+  addSection("locations", context.locations, (l) =>
+    serializeLocation(l, charMap),
+  );
+  addSection("style-guide", context.styleGuide, serializeStyleGuideEntry);
+  addSection("timeline", context.timelineEvents, (e) =>
+    serializeTimelineEvent(e, charMap),
+  );
 
   if (context.worldbuildingDocs.length > 0) {
     novel += "<worldbuilding>\n";

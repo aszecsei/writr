@@ -7,7 +7,7 @@ import {
   SearchPagination,
   SearchResultItem,
 } from "@/components/search";
-import { useSearchPage } from "@/hooks/useSearchPage";
+import { useSearchPage } from "@/hooks/ui/useSearchPage";
 import type { SearchableEntityType } from "@/lib/search";
 import { entityConfigs } from "@/lib/search";
 

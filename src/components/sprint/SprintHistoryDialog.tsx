@@ -5,7 +5,10 @@ import { BUTTON_CANCEL } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteSprint } from "@/db/operations";
 import type { WritingSprint } from "@/db/schemas";
-import { useSprintHistory, useSprintStats } from "@/hooks/useSprintHistory";
+import {
+  useSprintHistory,
+  useSprintStats,
+} from "@/hooks/writing/useSprintHistory";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
 

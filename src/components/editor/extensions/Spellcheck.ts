@@ -55,6 +55,19 @@ function buildDecorations(
 /** Debounce delay for typing (ms). */
 const TYPING_DEBOUNCE = 300;
 
+/**
+ * Spellcheck TipTap extension.
+ *
+ * Uses a debounce strategy to avoid checking on every keystroke:
+ * - Typing triggers a debounced check after TYPING_DEBOUNCE ms.
+ * - SPELLCHECK_UPDATED_META signals an immediate check (e.g., when
+ *   the dictionary changes or spellcheck is toggled on).
+ * - When async results arrive via SPELLCHECK_RESULTS_META, the view
+ *   update handler skips re-scheduling to avoid infinite loops.
+ *
+ * Decorations are mapped through document changes to keep underlines
+ * in place between full re-checks.
+ */
 export const Spellcheck = Extension.create<SpellcheckOptions>({
   name: "spellcheck",
 

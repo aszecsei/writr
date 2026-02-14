@@ -5,22 +5,14 @@ import { ChevronDown, MessageSquarePlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createComment } from "@/db/operations";
 import type { CommentColor } from "@/db/schemas";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { COLOR_BUTTON_CLASSES, COMMENT_COLORS } from "./colors";
 
 interface CreateCommentButtonProps {
   editor: Editor | null;
   projectId: string;
   chapterId: string;
 }
-
-const COLORS: CommentColor[] = ["yellow", "blue", "green", "red", "purple"];
-
-const COLOR_BUTTON_CLASSES: Record<CommentColor, string> = {
-  yellow: "bg-yellow-400 hover:bg-yellow-500",
-  blue: "bg-blue-400 hover:bg-blue-500",
-  green: "bg-green-400 hover:bg-green-500",
-  red: "bg-red-400 hover:bg-red-500",
-  purple: "bg-purple-400 hover:bg-purple-500",
-};
 
 export function CreateCommentButton({
   editor,
@@ -56,19 +48,7 @@ export function CreateCommentButton({
     };
   }, [editor]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   if (!editor) return null;
 
@@ -140,7 +120,7 @@ export function CreateCommentButton({
             Color
           </div>
           <div className="flex gap-1.5">
-            {COLORS.map((color) => (
+            {COMMENT_COLORS.map((color) => (
               <button
                 key={color}
                 type="button"

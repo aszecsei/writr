@@ -7,7 +7,7 @@ import { DialogFooter } from "@/components/ui/DialogFooter";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteProject } from "@/db/operations";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/hooks/data/useProject";
 import { isDeleteProjectModal, useUiStore } from "@/store/uiStore";
 
 export function DeleteProjectDialog() {

@@ -20,8 +20,8 @@ import {
   useCharactersByProject,
   useLocation,
   useLocationsByProject,
-} from "@/hooks/useBibleEntries";
-import { useLocationForm } from "@/hooks/useLocationForm";
+} from "@/hooks/data/useBibleEntries";
+import { useLocationForm } from "@/hooks/forms/useLocationForm";
 
 export default function LocationDetailPage() {
   const params = useParams<{ projectId: string; locationId: string }>();

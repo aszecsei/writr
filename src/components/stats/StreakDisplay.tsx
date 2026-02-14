@@ -1,7 +1,7 @@
 "use client";
 
 import { Flame } from "lucide-react";
-import type { StreakInfo } from "@/hooks/useWritingStats";
+import type { StreakInfo } from "@/hooks/editor/useWritingStats";
 
 interface StreakDisplayProps {
   streak: StreakInfo;

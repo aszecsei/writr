@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import {
   applyEditorWidth,
   applyNeutralColor,

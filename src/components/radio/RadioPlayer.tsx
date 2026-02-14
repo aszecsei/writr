@@ -2,7 +2,7 @@
 
 import { type SyntheticEvent, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
-import { usePlaylistTrack } from "@/hooks/usePlaylistEntries";
+import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
 import { useRadioStore } from "@/store/radioStore";
 
 /**

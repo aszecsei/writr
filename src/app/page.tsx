@@ -13,7 +13,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
-import { useAllProjects } from "@/hooks/useProject";
+import { useAllProjects } from "@/hooks/data/useProject";
 import { useUiStore } from "@/store/uiStore";
 
 export default function DashboardPage() {

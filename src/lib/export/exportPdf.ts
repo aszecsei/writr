@@ -6,6 +6,7 @@ import type {
 import { match } from "ts-pattern";
 import type { DocNode, TextAlignment, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
+import { HR_TEXT, imagePlaceholder } from "./shared";
 import type { ExportContent, ExportOptions } from "./types";
 
 const HEADING_SIZES: Record<number, number> = {
@@ -141,7 +142,7 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
       })
       .with({ type: "hr" }, () => {
         result.push({
-          text: "*\u2003\u2003*\u2003\u2003*",
+          text: HR_TEXT,
           alignment: "center",
           color: "#666666",
           fontSize: 12,
@@ -151,7 +152,7 @@ function nodesToPdfContent(nodes: DocNode[]): Content[] {
       .with({ type: "image" }, ({ alt }) => {
         // For images, add a placeholder text since embedding requires fetching
         result.push({
-          text: alt ? `[Image: ${alt}]` : "[Image]",
+          text: imagePlaceholder(alt),
           italics: true,
           color: "#666666",
           alignment: "center",

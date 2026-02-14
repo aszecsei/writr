@@ -16,8 +16,8 @@ import {
   SprintHistoryDialog,
   SprintWidget,
 } from "@/components/sprint";
-import { useAppSettings } from "@/hooks/useAppSettings";
-import { useFocusModeShortcuts } from "@/hooks/useFocusModeShortcuts";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useFocusModeShortcuts } from "@/hooks/ui/useFocusModeShortcuts";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./TopBar";

@@ -4,14 +4,14 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useCallback, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { syncDeleteOutlineRow } from "@/db/operations";
-import { useChaptersByProject } from "@/hooks/useChapter";
+import { useChaptersByProject } from "@/hooks/data/useChapter";
 import {
   useOutlineGridCellsMap,
   useOutlineGridColumns,
   useOutlineGridRows,
-} from "@/hooks/useOutlineGrid";
-import { useOutlineGridDragDrop } from "@/hooks/useOutlineGridDragDrop";
-import { useOutlineGridOperations } from "@/hooks/useOutlineGridOperations";
+} from "@/hooks/outline/useOutlineGrid";
+import { useOutlineGridDragDrop } from "@/hooks/outline/useOutlineGridDragDrop";
+import { useOutlineGridOperations } from "@/hooks/outline/useOutlineGridOperations";
 import {
   type ContextMenuTarget,
   OutlineGridContextMenu,

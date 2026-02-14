@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { SortableTimelineCard } from "@/components/bible/SortableTimelineCard";
 import { createTimelineEvent, reorderTimelineEvents } from "@/db/operations";
-import { useTimelineByProject } from "@/hooks/useBibleEntries";
+import { useTimelineByProject } from "@/hooks/data/useBibleEntries";
 
 export default function TimelinePage() {
   const params = useParams<{ projectId: string }>();

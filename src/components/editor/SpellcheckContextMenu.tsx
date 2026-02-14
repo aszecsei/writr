@@ -8,6 +8,7 @@ import {
   addWordToAppDictionary,
   addWordToProjectDictionary,
 } from "@/db/operations";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   type ContextMenuState,
   useSpellcheckStore,
@@ -62,28 +63,7 @@ export function SpellcheckContextMenu({
     onClose();
   }, [addToIgnored, contextMenu.word, onClose]);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  useClickOutside(menuRef, onClose);
 
   // Position the menu
   const style = {
@@ -108,9 +88,10 @@ export function SpellcheckContextMenu({
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: adjustPosition reads contextMenu.rect internally
   useEffect(() => {
     adjustPosition();
-  });
+  }, [contextMenu.rect]);
 
   return createPortal(
     <div

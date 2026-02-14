@@ -63,6 +63,12 @@ async function searchTable<T extends { id: string }>(
     .filter((r): r is SearchResult => r !== null);
 }
 
+/**
+ * Outline cells are special-cased because they can't use `searchTable`:
+ * cells have no self-contained title — the display title is composed from
+ * the parent row label and column title, requiring joins to two other tables.
+ * Cells whose row or column is missing are silently skipped.
+ */
 async function searchOutlineCells(
   projectId: string,
   query: string,

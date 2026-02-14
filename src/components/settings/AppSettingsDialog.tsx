@@ -26,7 +26,7 @@ import type {
   ReasoningEffort,
   UiDensity,
 } from "@/db/schemas";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { getDefaultProviderModels } from "@/lib/ai/providers";
 import type { Backup } from "@/lib/backup";
 import {

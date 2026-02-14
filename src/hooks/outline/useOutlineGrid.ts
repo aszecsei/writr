@@ -5,7 +5,7 @@ import type { OutlineGridCell } from "@/db/schemas";
 import {
   createProjectListHook,
   createProjectListUnsortedHook,
-} from "./factories";
+} from "../factories";
 
 export const useOutlineGridColumns = createProjectListHook(
   db.outlineGridColumns,

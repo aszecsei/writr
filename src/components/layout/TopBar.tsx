@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SearchBar } from "@/components/search";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { formatReadingTime } from "@/lib/reading-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";

@@ -46,6 +46,15 @@ export function isProjectBackup(backup: Backup): backup is ProjectBackup {
 
 type IdMap = Map<string, string>;
 
+/**
+ * `remapId` — for nullable/optional foreign key references (e.g., `parentLocationId`).
+ * Falls back to the original ID if no mapping exists, tolerating references to
+ * entities outside the backup scope.
+ *
+ * `mustGetId` — for required references that must exist in the backup
+ * (e.g., entity `id`, `projectId`, `sourceCharacterId`). Throws immediately
+ * if the mapping is missing, preventing corrupted data from propagating.
+ */
 function remapId(id: string | null | undefined, idMap: IdMap): string | null {
   if (id == null) return null;
   return idMap.get(id) ?? id;
@@ -68,6 +77,19 @@ function mapEntityIds(idMap: IdMap, entities: { id: string }[]): void {
   for (const entity of entities) {
     idMap.set(entity.id, generateId());
   }
+}
+
+/** Remap id + projectId for entities with no additional foreign keys. */
+function remapSimple<T extends { id: string; projectId: string }>(
+  entities: T[],
+  idMap: IdMap,
+  newProjectId: string,
+): T[] {
+  return entities.map((e) => ({
+    ...e,
+    id: mustGetId(idMap, e.id),
+    projectId: newProjectId,
+  }));
 }
 
 export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
@@ -96,21 +118,21 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     idMap.set(data.projectDictionary.id, generateId());
   }
 
-  // Remap project
-  const project = {
-    ...data.project,
-    id: newProjectId,
-    title: `${data.project.title} (Copy)`,
-  };
+  // Simple entities: only id + projectId remapped
+  const chapters = remapSimple(data.chapters, idMap, newProjectId);
+  const styleGuideEntries = remapSimple(
+    data.styleGuideEntries,
+    idMap,
+    newProjectId,
+  );
+  const outlineGridColumns = remapSimple(
+    data.outlineGridColumns,
+    idMap,
+    newProjectId,
+  );
+  const playlistTracks = remapSimple(data.playlistTracks, idMap, newProjectId);
 
-  // Remap chapters
-  const chapters = data.chapters.map((c) => ({
-    ...c,
-    id: mustGetId(idMap, c.id),
-    projectId: newProjectId,
-  }));
-
-  // Remap characters with cross-references
+  // Complex entities: additional FK arrays or references
   const characters = data.characters.map((c) => ({
     ...c,
     id: mustGetId(idMap, c.id),
@@ -119,7 +141,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     linkedLocationIds: remapIdArray(c.linkedLocationIds, idMap),
   }));
 
-  // Remap character relationships
   const characterRelationships = data.characterRelationships.map((r) => ({
     ...r,
     id: mustGetId(idMap, r.id),
@@ -128,7 +149,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     targetCharacterId: mustGetId(idMap, r.targetCharacterId),
   }));
 
-  // Remap locations with parent references
   const locations = data.locations.map((l) => ({
     ...l,
     id: mustGetId(idMap, l.id),
@@ -137,7 +157,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     linkedCharacterIds: remapIdArray(l.linkedCharacterIds, idMap),
   }));
 
-  // Remap timeline events
   const timelineEvents = data.timelineEvents.map((e) => ({
     ...e,
     id: mustGetId(idMap, e.id),
@@ -146,14 +165,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     linkedCharacterIds: remapIdArray(e.linkedCharacterIds, idMap),
   }));
 
-  // Remap style guide entries
-  const styleGuideEntries = data.styleGuideEntries.map((s) => ({
-    ...s,
-    id: mustGetId(idMap, s.id),
-    projectId: newProjectId,
-  }));
-
-  // Remap worldbuilding docs with parent references
   const worldbuildingDocs = data.worldbuildingDocs.map((d) => ({
     ...d,
     id: mustGetId(idMap, d.id),
@@ -161,13 +172,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     parentDocId: remapId(d.parentDocId, idMap),
     linkedCharacterIds: remapIdArray(d.linkedCharacterIds, idMap),
     linkedLocationIds: remapIdArray(d.linkedLocationIds, idMap),
-  }));
-
-  // Remap outline grid
-  const outlineGridColumns = data.outlineGridColumns.map((c) => ({
-    ...c,
-    id: mustGetId(idMap, c.id),
-    projectId: newProjectId,
   }));
 
   const outlineGridRows = data.outlineGridRows.map((r) => ({
@@ -185,7 +189,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     columnId: mustGetId(idMap, c.columnId),
   }));
 
-  // Remap writing sprints
   const writingSprints = data.writingSprints.map((s) => ({
     ...s,
     id: mustGetId(idMap, s.id),
@@ -193,7 +196,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     chapterId: remapId(s.chapterId, idMap),
   }));
 
-  // Remap writing sessions
   const writingSessions = data.writingSessions.map((s) => ({
     ...s,
     id: mustGetId(idMap, s.id),
@@ -201,14 +203,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     chapterId: mustGetId(idMap, s.chapterId),
   }));
 
-  // Remap playlist tracks
-  const playlistTracks = data.playlistTracks.map((t) => ({
-    ...t,
-    id: mustGetId(idMap, t.id),
-    projectId: newProjectId,
-  }));
-
-  // Remap comments
   const comments = data.comments.map((c) => ({
     ...c,
     id: mustGetId(idMap, c.id),
@@ -216,7 +210,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     chapterId: mustGetId(idMap, c.chapterId),
   }));
 
-  // Remap chapter snapshots
   const chapterSnapshots = data.chapterSnapshots.map((s) => ({
     ...s,
     id: mustGetId(idMap, s.id),
@@ -224,7 +217,6 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     projectId: newProjectId,
   }));
 
-  // Remap project dictionary
   const projectDictionary = data.projectDictionary
     ? {
         ...data.projectDictionary,
@@ -234,7 +226,11 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     : undefined;
 
   return {
-    project,
+    project: {
+      ...data.project,
+      id: newProjectId,
+      title: `${data.project.title} (Copy)`,
+    },
     chapters,
     characters,
     characterRelationships,

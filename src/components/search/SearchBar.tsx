@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearch } from "@/hooks/useSearch";
+import { useSearch } from "@/hooks/ui/useSearch";
 import { useProjectStore } from "@/store/projectStore";
 import { SearchDropdown } from "./SearchDropdown";
 import { useSearchShortcuts } from "./useSearchShortcuts";

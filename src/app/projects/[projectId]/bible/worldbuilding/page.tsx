@@ -11,7 +11,7 @@ import {
   updateWorldbuildingDoc,
 } from "@/db/operations";
 import type { WorldbuildingDoc } from "@/db/schemas";
-import { useWorldbuildingDocsByProject } from "@/hooks/useBibleEntries";
+import { useWorldbuildingDocsByProject } from "@/hooks/data/useBibleEntries";
 import {
   buildWorldbuildingTree,
   compileWorldbuildingToMarkdown,

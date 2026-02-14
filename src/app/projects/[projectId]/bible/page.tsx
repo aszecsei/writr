@@ -11,8 +11,8 @@ import {
   useStyleGuideByProject,
   useTimelineByProject,
   useWorldbuildingDocsByProject,
-} from "@/hooks/useBibleEntries";
-import { usePlaylistByProject } from "@/hooks/usePlaylistEntries";
+} from "@/hooks/data/useBibleEntries";
+import { usePlaylistByProject } from "@/hooks/data/usePlaylistEntries";
 
 const sections: {
   key: string;

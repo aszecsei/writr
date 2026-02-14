@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { Modal } from "@/components/ui/Modal";
 import { updateProject } from "@/db/operations";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/hooks/data/useProject";
 import { isEditProjectModal, useUiStore } from "@/store/uiStore";
 import { type ProjectFormData, ProjectFormFields } from "./ProjectFormFields";
 

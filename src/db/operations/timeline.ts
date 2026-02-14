@@ -1,6 +1,6 @@
 import { db } from "../database";
 import { type TimelineEvent, TimelineEventSchema } from "../schemas";
-import { generateId, now, reorderEntities } from "./helpers";
+import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Timeline Events ────────────────────────────────────────────────
 
@@ -29,9 +29,11 @@ export async function createTimelineEvent(
       >
     >,
 ): Promise<TimelineEvent> {
-  const order =
-    data.order ??
-    (await db.timelineEvents.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.timelineEvents,
+    { projectId: data.projectId },
+    data.order,
+  );
   const event = TimelineEventSchema.parse({
     id: generateId(),
     projectId: data.projectId,

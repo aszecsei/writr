@@ -11,7 +11,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { usePlaylistTrack } from "@/hooks/usePlaylistEntries";
+import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
 import { type LoopMode, useRadioStore } from "@/store/radioStore";
 
 function formatTime(seconds: number): string {

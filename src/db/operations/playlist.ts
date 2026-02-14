@@ -1,6 +1,6 @@
 import { db } from "../database";
 import { type PlaylistTrack, PlaylistTrackSchema } from "../schemas";
-import { generateId, now, reorderEntities } from "./helpers";
+import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Playlist Tracks ─────────────────────────────────────────────────
 
@@ -20,9 +20,11 @@ export async function createPlaylistTrack(
   data: Pick<PlaylistTrack, "projectId" | "title" | "url" | "source"> &
     Partial<Pick<PlaylistTrack, "thumbnailUrl" | "duration" | "order">>,
 ): Promise<PlaylistTrack> {
-  const order =
-    data.order ??
-    (await db.playlistTracks.where({ projectId: data.projectId }).count());
+  const order = await getNextOrder(
+    db.playlistTracks,
+    { projectId: data.projectId },
+    data.order,
+  );
   const track = PlaylistTrackSchema.parse({
     id: generateId(),
     projectId: data.projectId,

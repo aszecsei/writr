@@ -7,6 +7,12 @@ import { deleteComment, resolveComment, updateComment } from "@/db/operations";
 import type { Comment, CommentColor } from "@/db/schemas";
 import { useCommentStore } from "@/store/commentStore";
 import { getCommentPositions } from "../extensions/Comments";
+import {
+  CARD_BORDER_COLOR,
+  COLOR_BUTTON_CLASSES,
+  COMMENT_COLORS,
+} from "./colors";
+import { calculateCommentTop } from "./position";
 
 interface CommentMarginProps {
   editor: Editor | null;
@@ -19,24 +25,6 @@ interface CommentPosition {
   top: number;
   comment: Comment;
 }
-
-const COLORS: CommentColor[] = ["yellow", "blue", "green", "red", "purple"];
-
-const CARD_BORDER_COLOR: Record<CommentColor, string> = {
-  yellow: "border-l-yellow-400 dark:border-l-yellow-500",
-  blue: "border-l-blue-400 dark:border-l-blue-500",
-  green: "border-l-green-400 dark:border-l-green-500",
-  red: "border-l-red-400 dark:border-l-red-500",
-  purple: "border-l-purple-400 dark:border-l-purple-500",
-};
-
-const COLOR_BUTTON_CLASSES: Record<CommentColor, string> = {
-  yellow: "bg-yellow-400 hover:bg-yellow-500",
-  blue: "bg-blue-400 hover:bg-blue-500",
-  green: "bg-green-400 hover:bg-green-500",
-  red: "bg-red-400 hover:bg-red-500",
-  purple: "bg-purple-400 hover:bg-purple-500",
-};
 
 export function CommentMargin({
   editor,
@@ -55,36 +43,15 @@ export function CommentMargin({
     }
 
     const view = editor.view;
-    const scrollContainer = view.dom.closest(
-      ".overflow-y-auto",
-    ) as HTMLElement | null;
-    if (!scrollContainer) return;
-
     const newPositions: CommentPosition[] = [];
-    const docSize = view.state.doc.content.size;
     const positionMap = getCommentPositions(view.state);
 
     for (const comment of comments) {
       if (comment.status === "resolved") continue;
 
-      const mapped = positionMap.get(comment.id);
-      const pos = Math.max(
-        1,
-        Math.min(mapped?.from ?? comment.fromOffset, docSize),
-      );
-
-      try {
-        const coords = view.coordsAtPos(pos);
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const top = coords.top - containerRect.top + scrollContainer.scrollTop;
-
-        newPositions.push({
-          id: comment.id,
-          top,
-          comment,
-        });
-      } catch {
-        // Position may be invalid if document changed
+      const top = calculateCommentTop(view, comment, positionMap);
+      if (top !== null) {
+        newPositions.push({ id: comment.id, top, comment });
       }
     }
 
@@ -273,7 +240,7 @@ function ExpandedCard({
 
           {/* Color picker */}
           <div className="mb-2 flex items-center gap-1">
-            {COLORS.map((color) => (
+            {COMMENT_COLORS.map((color) => (
               <button
                 key={color}
                 type="button"

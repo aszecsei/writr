@@ -5,31 +5,20 @@ import { Check, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteComment, resolveComment, updateComment } from "@/db/operations";
 import type { Comment, CommentColor } from "@/db/schemas";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { useCommentStore } from "@/store/commentStore";
 import { getCommentPositions } from "../extensions/Comments";
+import {
+  CARD_BORDER_COLOR,
+  COLOR_BUTTON_CLASSES,
+  COMMENT_COLORS,
+} from "./colors";
+import { calculateCommentTop } from "./position";
 
 interface CommentPopoverProps {
   editor: Editor | null;
   comments: Comment[];
 }
-
-const COLORS: CommentColor[] = ["yellow", "blue", "green", "red", "purple"];
-
-const COLOR_BUTTON_CLASSES: Record<CommentColor, string> = {
-  yellow: "bg-yellow-400 hover:bg-yellow-500",
-  blue: "bg-blue-400 hover:bg-blue-500",
-  green: "bg-green-400 hover:bg-green-500",
-  red: "bg-red-400 hover:bg-red-500",
-  purple: "bg-purple-400 hover:bg-purple-500",
-};
-
-const CARD_BORDER_COLOR: Record<CommentColor, string> = {
-  yellow: "border-l-yellow-400 dark:border-l-yellow-500",
-  blue: "border-l-blue-400 dark:border-l-blue-500",
-  green: "border-l-green-400 dark:border-l-green-500",
-  red: "border-l-red-400 dark:border-l-red-500",
-  purple: "border-l-purple-400 dark:border-l-purple-500",
-};
 
 export function CommentPopover({ editor, comments }: CommentPopoverProps) {
   const selectedId = useCommentStore((s) => s.selectedId);
@@ -57,29 +46,9 @@ export function CommentPopover({ editor, comments }: CommentPopoverProps) {
       return;
     }
 
-    const view = editor.view;
-    const docSize = view.state.doc.content.size;
-    const positionMap = getCommentPositions(view.state);
-    const mapped = positionMap.get(selectedComment.id);
-    const pos = Math.max(
-      1,
-      Math.min(mapped?.from ?? selectedComment.fromOffset, docSize),
-    );
-    const scrollContainer = view.dom.closest(
-      ".overflow-y-auto",
-    ) as HTMLElement | null;
-
-    if (!scrollContainer) return;
-
-    try {
-      const coords = view.coordsAtPos(pos);
-      const containerRect = scrollContainer.getBoundingClientRect();
-      // Content-relative position: auto-scrolls with content
-      const top = coords.top - containerRect.top + scrollContainer.scrollTop;
-      setPosition({ top: top - 10 });
-    } catch {
-      setPosition(null);
-    }
+    const positionMap = getCommentPositions(editor.view.state);
+    const top = calculateCommentTop(editor.view, selectedComment, positionMap);
+    setPosition(top !== null ? { top: top - 10 } : null);
   }, [editor, selectedComment]);
 
   // Focus textarea when popover opens
@@ -89,38 +58,15 @@ export function CommentPopover({ editor, comments }: CommentPopoverProps) {
     }
   }, [position]);
 
-  // Close on click outside or Escape
-  useEffect(() => {
-    if (!selectedId) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node)
-      ) {
-        if (selectedComment && content !== selectedComment.content) {
-          updateComment(selectedId, { content });
-        }
-        clearSelection();
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (selectedComment && content !== selectedComment.content) {
-          updateComment(selectedId, { content });
-        }
-        clearSelection();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+  // Close on click outside or Escape, saving unsaved content first
+  const handleDismiss = useCallback(() => {
+    if (selectedId && selectedComment && content !== selectedComment.content) {
+      updateComment(selectedId, { content });
+    }
+    clearSelection();
   }, [selectedId, selectedComment, content, clearSelection]);
+
+  useClickOutside(popoverRef, handleDismiss, !!selectedId);
 
   const handleColorChange = useCallback(
     async (color: CommentColor) => {
@@ -194,7 +140,7 @@ export function CommentPopover({ editor, comments }: CommentPopoverProps) {
         <span className="mr-1 text-xs text-neutral-500 dark:text-neutral-400">
           Color:
         </span>
-        {COLORS.map((color) => (
+        {COMMENT_COLORS.map((color) => (
           <button
             key={color}
             type="button"

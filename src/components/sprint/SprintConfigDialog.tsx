@@ -10,7 +10,7 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
-import { useWritingSprint } from "@/hooks/useWritingSprint";
+import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
 

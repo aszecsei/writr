@@ -12,8 +12,8 @@ import {
   SpellCheck,
 } from "lucide-react";
 import { useCallback } from "react";
-import { useAppSettings } from "@/hooks/useAppSettings";
-import { useChapter } from "@/hooks/useChapter";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useChapter } from "@/hooks/data/useChapter";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";

@@ -4,6 +4,16 @@ import { db } from "../database";
 
 export { generateId };
 
+/** Return `data.order` if provided, otherwise count existing rows matching `filter`. */
+export async function getNextOrder(
+  table: Table,
+  filter: Record<string, unknown>,
+  explicitOrder: number | undefined,
+): Promise<number> {
+  if (explicitOrder !== undefined) return explicitOrder;
+  return table.where(filter).count();
+}
+
 export function now(): string {
   return new Date().toISOString();
 }

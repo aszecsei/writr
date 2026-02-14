@@ -8,7 +8,7 @@ import type {
   OutlineGridColumn,
   OutlineGridRow as OutlineGridRowType,
 } from "@/db/schemas";
-import { useInlineEdit } from "@/hooks/useInlineEdit";
+import { useInlineEdit } from "@/hooks/forms/useInlineEdit";
 import { OutlineGridCell as GridCell } from "./OutlineGridCell";
 import { StatusBadge } from "./StatusBadge";
 

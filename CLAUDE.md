@@ -42,7 +42,14 @@ Long-form writing app with multi-project support, chapter-based rich-text editin
   - `spellcheckStore` — enabled state, ignored words, context menu, scanner
   - `findReplaceStore` — search/replace terms, modes (regex/case/whole-word), match tracking
   - `radioStore` — playlist playback, queue, volume, shuffle/loop (persisted)
-- **`src/hooks/`** — React hooks bridging Dexie and components via `useLiveQuery`. Factory pattern: `createEntityHook()`, `createProjectListHook()`, `createProjectListUnsortedHook()` in `factories.ts`. Key hooks: `useAutoSave`, `useChapter`, `useComments`, `useSearch`, `useWritingStats`, `useWritingSprint`, `useAppSettings`, `useBibleEntries` (characters/locations/timeline/etc.), `useOutlineGrid*`, `useCharacterForm`, `useLocationForm`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`.
+- **`src/hooks/`** — React hooks bridging Dexie and components via `useLiveQuery`. Factory pattern: `createEntityHook()`, `createProjectListHook()`, `createProjectListUnsortedHook()` in `factories.ts`. Organized into subdirectories:
+  - `data/` — Dexie data hooks: `useChapter`, `useProject`, `useBibleEntries`, `useAppSettings`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`
+  - `editor/` — Editor lifecycle hooks: `useAutoSave`, `useComments`, `useEditorCommentSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`
+  - `forms/` — Form hooks: `useCharacterForm`, `useLocationForm`, `useInlineEdit`
+  - `outline/` — Outline grid hooks: `useOutlineGrid`, `useOutlineGridDragDrop`, `useOutlineGridOperations`
+  - `writing/` — Sprint hooks: `useWritingSprint`, `useSprintHistory`
+  - `ui/` — UI hooks: `useFocusModeShortcuts`, `useAutoLayout`, `useSearch`, `useSearchPage`
+  - Root: `factories.ts`, `useClickOutside.ts`
 - **`src/components/editor/`** — TipTap editor with `tiptap-markdown` for Markdown round-tripping. Content stored as Markdown strings in Dexie. Custom extensions in `extensions/`: Comments, SearchAndReplace, TypewriterScrolling, Spellcheck, Indent, Ruby, SelectionPreserver. Toolbar in `EditorToolbar.tsx`, comments UI in `comments/`, find-replace in `FindReplacePanel.tsx`.
 - **`src/components/ui/`** — Reusable UI primitives (see Reusable Components section below).
 - **`src/lib/ai/`** — OpenRouter integration. `client.ts` calls `/api/ai` (Next.js route handler that proxies to OpenRouter). Streaming via `streamAi()` generator. `prompts.ts` builds system prompts from story bible + outline grid context. Seven AI tools: generate-prose, review-text, suggest-edits, character-dialogue, brainstorm, summarize, consistency-check.

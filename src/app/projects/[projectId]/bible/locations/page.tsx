@@ -9,7 +9,7 @@ import type { Location } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
-} from "@/hooks/useBibleEntries";
+} from "@/hooks/data/useBibleEntries";
 
 interface LocationNode {
   location: Location;

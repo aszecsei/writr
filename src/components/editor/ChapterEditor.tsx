@@ -1,33 +1,24 @@
 "use no memo";
 "use client";
 
-import { generateHTML } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  updateChapterContent,
-  updateComment,
-  updateCommentPositions,
-} from "@/db/operations";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { Comment } from "@/db/schemas";
-import { useAppSettings } from "@/hooks/useAppSettings";
-import { useAutoSave } from "@/hooks/useAutoSave";
-import {
-  useCharactersByProject,
-  useLocationsByProject,
-} from "@/hooks/useBibleEntries";
-import { useChapter } from "@/hooks/useChapter";
-import { useCommentsByChapter } from "@/hooks/useComments";
-import { useCombinedDictionaryWords } from "@/hooks/useDictionary";
-import { reconcileComment } from "@/lib/comments/reconcile";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useChapter } from "@/hooks/data/useChapter";
+import { useAutoSave } from "@/hooks/editor/useAutoSave";
+import { useCommentsByChapter } from "@/hooks/editor/useComments";
+import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
+import { useEditorKeyboardShortcuts } from "@/hooks/editor/useEditorKeyboardShortcuts";
+import { useEditorSpellcheck } from "@/hooks/editor/useEditorSpellcheck";
+import { useFocusMode } from "@/hooks/editor/useFocusMode";
 import { getEditorFont } from "@/lib/fonts";
 import {
   fountainToProseMirror,
   parseFountain,
   serializeFountain,
 } from "@/lib/fountain";
-import { getSpellcheckService, type SpellcheckService } from "@/lib/spellcheck";
-import { combineCustomWords } from "@/lib/spellcheck/auto-populate";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useFindReplaceStore } from "@/store/findReplaceStore";
@@ -37,10 +28,7 @@ import { useUiStore } from "@/store/uiStore";
 import { CommentMargin, CommentPopover } from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions, createScreenplayExtensions } from "./extensions";
-import {
-  COMMENTS_UPDATED_META,
-  getCommentPositions,
-} from "./extensions/Comments";
+import { getCommentPositions } from "./extensions/Comments";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
 import { ScreenplayToolbar } from "./ScreenplayToolbar";
@@ -80,29 +68,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setSelection = useEditorStore((s) => s.setSelection);
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
-  const openModal = useUiStore((s) => s.openModal);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
   const isScreenplay = activeProjectMode === "screenplay";
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const closeFindReplace = useFindReplaceStore((s) => s.close);
-  const initializedRef = useRef(false);
-  const reconcileRunRef = useRef(false);
-
-  // Spellcheck state
-  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
-  const ignoredWords = useSpellcheckStore((s) => s.ignoredWords);
   const contextMenu = useSpellcheckStore((s) => s.contextMenu);
-  const openContextMenu = useSpellcheckStore((s) => s.openContextMenu);
   const closeContextMenu = useSpellcheckStore((s) => s.closeContextMenu);
-
-  // Dictionary and story bible data for spellcheck
-  const dictionaryWords = useCombinedDictionaryWords(
-    activeProjectId ?? undefined,
-  );
-  const characters = useCharactersByProject(activeProjectId);
-  const locations = useLocationsByProject(activeProjectId);
+  const initializedRef = useRef(false);
 
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
   const typewriterScrollingRef = useRef(false);
@@ -111,30 +85,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
 
-  // Refs for spellcheck - allows dynamic updates without recreating editor
-  const spellcheckerRef = useRef<SpellcheckService | null>(null);
-  const customWordsRef = useRef<Set<string>>(new Set());
-  const spellcheckEnabledRef = useRef(spellcheckEnabled);
-  spellcheckEnabledRef.current = spellcheckEnabled;
-  const ignoredWordsRef = useRef<Set<string>>(new Set());
-  ignoredWordsRef.current = ignoredWords;
-  const [spellcheckLoaded, setSpellcheckLoaded] = useState(() =>
-    getSpellcheckService().isLoaded(),
-  );
-
-  // Combine dictionary words with story bible names
-  const combinedCustomWords = useMemo(() => {
-    return combineCustomWords(
-      dictionaryWords,
-      characters ?? [],
-      locations ?? [],
-    );
-  }, [dictionaryWords, characters, locations]);
-
-  // Update customWordsRef when combined words change
-  useEffect(() => {
-    customWordsRef.current = combinedCustomWords;
-  }, [combinedCustomWords]);
+  // Spellcheck setup
+  const {
+    spellcheckerRef,
+    customWordsRef,
+    spellcheckEnabledRef,
+    ignoredWordsRef,
+    onSpellcheckContextMenu,
+    spellcheckVersion,
+  } = useEditorSpellcheck(activeProjectId);
 
   // Stable callback refs for selection preserver
   const setSelectionRef = useRef(setSelection);
@@ -151,26 +110,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const onSelectionClear = useCallback(() => {
     clearSelectionRef.current();
   }, []);
-
-  // Spellcheck context menu callback
-  const onSpellcheckContextMenu = useCallback(
-    (
-      word: string,
-      from: number,
-      to: number,
-      suggestions: string[],
-      rect: DOMRect,
-    ) => {
-      openContextMenu({ word, from, to, suggestions, rect });
-    },
-    [openContextMenu],
-  );
-
-  // Filter to active/orphaned comments (not resolved)
-  const activeComments = useMemo(() => {
-    const filtered = (comments ?? []).filter((c) => c.status !== "resolved");
-    return filtered;
-  }, [comments]);
 
   // Memoize extensions to prevent recreation on every render
   // biome-ignore lint/correctness/useExhaustiveDependencies: refs and stable callbacks intentionally omitted to prevent editor recreation
@@ -207,46 +146,22 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     },
   });
 
-  // Update the comments ref and force ProseMirror to re-render decorations.
-  // Only dispatch after content is initialized to prevent positions being
-  // mapped through the setContent replacement (which would corrupt them).
-  useEffect(() => {
-    commentsRef.current = activeComments;
-    if (editor && !editor.isDestroyed && initializedRef.current) {
-      // Dispatch a transaction with metadata to trigger decoration rebuild
-      const tr = editor.state.tr.setMeta(COMMENTS_UPDATED_META, true);
-      editor.view.dispatch(tr);
-    }
-  }, [activeComments, editor]);
+  // Comment synchronization (ref sync + reconciliation)
+  const { activeComments, resetReconcile } = useEditorCommentSync(
+    editor,
+    comments,
+    commentsRef,
+    initializedRef,
+  );
 
-  // Initialize spellcheck service
-  useEffect(() => {
-    const service = getSpellcheckService();
-    spellcheckerRef.current = service;
-
-    if (service.isLoaded()) {
-      setSpellcheckLoaded(true);
-    } else if (!service.isLoading()) {
-      service.load().then(() => {
-        setSpellcheckLoaded(true);
-      });
-    }
-  }, []);
-
-  // Trigger spellcheck rebuild when custom words or enabled state changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: these deps intentionally trigger rebuilds
+  // Trigger spellcheck decoration rebuild when spellcheck state changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: spellcheckVersion tracks all spellcheck state changes
   useEffect(() => {
     if (editor && !editor.isDestroyed && initializedRef.current) {
       const tr = editor.state.tr.setMeta(SPELLCHECK_UPDATED_META, true);
       editor.view.dispatch(tr);
     }
-  }, [
-    editor,
-    combinedCustomWords,
-    spellcheckEnabled,
-    ignoredWords,
-    spellcheckLoaded,
-  ]);
+  }, [editor, spellcheckVersion]);
 
   // Set active document on mount
   useEffect(() => {
@@ -266,7 +181,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   useEffect(() => {
     if (editor && chapter && !editor.isDestroyed && !initializedRef.current) {
       if (isScreenplay) {
-        // Fountain → ProseMirror JSON
         const elements = parseFountain(chapter.content || "");
         const json = fountainToProseMirror(elements);
         editor.commands.setContent(json);
@@ -284,44 +198,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion change
   useEffect(() => {
     initializedRef.current = false;
-    reconcileRunRef.current = false;
-  }, [chapterId, contentVersion]);
-
-  // Reconcile comment positions on chapter load
-  useEffect(() => {
-    if (
-      !editor ||
-      editor.isDestroyed ||
-      !comments ||
-      !initializedRef.current ||
-      reconcileRunRef.current
-    )
-      return;
-    reconcileRunRef.current = true;
-
-    const doc = editor.state.doc;
-    const plainText = doc.textBetween(1, doc.content.size, "\n");
-
-    for (const comment of comments) {
-      if (comment.status === "resolved") continue;
-
-      const result = reconcileComment(comment, plainText);
-
-      if (!result.found) {
-        if (comment.status !== "orphaned") {
-          updateComment(comment.id, { status: "orphaned" });
-        }
-      } else if (result.newFrom !== undefined && result.newTo !== undefined) {
-        updateComment(comment.id, {
-          fromOffset: result.newFrom,
-          toOffset: result.newTo,
-          status: "active",
-        });
-      } else if (comment.status === "orphaned") {
-        updateComment(comment.id, { status: "active" });
-      }
-    }
-  }, [editor, comments]);
+    resetReconcile();
+  }, [chapterId, contentVersion, resetReconcile]);
 
   // Auto-save
   const isScreenplayRef = useRef(isScreenplay);
@@ -334,7 +212,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       : getMarkdown(editor.storage);
     const wordCount = getWordCount(editor.storage);
     await updateChapterContent(chapterId, content, wordCount);
-    // Persist tracked comment positions to IndexedDB
     const positions = getCommentPositions(editor.state);
     if (positions.size > 0) {
       await updateCommentPositions(positions);
@@ -357,9 +234,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           ? serializeFountain(ed.state.doc)
           : getMarkdown(ed.storage);
         const wc = getWordCount(ed.storage);
-        // Fire-and-forget save on unmount
         updateChapterContent(chapterIdRef.current, content, wc);
-        // Persist tracked comment positions
         const positions = getCommentPositions(ed.state);
         if (positions.size > 0) {
           updateCommentPositions(positions);
@@ -368,84 +243,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     };
   }, []);
 
-  // Focus editor and scroll to center cursor when entering focus mode
+  // Focus mode: focus editor and scroll to center cursor
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!focusModeEnabled || !editor || editor.isDestroyed) return;
+  useFocusMode(focusModeEnabled, editor, scrollContainerRef);
 
-    const focusAndScroll = () => {
-      if (editor.isDestroyed || !scrollContainerRef.current) return;
-
-      // Focus the editor so user can start typing immediately
-      editor.commands.focus();
-
-      // Scroll to center the cursor
-      const view = editor.view;
-      const { from } = view.state.selection;
-      const coords = view.coordsAtPos(from);
-      const container = scrollContainerRef.current;
-
-      const containerRect = container.getBoundingClientRect();
-      const containerCenter = containerRect.height / 2;
-      const cursorOffsetInContainer =
-        coords.top - containerRect.top + container.scrollTop;
-      const targetScroll = cursorOffsetInContainer - containerCenter;
-
-      container.scrollTo({
-        top: Math.max(0, targetScroll),
-        behavior: "instant",
-      });
-    };
-
-    // Focus after fullscreen transition completes
-    const handleFullscreenChange = () => {
-      if (document.fullscreenElement) {
-        // Just entered fullscreen, focus the editor
-        setTimeout(focusAndScroll, 50);
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-    // Also try immediately in case fullscreen already happened or isn't available
-    const timeoutId = setTimeout(focusAndScroll, 100);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      clearTimeout(timeoutId);
-    };
-  }, [focusModeEnabled, editor]);
-
-  // Keyboard shortcut for preview card (Ctrl+Shift+P)
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey && e.shiftKey && e.key === "P") {
-        e.preventDefault();
-        if (!editor || editor.isDestroyed) return;
-
-        const { from, to, empty } = editor.state.selection;
-        if (empty) return;
-
-        const slice = editor.state.doc.slice(from, to);
-        const json = { type: "doc", content: slice.content.toJSON() };
-        const selectedHtml = generateHTML(
-          json,
-          editor.extensionManager.extensions,
-        );
-        if (!selectedHtml.trim()) return;
-
-        openModal({
-          id: "preview-card",
-          selectedHtml,
-          projectTitle: activeProjectTitle ?? "Untitled",
-          chapterTitle: chapter?.title ?? "",
-        });
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [editor, chapter, activeProjectTitle, openModal]);
+  // Keyboard shortcuts (Ctrl+Shift+P for preview card)
+  useEditorKeyboardShortcuts(
+    editor,
+    chapter?.title,
+    activeProjectTitle ?? undefined,
+  );
 
   if (!chapter) {
     return (
@@ -472,7 +279,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           <div
             className={`mx-auto px-8 ${isScreenplay ? "" : "max-w-editor"}`}
             style={{
-              // Add top/bottom padding in focus mode to allow cursor to always be centered
               paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
               paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
             }}
@@ -506,7 +312,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           )}
         </div>
       </div>
-      {/* Spellcheck context menu */}
       {contextMenu && activeProjectId && (
         <SpellcheckContextMenu
           editor={editor}
@@ -515,7 +320,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           onClose={closeContextMenu}
         />
       )}
-      {/* Spellcheck scanner modal */}
       {activeProjectId && (
         <SpellcheckScannerModal editor={editor} projectId={activeProjectId} />
       )}

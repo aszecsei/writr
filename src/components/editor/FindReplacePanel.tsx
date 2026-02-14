@@ -120,6 +120,27 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
     }
   }, [isOpen, editor]);
 
+  /** Scroll the editor so the current search match is visible. */
+  const scrollToMatch = useCallback(() => {
+    setTimeout(() => {
+      if (!editor || editor.isDestroyed) return;
+      const s = getSearchState(editor.state);
+      if (s && s.matches.length > 0) {
+        const match = s.matches[s.currentIndex];
+        editor.commands.setTextSelection(match.from);
+        const view = editor.view;
+        const coords = view.coordsAtPos(match.from);
+        const dom = view.dom.closest(".overflow-y-auto");
+        if (dom) {
+          const rect = dom.getBoundingClientRect();
+          const targetY =
+            coords.top - rect.top + dom.scrollTop - rect.height / 2;
+          dom.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+        }
+      }
+    }, 0);
+  }, [editor]);
+
   const handleClose = useCallback(() => {
     close();
     // Return focus to editor
@@ -139,26 +160,16 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       { caseSensitive, wholeWord, useRegex },
       nextIndex,
     );
-
-    // Scroll to match
-    setTimeout(() => {
-      if (!editor || editor.isDestroyed) return;
-      const s = getSearchState(editor.state);
-      if (s && s.matches.length > 0) {
-        const match = s.matches[s.currentIndex];
-        editor.commands.setTextSelection(match.from);
-        const view = editor.view;
-        const coords = view.coordsAtPos(match.from);
-        const dom = view.dom.closest(".overflow-y-auto");
-        if (dom) {
-          const rect = dom.getBoundingClientRect();
-          const targetY =
-            coords.top - rect.top + dom.scrollTop - rect.height / 2;
-          dom.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
-        }
-      }
-    }, 0);
-  }, [editor, searchTerm, caseSensitive, wholeWord, useRegex, dispatchSearch]);
+    scrollToMatch();
+  }, [
+    editor,
+    searchTerm,
+    caseSensitive,
+    wholeWord,
+    useRegex,
+    dispatchSearch,
+    scrollToMatch,
+  ]);
 
   const findPrevious = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
@@ -172,26 +183,16 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       { caseSensitive, wholeWord, useRegex },
       prevIndex,
     );
-
-    // Scroll to match
-    setTimeout(() => {
-      if (!editor || editor.isDestroyed) return;
-      const s = getSearchState(editor.state);
-      if (s && s.matches.length > 0) {
-        const match = s.matches[s.currentIndex];
-        editor.commands.setTextSelection(match.from);
-        const view = editor.view;
-        const coords = view.coordsAtPos(match.from);
-        const dom = view.dom.closest(".overflow-y-auto");
-        if (dom) {
-          const rect = dom.getBoundingClientRect();
-          const targetY =
-            coords.top - rect.top + dom.scrollTop - rect.height / 2;
-          dom.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
-        }
-      }
-    }, 0);
-  }, [editor, searchTerm, caseSensitive, wholeWord, useRegex, dispatchSearch]);
+    scrollToMatch();
+  }, [
+    editor,
+    searchTerm,
+    caseSensitive,
+    wholeWord,
+    useRegex,
+    dispatchSearch,
+    scrollToMatch,
+  ]);
 
   const replaceCurrent = useCallback(() => {
     if (!editor || editor.isDestroyed) return;

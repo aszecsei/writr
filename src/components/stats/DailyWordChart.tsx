@@ -1,7 +1,7 @@
 "use client";
 
 import { toLocalDateString } from "@/db/operations/helpers";
-import type { DailyStats } from "@/hooks/useWritingStats";
+import type { DailyStats } from "@/hooks/editor/useWritingStats";
 
 interface DailyWordChartProps {
   daily: DailyStats[];

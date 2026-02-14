@@ -10,7 +10,7 @@ import type { CharacterRole } from "@/db/schemas";
 import {
   useCharactersByProject,
   useRelationshipsByProject,
-} from "@/hooks/useBibleEntries";
+} from "@/hooks/data/useBibleEntries";
 
 const roleBorderColors: Record<CharacterRole, string> = {
   protagonist: "border-l-amber-400 dark:border-l-amber-500",

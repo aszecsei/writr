@@ -56,6 +56,19 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+/** Jump to a specific queue index and start loading the track. */
+function navigateQueue(
+  set: (fn: (s: RadioState) => void) => void,
+  index: number,
+) {
+  set((s) => {
+    s.queueIndex = index;
+    s.currentTrackId = s.queue[index];
+    s.currentTime = 0;
+    s.playbackState = "loading";
+  });
+}
+
 export const useRadioStore = create<RadioState>()(
   persist(
     immer((set, get) => ({
@@ -96,24 +109,8 @@ export const useRadioStore = create<RadioState>()(
       next: () => {
         const state = get();
         if (state.queue.length === 0) return;
-
-        const nextIndex = state.queueIndex + 1;
-        if (nextIndex >= state.queue.length) {
-          // Loop back to start
-          set((s) => {
-            s.queueIndex = 0;
-            s.currentTrackId = s.queue[0];
-            s.currentTime = 0;
-            s.playbackState = "loading";
-          });
-        } else {
-          set((s) => {
-            s.queueIndex = nextIndex;
-            s.currentTrackId = s.queue[nextIndex];
-            s.currentTime = 0;
-            s.playbackState = "loading";
-          });
-        }
+        const nextIndex = (state.queueIndex + 1) % state.queue.length;
+        navigateQueue(set, nextIndex);
       },
 
       previous: () => {
@@ -128,23 +125,9 @@ export const useRadioStore = create<RadioState>()(
           return;
         }
 
-        const prevIndex = state.queueIndex - 1;
-        if (prevIndex < 0) {
-          // Loop to end
-          set((s) => {
-            s.queueIndex = s.queue.length - 1;
-            s.currentTrackId = s.queue[s.queue.length - 1];
-            s.currentTime = 0;
-            s.playbackState = "loading";
-          });
-        } else {
-          set((s) => {
-            s.queueIndex = prevIndex;
-            s.currentTrackId = s.queue[prevIndex];
-            s.currentTime = 0;
-            s.playbackState = "loading";
-          });
-        }
+        const prevIndex =
+          (state.queueIndex - 1 + state.queue.length) % state.queue.length;
+        navigateQueue(set, prevIndex);
       },
 
       seekTo: (time: number) =>

@@ -17,14 +17,14 @@ import {
   useStyleGuideByProject,
   useTimelineByProject,
   useWorldbuildingDocsByProject,
-} from "@/hooks/useBibleEntries";
-import { useChapter, useChaptersByProject } from "@/hooks/useChapter";
+} from "@/hooks/data/useBibleEntries";
+import { useChapter, useChaptersByProject } from "@/hooks/data/useChapter";
+import { useProject } from "@/hooks/data/useProject";
 import {
   useOutlineGridCells,
   useOutlineGridColumns,
   useOutlineGridRows,
-} from "@/hooks/useOutlineGrid";
-import { useProject } from "@/hooks/useProject";
+} from "@/hooks/outline/useOutlineGrid";
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
 import { PROVIDERS } from "@/lib/ai/providers";

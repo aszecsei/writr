@@ -11,8 +11,8 @@ import {
   updateChapterContent,
 } from "@/db/operations";
 import type { ChapterSnapshot } from "@/db/schemas";
-import { useChapter } from "@/hooks/useChapter";
-import { useSnapshotsByChapter } from "@/hooks/useSnapshots";
+import { useChapter } from "@/hooks/data/useChapter";
+import { useSnapshotsByChapter } from "@/hooks/data/useSnapshots";
 import { useEditorStore } from "@/store/editorStore";
 import { isVersionHistoryModal, useUiStore } from "@/store/uiStore";
 
@@ -209,174 +209,231 @@ function VersionHistoryContent({
       </h2>
 
       {view === "list" && (
-        <>
-          {/* Create snapshot */}
-          <div className="mt-4 flex gap-2">
-            <input
-              type="text"
-              value={snapshotName}
-              onChange={(e) => setSnapshotName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleCreate();
-                }
-              }}
-              placeholder="Snapshot name..."
-              className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            />
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={!snapshotName.trim()}
-              className={BUTTON_PRIMARY}
-            >
-              Save Snapshot
-            </button>
-          </div>
-
-          {/* Snapshot list */}
-          <div className="mt-4 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700">
-            {!snapshots || snapshots.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
-                No snapshots yet. Save one to create a checkpoint.
-              </p>
-            ) : (
-              <ul>
-                {snapshots.map((snap) => (
-                  <li
-                    key={snap.id}
-                    className="border-b border-neutral-100 px-4 py-3 last:border-b-0 dark:border-neutral-800"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {snap.name}
-                        </p>
-                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                          {formatRelativeTime(snap.createdAt)} &middot;{" "}
-                          {snap.wordCount.toLocaleString()} words
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          title="Compare with current"
-                          onClick={() => handleCompare(snap)}
-                          className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-                        >
-                          <GitCompare size={14} />
-                        </button>
-                        {confirmRestore === snap.id ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleRestore(snap)}
-                              className="rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmRestore(null)}
-                              className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            title="Restore this snapshot"
-                            onClick={() => setConfirmRestore(snap.id)}
-                            className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-                          >
-                            <RotateCcw size={14} />
-                          </button>
-                        )}
-                        {confirmDelete === snap.id ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(snap.id)}
-                              className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDelete(null)}
-                              className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            title="Delete this snapshot"
-                            onClick={() => setConfirmDelete(snap.id)}
-                            className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-950 dark:hover:text-red-400"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-            {snapshots?.length ?? 0} snapshot
-            {(snapshots?.length ?? 0) !== 1 && "s"}
-          </p>
-        </>
+        <SnapshotListView
+          snapshots={snapshots}
+          snapshotName={snapshotName}
+          setSnapshotName={setSnapshotName}
+          confirmDelete={confirmDelete}
+          setConfirmDelete={setConfirmDelete}
+          confirmRestore={confirmRestore}
+          setConfirmRestore={setConfirmRestore}
+          onCreate={handleCreate}
+          onDelete={handleDelete}
+          onRestore={handleRestore}
+          onCompare={handleCompare}
+        />
       )}
 
       {view === "diff" && diffSnapshot && (
-        <>
-          <div className="mt-4 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleBackToList}
-              className={BUTTON_CANCEL}
-            >
-              <ArrowLeft size={14} className="mr-1 inline" />
-              Back
-            </button>
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              Comparing &ldquo;{diffSnapshot.name}&rdquo; with current
-            </span>
-          </div>
-
-          {/* Legend */}
-          <div className="mt-3 flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded bg-red-100 dark:bg-red-900/40" />
-              <span className="text-neutral-600 dark:text-neutral-400">
-                Removed from snapshot
-              </span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded bg-green-100 dark:bg-green-900/40" />
-              <span className="text-neutral-600 dark:text-neutral-400">
-                Added in current
-              </span>
-            </span>
-          </div>
-
-          {/* Diff content */}
-          <div className="mt-3 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 p-4 dark:border-neutral-700">
-            <InlineDiff
-              oldText={diffSnapshot.content}
-              newText={chapter?.content ?? ""}
-            />
-          </div>
-        </>
+        <SnapshotDiffView
+          snapshot={diffSnapshot}
+          currentContent={chapter?.content ?? ""}
+          onBack={handleBackToList}
+        />
       )}
     </Modal>
+  );
+}
+
+/* ─── Snapshot List View ─── */
+
+function SnapshotListView({
+  snapshots,
+  snapshotName,
+  setSnapshotName,
+  confirmDelete,
+  setConfirmDelete,
+  confirmRestore,
+  setConfirmRestore,
+  onCreate,
+  onDelete,
+  onRestore,
+  onCompare,
+}: {
+  snapshots: ChapterSnapshot[] | undefined;
+  snapshotName: string;
+  setSnapshotName: (v: string) => void;
+  confirmDelete: string | null;
+  setConfirmDelete: (v: string | null) => void;
+  confirmRestore: string | null;
+  setConfirmRestore: (v: string | null) => void;
+  onCreate: () => void;
+  onDelete: (id: string) => void;
+  onRestore: (snapshot: ChapterSnapshot) => void;
+  onCompare: (snapshot: ChapterSnapshot) => void;
+}) {
+  return (
+    <>
+      {/* Create snapshot */}
+      <div className="mt-4 flex gap-2">
+        <input
+          type="text"
+          value={snapshotName}
+          onChange={(e) => setSnapshotName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onCreate();
+            }
+          }}
+          placeholder="Snapshot name..."
+          className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+        />
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={!snapshotName.trim()}
+          className={BUTTON_PRIMARY}
+        >
+          Save Snapshot
+        </button>
+      </div>
+
+      {/* Snapshot list */}
+      <div className="mt-4 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700">
+        {!snapshots || snapshots.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
+            No snapshots yet. Save one to create a checkpoint.
+          </p>
+        ) : (
+          <ul>
+            {snapshots.map((snap) => (
+              <li
+                key={snap.id}
+                className="border-b border-neutral-100 px-4 py-3 last:border-b-0 dark:border-neutral-800"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      {snap.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      {formatRelativeTime(snap.createdAt)} &middot;{" "}
+                      {snap.wordCount.toLocaleString()} words
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      title="Compare with current"
+                      onClick={() => onCompare(snap)}
+                      className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                    >
+                      <GitCompare size={14} />
+                    </button>
+                    {confirmRestore === snap.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onRestore(snap)}
+                          className="rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRestore(null)}
+                          className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        title="Restore this snapshot"
+                        onClick={() => setConfirmRestore(snap.id)}
+                        className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                    )}
+                    {confirmDelete === snap.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onDelete(snap.id)}
+                          className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(null)}
+                          className="rounded-md px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        title="Delete this snapshot"
+                        onClick={() => setConfirmDelete(snap.id)}
+                        className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-950 dark:hover:text-red-400"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        {snapshots?.length ?? 0} snapshot
+        {(snapshots?.length ?? 0) !== 1 && "s"}
+      </p>
+    </>
+  );
+}
+
+/* ─── Snapshot Diff View ─── */
+
+function SnapshotDiffView({
+  snapshot,
+  currentContent,
+  onBack,
+}: {
+  snapshot: ChapterSnapshot;
+  currentContent: string;
+  onBack: () => void;
+}) {
+  return (
+    <>
+      <div className="mt-4 flex items-center gap-2">
+        <button type="button" onClick={onBack} className={BUTTON_CANCEL}>
+          <ArrowLeft size={14} className="mr-1 inline" />
+          Back
+        </button>
+        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+          Comparing &ldquo;{snapshot.name}&rdquo; with current
+        </span>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 flex items-center gap-4 text-xs">
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-red-100 dark:bg-red-900/40" />
+          <span className="text-neutral-600 dark:text-neutral-400">
+            Removed from snapshot
+          </span>
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-green-100 dark:bg-green-900/40" />
+          <span className="text-neutral-600 dark:text-neutral-400">
+            Added in current
+          </span>
+        </span>
+      </div>
+
+      {/* Diff content */}
+      <div className="mt-3 max-h-[400px] overflow-y-auto rounded-md border border-neutral-200 p-4 dark:border-neutral-700">
+        <InlineDiff oldText={snapshot.content} newText={currentContent} />
+      </div>
+    </>
   );
 }

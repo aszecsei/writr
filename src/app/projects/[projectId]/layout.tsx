@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/hooks/data/useProject";
 import { useProjectStore } from "@/store/projectStore";
 
 export default function ProjectLayout({ children }: { children: ReactNode }) {

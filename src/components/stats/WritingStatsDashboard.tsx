@@ -1,7 +1,7 @@
 "use client";
 
 import { BarChart3, Clock, TrendingUp, Type } from "lucide-react";
-import { useWritingStats } from "@/hooks/useWritingStats";
+import { useWritingStats } from "@/hooks/editor/useWritingStats";
 import { DailyWordChart } from "./DailyWordChart";
 import { StatCard } from "./StatCard";
 import { StreakDisplay } from "./StreakDisplay";

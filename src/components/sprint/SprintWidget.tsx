@@ -1,7 +1,7 @@
 "use client";
 
 import { Pause, Play, Square } from "lucide-react";
-import { useWritingSprint } from "@/hooks/useWritingSprint";
+import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
 import { useSprintStore } from "@/store/sprintStore";
 
 function formatTime(ms: number): string {

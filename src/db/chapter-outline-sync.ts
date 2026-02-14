@@ -1,11 +1,20 @@
 /**
  * Chapter-Outline Synchronization Module
  *
- * This module centralizes all synchronization logic between chapters and outline rows.
+ * Centralizes all synchronization logic between chapters and outline rows.
  * UI components should use these functions instead of manipulating linked state directly.
  *
- * Key principle: All linked/unlinked conditional logic is encapsulated here.
- * UI components just call intent-based functions and the DB layer handles sync.
+ * Core invariants:
+ * 1. When a row is linked to a chapter, the row's `label` is cleared — the chapter
+ *    title becomes the single source of truth for display.
+ * 2. When a row is unlinked, the chapter title is copied into the row's `label`,
+ *    preserving the semantic meaning without data loss.
+ * 3. Reordering is bidirectional: reordering chapters moves linked rows to match
+ *    (unlinked rows shift to the end), and reordering rows updates linked chapter
+ *    order correspondingly.
+ * 4. Delete operations support a `cascade` flag: true deletes both sides plus
+ *    dependents (cells, comments, snapshots); false unlinks and preserves the
+ *    "other side" with invariant #2.
  */
 
 import { generateId } from "@/lib/id";

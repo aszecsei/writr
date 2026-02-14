@@ -8,8 +8,8 @@ import {
   updateStyleGuideEntry,
 } from "@/db/operations";
 import type { StyleGuideCategory } from "@/db/schemas";
-import { useStyleGuideByProject } from "@/hooks/useBibleEntries";
-import { useHighlightFade } from "@/hooks/useHighlightFade";
+import { useStyleGuideByProject } from "@/hooks/data/useBibleEntries";
+import { useHighlightFade } from "@/hooks/editor/useHighlightFade";
 
 export default function StyleGuidePage() {
   const params = useParams<{ projectId: string }>();

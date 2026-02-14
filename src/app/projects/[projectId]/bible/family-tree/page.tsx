@@ -25,11 +25,11 @@ import {
 } from "@/components/family-tree/CharacterNode";
 import { RelationshipEdge } from "@/components/family-tree/RelationshipEdge";
 import { RelationshipList } from "@/components/family-tree/RelationshipList";
-import { layoutNodes } from "@/hooks/useAutoLayout";
 import {
   useCharactersByProject,
   useRelationshipsByProject,
-} from "@/hooks/useBibleEntries";
+} from "@/hooks/data/useBibleEntries";
+import { layoutNodes } from "@/hooks/ui/useAutoLayout";
 
 const nodeTypes: NodeTypes = { character: CharacterNode };
 const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };

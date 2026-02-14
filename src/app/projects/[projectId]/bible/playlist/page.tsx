@@ -14,7 +14,7 @@ import {
   reorderPlaylistTracks,
 } from "@/db/operations";
 import type { PlaylistTrack } from "@/db/schemas";
-import { usePlaylistByProject } from "@/hooks/usePlaylistEntries";
+import { usePlaylistByProject } from "@/hooks/data/usePlaylistEntries";
 import { fetchTrackMetadata } from "@/lib/radio/metadata";
 import { parseTrackUrl } from "@/lib/radio/url-parser";
 import { useRadioStore } from "@/store/radioStore";

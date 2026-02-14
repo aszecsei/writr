@@ -2,7 +2,8 @@
 
 import type { Editor } from "@tiptap/react";
 import { Check, Type } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { convertToSmartQuotes } from "@/lib/smart-quotes";
 
 interface TextToolsMenuProps {
@@ -14,18 +15,7 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
   const [applied, setApplied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    if (menuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [menuOpen]);
+  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   function handleSmartQuotes() {
     if (!editor) return;

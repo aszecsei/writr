@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
-import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_TOOL_INSTRUCTIONS,

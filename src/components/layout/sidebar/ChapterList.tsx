@@ -29,7 +29,7 @@ import {
   syncReorderChapters,
   updateChapter,
 } from "@/db/operations";
-import { useChaptersByProject } from "@/hooks/useChapter";
+import { useChaptersByProject } from "@/hooks/data/useChapter";
 import { getTerm } from "@/lib/terminology";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";

@@ -11,6 +11,7 @@ import {
 import { match } from "ts-pattern";
 import type { DocNode, TextAlignment, TextSpan } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
+import { HR_TEXT, imagePlaceholder } from "./shared";
 import type { ExportContent, ExportOptions } from "./types";
 
 const HEADING_MAP: Record<
@@ -158,7 +159,7 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
           new Paragraph({
             children: [
               new TextRun({
-                text: "*\u2003\u2003*\u2003\u2003*",
+                text: HR_TEXT,
                 color: "666666",
               }),
             ],
@@ -173,7 +174,7 @@ function nodesToParagraphs(nodes: DocNode[]): Paragraph[] {
           new Paragraph({
             children: [
               new TextRun({
-                text: alt ? `[Image: ${alt}]` : "[Image]",
+                text: imagePlaceholder(alt),
                 italics: true,
                 color: "666666",
               }),

@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import { useState } from "react";
 import { deleteTimelineEvent, updateTimelineEvent } from "@/db/operations";
-import { useHighlightFade } from "@/hooks/useHighlightFade";
+import { useHighlightFade } from "@/hooks/editor/useHighlightFade";
 import { DragHandle } from "./DragHandle";
 
 interface SortableTimelineCardProps {
