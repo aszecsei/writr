@@ -1,11 +1,16 @@
-import type { AiMessage, AiResponse, AiStreamChunk } from "../types";
+import type {
+  AiMessage,
+  AiResponse,
+  AiStreamChunk,
+  ReasoningEffort,
+} from "../types";
 
 export interface CompletionParams {
   model: string;
   messages: AiMessage[];
   temperature: number;
   maxTokens: number;
-  reasoning?: { effort: string };
+  reasoning?: { effort: ReasoningEffort };
 }
 
 export interface ProviderAdapter {

@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import type { AiMessage, ContentPart, FinishReason } from "../types";
-import type { ProviderAdapter } from "./types";
+import { parseBase64ImageDataUrl } from "./helpers";
+import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface GoogleAdapterConfig {
   mode: "api-key" | "vertex";
@@ -20,15 +21,6 @@ function normalizeFinishReason(raw: string | null | undefined): FinishReason {
   }
 }
 
-function parseDataUrl(url: string): {
-  mimeType: string;
-  data: string;
-} | null {
-  const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
-  if (!match) return null;
-  return { mimeType: match[1], data: match[2] };
-}
-
 interface GooglePart {
   text?: string;
   inlineData?: { mimeType: string; data: string };
@@ -40,7 +32,7 @@ function toGoogleParts(parts: ContentPart[]): GooglePart[] {
     if (part.type === "text") {
       result.push({ text: part.text });
     } else if (part.type === "image_url") {
-      const parsed = parseDataUrl(part.image_url.url);
+      const parsed = parseBase64ImageDataUrl(part.image_url.url);
       if (parsed) {
         result.push({
           inlineData: { mimeType: parsed.mimeType, data: parsed.data },
@@ -103,6 +95,34 @@ const BUDGET_MAP: Record<string, number> = {
   xhigh: 32768,
 };
 
+function buildThinkingConfig(params: CompletionParams): object {
+  if (params.reasoning && params.reasoning.effort !== "none") {
+    return {
+      thinkingConfig: {
+        thinkingBudget: BUDGET_MAP[params.reasoning.effort] ?? 8192,
+      },
+    };
+  }
+  return {};
+}
+
+function buildRequestPayload(params: CompletionParams, signal?: AbortSignal) {
+  const { systemInstruction, messages } = extractSystemMessages(
+    params.messages,
+  );
+  return {
+    model: params.model,
+    contents: messages,
+    config: {
+      ...(systemInstruction ? { systemInstruction } : {}),
+      temperature: params.temperature,
+      maxOutputTokens: params.maxTokens,
+      ...buildThinkingConfig(params),
+      ...(signal ? { abortSignal: signal } : {}),
+    },
+  };
+}
+
 function createClient(
   config: GoogleAdapterConfig,
   apiKey: string,
@@ -124,30 +144,9 @@ export function createGoogleAdapter(
   return {
     async complete(apiKey, params, signal) {
       const client = createClient(config, apiKey);
-      const { systemInstruction, messages } = extractSystemMessages(
-        params.messages,
+      const response = await client.models.generateContent(
+        buildRequestPayload(params, signal),
       );
-
-      const thinkingConfig =
-        params.reasoning && params.reasoning.effort !== "none"
-          ? {
-              thinkingConfig: {
-                thinkingBudget: BUDGET_MAP[params.reasoning.effort] ?? 8192,
-              },
-            }
-          : {};
-
-      const response = await client.models.generateContent({
-        model: params.model,
-        contents: messages,
-        config: {
-          ...(systemInstruction ? { systemInstruction } : {}),
-          temperature: params.temperature,
-          maxOutputTokens: params.maxTokens,
-          ...thinkingConfig,
-          ...(signal ? { abortSignal: signal } : {}),
-        },
-      });
 
       let text = "";
       let reasoning = "";
@@ -180,30 +179,9 @@ export function createGoogleAdapter(
 
     async *stream(apiKey, params, signal) {
       const client = createClient(config, apiKey);
-      const { systemInstruction, messages } = extractSystemMessages(
-        params.messages,
+      const stream = await client.models.generateContentStream(
+        buildRequestPayload(params, signal),
       );
-
-      const thinkingConfig =
-        params.reasoning && params.reasoning.effort !== "none"
-          ? {
-              thinkingConfig: {
-                thinkingBudget: BUDGET_MAP[params.reasoning.effort] ?? 8192,
-              },
-            }
-          : {};
-
-      const stream = await client.models.generateContentStream({
-        model: params.model,
-        contents: messages,
-        config: {
-          ...(systemInstruction ? { systemInstruction } : {}),
-          temperature: params.temperature,
-          maxOutputTokens: params.maxTokens,
-          ...thinkingConfig,
-          ...(signal ? { abortSignal: signal } : {}),
-        },
-      });
 
       for await (const response of stream) {
         const candidate = response.candidates?.[0];

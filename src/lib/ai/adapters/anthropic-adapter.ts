@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { AiMessage, ContentPart, FinishReason } from "../types";
-import type { ProviderAdapter } from "./types";
+import { parseBase64ImageDataUrl } from "./helpers";
+import type { CompletionParams, ProviderAdapter } from "./types";
 
 function normalizeStopReason(
   stopReason: string | null | undefined,
@@ -15,15 +16,6 @@ function normalizeStopReason(
     default:
       return stopReason ? "unknown" : "stop";
   }
-}
-
-function parseDataUrl(url: string): {
-  mediaType: string;
-  data: string;
-} | null {
-  const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
-  if (!match) return null;
-  return { mediaType: match[1], data: match[2] };
 }
 
 type AnthropicImageMediaType =
@@ -44,13 +36,13 @@ function toAnthropicContent(
         ...(part.cache_control ? { cache_control: part.cache_control } : {}),
       } as Anthropic.TextBlockParam);
     } else if (part.type === "image_url") {
-      const parsed = parseDataUrl(part.image_url.url);
+      const parsed = parseBase64ImageDataUrl(part.image_url.url);
       if (parsed) {
         blocks.push({
           type: "image",
           source: {
             type: "base64",
-            media_type: parsed.mediaType as AnthropicImageMediaType,
+            media_type: parsed.mimeType as AnthropicImageMediaType,
             data: parsed.data,
           },
         });
@@ -142,50 +134,65 @@ function isAdaptiveModel(model: string): boolean {
 }
 
 function hasThinking(
-  reasoning: { effort: string } | undefined,
-): reasoning is { effort: string } {
+  reasoning: CompletionParams["reasoning"],
+): reasoning is NonNullable<CompletionParams["reasoning"]> {
   return !!reasoning && reasoning.effort !== "none";
 }
 
-function getBudget(reasoning: { effort: string }): number {
+function getBudget(
+  reasoning: NonNullable<CompletionParams["reasoning"]>,
+): number {
   return BUDGET_MAP[reasoning.effort] ?? 10240;
+}
+
+function buildThinkingConfig(params: CompletionParams): object {
+  if (hasThinking(params.reasoning)) {
+    if (isAdaptiveModel(params.model)) {
+      return {
+        thinking: { type: "adaptive" },
+        output_config: {
+          effort: EFFORT_MAP[params.reasoning.effort] ?? "high",
+        },
+      };
+    }
+    return {
+      thinking: {
+        type: "enabled",
+        budget_tokens: getBudget(params.reasoning),
+      },
+    };
+  }
+  return { temperature: params.temperature };
+}
+
+function buildRequestPayload(params: CompletionParams): {
+  model: string;
+  messages: Anthropic.MessageParam[];
+  max_tokens: number;
+  system?: Anthropic.TextBlockParam[];
+  temperature?: number;
+  thinking?: { type: "adaptive" | "enabled"; budget_tokens?: number };
+  output_config?: { effort: string };
+} {
+  const { system, messages } = extractSystemMessages(params.messages);
+  return {
+    model: params.model,
+    ...(system.length > 0 ? { system } : {}),
+    messages,
+    max_tokens: params.maxTokens,
+    ...buildThinkingConfig(params),
+  };
 }
 
 export function createAnthropicAdapter(): ProviderAdapter {
   return {
     async complete(apiKey, params, signal) {
       const client = new Anthropic({ apiKey });
-      const { system, messages } = extractSystemMessages(params.messages);
-
-      let thinkingConfig: object;
-      if (hasThinking(params.reasoning)) {
-        if (isAdaptiveModel(params.model)) {
-          thinkingConfig = {
-            thinking: { type: "adaptive" },
-            output_config: {
-              effort: EFFORT_MAP[params.reasoning.effort] ?? "high",
-            },
-          };
-        } else {
-          thinkingConfig = {
-            thinking: {
-              type: "enabled",
-              budget_tokens: getBudget(params.reasoning),
-            },
-          };
-        }
-      } else {
-        thinkingConfig = { temperature: params.temperature };
-      }
 
       const response = await client.messages.create(
-        {
-          model: params.model,
-          ...(system.length > 0 ? { system } : {}),
-          messages,
-          max_tokens: params.maxTokens,
-          ...thinkingConfig,
-        } as Anthropic.MessageCreateParamsNonStreaming,
+        buildRequestPayload(
+          params,
+        ) as Anthropic.MessageCreateParamsNonStreaming,
         { signal },
       );
 
@@ -215,37 +222,9 @@ export function createAnthropicAdapter(): ProviderAdapter {
 
     async *stream(apiKey, params, signal) {
       const client = new Anthropic({ apiKey });
-      const { system, messages } = extractSystemMessages(params.messages);
-
-      let thinkingConfig: object;
-      if (hasThinking(params.reasoning)) {
-        if (isAdaptiveModel(params.model)) {
-          thinkingConfig = {
-            thinking: { type: "adaptive" },
-            output_config: {
-              effort: EFFORT_MAP[params.reasoning.effort] ?? "high",
-            },
-          };
-        } else {
-          thinkingConfig = {
-            thinking: {
-              type: "enabled",
-              budget_tokens: getBudget(params.reasoning),
-            },
-          };
-        }
-      } else {
-        thinkingConfig = { temperature: params.temperature };
-      }
 
       const stream = client.messages.stream(
-        {
-          model: params.model,
-          ...(system.length > 0 ? { system } : {}),
-          messages,
-          max_tokens: params.maxTokens,
-          ...thinkingConfig,
-        } as Anthropic.MessageCreateParamsStreaming,
+        buildRequestPayload(params) as Anthropic.MessageCreateParamsStreaming,
         { signal },
       );
 

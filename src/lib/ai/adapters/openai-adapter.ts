@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { AiMessage, FinishReason } from "../types";
-import type { ProviderAdapter } from "./types";
+import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface OpenAiAdapterConfig {
   baseURL: string;
@@ -53,24 +53,40 @@ function stripCacheControl(
 export function createOpenAiAdapter(
   config: OpenAiAdapterConfig,
 ): ProviderAdapter {
+  const createClient = (apiKey: string) =>
+    new OpenAI({
+      apiKey,
+      baseURL: config.baseURL,
+      defaultHeaders: config.defaultHeaders,
+    });
+
+  function buildRequestPayload(
+    params: CompletionParams,
+    stream: boolean,
+  ):
+    | OpenAI.ChatCompletionCreateParamsNonStreaming
+    | OpenAI.ChatCompletionCreateParamsStreaming {
+    return {
+      model: params.model,
+      messages: isAnthropicModel(params.model)
+        ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
+        : stripCacheControl(params.messages),
+      temperature: params.temperature,
+      max_tokens: params.maxTokens,
+      stream,
+      ...(params.reasoning ? { reasoning: params.reasoning } : {}),
+    };
+  }
+
   return {
     async complete(apiKey, params, signal) {
-      const client = new OpenAI({
-        apiKey,
-        baseURL: config.baseURL,
-        defaultHeaders: config.defaultHeaders,
-      });
+      const client = createClient(apiKey);
 
       const response = (await client.chat.completions.create(
-        {
-          model: params.model,
-          messages: isAnthropicModel(params.model)
-            ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
-            : stripCacheControl(params.messages),
-          temperature: params.temperature,
-          max_tokens: params.maxTokens,
-          ...(params.reasoning ? { reasoning: params.reasoning } : {}),
-        } as OpenAI.ChatCompletionCreateParamsNonStreaming,
+        buildRequestPayload(
+          params,
+          false,
+        ) as OpenAI.ChatCompletionCreateParamsNonStreaming,
         { signal },
       )) as OpenAI.ChatCompletion & {
         choices: { message: { reasoning?: string } }[];
@@ -97,23 +113,13 @@ export function createOpenAiAdapter(
     },
 
     async *stream(apiKey, params, signal) {
-      const client = new OpenAI({
-        apiKey,
-        baseURL: config.baseURL,
-        defaultHeaders: config.defaultHeaders,
-      });
+      const client = createClient(apiKey);
 
       const stream = await client.chat.completions.create(
-        {
-          model: params.model,
-          messages: isAnthropicModel(params.model)
-            ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
-            : stripCacheControl(params.messages),
-          temperature: params.temperature,
-          max_tokens: params.maxTokens,
-          stream: true,
-          ...(params.reasoning ? { reasoning: params.reasoning } : {}),
-        } as OpenAI.ChatCompletionCreateParamsStreaming,
+        buildRequestPayload(
+          params,
+          true,
+        ) as OpenAI.ChatCompletionCreateParamsStreaming,
         { signal },
       );
 
