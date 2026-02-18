@@ -130,7 +130,7 @@ const EFFORT_MAP: Record<string, string> = {
 };
 
 function isAdaptiveModel(model: string): boolean {
-  return model.startsWith("claude-opus-4-6");
+  return model.startsWith("claude-opus-4-6") || model.startsWith("claude-sonnet-4-6");
 }
 
 function hasThinking(
@@ -148,11 +148,13 @@ function getBudget(
 function buildThinkingConfig(params: CompletionParams): object {
   if (hasThinking(params.reasoning)) {
     if (isAdaptiveModel(params.model)) {
+      let effort = EFFORT_MAP[params.reasoning.effort] ?? "high";
+      if (effort === "max" && !params.model.startsWith("claude-opus-4-6")) {
+        effort = "high";
+      }
       return {
         thinking: { type: "adaptive" },
-        output_config: {
-          effort: EFFORT_MAP[params.reasoning.effort] ?? "high",
-        },
+        output_config: { effort },
       };
     }
     return {

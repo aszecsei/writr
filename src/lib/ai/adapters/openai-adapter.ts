@@ -24,6 +24,31 @@ function isAnthropicModel(model: string): boolean {
   return model.startsWith("anthropic/");
 }
 
+function isClaude46(model: string): boolean {
+  return isAnthropicModel(model) && (/4\.6/.test(model) || /4-6/.test(model));
+}
+
+const VERBOSITY_MAP: Record<string, string> = {
+  xhigh: "max",
+  high: "high",
+  medium: "medium",
+  low: "low",
+  minimal: "low",
+};
+
+function buildReasoningParam(params: CompletionParams): object {
+  if (!params.reasoning) return {};
+  if (isClaude46(params.model)) {
+    // OpenRouter ignores reasoning.effort for Claude 4.6;
+    // use verbosity (maps to output_config.effort) instead
+    return {
+      reasoning: { enabled: true },
+      verbosity: VERBOSITY_MAP[params.reasoning.effort] ?? "medium",
+    };
+  }
+  return { reasoning: params.reasoning };
+}
+
 /**
  * Strip `cache_control` from content parts — OpenAI-compatible APIs don't
  * support it, and SDK types may reject it.
@@ -74,7 +99,7 @@ export function createOpenAiAdapter(
       temperature: params.temperature,
       max_tokens: params.maxTokens,
       stream,
-      ...(params.reasoning ? { reasoning: params.reasoning } : {}),
+      ...buildReasoningParam(params),
     };
   }
 
