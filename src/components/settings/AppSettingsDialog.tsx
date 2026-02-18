@@ -90,6 +90,7 @@ export function AppSettingsDialog() {
   const [streamResponses, setStreamResponses] = useState(true);
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
+  const [enableToolCalling, setEnableToolCalling] = useState(false);
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
     filename: string;
@@ -134,6 +135,7 @@ export function AppSettingsDialog() {
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
+      setEnableToolCalling(settings.enableToolCalling);
     }
   }, [settings, modal.id]);
 
@@ -193,7 +195,8 @@ export function AppSettingsDialog() {
         JSON.stringify(settings.providerModels) ||
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
-      reasoningEffort !== settings.reasoningEffort);
+      reasoningEffort !== settings.reasoningEffort ||
+      enableToolCalling !== settings.enableToolCalling);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -216,6 +219,7 @@ export function AppSettingsDialog() {
       debugMode,
       streamResponses,
       reasoningEffort,
+      enableToolCalling,
     });
     closeModal();
   }
@@ -287,6 +291,7 @@ export function AppSettingsDialog() {
             streamResponses={streamResponses}
             reasoningEffort={reasoningEffort}
             debugMode={debugMode}
+            enableToolCalling={enableToolCalling}
             onEnableAiFeaturesChange={setEnableAiFeatures}
             onAiProviderChange={setAiProvider}
             onProviderApiKeyChange={(provider, key) =>
@@ -298,6 +303,7 @@ export function AppSettingsDialog() {
             onStreamResponsesChange={setStreamResponses}
             onReasoningEffortChange={setReasoningEffort}
             onDebugModeChange={setDebugMode}
+            onEnableToolCallingChange={setEnableToolCalling}
             onConfigureAi={() => openModal({ id: "ai-config" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}

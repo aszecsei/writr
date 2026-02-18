@@ -40,9 +40,17 @@ export interface ImageUrlContentPart {
 
 export type ContentPart = TextContentPart | ImageUrlContentPart;
 
+export interface AiToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
 export interface AiMessage {
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "tool";
   content: string | ContentPart[];
+  toolCalls?: AiToolCall[];
+  toolCallId?: string;
 }
 
 import type {
@@ -65,6 +73,7 @@ export type { AiProvider, ReasoningEffort };
 
 export interface AiContext {
   projectTitle: string;
+  projectDescription: string;
   genre: string;
   projectMode?: ProjectMode;
   characters: Character[];
@@ -82,7 +91,12 @@ export interface AiContext {
   selectedText?: string;
 }
 
-export type FinishReason = "stop" | "length" | "content_filter" | "unknown";
+export type FinishReason =
+  | "stop"
+  | "length"
+  | "content_filter"
+  | "tool_use"
+  | "unknown";
 
 export interface AiResponse {
   content: string;
@@ -94,11 +108,18 @@ export interface AiResponse {
     total_tokens: number;
   };
   finishReason?: FinishReason;
+  toolCalls?: AiToolCall[];
 }
 
 export type AiStreamChunk =
   | { type: "reasoning"; text: string }
   | { type: "content"; text: string }
+  | {
+      type: "tool_use";
+      id: string;
+      name: string;
+      input: Record<string, unknown>;
+    }
   | { type: "stop"; finishReason: FinishReason };
 
 export interface AiSettings {
@@ -112,4 +133,6 @@ export interface AiSettings {
   customSystemPrompt?: string | null;
   toolPromptOverride?: string;
   images?: { url: string }[];
+  toolDefinitions?: import("./tool-calling").ToolDefinitionForModel[];
+  skipUserPrompt?: boolean;
 }

@@ -361,6 +361,7 @@ export const AppSettingsSchema = z.object({
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),
+  enableToolCalling: z.boolean().default(false),
   customSystemPrompt: z.string().nullable().default(null),
   disabledBuiltinTools: z.array(z.string()).default([]),
   builtinToolOverrides: z.record(z.string(), z.string()).default({}),

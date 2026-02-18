@@ -440,6 +440,17 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    this.version(24).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.enableToolCalling === undefined) {
+            s.enableToolCalling = false;
+          }
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

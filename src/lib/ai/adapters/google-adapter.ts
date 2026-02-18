@@ -1,5 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
-import type { AiMessage, ContentPart, FinishReason } from "../types";
+import type {
+  AiMessage,
+  AiToolCall,
+  ContentPart,
+  FinishReason,
+} from "../types";
 import { parseBase64ImageDataUrl } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
@@ -24,6 +29,8 @@ function normalizeFinishReason(raw: string | null | undefined): FinishReason {
 interface GooglePart {
   text?: string;
   inlineData?: { mimeType: string; data: string };
+  functionCall?: { name: string; args: Record<string, unknown> };
+  functionResponse?: { name: string; response: Record<string, unknown> };
 }
 
 function toGoogleParts(parts: ContentPart[]): GooglePart[] {
@@ -70,6 +77,33 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
           }
         }
       }
+    } else if (msg.role === "tool") {
+      // Google expects function responses in user role messages
+      nonSystemMessages.push({
+        role: "user",
+        parts: [
+          {
+            functionResponse: {
+              name: msg.toolCallId ?? "unknown",
+              response: JSON.parse(
+                typeof msg.content === "string" ? msg.content : "{}",
+              ),
+            },
+          },
+        ],
+      });
+    } else if (msg.role === "assistant" && msg.toolCalls?.length) {
+      // Assistant message with function calls
+      const parts: GooglePart[] = [];
+      if (typeof msg.content === "string" && msg.content) {
+        parts.push({ text: msg.content });
+      }
+      for (const tc of msg.toolCalls) {
+        parts.push({
+          functionCall: { name: tc.name, args: tc.arguments },
+        });
+      }
+      nonSystemMessages.push({ role: "model", parts });
     } else {
       const role = msg.role === "assistant" ? "model" : "user";
       if (typeof msg.content === "string") {
@@ -106,6 +140,21 @@ function buildThinkingConfig(params: CompletionParams): object {
   return {};
 }
 
+function buildToolsParam(params: CompletionParams): object {
+  if (!params.tools?.length) return {};
+  return {
+    tools: [
+      {
+        functionDeclarations: params.tools.map((t) => ({
+          name: t.id,
+          description: t.description,
+          parameters: t.parameters,
+        })),
+      },
+    ],
+  };
+}
+
 function buildRequestPayload(params: CompletionParams, signal?: AbortSignal) {
   const { systemInstruction, messages } = extractSystemMessages(
     params.messages,
@@ -118,6 +167,7 @@ function buildRequestPayload(params: CompletionParams, signal?: AbortSignal) {
       temperature: params.temperature,
       maxOutputTokens: params.maxTokens,
       ...buildThinkingConfig(params),
+      ...buildToolsParam(params),
       ...(signal ? { abortSignal: signal } : {}),
     },
   };
@@ -150,17 +200,28 @@ export function createGoogleAdapter(
 
       let text = "";
       let reasoning = "";
+      const toolCalls: AiToolCall[] = [];
       const candidate = response.candidates?.[0];
       if (candidate?.content?.parts) {
         for (const part of candidate.content.parts) {
           if (part.thought) {
             reasoning += part.text ?? "";
+          } else if (part.functionCall) {
+            toolCalls.push({
+              id: `google-tc-${crypto.randomUUID()}`,
+              name: part.functionCall.name ?? "",
+              arguments: (part.functionCall.args ?? {}) as Record<
+                string,
+                unknown
+              >,
+            });
           } else if (part.text) {
             text += part.text;
           }
         }
       }
 
+      const hasToolCalls = toolCalls.length > 0;
       return {
         content: text,
         reasoning: reasoning || undefined,
@@ -173,7 +234,10 @@ export function createGoogleAdapter(
               total_tokens: response.usageMetadata.totalTokenCount ?? 0,
             }
           : undefined,
-        finishReason: normalizeFinishReason(candidate?.finishReason),
+        finishReason: hasToolCalls
+          ? "tool_use"
+          : normalizeFinishReason(candidate?.finishReason),
+        toolCalls: hasToolCalls ? toolCalls : undefined,
       };
     },
 
@@ -191,6 +255,17 @@ export function createGoogleAdapter(
               if (part.text) {
                 yield { type: "reasoning" as const, text: part.text };
               }
+            } else if (part.functionCall) {
+              // Google sends complete function calls (no incremental JSON)
+              yield {
+                type: "tool_use" as const,
+                id: `google-tc-${crypto.randomUUID()}`,
+                name: part.functionCall.name ?? "",
+                input: (part.functionCall.args ?? {}) as Record<
+                  string,
+                  unknown
+                >,
+              };
             } else if (part.text) {
               yield { type: "content" as const, text: part.text };
             }

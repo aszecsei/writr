@@ -12,6 +12,7 @@ import {
   makeWorldbuildingDoc,
 } from "@/test/helpers";
 import {
+  buildAgenticContext,
   buildMessages,
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_TOOL_INSTRUCTIONS,
@@ -29,6 +30,7 @@ const pid = "00000000-0000-4000-8000-000000000001";
 function emptyContext(overrides?: Partial<AiContext>): AiContext {
   return {
     projectTitle: "Test Novel",
+    projectDescription: "",
     genre: "",
     characters: [],
     locations: [],
@@ -489,5 +491,214 @@ describe("buildMessages", () => {
       const text = getSystemText(msgs);
       expect(text).toContain("Follow the user's instructions.");
     });
+  });
+
+  describe("agentic (tool-calling) mode context", () => {
+    it("uses minimal context with only style guide when enableToolCalling is true", () => {
+      const ctx = emptyContext({
+        characters: [makeCharacter({ projectId: pid, name: "Hero" })],
+        locations: [makeLocation({ projectId: pid, name: "Town" })],
+        timelineEvents: [
+          makeTimelineEvent({ projectId: pid, title: "Battle" }),
+        ],
+        worldbuildingDocs: [
+          makeWorldbuildingDoc({ projectId: pid, title: "Lore" }),
+        ],
+        styleGuide: [
+          makeStyleGuideEntry({
+            projectId: pid,
+            title: "POV",
+            content: "First person",
+          }),
+        ],
+      });
+      const msgs = buildMessages("brainstorm", "test", ctx, [], {
+        enableToolCalling: true,
+      });
+      const text = getNovelContextText(msgs);
+
+      // Should include style guide
+      expect(text).toContain("<style-guide>");
+      expect(text).toContain("POV");
+
+      // Should NOT include characters, locations, timeline, worldbuilding
+      expect(text).not.toContain("<characters>");
+      expect(text).not.toContain("<locations>");
+      expect(text).not.toContain("<timeline>");
+      expect(text).not.toContain("<worldbuilding>");
+    });
+
+    it("text-only mode includes full context", () => {
+      const ctx = emptyContext({
+        characters: [makeCharacter({ projectId: pid, name: "Hero" })],
+        locations: [makeLocation({ projectId: pid, name: "Town" })],
+        styleGuide: [
+          makeStyleGuideEntry({
+            projectId: pid,
+            title: "POV",
+            content: "First person",
+          }),
+        ],
+      });
+      const msgs = buildMessages("brainstorm", "test", ctx, [], {
+        enableToolCalling: false,
+      });
+      const text = getNovelContextText(msgs);
+
+      expect(text).toContain("<characters>");
+      expect(text).toContain("<locations>");
+      expect(text).toContain("<style-guide>");
+    });
+
+    it("agentic system prompt includes tool-calling instructions", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext(), [], {
+        enableToolCalling: true,
+      });
+      const text = getSystemText(msgs);
+      expect(text).toContain("<tool-calling-instructions>");
+      expect(text).toContain("list_characters");
+      expect(text).toContain("read_chapter");
+      expect(text).toContain("read_chapter_range");
+      expect(text).toContain("search_chapter");
+      expect(text).toContain("get_chapter_structure");
+      expect(text).toContain("get_outline");
+      expect(text).toContain("search_project");
+    });
+
+    it("text-only system prompt does not include tool-calling instructions", () => {
+      const msgs = buildMessages("brainstorm", "test", emptyContext());
+      const text = getSystemText(msgs);
+      expect(text).not.toContain("<tool-calling-instructions>");
+    });
+
+    it("agentic context includes project description", () => {
+      const ctx = emptyContext({
+        projectDescription: "A coming-of-age story about magic",
+      });
+      const msgs = buildMessages("brainstorm", "test", ctx, [], {
+        enableToolCalling: true,
+      });
+      const text = getNovelContextText(msgs);
+      expect(text).toContain(
+        "<description>A coming-of-age story about magic</description>",
+      );
+    });
+
+    it("agentic context omits description when empty", () => {
+      const ctx = emptyContext({ projectDescription: "" });
+      const msgs = buildMessages("brainstorm", "test", ctx, [], {
+        enableToolCalling: true,
+      });
+      const text = getNovelContextText(msgs);
+      expect(text).not.toContain("<description>");
+    });
+
+    it("marks last history message with cache_control in agentic mode", () => {
+      const history: AiMessage[] = [
+        { role: "user", content: "first question" },
+        { role: "assistant", content: "first answer" },
+      ];
+      const msgs = buildMessages(
+        "brainstorm",
+        "test",
+        emptyContext(),
+        history,
+        {
+          enableToolCalling: true,
+        },
+      );
+      // The last history message ("first answer") should be converted to ContentPart[]
+      const lastHistoryMsg = msgs.find(
+        (m) =>
+          m.role === "assistant" &&
+          typeof m.content !== "string" &&
+          Array.isArray(m.content) &&
+          m.content.some(
+            (p) =>
+              p.type === "text" &&
+              (p as TextContentPart).text === "first answer",
+          ),
+      );
+      expect(lastHistoryMsg).toBeDefined();
+      const textPart = (lastHistoryMsg?.content as TextContentPart[]).find(
+        (p) => p.text === "first answer",
+      );
+      expect(textPart?.cache_control).toEqual({ type: "ephemeral" });
+    });
+
+    it("does not add cache_control to history in text-only mode", () => {
+      const history: AiMessage[] = [
+        { role: "user", content: "first question" },
+        { role: "assistant", content: "first answer" },
+      ];
+      const msgs = buildMessages(
+        "brainstorm",
+        "test",
+        emptyContext(),
+        history,
+        { enableToolCalling: false },
+      );
+      const lastHistoryMsg = msgs.find(
+        (m) => m.role === "assistant" && m.content === "first answer",
+      );
+      expect(lastHistoryMsg).toBeDefined();
+      // Content should remain a plain string, not converted to ContentPart[]
+      expect(typeof lastHistoryMsg?.content).toBe("string");
+    });
+  });
+});
+
+describe("buildAgenticContext", () => {
+  it("includes project title and genre", () => {
+    const ctx = emptyContext({ genre: "fantasy" });
+    const xml = buildAgenticContext(ctx);
+    expect(xml).toContain('<novel title="Test Novel" genre="fantasy">');
+    expect(xml).toContain("</novel>");
+  });
+
+  it("uses screenplay root tag when mode is screenplay", () => {
+    const ctx = emptyContext({ projectMode: "screenplay" });
+    const xml = buildAgenticContext(ctx);
+    expect(xml).toContain("<screenplay");
+    expect(xml).toContain("</screenplay>");
+  });
+
+  it("includes style guide entries", () => {
+    const ctx = emptyContext({
+      styleGuide: [
+        makeStyleGuideEntry({
+          projectId: pid,
+          title: "Tense",
+          content: "Past tense",
+        }),
+      ],
+    });
+    const xml = buildAgenticContext(ctx);
+    expect(xml).toContain("<style-guide>");
+    expect(xml).toContain('<rule title="Tense">');
+    expect(xml).toContain("Past tense");
+  });
+
+  it("omits style guide section when empty", () => {
+    const xml = buildAgenticContext(emptyContext());
+    expect(xml).not.toContain("<style-guide>");
+  });
+
+  it("does NOT include characters, locations, timeline, or worldbuilding", () => {
+    const ctx = emptyContext({
+      characters: [makeCharacter({ projectId: pid, name: "Hero" })],
+      locations: [makeLocation({ projectId: pid, name: "Town" })],
+      timelineEvents: [makeTimelineEvent({ projectId: pid, title: "Battle" })],
+      worldbuildingDocs: [
+        makeWorldbuildingDoc({ projectId: pid, title: "Lore" }),
+      ],
+    });
+    const xml = buildAgenticContext(ctx);
+    expect(xml).not.toContain("<characters>");
+    expect(xml).not.toContain("<locations>");
+    expect(xml).not.toContain("<timeline>");
+    expect(xml).not.toContain("<worldbuilding>");
+    expect(xml).not.toContain("Hero");
+    expect(xml).not.toContain("Town");
   });
 });

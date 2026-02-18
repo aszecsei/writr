@@ -17,14 +17,42 @@ const ImageUrlPartSchema = z.object({
 
 const ContentPartSchema = z.union([TextPartSchema, ImageUrlPartSchema]);
 
+const ToolCallSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  arguments: z.record(z.string(), z.unknown()),
+});
+
+const ToolParametersSchema = z.object({
+  type: z.literal("object"),
+  properties: z.record(
+    z.string(),
+    z.object({
+      type: z.string(),
+      description: z.string().optional(),
+      enum: z.array(z.string()).optional(),
+    }),
+  ),
+  required: z.array(z.string()).optional(),
+});
+
+const ToolDefinitionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  parameters: ToolParametersSchema,
+});
+
 const AiRequestSchema = z.object({
   apiKey: z.string().min(1),
   model: z.string().min(1),
   provider: AiProviderEnum.default("openrouter"),
   messages: z.array(
     z.object({
-      role: z.enum(["system", "user", "assistant"]),
+      role: z.enum(["system", "user", "assistant", "tool"]),
       content: z.union([z.string(), z.array(ContentPartSchema)]),
+      toolCalls: z.array(ToolCallSchema).optional(),
+      toolCallId: z.string().optional(),
     }),
   ),
   temperature: z.number().min(0).max(2).optional(),
@@ -35,6 +63,7 @@ const AiRequestSchema = z.object({
       effort: z.enum(["xhigh", "high", "medium", "low", "minimal", "none"]),
     })
     .optional(),
+  tools: z.array(ToolDefinitionSchema).optional(),
 });
 
 const encoder = new TextEncoder();
@@ -59,6 +88,7 @@ export async function POST(request: NextRequest) {
     max_tokens,
     stream,
     reasoning,
+    tools,
   } = parsed.data;
 
   const { adapter } = PROVIDERS[provider];
@@ -69,6 +99,12 @@ export async function POST(request: NextRequest) {
     temperature: temperature ?? 0.7,
     maxTokens: max_tokens ?? 2048,
     ...(reasoning ? { reasoning } : {}),
+    ...(tools?.length
+      ? {
+          tools:
+            tools as import("@/lib/ai/tool-calling").ToolDefinitionForModel[],
+        }
+      : {}),
   };
 
   try {

@@ -26,13 +26,20 @@ const SCREENPLAY_TOOL_INSTRUCTIONS: Partial<Record<BuiltinAiTool, string>> = {
     "Format as a numbered list with the original text and your suggested replacement in Fountain format.",
 };
 
-function buildNovelContext(context: AiContext): string {
+function buildNovelContext(
+  context: AiContext,
+  options?: { excludeMinorCharacters?: boolean },
+): string {
   const isScreenplay = context.projectMode === "screenplay";
   const rootTag = isScreenplay ? "screenplay" : "novel";
   const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
   let novel = `<${rootTag} title="${context.projectTitle}"${genreAttr}>\n\n`;
 
   const charMap = buildNameMap(context.characters, (c) => c.name);
+
+  const characters = options?.excludeMinorCharacters
+    ? context.characters.filter((c) => c.role !== "minor")
+    : context.characters;
 
   /** Append a tagged section if `items` is non-empty. */
   function addSection<T>(
@@ -46,7 +53,7 @@ function buildNovelContext(context: AiContext): string {
     novel += `<${tag}>\n${lines.join("\n")}\n</${tag}>\n\n`;
   }
 
-  addSection("characters", context.characters, serializeCharacter);
+  addSection("characters", characters, serializeCharacter);
   addSection("relationships", context.relationships, (r) =>
     serializeRelationship(r, charMap),
   );
@@ -78,6 +85,34 @@ function buildNovelContext(context: AiContext): string {
 
   novel += `</${rootTag}>`;
   return novel;
+}
+
+/**
+ * Build a minimal, cache-stable context for agentic (tool-calling) mode.
+ * Contains only project metadata and style guide — the AI fetches everything
+ * else on demand via tools, saving tokens and improving cache hit rates.
+ */
+export function buildAgenticContext(context: AiContext): string {
+  const isScreenplay = context.projectMode === "screenplay";
+  const rootTag = isScreenplay ? "screenplay" : "novel";
+  const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
+  let xml = `<${rootTag} title="${context.projectTitle}"${genreAttr}>\n\n`;
+
+  if (context.projectDescription) {
+    xml += `<description>${context.projectDescription}</description>\n\n`;
+  }
+
+  if (context.styleGuide.length > 0) {
+    const lines = context.styleGuide
+      .map(serializeStyleGuideEntry)
+      .filter(Boolean);
+    if (lines.length > 0) {
+      xml += `<style-guide>\n${lines.join("\n")}\n</style-guide>\n\n`;
+    }
+  }
+
+  xml += `</${rootTag}>`;
+  return xml;
 }
 
 export const DEFAULT_TOOL_INSTRUCTIONS: Record<BuiltinAiTool, string> = {
@@ -143,6 +178,8 @@ interface BuildMessagesOptions {
   customSystemPrompt?: string | null;
   toolPromptOverride?: string;
   images?: ImageAttachment[];
+  enableToolCalling?: boolean;
+  skipUserPrompt?: boolean;
 }
 
 function resolveDefaultToolInstruction(
@@ -185,21 +222,49 @@ export function buildMessages(
     );
 
   const preamble = options?.customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
+  const enableToolCalling = options?.enableToolCalling ?? false;
+
+  let systemContent = `${preamble}\n\n<task>\n${toolInstruction}\n</task>`;
+
+  if (enableToolCalling) {
+    systemContent +=
+      "\n\n<tool-calling-instructions>\n" +
+      "You have tools to discover and manage the user's project.\n" +
+      "The context above contains only the project's style guide for voice/tone reference.\n" +
+      "Use tools to discover all other project data on demand:\n\n" +
+      "DISCOVERY PATTERN:\n" +
+      "1. Use list_* tools (list_characters, list_locations, list_chapters, list_timeline_events, list_style_guide, list_worldbuilding_docs) to find entity IDs.\n" +
+      "2. Use get_* tools (get_character, get_location, get_chapter, get_timeline_event, get_style_guide_entry, get_worldbuilding_doc) for full details.\n" +
+      "3. For chapter content, prefer PARTIAL retrieval to save tokens:\n" +
+      "   a. get_chapter returns metadata including totalParagraphs and hasSceneBreaks.\n" +
+      "   b. get_chapter_structure to see scene boundaries with paragraph numbers and previews.\n" +
+      "   c. search_chapter to find specific passages by keyword within one chapter.\n" +
+      "   d. read_chapter_range to read a range of paragraphs (e.g., paragraphs 1-20).\n" +
+      "   e. read_chapter ONLY when you truly need the entire chapter.\n" +
+      "4. Use get_outline to get the full outline grid.\n" +
+      "5. Use search_project to search across ALL entity types by keyword (chapters, characters, locations, etc.).\n" +
+      "6. Use search_chapters for chapter-content-only keyword search.\n\n" +
+      "Fetch only what you need for the current task — don't retrieve everything upfront.\n" +
+      "</tool-calling-instructions>";
+  }
 
   const messages: AiMessage[] = [
     {
       role: "system",
-      content: `${preamble}\n\n<task>\n${toolInstruction}\n</task>`,
+      content: systemContent,
     },
   ];
 
   // Story bible context as a user message (cacheable)
+  const contextXml = enableToolCalling
+    ? buildAgenticContext(context)
+    : buildNovelContext(context);
   messages.push({
     role: "user",
     content: [
       {
         type: "text",
-        text: buildNovelContext(context),
+        text: contextXml,
         cache_control: { type: "ephemeral" },
       },
     ],
@@ -221,18 +286,66 @@ export function buildMessages(
     messages.push({ role: "assistant", content: "Understood." });
   }
 
-  for (const msg of history) {
-    messages.push({ role: msg.role, content: msg.content });
+  for (let i = 0; i < history.length; i++) {
+    const msg = history[i];
+    const isLast = i === history.length - 1;
+
+    // In agentic mode, mark the last history message with cache_control so
+    // the entire conversation prefix is cached across tool-calling iterations.
+    let content = msg.content;
+    if (enableToolCalling && isLast && history.length > 0) {
+      if (typeof content === "string") {
+        content = [
+          {
+            type: "text" as const,
+            text: content,
+            cache_control: { type: "ephemeral" as const },
+          },
+        ];
+      } else if (Array.isArray(content)) {
+        // Append cache_control to the last text part
+        const parts = [...content];
+        for (let j = parts.length - 1; j >= 0; j--) {
+          if (parts[j].type === "text") {
+            parts[j] = { ...parts[j], cache_control: { type: "ephemeral" } };
+            break;
+          }
+        }
+        content = parts;
+      }
+    }
+
+    messages.push({
+      role: msg.role,
+      content,
+      ...(msg.toolCalls ? { toolCalls: msg.toolCalls } : {}),
+      ...(msg.toolCallId ? { toolCallId: msg.toolCallId } : {}),
+    });
   }
 
-  const imageAttachments = options?.images;
-  if (context.selectedText) {
-    const text = `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`;
-    if (imageAttachments && imageAttachments.length > 0) {
+  if (!options?.skipUserPrompt) {
+    const imageAttachments = options?.images;
+    if (context.selectedText) {
+      const text = `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`;
+      if (imageAttachments && imageAttachments.length > 0) {
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text", text },
+            ...imageAttachments.map((img) => ({
+              type: "image_url" as const,
+              image_url: { url: img.url },
+            })),
+          ],
+        });
+      } else {
+        messages.push({ role: "user", content: text });
+      }
+    } else if (imageAttachments && imageAttachments.length > 0) {
       messages.push({
         role: "user",
         content: [
-          { type: "text", text },
+          { type: "text", text: userPrompt },
           ...imageAttachments.map((img) => ({
             type: "image_url" as const,
             image_url: { url: img.url },
@@ -240,21 +353,8 @@ export function buildMessages(
         ],
       });
     } else {
-      messages.push({ role: "user", content: text });
+      messages.push({ role: "user", content: userPrompt });
     }
-  } else if (imageAttachments && imageAttachments.length > 0) {
-    messages.push({
-      role: "user",
-      content: [
-        { type: "text", text: userPrompt },
-        ...imageAttachments.map((img) => ({
-          type: "image_url" as const,
-          image_url: { url: img.url },
-        })),
-      ],
-    });
-  } else {
-    messages.push({ role: "user", content: userPrompt });
   }
 
   // Inject post-chat instructions into the Nth-last user message

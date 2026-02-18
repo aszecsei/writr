@@ -33,6 +33,7 @@ interface AiSettingsProps {
   streamResponses: boolean;
   reasoningEffort: ReasoningEffort;
   debugMode: boolean;
+  enableToolCalling: boolean;
   onEnableAiFeaturesChange: (enabled: boolean) => void;
   onAiProviderChange: (provider: AiProvider) => void;
   onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
@@ -40,6 +41,7 @@ interface AiSettingsProps {
   onStreamResponsesChange: (enabled: boolean) => void;
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
+  onEnableToolCallingChange: (enabled: boolean) => void;
   onConfigureAi: () => void;
   inputClass: string;
   labelClass: string;
@@ -90,6 +92,7 @@ export function AiSettings({
   streamResponses,
   reasoningEffort,
   debugMode,
+  enableToolCalling,
   onEnableAiFeaturesChange,
   onAiProviderChange,
   onProviderApiKeyChange,
@@ -97,6 +100,7 @@ export function AiSettings({
   onStreamResponsesChange,
   onReasoningEffortChange,
   onDebugModeChange,
+  onEnableToolCallingChange,
   onConfigureAi,
   inputClass,
   labelClass,
@@ -203,6 +207,19 @@ export function AiSettings({
               Debug mode (dry-run)
               <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
                 — show prompt instead of calling AI
+              </span>
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <input
+                type="checkbox"
+                checked={enableToolCalling}
+                onChange={(e) => onEnableToolCallingChange(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+              />
+              Enable tool calling
+              <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
+                — allow AI to create and modify story bible entries (requires
+                approval)
               </span>
             </label>
             <button

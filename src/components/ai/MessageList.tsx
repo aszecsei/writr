@@ -12,9 +12,11 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { ImageLightbox } from "../bible/ImageLightbox";
 import { MarkdownMessage } from "./MarkdownMessage";
+import { ToolCallMessage } from "./ToolCallMessage";
 
 interface MessageImage {
   url: string;
@@ -31,6 +33,7 @@ interface Message {
   durationMs?: number;
   finishReason?: FinishReason;
   images?: MessageImage[];
+  toolCalls?: ToolCallEntry[];
 }
 
 function formatDuration(ms: number): string {
@@ -56,6 +59,9 @@ interface MessageListProps {
   onEditingContentChange: (content: string) => void;
   onCancelEdit: () => void;
   onConfirmEdit: () => void;
+  onApproveToolCall?: (messageId: string, toolCallId: string) => void;
+  onDenyToolCall?: (messageId: string, toolCallId: string) => void;
+  pendingToolApproval?: boolean;
 }
 
 function StopReasonBanner({ reason }: { reason: FinishReason }) {
@@ -93,6 +99,9 @@ export function MessageList({
   onEditingContentChange,
   onCancelEdit,
   onConfirmEdit,
+  onApproveToolCall,
+  onDenyToolCall,
+  pendingToolApproval,
 }: MessageListProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -237,6 +246,22 @@ export function MessageList({
             ) : msg.role === "assistant" ? (
               <>
                 <MarkdownMessage content={msg.content} />
+                {msg.toolCalls?.map((tc) => (
+                  <ToolCallMessage
+                    key={tc.id}
+                    entry={tc}
+                    onApprove={
+                      tc.status === "pending" && onApproveToolCall
+                        ? () => onApproveToolCall(msg.id, tc.id)
+                        : undefined
+                    }
+                    onDeny={
+                      tc.status === "pending" && onDenyToolCall
+                        ? () => onDenyToolCall(msg.id, tc.id)
+                        : undefined
+                    }
+                  />
+                ))}
                 {msg.finishReason && (
                   <StopReasonBanner reason={msg.finishReason} />
                 )}
@@ -269,6 +294,7 @@ export function MessageList({
         );
       })}
       {!loading &&
+        !pendingToolApproval &&
         messages.length > 0 &&
         messages[messages.length - 1].role === "assistant" &&
         (() => {

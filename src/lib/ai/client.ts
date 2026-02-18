@@ -27,6 +27,8 @@ function buildRequestBody(
       customSystemPrompt: settings.customSystemPrompt,
       toolPromptOverride: settings.toolPromptOverride,
       images: settings.images,
+      enableToolCalling: !!settings.toolDefinitions?.length,
+      skipUserPrompt: settings.skipUserPrompt,
     }),
     temperature: tool === "generate-prose" ? 1.0 : 0.5,
     max_tokens: 24 * 1024,
@@ -35,6 +37,10 @@ function buildRequestBody(
 
   if (settings.reasoningEffort && settings.reasoningEffort !== "none") {
     body.reasoning = { effort: settings.reasoningEffort };
+  }
+
+  if (settings.toolDefinitions?.length) {
+    body.tools = settings.toolDefinitions;
   }
 
   return body;

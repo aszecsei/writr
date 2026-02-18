@@ -1,5 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { AiMessage, ContentPart, FinishReason } from "../types";
+import type {
+  AiMessage,
+  AiToolCall,
+  ContentPart,
+  FinishReason,
+} from "../types";
 import { parseBase64ImageDataUrl } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
@@ -13,6 +18,8 @@ function normalizeStopReason(
       return "length";
     case "stop_sequence":
       return "stop";
+    case "tool_use":
+      return "tool_use";
     default:
       return stopReason ? "unknown" : "stop";
   }
@@ -83,6 +90,33 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
           }
         }
       }
+    } else if (msg.role === "tool") {
+      // Anthropic expects tool results as user messages with tool_result content blocks
+      nonSystemMessages.push({
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: msg.toolCallId ?? "",
+            content: typeof msg.content === "string" ? msg.content : "",
+          },
+        ],
+      } as Anthropic.MessageParam);
+    } else if (msg.role === "assistant" && msg.toolCalls?.length) {
+      // Assistant message with tool use blocks
+      const content: Anthropic.ContentBlockParam[] = [];
+      if (typeof msg.content === "string" && msg.content) {
+        content.push({ type: "text", text: msg.content });
+      }
+      for (const tc of msg.toolCalls) {
+        content.push({
+          type: "tool_use",
+          id: tc.id,
+          name: tc.name,
+          input: tc.arguments,
+        } as Anthropic.ContentBlockParam);
+      }
+      nonSystemMessages.push({ role: "assistant", content });
     } else if (typeof msg.content === "string") {
       nonSystemMessages.push({
         role: msg.role as "user" | "assistant",
@@ -130,7 +164,9 @@ const EFFORT_MAP: Record<string, string> = {
 };
 
 function isAdaptiveModel(model: string): boolean {
-  return model.startsWith("claude-opus-4-6") || model.startsWith("claude-sonnet-4-6");
+  return (
+    model.startsWith("claude-opus-4-6") || model.startsWith("claude-sonnet-4-6")
+  );
 }
 
 function hasThinking(
@@ -167,6 +203,19 @@ function buildThinkingConfig(params: CompletionParams): object {
   return { temperature: params.temperature };
 }
 
+function buildToolsParam(
+  params: CompletionParams,
+): { tools: Anthropic.Tool[] } | object {
+  if (!params.tools?.length) return {};
+  return {
+    tools: params.tools.map((t) => ({
+      name: t.id,
+      description: t.description,
+      input_schema: t.parameters as unknown as Anthropic.Tool.InputSchema,
+    })),
+  };
+}
+
 function buildRequestPayload(params: CompletionParams): {
   model: string;
   messages: Anthropic.MessageParam[];
@@ -175,6 +224,7 @@ function buildRequestPayload(params: CompletionParams): {
   temperature?: number;
   thinking?: { type: "adaptive" | "enabled"; budget_tokens?: number };
   output_config?: { effort: string };
+  tools?: Anthropic.Tool[];
 } {
   const { system, messages } = extractSystemMessages(params.messages);
   return {
@@ -183,6 +233,7 @@ function buildRequestPayload(params: CompletionParams): {
     messages,
     max_tokens: params.maxTokens,
     ...buildThinkingConfig(params),
+    ...buildToolsParam(params),
   };
 }
 
@@ -200,11 +251,18 @@ export function createAnthropicAdapter(): ProviderAdapter {
 
       let text = "";
       let reasoning = "";
+      const toolCalls: AiToolCall[] = [];
       for (const block of response.content) {
         if (block.type === "text") {
           text += block.text;
         } else if (block.type === "thinking") {
           reasoning += block.thinking;
+        } else if (block.type === "tool_use") {
+          toolCalls.push({
+            id: block.id,
+            name: block.name,
+            arguments: block.input as Record<string, unknown>,
+          });
         }
       }
 
@@ -219,6 +277,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
             response.usage.input_tokens + response.usage.output_tokens,
         },
         finishReason: normalizeStopReason(response.stop_reason),
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       };
     },
 
@@ -230,13 +289,46 @@ export function createAnthropicAdapter(): ProviderAdapter {
         { signal },
       );
 
+      // Track current tool_use block being streamed
+      let currentToolUse: {
+        id: string;
+        name: string;
+        inputJson: string;
+      } | null = null;
+
       for await (const event of stream) {
-        if (event.type === "content_block_delta") {
+        if (event.type === "content_block_start") {
+          const block = (
+            event as {
+              content_block: { type: string; id?: string; name?: string };
+            }
+          ).content_block;
+          if (block.type === "tool_use") {
+            currentToolUse = {
+              id: block.id ?? "",
+              name: block.name ?? "",
+              inputJson: "",
+            };
+          }
+        } else if (event.type === "content_block_delta") {
           const delta = event.delta;
           if (delta.type === "text_delta") {
             yield { type: "content" as const, text: delta.text };
           } else if (delta.type === "thinking_delta") {
             yield { type: "reasoning" as const, text: delta.thinking };
+          } else if (delta.type === "input_json_delta" && currentToolUse) {
+            currentToolUse.inputJson +=
+              (delta as { partial_json?: string }).partial_json ?? "";
+          }
+        } else if (event.type === "content_block_stop") {
+          if (currentToolUse) {
+            yield {
+              type: "tool_use" as const,
+              id: currentToolUse.id,
+              name: currentToolUse.name,
+              input: JSON.parse(currentToolUse.inputJson || "{}"),
+            };
+            currentToolUse = null;
           }
         } else if (event.type === "message_delta") {
           if (event.delta.stop_reason) {

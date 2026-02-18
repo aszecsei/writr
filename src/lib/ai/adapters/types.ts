@@ -1,3 +1,4 @@
+import type { ToolDefinitionForModel } from "../tool-calling";
 import type {
   AiMessage,
   AiResponse,
@@ -11,6 +12,7 @@ export interface CompletionParams {
   temperature: number;
   maxTokens: number;
   reasoning?: { effort: ReasoningEffort };
+  tools?: ToolDefinitionForModel[];
 }
 
 export interface ProviderAdapter {

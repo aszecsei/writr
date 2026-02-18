@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AiMessage, FinishReason } from "../types";
+import type { AiMessage, AiToolCall, FinishReason } from "../types";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface OpenAiAdapterConfig {
@@ -15,6 +15,8 @@ function normalizeFinishReason(raw: string | null | undefined): FinishReason {
       return "length";
     case "content_filter":
       return "content_filter";
+    case "tool_calls":
+      return "tool_use";
     default:
       return raw ? "unknown" : "stop";
   }
@@ -53,12 +55,75 @@ function buildReasoningParam(params: CompletionParams): object {
  * Strip `cache_control` from content parts — OpenAI-compatible APIs don't
  * support it, and SDK types may reject it.
  */
-function stripCacheControl(
+function convertMessages(
   messages: AiMessage[],
+  isAnthropic: boolean,
 ): OpenAI.ChatCompletionMessageParam[] {
+  if (isAnthropic) {
+    // For Anthropic models through OpenRouter, pass messages with minimal transformation
+    // but still handle tool-related roles
+    return messages.map((msg) => {
+      if (msg.role === "tool") {
+        return {
+          role: "tool" as const,
+          tool_call_id: msg.toolCallId ?? "",
+          content: typeof msg.content === "string" ? msg.content : "",
+        };
+      }
+      if (msg.role === "assistant" && msg.toolCalls?.length) {
+        return {
+          role: "assistant" as const,
+          content: typeof msg.content === "string" ? msg.content : "",
+          tool_calls: msg.toolCalls.map((tc) => ({
+            id: tc.id,
+            type: "function" as const,
+            function: {
+              name: tc.name,
+              arguments: JSON.stringify(tc.arguments),
+            },
+          })),
+        } as OpenAI.ChatCompletionMessageParam;
+      }
+      if (typeof msg.content === "string") {
+        return {
+          role: msg.role as "system" | "user" | "assistant",
+          content: msg.content,
+        };
+      }
+      return {
+        role: msg.role,
+        content: msg.content,
+      } as unknown as OpenAI.ChatCompletionMessageParam;
+    });
+  }
+
   return messages.map((msg) => {
+    if (msg.role === "tool") {
+      return {
+        role: "tool" as const,
+        tool_call_id: msg.toolCallId ?? "",
+        content: typeof msg.content === "string" ? msg.content : "",
+      };
+    }
+    if (msg.role === "assistant" && msg.toolCalls?.length) {
+      return {
+        role: "assistant" as const,
+        content: typeof msg.content === "string" ? msg.content || null : null,
+        tool_calls: msg.toolCalls.map((tc) => ({
+          id: tc.id,
+          type: "function" as const,
+          function: {
+            name: tc.name,
+            arguments: JSON.stringify(tc.arguments),
+          },
+        })),
+      } as OpenAI.ChatCompletionMessageParam;
+    }
     if (typeof msg.content === "string") {
-      return { role: msg.role, content: msg.content };
+      return {
+        role: msg.role as "system" | "user" | "assistant",
+        content: msg.content,
+      };
     }
     const parts: OpenAI.ChatCompletionContentPart[] = msg.content.map(
       (part) => {
@@ -71,8 +136,25 @@ function stripCacheControl(
         };
       },
     );
-    return { role: msg.role, content: parts };
-  }) as OpenAI.ChatCompletionMessageParam[];
+    return {
+      role: msg.role,
+      content: parts,
+    } as OpenAI.ChatCompletionMessageParam;
+  });
+}
+
+function buildToolsParam(params: CompletionParams): object {
+  if (!params.tools?.length) return {};
+  return {
+    tools: params.tools.map((t) => ({
+      type: "function" as const,
+      function: {
+        name: t.id,
+        description: t.description,
+        parameters: t.parameters,
+      },
+    })),
+  };
 }
 
 export function createOpenAiAdapter(
@@ -91,15 +173,15 @@ export function createOpenAiAdapter(
   ):
     | OpenAI.ChatCompletionCreateParamsNonStreaming
     | OpenAI.ChatCompletionCreateParamsStreaming {
+    const isAnthropic = isAnthropicModel(params.model);
     return {
       model: params.model,
-      messages: isAnthropicModel(params.model)
-        ? (params.messages as unknown as OpenAI.ChatCompletionMessageParam[])
-        : stripCacheControl(params.messages),
+      messages: convertMessages(params.messages, isAnthropic),
       temperature: params.temperature,
       max_tokens: params.maxTokens,
       stream,
       ...buildReasoningParam(params),
+      ...buildToolsParam(params),
     };
   }
 
@@ -122,6 +204,24 @@ export function createOpenAiAdapter(
         reasoning?: string;
       };
 
+      let toolCalls: AiToolCall[] | undefined;
+      if (message?.tool_calls?.length) {
+        toolCalls = message.tool_calls
+          .filter(
+            (
+              tc,
+            ): tc is typeof tc & {
+              type: "function";
+              function: { name: string; arguments: string };
+            } => tc.type === "function" && "function" in tc,
+          )
+          .map((tc) => ({
+            id: tc.id,
+            name: tc.function.name,
+            arguments: JSON.parse(tc.function.arguments || "{}"),
+          }));
+      }
+
       return {
         content: message?.content ?? "",
         reasoning: message?.reasoning,
@@ -134,6 +234,7 @@ export function createOpenAiAdapter(
             }
           : undefined,
         finishReason: normalizeFinishReason(choice?.finish_reason),
+        toolCalls,
       };
     },
 
@@ -147,6 +248,12 @@ export function createOpenAiAdapter(
         ) as OpenAI.ChatCompletionCreateParamsStreaming,
         { signal },
       );
+
+      // Accumulate tool calls across streaming chunks
+      const toolCallAccumulator = new Map<
+        number,
+        { id: string; name: string; args: string }
+      >();
 
       for await (const chunk of stream) {
         const choice = chunk.choices[0];
@@ -172,9 +279,39 @@ export function createOpenAiAdapter(
           if (delta.content) {
             yield { type: "content" as const, text: delta.content };
           }
+
+          // Accumulate tool call deltas
+          if (delta.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const idx = tc.index;
+              const existing = toolCallAccumulator.get(idx);
+              if (existing) {
+                existing.args += tc.function?.arguments ?? "";
+              } else {
+                toolCallAccumulator.set(idx, {
+                  id: tc.id ?? "",
+                  name: tc.function?.name ?? "",
+                  args: tc.function?.arguments ?? "",
+                });
+              }
+            }
+          }
         }
 
         if (choice?.finish_reason) {
+          // Emit accumulated tool calls before the stop chunk
+          if (choice.finish_reason === "tool_calls") {
+            for (const [, tc] of [...toolCallAccumulator.entries()].sort(
+              (a, b) => a[0] - b[0],
+            )) {
+              yield {
+                type: "tool_use" as const,
+                id: tc.id,
+                name: tc.name,
+                input: JSON.parse(tc.args || "{}"),
+              };
+            }
+          }
           yield {
             type: "stop" as const,
             finishReason: normalizeFinishReason(choice.finish_reason),

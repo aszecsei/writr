@@ -28,6 +28,13 @@ import {
 import { callAi, streamAi } from "@/lib/ai/client";
 import { buildMessages } from "@/lib/ai/prompts";
 import { PROVIDERS } from "@/lib/ai/providers";
+import {
+  AI_TOOL_MAP,
+  executeTool,
+  getToolDefinitionsForModel,
+  type ToolCallEntry,
+  type ToolCallPayload,
+} from "@/lib/ai/tool-calling";
 import type {
   AiContext,
   AiMessage,
@@ -78,6 +85,64 @@ function resolveToolPrompt(
   return custom?.prompt;
 }
 
+/** Convert UI Message[] to AiMessage[] for the API, including tool call history */
+function messagesToAiHistory(messages: Message[]): AiMessage[] {
+  const result: AiMessage[] = [];
+
+  for (const m of messages) {
+    if (m.images && m.images.length > 0) {
+      result.push({
+        role: m.role,
+        content: [
+          { type: "text" as const, text: m.content },
+          ...m.images.map((img) => ({
+            type: "image_url" as const,
+            image_url: { url: img.url },
+          })),
+        ],
+      });
+    } else {
+      const msg: AiMessage = { role: m.role, content: m.content };
+
+      // Include tool calls on assistant messages
+      if (m.toolCalls?.length) {
+        msg.toolCalls = m.toolCalls.map((tc) => ({
+          id: tc.id,
+          name: tc.toolName,
+          arguments: tc.input,
+        }));
+      }
+
+      result.push(msg);
+    }
+
+    // Emit tool result messages after assistant messages that had tool calls
+    if (m.toolCalls?.length) {
+      for (const tc of m.toolCalls) {
+        if (
+          tc.status === "executed" ||
+          tc.status === "denied" ||
+          tc.status === "error"
+        ) {
+          const content =
+            tc.status === "denied"
+              ? JSON.stringify({ success: false, message: "Denied by user" })
+              : JSON.stringify(
+                  tc.result ?? { success: false, message: "No result" },
+                );
+          result.push({
+            role: "tool",
+            content,
+            toolCallId: tc.id,
+          });
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 export function AiPanel() {
   const projectId = useProjectStore((s) => s.activeProjectId);
   const project = useProject(projectId);
@@ -114,6 +179,12 @@ export function AiPanel() {
   const [editingContent, setEditingContent] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [pendingToolApproval, setPendingToolApproval] = useState(false);
+
+  // Resolver for pending tool call approval — settled by Approve/Deny buttons
+  const toolCallResolverRef = useRef<{
+    resolve: (approved: boolean) => void;
+  } | null>(null);
 
   useEffect(() => {
     if (!loading) {
@@ -135,6 +206,7 @@ export function AiPanel() {
   const buildContext = useCallback((): AiContext => {
     return {
       projectTitle: project?.title ?? "",
+      projectDescription: project?.description ?? "",
       genre: project?.genre ?? "",
       projectMode: activeProjectMode ?? "prose",
       characters: characters ?? [],
@@ -170,6 +242,51 @@ export function AiPanel() {
     activeProjectMode,
   ]);
 
+  /** Wait for user to click Approve or Deny on a write tool call */
+  function waitForToolDecision(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      toolCallResolverRef.current = { resolve };
+    });
+  }
+
+  function handleApproveToolCall(messageId: string, toolCallId: string) {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              toolCalls: msg.toolCalls?.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, status: "approved" as const }
+                  : tc,
+              ),
+            }
+          : msg,
+      ),
+    );
+    toolCallResolverRef.current?.resolve(true);
+    toolCallResolverRef.current = null;
+  }
+
+  function handleDenyToolCall(messageId: string, toolCallId: string) {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              toolCalls: msg.toolCalls?.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, status: "denied" as const }
+                  : tc,
+              ),
+            }
+          : msg,
+      ),
+    );
+    toolCallResolverRef.current?.resolve(false);
+    toolCallResolverRef.current = null;
+  }
+
   async function generateAiResponse(
     userMessage: string,
     history: Message[],
@@ -179,21 +296,7 @@ export function AiPanel() {
     const settings = await getAppSettings();
     const context = buildContext();
 
-    const aiHistory: AiMessage[] = history.map((m) => {
-      if (m.images && m.images.length > 0) {
-        return {
-          role: m.role,
-          content: [
-            { type: "text" as const, text: m.content },
-            ...m.images.map((img) => ({
-              type: "image_url" as const,
-              image_url: { url: img.url },
-            })),
-          ],
-        };
-      }
-      return { role: m.role, content: m.content };
-    });
+    const aiHistory = messagesToAiHistory(history);
 
     // Resolve tool prompt override
     const toolPromptOverride = resolveToolPrompt(tool, settings);
@@ -213,6 +316,7 @@ export function AiPanel() {
           customSystemPrompt: settings.customSystemPrompt,
           toolPromptOverride,
           images: imageAttachments,
+          enableToolCalling: settings.enableToolCalling ?? false,
         },
       );
       setMessages((prev) => [
@@ -240,6 +344,10 @@ export function AiPanel() {
       );
     }
 
+    const enableToolCalling = settings.enableToolCalling ?? false;
+    const toolDefinitions =
+      enableToolCalling && projectId ? getToolDefinitionsForModel() : undefined;
+
     const aiSettings = {
       apiKey,
       model: settings.providerModels[provider],
@@ -251,6 +359,7 @@ export function AiPanel() {
       customSystemPrompt: settings.customSystemPrompt,
       toolPromptOverride,
       images: imageAttachments,
+      toolDefinitions,
     };
 
     const capturedPrompt = buildMessages(
@@ -265,93 +374,266 @@ export function AiPanel() {
         customSystemPrompt: settings.customSystemPrompt,
         toolPromptOverride,
         images: imageAttachments,
+        enableToolCalling,
       },
     );
     const startTime = Date.now();
     requestStartRef.current = startTime;
     setElapsedMs(0);
 
-    const assistantId = generateId();
+    // Tool-calling while loop: stream → collect tool_use → execute/approve → loop
+    let currentAiHistory = aiHistory;
+    let currentCapturedPrompt = capturedPrompt;
+    let isFirstIteration = true;
 
-    if (settings.streamResponses) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-          timestamp: new Date().toISOString(),
-          promptMessages: capturedPrompt,
-        },
-      ]);
+    while (true) {
+      if (signal.aborted) break;
 
-      let streamFinishReason: FinishReason | undefined;
-      for await (const chunk of streamAi(
-        tool,
-        userMessage,
-        context,
-        aiSettings,
-        aiHistory,
-        signal,
-      )) {
-        if (signal.aborted) break;
-        if (chunk.type === "stop") {
-          streamFinishReason = chunk.finishReason;
-          continue;
-        }
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (chunk.type === "reasoning") {
-            updated[updated.length - 1] = {
-              ...last,
-              reasoning: (last.reasoning ?? "") + chunk.text,
-            };
-          } else {
-            updated[updated.length - 1] = {
-              ...last,
-              content: last.content + chunk.text,
-            };
+      const assistantId = generateId();
+      const collectedToolCalls: ToolCallPayload[] = [];
+
+      // On iteration 2+, the user message is already in the history
+      // (from messagesToAiHistory), so skip appending it again.
+      const iterationSettings = isFirstIteration
+        ? aiSettings
+        : { ...aiSettings, skipUserPrompt: true };
+
+      if (settings.streamResponses) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantId,
+            role: "assistant",
+            content: "",
+            timestamp: new Date().toISOString(),
+            promptMessages: isFirstIteration
+              ? currentCapturedPrompt
+              : undefined,
+          },
+        ]);
+
+        let streamFinishReason: FinishReason | undefined;
+        for await (const chunk of streamAi(
+          tool,
+          userMessage,
+          context,
+          iterationSettings,
+          currentAiHistory,
+          signal,
+        )) {
+          if (signal.aborted) break;
+          if (chunk.type === "stop") {
+            streamFinishReason = chunk.finishReason;
+            continue;
           }
-          return updated;
-        });
+          if (chunk.type === "tool_use") {
+            collectedToolCalls.push({
+              id: chunk.id,
+              name: chunk.name,
+              input: chunk.input,
+            });
+            continue;
+          }
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (chunk.type === "reasoning") {
+              updated[updated.length - 1] = {
+                ...last,
+                reasoning: (last.reasoning ?? "") + chunk.text,
+              };
+            } else {
+              updated[updated.length - 1] = {
+                ...last,
+                content: last.content + chunk.text,
+              };
+            }
+            return updated;
+          });
+        }
+
+        // If no tool calls, finalize and exit loop
+        if (
+          streamFinishReason !== "tool_use" ||
+          collectedToolCalls.length === 0
+        ) {
+          const elapsed = Date.now() - startTime;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = {
+              ...last,
+              durationMs: elapsed,
+              finishReason: streamFinishReason,
+            };
+            return updated;
+          });
+          break;
+        }
+
+        // Process tool calls
+        await processToolCalls(assistantId, collectedToolCalls, signal);
+      } else {
+        const response = await callAi(
+          tool,
+          userMessage,
+          context,
+          iterationSettings,
+          currentAiHistory,
+          signal,
+        );
+
+        if (
+          response.finishReason !== "tool_use" ||
+          !response.toolCalls?.length
+        ) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantId,
+              role: "assistant",
+              content: response.content,
+              reasoning: response.reasoning,
+              timestamp: new Date().toISOString(),
+              promptMessages: isFirstIteration
+                ? currentCapturedPrompt
+                : undefined,
+              durationMs: Date.now() - startTime,
+              finishReason: response.finishReason,
+            },
+          ]);
+          break;
+        }
+
+        // Has tool calls - add assistant message then process
+        const payloads: ToolCallPayload[] = response.toolCalls.map((tc) => ({
+          id: tc.id,
+          name: tc.name,
+          input: tc.arguments,
+        }));
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantId,
+            role: "assistant",
+            content: response.content,
+            reasoning: response.reasoning,
+            timestamp: new Date().toISOString(),
+            promptMessages: isFirstIteration
+              ? currentCapturedPrompt
+              : undefined,
+          },
+        ]);
+
+        await processToolCalls(assistantId, payloads, signal);
       }
 
-      const elapsed = Date.now() - startTime;
-      setMessages((prev) => {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        updated[updated.length - 1] = {
-          ...last,
-          durationMs: elapsed,
-          finishReason: streamFinishReason,
-        };
-        return updated;
-      });
-    } else {
-      const response = await callAi(
-        tool,
-        userMessage,
-        context,
-        aiSettings,
-        aiHistory,
-        signal,
-      );
+      if (signal.aborted) break;
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantId,
-          role: "assistant",
-          content: response.content,
-          reasoning: response.reasoning,
-          timestamp: new Date().toISOString(),
-          promptMessages: capturedPrompt,
-          durationMs: Date.now() - startTime,
-          finishReason: response.finishReason,
-        },
-      ]);
+      // Rebuild history from current messages state for next iteration
+      // We need to read the latest messages state
+      const latestMessages = await new Promise<Message[]>((resolve) => {
+        setMessages((prev) => {
+          resolve(prev);
+          return prev;
+        });
+      });
+
+      currentAiHistory = messagesToAiHistory(latestMessages);
+      currentCapturedPrompt = [];
+      isFirstIteration = false;
     }
+  }
+
+  /** Process tool calls: auto-execute reads, prompt for writes */
+  async function processToolCalls(
+    assistantMsgId: string,
+    payloads: ToolCallPayload[],
+    signal: AbortSignal,
+  ) {
+    if (!projectId) return;
+
+    // Build ToolCallEntry[] and attach to the assistant message
+    const entries: ToolCallEntry[] = payloads.map((p) => {
+      const toolDef = AI_TOOL_MAP.get(p.name);
+      return {
+        id: p.id,
+        toolName: p.name,
+        displayName: toolDef?.name ?? p.name,
+        input: p.input,
+        status: toolDef?.requiresApproval
+          ? ("pending" as const)
+          : ("approved" as const),
+      };
+    });
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === assistantMsgId ? { ...msg, toolCalls: entries } : msg,
+      ),
+    );
+
+    // Process each tool call sequentially
+    for (const entry of entries) {
+      if (signal.aborted) break;
+
+      const toolDef = AI_TOOL_MAP.get(entry.toolName);
+      if (!toolDef) {
+        updateToolCallEntry(assistantMsgId, entry.id, {
+          status: "error",
+          result: {
+            success: false,
+            message: `Unknown tool: ${entry.toolName}`,
+          },
+        });
+        continue;
+      }
+
+      if (toolDef.requiresApproval) {
+        // Wait for user approval
+        setPendingToolApproval(true);
+        const approved = await waitForToolDecision();
+        setPendingToolApproval(false);
+
+        if (signal.aborted) break;
+
+        if (!approved) {
+          updateToolCallEntry(assistantMsgId, entry.id, {
+            status: "denied",
+          });
+          continue;
+        }
+      }
+
+      // Execute the tool (with auto-validation via executeTool)
+      const result = await executeTool(entry.toolName, entry.input, {
+        projectId,
+      });
+      updateToolCallEntry(assistantMsgId, entry.id, {
+        status: result.success ? "executed" : "error",
+        result,
+      });
+    }
+  }
+
+  function updateToolCallEntry(
+    messageId: string,
+    toolCallId: string,
+    update: Partial<ToolCallEntry>,
+  ) {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              toolCalls: msg.toolCalls?.map((tc) =>
+                tc.id === toolCallId ? { ...tc, ...update } : tc,
+              ),
+            }
+          : msg,
+      ),
+    );
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -403,6 +685,7 @@ export function AiPanel() {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {
       setLoading(false);
+      setPendingToolApproval(false);
       abortControllerRef.current = null;
     }
   }
@@ -411,6 +694,11 @@ export function AiPanel() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
+    }
+    // Resolve any pending tool approval as denied
+    if (toolCallResolverRef.current) {
+      toolCallResolverRef.current.resolve(false);
+      toolCallResolverRef.current = null;
     }
     // Remove incomplete assistant message
     setMessages((prev) => {
@@ -421,6 +709,7 @@ export function AiPanel() {
       return prev;
     });
     setLoading(false);
+    setPendingToolApproval(false);
     setError(null);
   }
 
@@ -480,6 +769,7 @@ export function AiPanel() {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {
       setLoading(false);
+      setPendingToolApproval(false);
       abortControllerRef.current = null;
     }
   }
@@ -514,6 +804,7 @@ export function AiPanel() {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {
       setLoading(false);
+      setPendingToolApproval(false);
       abortControllerRef.current = null;
     }
   }
@@ -547,6 +838,7 @@ export function AiPanel() {
       setError(err instanceof Error ? err.message : "Request failed");
     } finally {
       setLoading(false);
+      setPendingToolApproval(false);
       abortControllerRef.current = null;
     }
   }
@@ -591,6 +883,9 @@ export function AiPanel() {
         onEditingContentChange={setEditingContent}
         onCancelEdit={handleCancelEdit}
         onConfirmEdit={handleConfirmEdit}
+        onApproveToolCall={handleApproveToolCall}
+        onDenyToolCall={handleDenyToolCall}
+        pendingToolApproval={pendingToolApproval}
       />
 
       <PromptInput
