@@ -40,11 +40,12 @@ import { ChapterStatusEnum, CharacterRoleEnum } from "@/db/schemas";
 import { buildNameMap, serializeOutlineGrid } from "@/lib/ai/serialize";
 import { extractSnippet, textContainsQuery } from "@/lib/search/highlight";
 import { searchProjectPaginated } from "@/lib/search/search";
-import type {
-  AiToolDefinition,
-  ToolDefinitionForModel,
-  ToolExecutionContext,
-  ToolResult,
+import {
+  type AiToolDefinition,
+  type ToolDefinitionForModel,
+  type ToolExecutionContext,
+  type ToolResult,
+  defineTool,
 } from "./types";
 
 // ─── Helper ─────────────────────────────────────────────────────────
@@ -73,7 +74,7 @@ function formatZodError(error: z.ZodError): string {
 
 // ─── Character Tools ────────────────────────────────────────────────
 
-const createCharacterTool: AiToolDefinition = {
+const createCharacterTool = defineTool({
   id: "create_character",
   name: "Create Character",
   description:
@@ -117,9 +118,9 @@ const createCharacterTool: AiToolDefinition = {
       name: character.name,
     });
   },
-};
+});
 
-const getCharacterTool: AiToolDefinition = {
+const getCharacterTool = defineTool({
   id: "get_character",
   name: "Get Character",
   description:
@@ -151,9 +152,9 @@ const getCharacterTool: AiToolDefinition = {
       aliases: character.aliases,
     });
   },
-};
+});
 
-const updateCharacterTool: AiToolDefinition = {
+const updateCharacterTool = defineTool({
   id: "update_character",
   name: "Update Character",
   description:
@@ -200,9 +201,9 @@ const updateCharacterTool: AiToolDefinition = {
     await updateCharacter(id, fields);
     return ok(`Updated character "${existing.name}"`);
   },
-};
+});
 
-const listCharactersTool: AiToolDefinition = {
+const listCharactersTool = defineTool({
   id: "list_characters",
   name: "List Characters",
   description:
@@ -224,11 +225,11 @@ const listCharactersTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
 // ─── Location Tools ─────────────────────────────────────────────────
 
-const createLocationTool: AiToolDefinition = {
+const createLocationTool = defineTool({
   id: "create_location",
   name: "Create Location",
   description:
@@ -262,9 +263,9 @@ const createLocationTool: AiToolDefinition = {
       name: location.name,
     });
   },
-};
+});
 
-const getLocationTool: AiToolDefinition = {
+const getLocationTool = defineTool({
   id: "get_location",
   name: "Get Location",
   description: "Look up a location by ID to get full details.",
@@ -287,9 +288,9 @@ const getLocationTool: AiToolDefinition = {
       notes: location.notes,
     });
   },
-};
+});
 
-const updateLocationTool: AiToolDefinition = {
+const updateLocationTool = defineTool({
   id: "update_location",
   name: "Update Location",
   description:
@@ -320,11 +321,11 @@ const updateLocationTool: AiToolDefinition = {
     await updateLocation(id, fields);
     return ok(`Updated location "${existing.name}"`);
   },
-};
+});
 
 // ─── Timeline Event Tools ───────────────────────────────────────────
 
-const createTimelineEventTool: AiToolDefinition = {
+const createTimelineEventTool = defineTool({
   id: "create_timeline_event",
   name: "Create Timeline Event",
   description:
@@ -361,9 +362,9 @@ const createTimelineEventTool: AiToolDefinition = {
       title: event.title,
     });
   },
-};
+});
 
-const getTimelineEventTool: AiToolDefinition = {
+const getTimelineEventTool = defineTool({
   id: "get_timeline_event",
   name: "Get Timeline Event",
   description: "Look up a timeline event by ID to get full details.",
@@ -386,9 +387,9 @@ const getTimelineEventTool: AiToolDefinition = {
       date: event.date,
     });
   },
-};
+});
 
-const updateTimelineEventTool: AiToolDefinition = {
+const updateTimelineEventTool = defineTool({
   id: "update_timeline_event",
   name: "Update Timeline Event",
   description:
@@ -419,11 +420,11 @@ const updateTimelineEventTool: AiToolDefinition = {
     await updateTimelineEvent(id, fields);
     return ok(`Updated event "${existing.title}"`);
   },
-};
+});
 
 // ─── Chapter Tools ──────────────────────────────────────────────────
 
-const createChapterTool: AiToolDefinition = {
+const createChapterTool = defineTool({
   id: "create_chapter",
   name: "Create Chapter",
   description:
@@ -454,9 +455,9 @@ const createChapterTool: AiToolDefinition = {
       title: chapter.title,
     });
   },
-};
+});
 
-const getChapterTool: AiToolDefinition = {
+const getChapterTool = defineTool({
   id: "get_chapter",
   name: "Get Chapter",
   description:
@@ -486,9 +487,9 @@ const getChapterTool: AiToolDefinition = {
       hasSceneBreaks,
     });
   },
-};
+});
 
-const updateChapterTool: AiToolDefinition = {
+const updateChapterTool = defineTool({
   id: "update_chapter",
   name: "Update Chapter",
   description:
@@ -523,9 +524,9 @@ const updateChapterTool: AiToolDefinition = {
     await updateChapter(id, fields);
     return ok(`Updated chapter "${existing.title}"`);
   },
-};
+});
 
-const searchChaptersTool: AiToolDefinition = {
+const searchChaptersTool = defineTool({
   id: "search_chapters",
   name: "Search Chapters",
   description:
@@ -555,7 +556,7 @@ const searchChaptersTool: AiToolDefinition = {
       }));
     return ok(`Found ${matches.length} matching chapters`, { matches });
   },
-};
+});
 
 // ─── Search Tools ────────────────────────────────────────────────────
 
@@ -569,7 +570,7 @@ const SearchableEntityTypeEnum = z.enum([
   "outlineCell",
 ]);
 
-const searchProjectTool: AiToolDefinition = {
+const searchProjectTool = defineTool({
   id: "search_project",
   name: "Search Project",
   description:
@@ -628,11 +629,11 @@ const searchProjectTool: AiToolDefinition = {
       totalCount: result.totalCount,
     });
   },
-};
+});
 
 // ─── List/Read Tools (agentic discovery) ────────────────────────────
 
-const listChaptersTool: AiToolDefinition = {
+const listChaptersTool = defineTool({
   id: "list_chapters",
   name: "List Chapters",
   description:
@@ -655,9 +656,9 @@ const listChaptersTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
-const readChapterTool: AiToolDefinition = {
+const readChapterTool = defineTool({
   id: "read_chapter",
   name: "Read Chapter",
   description:
@@ -681,9 +682,9 @@ const readChapterTool: AiToolDefinition = {
       content: chapter.content,
     });
   },
-};
+});
 
-const readChapterRangeTool: AiToolDefinition = {
+const readChapterRangeTool = defineTool({
   id: "read_chapter_range",
   name: "Read Chapter Range",
   description:
@@ -734,9 +735,9 @@ const readChapterRangeTool: AiToolDefinition = {
       },
     );
   },
-};
+});
 
-const searchChapterTool: AiToolDefinition = {
+const searchChapterTool = defineTool({
   id: "search_chapter",
   name: "Search Chapter",
   description:
@@ -788,9 +789,9 @@ const searchChapterTool: AiToolDefinition = {
       },
     );
   },
-};
+});
 
-const getChapterStructureTool: AiToolDefinition = {
+const getChapterStructureTool = defineTool({
   id: "get_chapter_structure",
   name: "Get Chapter Structure",
   description:
@@ -843,9 +844,9 @@ const getChapterStructureTool: AiToolDefinition = {
       },
     );
   },
-};
+});
 
-const listLocationsTool: AiToolDefinition = {
+const listLocationsTool = defineTool({
   id: "list_locations",
   name: "List Locations",
   description:
@@ -866,9 +867,9 @@ const listLocationsTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
-const listTimelineEventsTool: AiToolDefinition = {
+const listTimelineEventsTool = defineTool({
   id: "list_timeline_events",
   name: "List Timeline Events",
   description:
@@ -890,9 +891,9 @@ const listTimelineEventsTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
-const listStyleGuideTool: AiToolDefinition = {
+const listStyleGuideTool = defineTool({
   id: "list_style_guide",
   name: "List Style Guide",
   description:
@@ -914,9 +915,9 @@ const listStyleGuideTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
-const getStyleGuideEntryTool: AiToolDefinition = {
+const getStyleGuideEntryTool = defineTool({
   id: "get_style_guide_entry",
   name: "Get Style Guide Entry",
   description: "Look up a style guide entry by ID to get its full content.",
@@ -939,9 +940,9 @@ const getStyleGuideEntryTool: AiToolDefinition = {
       content: entry.content,
     });
   },
-};
+});
 
-const listWorldbuildingDocsTool: AiToolDefinition = {
+const listWorldbuildingDocsTool = defineTool({
   id: "list_worldbuilding_docs",
   name: "List Worldbuilding Docs",
   description:
@@ -964,9 +965,9 @@ const listWorldbuildingDocsTool: AiToolDefinition = {
       })),
     });
   },
-};
+});
 
-const getWorldbuildingDocTool: AiToolDefinition = {
+const getWorldbuildingDocTool = defineTool({
   id: "get_worldbuilding_doc",
   name: "Get Worldbuilding Doc",
   description:
@@ -991,9 +992,9 @@ const getWorldbuildingDocTool: AiToolDefinition = {
       parentDocId: doc.parentDocId,
     });
   },
-};
+});
 
-const getOutlineTool: AiToolDefinition = {
+const getOutlineTool = defineTool({
   id: "get_outline",
   name: "Get Outline",
   description:
@@ -1020,7 +1021,7 @@ const getOutlineTool: AiToolDefinition = {
       outline: serialized,
     });
   },
-};
+});
 
 // ─── Registry ───────────────────────────────────────────────────────
 
@@ -1080,7 +1081,7 @@ export async function executeTool(
     return fail(`Invalid parameters: ${formatZodError(parsed.error)}`);
 
   try {
-    return await tool.execute(parsed.data, context);
+    return await tool.execute(parsed.data as Record<string, unknown>, context);
   } catch (error) {
     return fail(
       error instanceof Error ? error.message : "Tool execution failed",

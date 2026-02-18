@@ -36,6 +36,7 @@ export interface TextContentPart {
 export interface ImageUrlContentPart {
   type: "image_url";
   image_url: { url: string };
+  cache_control?: CacheControl;
 }
 
 export type ContentPart = TextContentPart | ImageUrlContentPart;
