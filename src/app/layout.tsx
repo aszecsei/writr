@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   Atkinson_Hyperlegible_Next,
+  Averia_Serif_Libre,
   Courier_Prime,
   Crimson_Pro,
   EB_Garamond,
@@ -100,6 +101,12 @@ const spectral = Spectral({
   weight: ["400", "700"],
 });
 
+const averiaSerifLibre = Averia_Serif_Libre({
+  variable: "--font-averia-serif-libre",
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+});
+
 const literaryFontVars = [
   literata.variable,
   lusitana.variable,
@@ -114,6 +121,7 @@ const literaryFontVars = [
   ebGaramond.variable,
   crimsonPro.variable,
   spectral.variable,
+  averiaSerifLibre.variable,
 ].join(" ");
 
 export const metadata: Metadata = {

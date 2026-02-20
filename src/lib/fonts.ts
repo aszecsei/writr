@@ -49,6 +49,12 @@ export const EDITOR_FONTS: EditorFont[] = [
     category: "serif",
     cssFamily: "var(--font-spectral), Georgia, serif",
   },
+  {
+    id: "averia-serif-libre",
+    label: "Averia Serif Libre",
+    category: "serif",
+    cssFamily: "var(--font-averia-serif-libre), Georgia, serif",
+  },
   // Sans-serif
   {
     id: "inter",
