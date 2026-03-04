@@ -111,8 +111,6 @@ export function serializeStyleGuideEntry(s: StyleGuideEntry): string {
   return `<rule title="${s.title}">\n${s.content}\n</rule>`;
 }
 
-const WORLDBUILDING_TRUNCATE_LENGTH = 2048;
-
 export function serializeWorldbuildingTree(docs: WorldbuildingDoc[]): string {
   const childrenOf = new Map<string | null, WorldbuildingDoc[]>();
   for (const d of docs) {
@@ -128,11 +126,7 @@ export function serializeWorldbuildingTree(docs: WorldbuildingDoc[]): string {
     const lines: string[] = [`<doc title="${doc.title}"${tagsAttr}>`];
 
     if (doc.content) {
-      const truncated =
-        doc.content.length > WORLDBUILDING_TRUNCATE_LENGTH
-          ? `${doc.content.slice(0, WORLDBUILDING_TRUNCATE_LENGTH)}...`
-          : doc.content;
-      lines.push(truncated);
+      lines.push(doc.content);
     }
 
     const children = childrenOf.get(doc.id);
