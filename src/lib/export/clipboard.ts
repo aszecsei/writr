@@ -1,5 +1,6 @@
 import { getChapter, getProject } from "@/db/operations";
-import { exportHtml } from "./exportHtml";
+import { HtmlExporter } from "./exporters/html-exporter";
+import { buildExport } from "./visitor";
 
 export interface ClipboardChapterOptions {
   projectId: string;
@@ -35,7 +36,9 @@ export async function copyChapterAo3HtmlToClipboard(
   if (!chapter) throw new Error("Chapter not found");
   if (!project) throw new Error("Project not found");
 
-  const html = exportHtml(
+  const exporter = new HtmlExporter();
+  buildExport(
+    exporter,
     {
       projectTitle: project.title,
       chapters: [{ title: chapter.title, content: chapter.content }],
@@ -51,5 +54,5 @@ export async function copyChapterAo3HtmlToClipboard(
     },
   );
 
-  await navigator.clipboard.writeText(html);
+  await navigator.clipboard.writeText(exporter.toString());
 }

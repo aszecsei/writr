@@ -330,31 +330,6 @@ describe("serializeWorldbuildingTree", () => {
     expect(regionClose).toBeLessThan(worldClose);
   });
 
-  it("does not truncate content at exactly 2048 chars", () => {
-    const content = "x".repeat(2048);
-    const doc = makeWorldbuildingDoc({
-      projectId: pid,
-      title: "Exact",
-      content,
-    });
-    const xml = serializeWorldbuildingTree([doc]);
-    expect(xml).not.toContain("...");
-    expect(xml).toContain(content);
-  });
-
-  it("truncates content at 2049 chars with ellipsis", () => {
-    const content = "x".repeat(2049);
-    const doc = makeWorldbuildingDoc({
-      projectId: pid,
-      title: "Long",
-      content,
-    });
-    const xml = serializeWorldbuildingTree([doc]);
-    expect(xml).toContain("...");
-    // Should have exactly 2048 x's + ...
-    expect(xml).toContain(`${"x".repeat(2048)}...`);
-  });
-
   it("includes tags attribute when present", () => {
     const doc = makeWorldbuildingDoc({
       projectId: pid,

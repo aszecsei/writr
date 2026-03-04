@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { exportHtml, nodesToHtml } from "./exportHtml";
-import type { DocNode } from "./markdown-to-nodes";
+import type { DocNode } from "../markdown-to-nodes";
+import { exportHtml, nodesToHtml } from "./html-exporter";
 
 describe("nodesToHtml", () => {
   describe("block-level elements", () => {

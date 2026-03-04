@@ -42,10 +42,10 @@ import { extractSnippet, textContainsQuery } from "@/lib/search/highlight";
 import { searchProjectPaginated } from "@/lib/search/search";
 import {
   type AiToolDefinition,
+  defineTool,
   type ToolDefinitionForModel,
   type ToolExecutionContext,
   type ToolResult,
-  defineTool,
 } from "./types";
 
 // ─── Helper ─────────────────────────────────────────────────────────

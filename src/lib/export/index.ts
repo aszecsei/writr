@@ -1,12 +1,12 @@
 import { match } from "ts-pattern";
 import { triggerDownload } from "./download";
-import { exportDocx } from "./exportDocx";
+import { createExporter } from "./exporters";
 import { exportFountain } from "./exportFountain";
 import { exportMarkdown } from "./exportMarkdown";
-import { exportPdf } from "./exportPdf";
 import { exportScreenplayPdf } from "./exportScreenplayPdf";
 import { gatherContent } from "./gather";
 import type { ExportOptions } from "./types";
+import { runExport } from "./visitor";
 
 export {
   copyChapterAo3HtmlToClipboard,
@@ -27,15 +27,18 @@ const FORMAT_EXTENSIONS: Record<ExportOptions["format"], string> = {
 export async function performExport(options: ExportOptions): Promise<void> {
   const content = await gatherContent(options);
 
-  const blob = await match(options.format)
-    .with("markdown", () => exportMarkdown(content, options))
-    .with("docx", () => exportDocx(content, options))
-    .with("pdf", () =>
-      options.projectMode === "screenplay"
-        ? exportScreenplayPdf(content, options)
-        : exportPdf(content, options),
+  const blob = await match(options)
+    .with({ format: "markdown" }, () => exportMarkdown(content, options))
+    .with({ format: "fountain" }, () => exportFountain(content, options))
+    .with({ format: "pdf", projectMode: "screenplay" }, () =>
+      exportScreenplayPdf(content, options),
     )
-    .with("fountain", () => exportFountain(content, options))
+    .with({ format: "docx" }, () =>
+      runExport(createExporter(options), content, options),
+    )
+    .with({ format: "pdf" }, () =>
+      runExport(createExporter(options), content, options),
+    )
     .exhaustive();
 
   const baseName =
