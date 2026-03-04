@@ -27,6 +27,7 @@ export function PromptInspectorDialog({
         </h2>
         <div className="flex-1 overflow-y-auto space-y-4">
           {promptMessages.map((msg, i) => (
+            /* biome-ignore lint/suspicious/noArrayIndexKey: does not change order */
             <div key={`${msg.role}-${i}`}>
               <span
                 className={`inline-block rounded px-2 py-0.5 text-xs font-medium uppercase ${roleColors[msg.role] ?? ""}`}
@@ -34,7 +35,7 @@ export function PromptInspectorDialog({
                 {msg.role}
               </span>
               {typeof msg.content === "string" ? (
-                <pre className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                <pre className="mt-1.5 whitespace-pre-wrap wrap-break-word rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                   {msg.content}
                 </pre>
               ) : (
@@ -48,7 +49,7 @@ export function PromptInspectorDialog({
                             cached
                           </span>
                         )}
-                        <pre className="whitespace-pre-wrap break-words rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                        <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                           {part.text}
                         </pre>
                       </>
