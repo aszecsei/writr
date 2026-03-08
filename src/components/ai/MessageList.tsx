@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Check,
+  ClipboardCopy,
   Code,
   Pencil,
   RefreshCw,
@@ -82,6 +83,25 @@ function StopReasonBanner({ reason }: { reason: FinishReason }) {
   );
 }
 
+function buildCopyText(msg: Message): string {
+  let text = msg.content;
+  if (msg.toolCalls?.length) {
+    for (const tc of msg.toolCalls) {
+      text += `\n\n---\nTool: ${tc.displayName}`;
+      const params = Object.entries(tc.input).filter(([k]) => k !== "id");
+      if (params.length) {
+        for (const [key, value] of params) {
+          text += `\n${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`;
+        }
+      }
+      if (tc.result) {
+        text += `\nResult: ${tc.result.message}`;
+      }
+    }
+  }
+  return text;
+}
+
 export type { Message };
 
 export function MessageList({
@@ -104,6 +124,7 @@ export function MessageList({
   pendingToolApproval,
 }: MessageListProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -203,6 +224,26 @@ export function MessageList({
                     <Code size={12} />
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text =
+                      msg.role === "assistant"
+                        ? buildCopyText(msg)
+                        : msg.content;
+                    navigator.clipboard.writeText(text);
+                    setCopiedId(msg.id);
+                    setTimeout(() => setCopiedId(null), 2000);
+                  }}
+                  title="Copy to clipboard"
+                  className="rounded p-0.5 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                >
+                  {copiedId === msg.id ? (
+                    <Check size={12} />
+                  ) : (
+                    <ClipboardCopy size={12} />
+                  )}
+                </button>
               </div>
             </div>
             {msg.role === "assistant" && msg.reasoning && (
