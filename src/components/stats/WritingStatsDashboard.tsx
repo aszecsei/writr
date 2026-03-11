@@ -67,7 +67,7 @@ export function WritingStatsDashboard({
           icon={Type}
         />
         <StatCard
-          label="Avg Words/Day"
+          label={`Avg Words/Day (${days} days)`}
           value={stats.averageWordsPerDay.toLocaleString()}
           icon={TrendingUp}
         />

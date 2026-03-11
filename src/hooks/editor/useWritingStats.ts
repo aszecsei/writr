@@ -172,22 +172,35 @@ export function useWritingStats(
     cutoffDate.setDate(cutoffDate.getDate() - days);
     const cutoffStr = toLocalDateString(cutoffDate);
 
-    let sessions: WritingSession[];
+    // Recent sessions (within date cutoff) for word counts and daily chart
+    let recentSessions: WritingSession[];
     if (projectId) {
-      sessions = await db.writingSessions
+      recentSessions = await db.writingSessions
         .where("[projectId+date]")
         .between([projectId, cutoffStr], [projectId, "\uffff"])
         .toArray();
     } else {
-      sessions = await db.writingSessions
+      recentSessions = await db.writingSessions
         .where("date")
         .aboveOrEqual(cutoffStr)
         .toArray();
     }
 
-    const daily = aggregateDailyStats(sessions);
-    const timeOfDay = aggregateTimeOfDayStats(sessions);
-    const streak = calculateStreak(daily);
+    // All sessions (no date cutoff) for streaks, time-of-day, and best hour
+    let allSessions: WritingSession[];
+    if (projectId) {
+      allSessions = await db.writingSessions
+        .where("projectId")
+        .equals(projectId)
+        .toArray();
+    } else {
+      allSessions = await db.writingSessions.toArray();
+    }
+
+    const daily = aggregateDailyStats(recentSessions);
+    const allDaily = aggregateDailyStats(allSessions);
+    const timeOfDay = aggregateTimeOfDayStats(allSessions);
+    const streak = calculateStreak(allDaily);
     const totalWords = daily.reduce((sum, d) => sum + d.wordsWritten, 0);
     const daysWithWriting = daily.filter((d) => d.wordsWritten > 0).length;
     const averageWordsPerDay =
