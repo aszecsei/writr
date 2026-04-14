@@ -18,7 +18,7 @@ export function ProjectCard({ project, onContextMenu }: ProjectCardProps) {
       onContextMenu={
         onContextMenu ? (e) => onContextMenu(e, project.id) : undefined
       }
-      className="group block rounded-xl border border-neutral-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
+      className="group block rounded-xl border border-neutral-200 bg-white p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:-translate-y-0.5 focus-visible:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
     >
       <h3 className="text-lg font-semibold text-neutral-900 group-hover:text-neutral-700 dark:text-neutral-100 dark:group-hover:text-neutral-300">
         {project.title}

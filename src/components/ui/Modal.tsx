@@ -36,7 +36,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onClick={handleOverlayClick}
@@ -46,7 +46,7 @@ export function Modal({
     >
       <div
         ref={panelRef}
-        className={`relative w-full ${maxWidth} rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900`}
+        className={`modal-panel relative w-full ${maxWidth} rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900`}
       >
         <button
           type="button"

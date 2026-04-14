@@ -188,7 +188,7 @@ export function ChapterList({
     <div className="space-y-1">
       <Link
         href={overviewHref}
-        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
           isOverviewActive
             ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
             : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
@@ -200,7 +200,7 @@ export function ChapterList({
 
       <Link
         href={`/projects/${projectId}/outline`}
-        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors ${
+        className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
           pathname.startsWith(`/projects/${projectId}/outline`)
             ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
             : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
@@ -257,7 +257,7 @@ export function ChapterList({
       <button
         type="button"
         onClick={handleAddChapter}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-density-item text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-300"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-density-item text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-300"
       >
         <Plus size={14} />
         {getTerm(activeProjectMode, "addChapter")}

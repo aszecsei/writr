@@ -139,7 +139,7 @@ function SaveStatusIndicator({
 
   return (
     <span
-      className={`flex items-center gap-1 text-xs ${
+      className={`flex items-center gap-1 text-xs transition-opacity duration-150 ${
         status === "error"
           ? "text-red-500"
           : "text-neutral-400 dark:text-neutral-500"

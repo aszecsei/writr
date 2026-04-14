@@ -36,7 +36,7 @@ export default function ProjectOverviewPage() {
           onClick={() =>
             openModal({ id: "edit-project", projectId: params.projectId })
           }
-          className="rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+          className="rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
           aria-label="Edit project"
         >
           <Pencil size={16} />
@@ -146,7 +146,7 @@ function StatCard({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5 transition-all duration-150 dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 transition-all duration-150 hover:border-neutral-300 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700">
       <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
         <Icon size={16} />
       </div>

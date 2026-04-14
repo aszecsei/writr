@@ -52,7 +52,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       role="alertdialog"
       aria-modal="true"
       onClick={handleOverlayClick}
@@ -62,7 +62,7 @@ export function ConfirmDialog({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900"
+        className="modal-panel relative w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900"
       >
         <div className="flex items-start gap-3">
           {isDanger && (
@@ -85,7 +85,7 @@ export function ConfirmDialog({
             <button
               type="button"
               onClick={extraAction.onClick}
-              className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900"
+              className="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900"
             >
               {extraAction.label}
             </button>
@@ -94,14 +94,14 @@ export function ConfirmDialog({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus-visible:ring-offset-neutral-900"
+              className="flex-1 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus-visible:ring-offset-neutral-900"
             >
               {cancelLabel}
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
                 isDanger
                   ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500"
                   : "bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"

@@ -112,7 +112,7 @@ export function ContextMenuItem({
   return (
     <button
       type="button"
-      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${styles}`}
+      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400 ${styles}`}
       onClick={onClick}
     >
       {Icon && <Icon size={14} />}

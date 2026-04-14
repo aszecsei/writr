@@ -79,7 +79,7 @@ export function SortableChapterItem({
       <Link
         href={href}
         onContextMenu={(e) => onContextMenu(e, chapter.id)}
-        className="flex flex-1 items-center justify-between py-density-item pr-3 text-sm"
+        className="flex flex-1 items-center justify-between rounded-r-md py-density-item pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400"
       >
         <span className="truncate">{chapter.title}</span>
         <span className="ml-2 shrink-0 text-xs text-neutral-400 dark:text-neutral-500">

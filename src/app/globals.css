@@ -149,6 +149,35 @@ summary {
   cursor: pointer;
 }
 
+/* Modal entrance animations */
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-overlay {
+  animation: modal-overlay-in 150ms ease-out;
+}
+
+.modal-panel {
+  animation: modal-panel-in 150ms ease-out;
+}
+
 button:disabled,
 select:disabled {
   cursor: default;
@@ -204,6 +233,7 @@ select:disabled {
   right: -3px;
   cursor: col-resize;
   z-index: 10;
+  transition: background-color 150ms ease;
 }
 
 .resize-handle:hover::before,
