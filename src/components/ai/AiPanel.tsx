@@ -25,22 +25,20 @@ import {
   useOutlineGridColumns,
   useOutlineGridRows,
 } from "@/hooks/outline/useOutlineGrid";
-import { callAi, streamAi } from "@/lib/ai/client";
+import {
+  type Agent,
+  makeManualAgentBuildMessages,
+  type RunAgentCallbacks,
+  resolveAgentModel,
+  runAgent,
+} from "@/lib/ai/agents";
 import { buildMessages } from "@/lib/ai/prompts";
 import { PROVIDERS } from "@/lib/ai/providers";
-import {
-  AI_TOOL_MAP,
-  executeTool,
-  getToolDefinitionsForModel,
-  type ToolCallEntry,
-  type ToolCallPayload,
-} from "@/lib/ai/tool-calling";
 import type {
   AiContext,
   AiMessage,
   AiToolId,
   BuiltinAiTool,
-  FinishReason,
 } from "@/lib/ai/types";
 import { BUILTIN_TOOL_IDS } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
@@ -334,306 +332,124 @@ export function AiPanel() {
       return;
     }
 
-    const provider = settings.aiProvider;
-    const providerConfig = PROVIDERS[provider];
-    const apiKey = settings.providerApiKeys[provider];
+    const enableToolCalling =
+      (settings.enableToolCalling ?? false) && !!projectId;
 
-    if (!apiKey) {
-      throw new Error(
-        `No API key configured. Add your ${providerConfig.label} API key in App Settings.`,
-      );
-    }
-
-    const enableToolCalling = settings.enableToolCalling ?? false;
-    const toolDefinitions =
-      enableToolCalling && projectId ? getToolDefinitionsForModel() : undefined;
-
-    const aiSettings = {
-      apiKey,
-      model: settings.providerModels[provider],
-      provider,
-      reasoningEffort: settings.reasoningEffort,
-      postChatInstructions: settings.postChatInstructions,
-      postChatInstructionsDepth: settings.postChatInstructionsDepth,
-      assistantPrefill: settings.assistantPrefill,
-      customSystemPrompt: settings.customSystemPrompt,
-      toolPromptOverride,
-      images: imageAttachments,
-      toolDefinitions,
-    };
-
-    const capturedPrompt = buildMessages(
-      tool,
-      userMessage,
-      context,
-      aiHistory,
-      {
+    const agent: Agent = {
+      id: `manual-${generateId()}`,
+      kind: "manual",
+      enableToolCalling,
+      buildMessages: makeManualAgentBuildMessages({
+        tool,
+        context,
+        enableToolCalling,
         postChatInstructions: settings.postChatInstructions,
         postChatInstructionsDepth: settings.postChatInstructionsDepth,
         assistantPrefill: settings.assistantPrefill,
         customSystemPrompt: settings.customSystemPrompt,
         toolPromptOverride,
         images: imageAttachments,
-        enableToolCalling,
-      },
-    );
-    const startTime = Date.now();
-    requestStartRef.current = startTime;
+      }),
+      agentContext: { projectId: projectId ?? "", agentKind: "manual" },
+    };
+
+    const model = resolveAgentModel(agent, settings);
+    if (!model.apiKey) {
+      throw new Error(
+        `No API key configured. Add your ${PROVIDERS[model.provider].label} API key in App Settings.`,
+      );
+    }
+
+    requestStartRef.current = Date.now();
     setElapsedMs(0);
 
-    // Tool-calling while loop: stream → collect tool_use → execute/approve → loop
-    let currentAiHistory = aiHistory;
-    let currentCapturedPrompt = capturedPrompt;
-    let isFirstIteration = true;
-
-    while (true) {
-      if (signal.aborted) break;
-
-      const assistantId = generateId();
-      const collectedToolCalls: ToolCallPayload[] = [];
-
-      // On iteration 2+, the user message is already in the history
-      // (from messagesToAiHistory), so skip appending it again.
-      const iterationSettings = isFirstIteration
-        ? aiSettings
-        : { ...aiSettings, skipUserPrompt: true };
-
-      if (settings.streamResponses) {
+    const callbacks: RunAgentCallbacks = {
+      onIterationStart: ({ messageId, iteration, capturedPrompt }) => {
         setMessages((prev) => [
           ...prev,
           {
-            id: assistantId,
+            id: messageId,
             role: "assistant",
             content: "",
             timestamp: new Date().toISOString(),
-            promptMessages: isFirstIteration
-              ? currentCapturedPrompt
-              : undefined,
+            promptMessages: iteration === 1 ? capturedPrompt : undefined,
           },
         ]);
-
-        let streamFinishReason: FinishReason | undefined;
-        for await (const chunk of streamAi(
-          tool,
-          userMessage,
-          context,
-          iterationSettings,
-          currentAiHistory,
-          signal,
-        )) {
-          if (signal.aborted) break;
-          if (chunk.type === "stop") {
-            streamFinishReason = chunk.finishReason;
-            continue;
-          }
-          if (chunk.type === "tool_use") {
-            collectedToolCalls.push({
-              id: chunk.id,
-              name: chunk.name,
-              input: chunk.input,
-            });
-            continue;
-          }
-          setMessages((prev) => {
-            const updated = [...prev];
-            const last = updated[updated.length - 1];
+      },
+      onChunk: ({ messageId, chunk }) => {
+        if (chunk.type !== "content" && chunk.type !== "reasoning") return;
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== messageId) return m;
             if (chunk.type === "reasoning") {
-              updated[updated.length - 1] = {
-                ...last,
-                reasoning: (last.reasoning ?? "") + chunk.text,
-              };
-            } else {
-              updated[updated.length - 1] = {
-                ...last,
-                content: last.content + chunk.text,
-              };
+              return { ...m, reasoning: (m.reasoning ?? "") + chunk.text };
             }
-            return updated;
-          });
-        }
-
-        // If no tool calls, finalize and exit loop
-        if (
-          streamFinishReason !== "tool_use" ||
-          collectedToolCalls.length === 0
-        ) {
-          const elapsed = Date.now() - startTime;
-          setMessages((prev) => {
-            const updated = [...prev];
-            const last = updated[updated.length - 1];
-            updated[updated.length - 1] = {
-              ...last,
-              durationMs: elapsed,
-              finishReason: streamFinishReason,
-            };
-            return updated;
-          });
-          break;
-        }
-
-        // Process tool calls
-        await processToolCalls(assistantId, collectedToolCalls, signal);
-      } else {
-        const response = await callAi(
-          tool,
-          userMessage,
-          context,
-          iterationSettings,
-          currentAiHistory,
-          signal,
+            return { ...m, content: m.content + chunk.text };
+          }),
         );
-
-        if (
-          response.finishReason !== "tool_use" ||
-          !response.toolCalls?.length
-        ) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: assistantId,
-              role: "assistant",
-              content: response.content,
-              reasoning: response.reasoning,
-              timestamp: new Date().toISOString(),
-              promptMessages: isFirstIteration
-                ? currentCapturedPrompt
-                : undefined,
-              durationMs: Date.now() - startTime,
-              finishReason: response.finishReason,
-            },
-          ]);
-          break;
-        }
-
-        // Has tool calls - add assistant message then process
-        const payloads: ToolCallPayload[] = response.toolCalls.map((tc) => ({
-          id: tc.id,
-          name: tc.name,
-          input: tc.arguments,
-        }));
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: assistantId,
-            role: "assistant",
-            content: response.content,
-            reasoning: response.reasoning,
-            timestamp: new Date().toISOString(),
-            promptMessages: isFirstIteration
-              ? currentCapturedPrompt
-              : undefined,
-          },
-        ]);
-
-        await processToolCalls(assistantId, payloads, signal);
-      }
-
-      if (signal.aborted) break;
-
-      // Rebuild history from current messages state for next iteration
-      // We need to read the latest messages state
-      const latestMessages = await new Promise<Message[]>((resolve) => {
-        setMessages((prev) => {
-          resolve(prev);
-          return prev;
-        });
-      });
-
-      currentAiHistory = messagesToAiHistory(latestMessages);
-      currentCapturedPrompt = [];
-      isFirstIteration = false;
-    }
-  }
-
-  /** Process tool calls: auto-execute reads, prompt for writes */
-  async function processToolCalls(
-    assistantMsgId: string,
-    payloads: ToolCallPayload[],
-    signal: AbortSignal,
-  ) {
-    if (!projectId) return;
-
-    // Build ToolCallEntry[] and attach to the assistant message
-    const entries: ToolCallEntry[] = payloads.map((p) => {
-      const toolDef = AI_TOOL_MAP.get(p.name);
-      return {
-        id: p.id,
-        toolName: p.name,
-        displayName: toolDef?.name ?? p.name,
-        input: p.input,
-        status: toolDef?.requiresApproval
-          ? ("pending" as const)
-          : ("approved" as const),
-      };
-    });
-
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === assistantMsgId ? { ...msg, toolCalls: entries } : msg,
-      ),
-    );
-
-    // Process each tool call sequentially
-    for (const entry of entries) {
-      if (signal.aborted) break;
-
-      const toolDef = AI_TOOL_MAP.get(entry.toolName);
-      if (!toolDef) {
-        updateToolCallEntry(assistantMsgId, entry.id, {
-          status: "error",
-          result: {
-            success: false,
-            message: `Unknown tool: ${entry.toolName}`,
-          },
-        });
-        continue;
-      }
-
-      if (toolDef.requiresApproval) {
-        // Wait for user approval
+      },
+      onIterationEnd: ({
+        messageId,
+        content,
+        reasoning,
+        finishReason,
+        durationMs,
+      }) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  content,
+                  reasoning: reasoning ?? m.reasoning,
+                  finishReason,
+                  durationMs,
+                }
+              : m,
+          ),
+        );
+      },
+      onToolCallsCollected: ({ messageId, entries }) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, toolCalls: entries } : m,
+          ),
+        );
+      },
+      approveToolCall: async () => {
         setPendingToolApproval(true);
-        const approved = await waitForToolDecision();
-        setPendingToolApproval(false);
-
-        if (signal.aborted) break;
-
-        if (!approved) {
-          updateToolCallEntry(assistantMsgId, entry.id, {
-            status: "denied",
-          });
-          continue;
+        try {
+          const approved = await waitForToolDecision();
+          return approved;
+        } finally {
+          setPendingToolApproval(false);
         }
-      }
+      },
+      onToolCallUpdate: ({ messageId, entry }) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? {
+                  ...m,
+                  toolCalls: m.toolCalls?.map((tc) =>
+                    tc.id === entry.id ? entry : tc,
+                  ),
+                }
+              : m,
+          ),
+        );
+      },
+    };
 
-      // Execute the tool (with auto-validation via executeTool)
-      const result = await executeTool(entry.toolName, entry.input, {
-        projectId,
-      });
-      updateToolCallEntry(assistantMsgId, entry.id, {
-        status: result.success ? "executed" : "error",
-        result,
-      });
-    }
-  }
-
-  function updateToolCallEntry(
-    messageId: string,
-    toolCallId: string,
-    update: Partial<ToolCallEntry>,
-  ) {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId
-          ? {
-              ...msg,
-              toolCalls: msg.toolCalls?.map((tc) =>
-                tc.id === toolCallId ? { ...tc, ...update } : tc,
-              ),
-            }
-          : msg,
-      ),
-    );
+    await runAgent({
+      agent,
+      userInput: userMessage,
+      history: aiHistory,
+      model,
+      stream: settings.streamResponses,
+      signal,
+      ...callbacks,
+    });
   }
 
   async function handleSubmit(e: FormEvent) {

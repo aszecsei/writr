@@ -18,6 +18,8 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type {
+  AgentKind,
+  AgentModelOverride,
   AiProvider,
   EditorWidth,
   GoalCountdownDisplay,
@@ -36,6 +38,7 @@ import {
   applyUiDensity,
 } from "@/lib/theme/apply-theme";
 import { useUiStore } from "@/store/uiStore";
+import { AgentSettings } from "./AgentSettings";
 import { AiSettings } from "./AiSettings";
 import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
@@ -91,6 +94,14 @@ export function AppSettingsDialog() {
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
   const [enableToolCalling, setEnableToolCalling] = useState(false);
+  const emptyAgentOverrides: Record<AgentKind, AgentModelOverride | null> = {
+    reader: null,
+    orchestrator: null,
+    editor: null,
+    verifier: null,
+  };
+  const [agentModelOverrides, setAgentModelOverrides] =
+    useState<Record<AgentKind, AgentModelOverride | null>>(emptyAgentOverrides);
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
     filename: string;
@@ -136,6 +147,12 @@ export function AppSettingsDialog() {
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
       setEnableToolCalling(settings.enableToolCalling);
+      setAgentModelOverrides({
+        reader: settings.agentModelOverrides.reader ?? null,
+        orchestrator: settings.agentModelOverrides.orchestrator ?? null,
+        editor: settings.agentModelOverrides.editor ?? null,
+        verifier: settings.agentModelOverrides.verifier ?? null,
+      });
     }
   }, [settings, modal.id]);
 
@@ -196,7 +213,9 @@ export function AppSettingsDialog() {
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
-      enableToolCalling !== settings.enableToolCalling);
+      enableToolCalling !== settings.enableToolCalling ||
+      JSON.stringify(agentModelOverrides) !==
+        JSON.stringify(settings.agentModelOverrides));
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -220,6 +239,7 @@ export function AppSettingsDialog() {
       streamResponses,
       reasoningEffort,
       enableToolCalling,
+      agentModelOverrides,
     });
     closeModal();
   }
@@ -283,31 +303,49 @@ export function AppSettingsDialog() {
         )}
 
         {tab === "ai" && (
-          <AiSettings
-            enableAiFeatures={enableAiFeatures}
-            aiProvider={aiProvider}
-            providerApiKeys={providerApiKeys}
-            providerModels={providerModels}
-            streamResponses={streamResponses}
-            reasoningEffort={reasoningEffort}
-            debugMode={debugMode}
-            enableToolCalling={enableToolCalling}
-            onEnableAiFeaturesChange={setEnableAiFeatures}
-            onAiProviderChange={setAiProvider}
-            onProviderApiKeyChange={(provider, key) =>
-              setProviderApiKeys((prev) => ({ ...prev, [provider]: key }))
-            }
-            onProviderModelChange={(provider, model) =>
-              setProviderModels((prev) => ({ ...prev, [provider]: model }))
-            }
-            onStreamResponsesChange={setStreamResponses}
-            onReasoningEffortChange={setReasoningEffort}
-            onDebugModeChange={setDebugMode}
-            onEnableToolCallingChange={setEnableToolCalling}
-            onConfigureAi={() => openModal({ id: "ai-config" })}
-            inputClass={INPUT_CLASS}
-            labelClass={LABEL_CLASS}
-          />
+          <div className="space-y-6">
+            <AiSettings
+              enableAiFeatures={enableAiFeatures}
+              aiProvider={aiProvider}
+              providerApiKeys={providerApiKeys}
+              providerModels={providerModels}
+              streamResponses={streamResponses}
+              reasoningEffort={reasoningEffort}
+              debugMode={debugMode}
+              enableToolCalling={enableToolCalling}
+              onEnableAiFeaturesChange={setEnableAiFeatures}
+              onAiProviderChange={setAiProvider}
+              onProviderApiKeyChange={(provider, key) =>
+                setProviderApiKeys((prev) => ({ ...prev, [provider]: key }))
+              }
+              onProviderModelChange={(provider, model) =>
+                setProviderModels((prev) => ({ ...prev, [provider]: model }))
+              }
+              onStreamResponsesChange={setStreamResponses}
+              onReasoningEffortChange={setReasoningEffort}
+              onDebugModeChange={setDebugMode}
+              onEnableToolCallingChange={setEnableToolCalling}
+              onConfigureAi={() => openModal({ id: "ai-config" })}
+              inputClass={INPUT_CLASS}
+              labelClass={LABEL_CLASS}
+            />
+            {enableAiFeatures && (
+              <AgentSettings
+                overrides={agentModelOverrides}
+                globalProvider={aiProvider}
+                globalModel={providerModels[aiProvider]}
+                globalReasoningEffort={reasoningEffort}
+                onChange={(kind, override) =>
+                  setAgentModelOverrides((prev) => ({
+                    ...prev,
+                    [kind]: override,
+                  }))
+                }
+                inputClass={INPUT_CLASS}
+                labelClass={LABEL_CLASS}
+              />
+            )}
+          </div>
         )}
 
         {tab === "data" && (

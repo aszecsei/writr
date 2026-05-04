@@ -451,6 +451,22 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    this.version(25).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.agentModelOverrides === undefined) {
+            s.agentModelOverrides = {
+              reader: null,
+              orchestrator: null,
+              editor: null,
+              verifier: null,
+            };
+          }
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(
