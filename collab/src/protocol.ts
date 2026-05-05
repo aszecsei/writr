@@ -61,8 +61,20 @@ export type SystemEvent =
   | { event: "peer_left"; peerId: string };
 
 export type ServerMessage =
-  | { type: "welcome"; peerId: string; role: Role; peerCount: number; hostPresent: boolean }
-  | { type: "y-update"; docKind: DocKind; streamId: number; payload: string; from: string }
+  | {
+      type: "welcome";
+      peerId: string;
+      role: Role;
+      peerCount: number;
+      hostPresent: boolean;
+    }
+  | {
+      type: "y-update";
+      docKind: DocKind;
+      streamId: number;
+      payload: string;
+      from: string;
+    }
   | { type: "awareness"; payload: string; from: string }
   | { type: "meta"; streamId: number; payload: string; from: string }
   | { type: "rotate-stream"; docKind: DocKind; newStreamId: number }
