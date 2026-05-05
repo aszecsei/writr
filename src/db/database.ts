@@ -1,13 +1,18 @@
 import Dexie, { type EntityTable } from "dexie";
 import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
 import type {
+  AgentNote,
+  AgentQuestion,
+  AgentRun,
   AppDictionary,
   AppSettings,
   Chapter,
   ChapterSnapshot,
+  ChapterSummary,
   Character,
   CharacterRelationship,
   Comment,
+  EditPlan,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
@@ -15,8 +20,14 @@ import type {
   PlaylistTrack,
   Project,
   ProjectDictionary,
+  ProposedEdit,
+  ReaderBibleLogEntry,
+  ReaderBibleViewEntry,
+  SnapshotManifest,
   StyleGuideEntry,
   TimelineEvent,
+  Verification,
+  WorkUnit,
   WorldbuildingDoc,
   WritingSession,
   WritingSprint,
@@ -43,6 +54,17 @@ export class WritrDatabase extends Dexie {
   appSettings!: EntityTable<AppSettings, "id">;
   appDictionary!: EntityTable<AppDictionary, "id">;
   projectDictionaries!: EntityTable<ProjectDictionary, "id">;
+  agentRuns!: EntityTable<AgentRun, "id">;
+  readerBibleLog!: EntityTable<ReaderBibleLogEntry, "id">;
+  readerBibleView!: EntityTable<ReaderBibleViewEntry, "id">;
+  agentNotes!: EntityTable<AgentNote, "id">;
+  agentQuestions!: EntityTable<AgentQuestion, "id">;
+  workUnits!: EntityTable<WorkUnit, "id">;
+  editPlans!: EntityTable<EditPlan, "id">;
+  proposedEdits!: EntityTable<ProposedEdit, "id">;
+  verifications!: EntityTable<Verification, "id">;
+  chapterSummaries!: EntityTable<ChapterSummary, "id">;
+  snapshotManifests!: EntityTable<SnapshotManifest, "id">;
 
   constructor() {
     super("writr");
@@ -466,6 +488,51 @@ export class WritrDatabase extends Dexie {
           }
         }),
     );
+
+    // v26: tables for the manuscript review/edit pipeline. All eleven tables
+    // declared together (some only used in Phase 2/3) so we don't ship five
+    // separate disturbance migrations as features land.
+    this.version(26).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      playlistTracks: "id, projectId, [projectId+order]",
+      comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+      chapterSnapshots: "id, chapterId, projectId, [chapterId+createdAt]",
+      appSettings: "id",
+      appDictionary: "id",
+      projectDictionaries: "id, projectId",
+      agentRuns: "id, projectId, status, [projectId+createdAt]",
+      readerBibleLog:
+        "id, projectId, runId, [projectId+path], [runId+createdAt]",
+      readerBibleView: "id, [projectId+path], projectId",
+      agentNotes: "id, projectId, runId, chapterId, [runId+status]",
+      agentQuestions: "id, projectId, runId, [runId+status]",
+      workUnits: "id, projectId, runId, [runId+tier], [runId+status]",
+      editPlans: "id, projectId, runId",
+      proposedEdits:
+        "id, projectId, runId, workUnitId, chapterId, [workUnitId+status]",
+      verifications: "id, projectId, runId, [runId+tier]",
+      chapterSummaries:
+        "id, projectId, chapterId, [chapterId+sourceContentHash]",
+      snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
+    });
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

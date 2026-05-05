@@ -12,6 +12,9 @@ export {
   unlinkChapterFromRow,
   updateRowLabel,
 } from "../chapter-outline-sync";
+export * from "./agentNotes";
+export * from "./agentQuestions";
+export * from "./agentRuns";
 export * from "./chapters";
 export * from "./characters";
 export * from "./comments";
@@ -20,6 +23,7 @@ export * from "./locations";
 export * from "./outline";
 export * from "./playlist";
 export * from "./projects";
+export * from "./readerBible";
 export * from "./settings";
 export * from "./snapshots";
 export * from "./sprints";

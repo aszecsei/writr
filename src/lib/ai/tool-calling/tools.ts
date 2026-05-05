@@ -1025,6 +1025,14 @@ const getOutlineTool = defineTool({
 
 // ─── Registry ───────────────────────────────────────────────────────
 
+import { bibleListTool, bibleReadTool, bibleWriteTool } from "./tools/bible";
+import {
+  listNotesTool,
+  listQuestionsTool,
+  noteTool,
+  questionTool,
+} from "./tools/notes";
+
 export const AI_TOOLS: AiToolDefinition[] = [
   createCharacterTool,
   getCharacterTool,
@@ -1053,6 +1061,14 @@ export const AI_TOOLS: AiToolDefinition[] = [
   listWorldbuildingDocsTool,
   getWorldbuildingDocTool,
   getOutlineTool,
+  // Pipeline agent tools (Phase 1+)
+  bibleReadTool,
+  bibleWriteTool,
+  bibleListTool,
+  noteTool,
+  questionTool,
+  listNotesTool,
+  listQuestionsTool,
 ];
 
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(

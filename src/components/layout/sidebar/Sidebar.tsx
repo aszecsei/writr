@@ -1,16 +1,27 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, FileText, Settings } from "lucide-react";
+import { BookOpen, Bot, FileText, Settings } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { MusicControlBar } from "@/components/radio/MusicControlBar";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
+import { AgentsNav } from "./AgentsNav";
 import { BibleNav } from "./BibleNav";
 import { ChapterList } from "./ChapterList";
 
-const panels: { id: SidebarPanel; label: string; icon: LucideIcon }[] = [
+interface PanelDef {
+  id: SidebarPanel;
+  label: string;
+  icon: LucideIcon;
+  requiresAi?: boolean;
+}
+
+const ALL_PANELS: PanelDef[] = [
   { id: "chapters", label: "Chapters", icon: FileText },
   { id: "bible", label: "Bible", icon: BookOpen },
+  { id: "agents", label: "Agents", icon: Bot, requiresAi: true },
 ];
 
 export function Sidebar() {
@@ -20,6 +31,18 @@ export function Sidebar() {
   const sidebarPanel = useUiStore((s) => s.sidebarPanel);
   const setSidebarPanel = useUiStore((s) => s.setSidebarPanel);
   const openModal = useUiStore((s) => s.openModal);
+  const settings = useAppSettings();
+  const aiEnabled = settings?.enableAiFeatures ?? false;
+
+  const panels = ALL_PANELS.filter((p) => !p.requiresAi || aiEnabled);
+
+  // If the user disables AI features while the agents panel is selected,
+  // fall back to chapters so the empty panel doesn't get stuck.
+  useEffect(() => {
+    if (sidebarPanel === "agents" && !aiEnabled) {
+      setSidebarPanel("chapters");
+    }
+  }, [sidebarPanel, aiEnabled, setSidebarPanel]);
 
   return (
     <aside className="flex h-full flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950">
@@ -49,6 +72,9 @@ export function Sidebar() {
         )}
         {sidebarPanel === "bible" && (
           <BibleNav projectId={projectId} pathname={pathname} />
+        )}
+        {sidebarPanel === "agents" && (
+          <AgentsNav projectId={projectId} pathname={pathname} />
         )}
       </div>
       <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
