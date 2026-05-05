@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Badge > merges a className override 1`] = `
+<span
+  class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-200 text-amber-900"
+>
+  Pinned
+</span>
+`;
+
+exports[`Badge > renders the default variant 1`] = `
+<span
+  class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium "
+>
+  Draft
+</span>
+`;
