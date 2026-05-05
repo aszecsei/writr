@@ -12,6 +12,7 @@ import {
   SpellCheck,
 } from "lucide-react";
 import { useCallback } from "react";
+import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { useCommentStore } from "@/store/commentStore";
@@ -232,6 +233,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           >
             <History size={16} />
           </button>
+          <ShareSessionButton />
           <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
           <TextToolsMenu editor={editor} />
           <button
