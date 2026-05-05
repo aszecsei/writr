@@ -1,41 +1,35 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import { updateAgentRunStatus } from "@/db/operations/agentRuns";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
-import {
-  useCharactersByProject,
-  useLocationsByProject,
-  useRelationshipsByProject,
-  useStyleGuideByProject,
-  useTimelineByProject,
-  useWorldbuildingDocsByProject,
-} from "@/hooks/data/useBibleEntries";
-import { useChaptersByProject } from "@/hooks/data/useChapter";
-import { useProject } from "@/hooks/data/useProject";
-import {
-  useOutlineGridCells,
-  useOutlineGridColumns,
-  useOutlineGridRows,
-} from "@/hooks/outline/useOutlineGrid";
+import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
   cancelRun,
   getRunController,
   startReaderPhase,
 } from "@/lib/ai/agents/pipeline/runEngine";
-import type { AiContext } from "@/lib/ai/types";
 import { EditApprovalPanel } from "./EditApprovalPanel";
 import { NotesQuestionsPanel } from "./NotesQuestionsPanel";
 import { PlanView } from "./PlanView";
 import { ReaderBibleView } from "./ReaderBibleView";
+import { SnapshotsPanel } from "./SnapshotsPanel";
+import { VerificationPanel } from "./VerificationPanel";
 
 interface RunDashboardProps {
   runId: string;
   projectId: string;
 }
 
-type Tab = "overview" | "bible" | "notes" | "plan" | "edits";
+type Tab =
+  | "overview"
+  | "bible"
+  | "notes"
+  | "plan"
+  | "edits"
+  | "verification"
+  | "snapshots";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -43,6 +37,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "notes", label: "Notes & Questions" },
   { id: "plan", label: "Plan" },
   { id: "edits", label: "Edits" },
+  { id: "verification", label: "Verification" },
+  { id: "snapshots", label: "Snapshots" },
 ];
 
 export function RunDashboard({ runId, projectId }: RunDashboardProps) {
@@ -50,49 +46,7 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
   const [tab, setTab] = useState<Tab>("overview");
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Live data sources for the agentic context — same as AiPanel.
-  const project = useProject(projectId);
-  const characters = useCharactersByProject(projectId);
-  const locations = useLocationsByProject(projectId);
-  const styleGuide = useStyleGuideByProject(projectId);
-  const timelineEvents = useTimelineByProject(projectId);
-  const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
-  const relationships = useRelationshipsByProject(projectId);
-  const outlineGridColumns = useOutlineGridColumns(projectId);
-  const outlineGridRows = useOutlineGridRows(projectId);
-  const outlineGridCells = useOutlineGridCells(projectId);
-  const chapters = useChaptersByProject(projectId);
-
-  const buildContext = useCallback(async (): Promise<AiContext> => {
-    return {
-      projectTitle: project?.title ?? "",
-      projectDescription: project?.description ?? "",
-      genre: project?.genre ?? "",
-      projectMode: project?.mode ?? "prose",
-      characters: characters ?? [],
-      locations: locations ?? [],
-      styleGuide: styleGuide ?? [],
-      timelineEvents: timelineEvents ?? [],
-      worldbuildingDocs: worldbuildingDocs ?? [],
-      relationships: relationships ?? [],
-      outlineGridColumns: outlineGridColumns ?? [],
-      outlineGridRows: outlineGridRows ?? [],
-      outlineGridCells: outlineGridCells ?? [],
-      chapters: chapters ?? [],
-    };
-  }, [
-    project,
-    characters,
-    locations,
-    styleGuide,
-    timelineEvents,
-    worldbuildingDocs,
-    relationships,
-    outlineGridColumns,
-    outlineGridRows,
-    outlineGridCells,
-    chapters,
-  ]);
+  const buildContext = useAgentRunContext(projectId);
 
   const isInFlight = !!getRunController(runId);
 
@@ -244,6 +198,10 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
         {tab === "plan" && <PlanView runId={runId} projectId={projectId} />}
         {tab === "edits" && (
           <EditApprovalPanel runId={runId} projectId={projectId} />
+        )}
+        {tab === "verification" && <VerificationPanel runId={runId} />}
+        {tab === "snapshots" && (
+          <SnapshotsPanel runId={runId} projectId={projectId} />
         )}
       </div>
     </div>

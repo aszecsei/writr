@@ -6,6 +6,7 @@ import { BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import { updateProposedEditStatus } from "@/db/operations/proposedEdits";
 import type { ProposedEdit, ProposedEditStatus } from "@/db/schemas";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
+import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
   useProposedEditsByRun,
   useWorkUnitsByTier,
@@ -28,6 +29,7 @@ export function EditApprovalPanel({
   const tier = run?.currentTier ?? 1;
   const tierUnits = useWorkUnitsByTier(runId, tier);
   const allEdits = useProposedEditsByRun(runId);
+  const buildContext = useAgentRunContext(projectId);
 
   const [confirmApply, setConfirmApply] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -78,6 +80,7 @@ export function EditApprovalPanel({
         projectId,
         tier,
         approvedEditIds: approvedIds,
+        buildContext,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply tier");
@@ -163,9 +166,7 @@ export function EditApprovalPanel({
             approvedCount === 1 ? "" : "s"
           } across ${byChapter.size} chapter${
             byChapter.size === 1 ? "" : "s"
-          } will be applied. Pending edits will be rejected. This advances the run to tier ${
-            tier + 1
-          }.`}
+          } will be applied. Pending edits will be rejected. The verifier will then re-read the affected chapters and surface any drift as new notes for the next planning round.`}
           variant="default"
           confirmLabel="Apply Edits"
           onConfirm={handleApply}
