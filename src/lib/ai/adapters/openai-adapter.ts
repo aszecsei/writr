@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { AiMessage, AiToolCall, FinishReason } from "../types";
+import { generateToolUseId } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface OpenAiAdapterConfig {
@@ -216,7 +217,7 @@ export function createOpenAiAdapter(
             } => tc.type === "function" && "function" in tc,
           )
           .map((tc) => ({
-            id: tc.id,
+            id: generateToolUseId(),
             name: tc.function.name,
             arguments: JSON.parse(tc.function.arguments || "{}"),
           }));
@@ -249,11 +250,18 @@ export function createOpenAiAdapter(
         { signal },
       );
 
-      // Accumulate tool calls across streaming chunks
+      // Accumulate tool calls across streaming chunks (keyed by upstream
+      // index). Ids are minted at emit time, not tracked here.
       const toolCallAccumulator = new Map<
         number,
-        { id: string; name: string; args: string }
+        { name: string; args: string }
       >();
+
+      // Capture the finish reason and emit tool_use/stop ONCE at end of stream.
+      // OpenRouter (notably the Azure-via-Anthropic route) sometimes emits the
+      // finalization chunk twice; emitting per-chunk would duplicate tool_use
+      // payloads downstream.
+      let finalFinishReason: string | null = null;
 
       for await (const chunk of stream) {
         const choice = chunk.choices[0];
@@ -280,16 +288,22 @@ export function createOpenAiAdapter(
             yield { type: "content" as const, text: delta.content };
           }
 
-          // Accumulate tool call deltas
+          // Accumulate tool call deltas keyed by index. Some providers
+          // (notably OpenRouter relaying Anthropic) split the name across
+          // chunks rather than putting it on the first delta — fill it in
+          // opportunistically. The upstream id is discarded; we mint our own
+          // at emit time so it can never be empty or collide.
           if (delta.tool_calls) {
             for (const tc of delta.tool_calls) {
               const idx = tc.index;
               const existing = toolCallAccumulator.get(idx);
               if (existing) {
+                if (!existing.name && tc.function?.name) {
+                  existing.name = tc.function.name;
+                }
                 existing.args += tc.function?.arguments ?? "";
               } else {
                 toolCallAccumulator.set(idx, {
-                  id: tc.id ?? "",
                   name: tc.function?.name ?? "",
                   args: tc.function?.arguments ?? "",
                 });
@@ -298,25 +312,29 @@ export function createOpenAiAdapter(
           }
         }
 
-        if (choice?.finish_reason) {
-          // Emit accumulated tool calls before the stop chunk
-          if (choice.finish_reason === "tool_calls") {
-            for (const [, tc] of [...toolCallAccumulator.entries()].sort(
-              (a, b) => a[0] - b[0],
-            )) {
-              yield {
-                type: "tool_use" as const,
-                id: tc.id,
-                name: tc.name,
-                input: JSON.parse(tc.args || "{}"),
-              };
-            }
-          }
+        if (choice?.finish_reason && !finalFinishReason) {
+          finalFinishReason = choice.finish_reason;
+        }
+      }
+
+      if (finalFinishReason === "tool_calls") {
+        for (const [, tc] of [...toolCallAccumulator.entries()].sort(
+          (a, b) => a[0] - b[0],
+        )) {
           yield {
-            type: "stop" as const,
-            finishReason: normalizeFinishReason(choice.finish_reason),
+            type: "tool_use" as const,
+            id: generateToolUseId(),
+            name: tc.name,
+            input: JSON.parse(tc.args || "{}"),
           };
         }
+      }
+
+      if (finalFinishReason) {
+        yield {
+          type: "stop" as const,
+          finishReason: normalizeFinishReason(finalFinishReason),
+        };
       }
     },
   };

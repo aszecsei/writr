@@ -56,7 +56,20 @@ async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.details ?? error.error ?? "AI request failed");
+    // Surface upstream provider context (OpenRouter wraps the real cause in
+    // `error.metadata` — without it, "Provider returned error" is opaque).
+    const upstreamMessage =
+      typeof error.upstream?.metadata === "object" && error.upstream.metadata
+        ? ((error.upstream.metadata as { raw?: string; reason?: string }).raw ??
+          (error.upstream.metadata as { reason?: string }).reason)
+        : undefined;
+    const message =
+      upstreamMessage ??
+      error.upstream?.message ??
+      error.details ??
+      error.error ??
+      "AI request failed";
+    throw new Error(message);
   }
 
   return response;

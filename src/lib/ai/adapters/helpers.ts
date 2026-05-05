@@ -14,3 +14,16 @@ export function parseBase64ImageDataUrl(
   if (!match) return null;
   return { mimeType: match[1], data: match[2] };
 }
+
+/**
+ * Generate a tool_use id we own end-to-end. The upstream provider's id has
+ * no meaning to us once it leaves the response — the assistant message and
+ * the matching tool_result on the next turn are both constructed by us, so
+ * we just need ids that are non-empty and unique within an assistant
+ * message. Some providers (notably OpenRouter relaying Anthropic via Azure)
+ * occasionally drop or repeat ids in streaming deltas, which then 400s with
+ * `tool_use ids must be unique` on the next turn.
+ */
+export function generateToolUseId(): string {
+  return `call_${crypto.randomUUID()}`;
+}

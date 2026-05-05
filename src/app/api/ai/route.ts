@@ -68,6 +68,51 @@ const AiRequestSchema = z.object({
 
 const encoder = new TextEncoder();
 
+interface UpstreamErrorBody {
+  message?: string;
+  code?: number | string;
+  metadata?: unknown;
+  type?: string;
+}
+
+function extractUpstreamError(error: unknown): {
+  status: number;
+  message: string;
+  upstream?: UpstreamErrorBody;
+} {
+  if (!(error instanceof Error)) {
+    return { status: 500, message: "Unknown AI error" };
+  }
+  const status =
+    "status" in error &&
+    typeof (error as { status: unknown }).status === "number"
+      ? (error as { status: number }).status
+      : 500;
+  // OpenAI SDK APIError exposes the parsed response body on `.error`
+  const upstream = (error as { error?: UpstreamErrorBody }).error;
+  return { status, message: error.message, upstream };
+}
+
+function logUpstreamError(provider: string, error: unknown) {
+  const { status, message, upstream } = extractUpstreamError(error);
+  console.error(
+    `[AI] ${provider} request failed (status ${status}): ${message}`,
+    upstream ? `\nUpstream body: ${JSON.stringify(upstream, null, 2)}` : "",
+  );
+}
+
+function errorResponse(provider: string, error: unknown) {
+  const { status, message, upstream } = extractUpstreamError(error);
+  return NextResponse.json(
+    {
+      error: `${PROVIDERS[provider as keyof typeof PROVIDERS]?.label ?? provider} API error`,
+      details: message,
+      upstream,
+    },
+    { status },
+  );
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = AiRequestSchema.safeParse(body);
@@ -114,9 +159,33 @@ export async function POST(request: NextRequest) {
     }
 
     const gen = adapter.stream(apiKey, params, request.signal);
+
+    // Drive the first iteration before opening the SSE response so upstream
+    // 4xx/5xx errors surface as JSON instead of a half-streamed broken pipe.
+    let primed: IteratorResult<unknown> | undefined;
+    try {
+      primed = await gen.next();
+    } catch (error) {
+      logUpstreamError(provider, error);
+      return errorResponse(provider, error);
+    }
+
     const responseBody = new ReadableStream({
       async pull(controller) {
         try {
+          if (primed) {
+            const current = primed;
+            primed = undefined;
+            if (current.done) {
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+              return;
+            }
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(current.value)}\n\n`),
+            );
+            return;
+          }
           const { done, value } = await gen.next();
           if (done) {
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
@@ -127,6 +196,7 @@ export async function POST(request: NextRequest) {
             encoder.encode(`data: ${JSON.stringify(value)}\n\n`),
           );
         } catch (error) {
+          logUpstreamError(provider, error);
           controller.error(error);
         }
       },
@@ -143,14 +213,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown AI error";
-    const status =
-      error instanceof Error && "status" in error
-        ? (error as { status: number }).status
-        : 500;
-    return NextResponse.json(
-      { error: `${PROVIDERS[provider].label} API error`, details: message },
-      { status },
-    );
+    logUpstreamError(provider, error);
+    return errorResponse(provider, error);
   }
 }

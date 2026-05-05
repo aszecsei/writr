@@ -5,7 +5,7 @@ import type {
   ContentPart,
   FinishReason,
 } from "../types";
-import { parseBase64ImageDataUrl } from "./helpers";
+import { generateToolUseId, parseBase64ImageDataUrl } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 function normalizeStopReason(
@@ -259,7 +259,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
           reasoning += block.thinking;
         } else if (block.type === "tool_use") {
           toolCalls.push({
-            id: block.id,
+            id: generateToolUseId(),
             name: block.name,
             arguments: block.input as Record<string, unknown>,
           });
@@ -289,9 +289,9 @@ export function createAnthropicAdapter(): ProviderAdapter {
         { signal },
       );
 
-      // Track current tool_use block being streamed
+      // Track current tool_use block being streamed. Id is minted at emit
+      // time, not taken from the upstream block.
       let currentToolUse: {
-        id: string;
         name: string;
         inputJson: string;
       } | null = null;
@@ -305,7 +305,6 @@ export function createAnthropicAdapter(): ProviderAdapter {
           ).content_block;
           if (block.type === "tool_use") {
             currentToolUse = {
-              id: block.id ?? "",
               name: block.name ?? "",
               inputJson: "",
             };
@@ -324,7 +323,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
           if (currentToolUse) {
             yield {
               type: "tool_use" as const,
-              id: currentToolUse.id,
+              id: generateToolUseId(),
               name: currentToolUse.name,
               input: JSON.parse(currentToolUse.inputJson || "{}"),
             };
