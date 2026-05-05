@@ -33,5 +33,6 @@ export * from "./snapshots";
 export * from "./sprints";
 export * from "./style-guide";
 export * from "./timeline";
+export * from "./verifications";
 export * from "./workUnits";
 export * from "./worldbuilding";

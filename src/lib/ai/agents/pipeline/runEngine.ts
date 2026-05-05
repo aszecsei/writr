@@ -1,9 +1,12 @@
 import { getAgentRun } from "@/db/operations/agentRuns";
 import type { AiContext } from "../../types";
 import { type ApplyTierResult, applyTier } from "./applyTier";
+import { getChaptersAwaitingReread } from "./driftDetect";
 import type { PipelineEventEmitter } from "./events";
 import { runReaderLoop } from "./readerLoop";
+import { type RevertTierResult, revertTier } from "./revertTier";
 import { executeTier, planTier } from "./tierRunner";
+import { type VerifyTierResult, verifyTier } from "./verifyTier";
 
 /**
  * Module-level registry of in-flight run controllers. The dashboard "Cancel"
@@ -147,10 +150,116 @@ export interface StartApplyTierOptions {
   tier: number;
   approvedEditIds: string[];
   manifestName?: string;
+  /** Skip the verifier pass (used for tests / no-op tiers). */
+  skipVerification?: boolean;
+  onEvent?: PipelineEventEmitter;
+  buildContext: () => Promise<AiContext>;
 }
 
+export interface StartApplyTierResult {
+  apply: ApplyTierResult;
+  verify?: VerifyTierResult;
+}
+
+/**
+ * Apply approved edits, then chain into the verifier so findings can become
+ * new notes for the next planning round in the same controller window.
+ */
 export async function startApplyTier(
   options: StartApplyTierOptions,
-): Promise<ApplyTierResult> {
-  return applyTier(options);
+): Promise<StartApplyTierResult> {
+  const existing = runControllers.get(options.runId);
+  if (existing) {
+    throw new Error(
+      `Run ${options.runId} is already in flight. Cancel it before restarting.`,
+    );
+  }
+  const controller = new AbortController();
+  runControllers.set(options.runId, controller);
+  try {
+    const apply = await applyTier({
+      runId: options.runId,
+      projectId: options.projectId,
+      tier: options.tier,
+      approvedEditIds: options.approvedEditIds,
+      manifestName: options.manifestName,
+    });
+
+    if (options.skipVerification || apply.appliedEditIds.length === 0) {
+      return { apply };
+    }
+
+    const verify = await verifyTier({
+      runId: options.runId,
+      projectId: options.projectId,
+      tier: options.tier,
+      affectedChapterIds: apply.affectedChapterIds,
+      signal: controller.signal,
+      onEvent: options.onEvent,
+      buildContext: options.buildContext,
+    });
+
+    return { apply, verify };
+  } finally {
+    runControllers.delete(options.runId);
+  }
+}
+
+export interface StartRevertTierOptions {
+  runId: string;
+  projectId: string;
+  manifestId: string;
+}
+
+export async function startRevertTier(
+  options: StartRevertTierOptions,
+): Promise<RevertTierResult> {
+  return revertTier(options);
+}
+
+export interface StartIncrementalRereadOptions {
+  runId: string;
+  projectId: string;
+  /** Optional override; defaults to the chapters touched by the latest tier. */
+  chapterIdsInScope?: string[];
+  onEvent?: PipelineEventEmitter;
+  buildContext: () => Promise<AiContext>;
+}
+
+/**
+ * Run a scoped Reader pass over chapters that changed since the last
+ * successful Reader pass. Used to refresh the bible after the verifier
+ * flagged drift.
+ */
+export async function startIncrementalReread(
+  options: StartIncrementalRereadOptions,
+): Promise<void> {
+  const existing = runControllers.get(options.runId);
+  if (existing) {
+    throw new Error(
+      `Run ${options.runId} is already in flight. Cancel it before restarting.`,
+    );
+  }
+  const scope =
+    options.chapterIdsInScope ??
+    (await getChaptersAwaitingReread(options.runId));
+  const controller = new AbortController();
+  runControllers.set(options.runId, controller);
+  try {
+    await runReaderLoop({
+      runId: options.runId,
+      projectId: options.projectId,
+      chapterIdsInScope: scope,
+      maxPasses: 2,
+      deltaThreshold: 0.05,
+      signal: controller.signal,
+      onEvent: options.onEvent,
+      buildContext: options.buildContext,
+    });
+  } finally {
+    runControllers.delete(options.runId);
+  }
+  // Clear the drift flag — next-tier planning is unblocked.
+  const { updateAgentRun } = await import("@/db/operations/agentRuns");
+  await updateAgentRun(options.runId, { requiresIncrementalReread: false });
 }

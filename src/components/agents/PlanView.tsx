@@ -1,33 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BUTTON_PRIMARY, INPUT_CLASS } from "@/components/ui/form-styles";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
-import {
-  useCharactersByProject,
-  useLocationsByProject,
-  useRelationshipsByProject,
-  useStyleGuideByProject,
-  useTimelineByProject,
-  useWorldbuildingDocsByProject,
-} from "@/hooks/data/useBibleEntries";
-import { useChaptersByProject } from "@/hooks/data/useChapter";
+import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
   useEditPlan,
   useWorkUnitsByRun,
   useWorkUnitsByTier,
 } from "@/hooks/data/usePlan";
-import { useProject } from "@/hooks/data/useProject";
-import {
-  useOutlineGridCells,
-  useOutlineGridColumns,
-  useOutlineGridRows,
-} from "@/hooks/outline/useOutlineGrid";
 import {
   startExecuteTier,
+  startIncrementalReread,
   startPlanTier,
 } from "@/lib/ai/agents/pipeline/runEngine";
-import type { AiContext } from "@/lib/ai/types";
 import { WorkUnitCard } from "./WorkUnitCard";
 
 interface PlanViewProps {
@@ -40,7 +26,7 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
   const plan = useEditPlan(runId);
   const allUnits = useWorkUnitsByRun(runId);
 
-  const buildContext = useBuildContext(projectId);
+  const buildContext = useAgentRunContext(projectId);
 
   const targetTier = run?.currentTier ?? 1;
   // currentTier is the number of tiers ALREADY APPLIED. The next tier to plan
@@ -55,8 +41,12 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const driftBlocks = run?.requiresIncrementalReread === true;
   const canPlan =
-    run?.status === "awaiting-plan-approval" || run?.status === "idle" || !run;
+    !driftBlocks &&
+    (run?.status === "awaiting-plan-approval" ||
+      run?.status === "idle" ||
+      !run);
   const canApprove = !!tierOnPlan && (tierUnits?.length ?? 0) > 0;
 
   async function handlePlan() {
@@ -73,6 +63,24 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
       setBriefing("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to plan tier");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleIncrementalReread() {
+    setError(null);
+    setBusy(true);
+    try {
+      await startIncrementalReread({
+        runId,
+        projectId,
+        buildContext,
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Incremental Reader pass failed",
+      );
     } finally {
       setBusy(false);
     }
@@ -101,6 +109,28 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
 
   return (
     <div className="space-y-6">
+      {driftBlocks && (
+        <section className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/40 dark:bg-amber-900/20">
+          <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+            ⚠ Incremental Reader pass required
+          </h3>
+          <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
+            The verifier flagged drift between the manuscript and the reader
+            bible. Re-read the changed chapters before planning the next tier.
+          </p>
+          <div className="mt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={handleIncrementalReread}
+              disabled={busy}
+              className={BUTTON_PRIMARY}
+            >
+              {busy ? "Re-reading…" : "Run Incremental Reader Pass"}
+            </button>
+          </div>
+        </section>
+      )}
+
       <section>
         <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Tier {planningTier}
@@ -196,55 +226,5 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
         </p>
       )}
     </div>
-  );
-}
-
-/**
- * Build the AiContext from live project data — same shape as the AiPanel.
- * Extracted as a hook so PlanView and EditApprovalPanel can both use it.
- */
-function useBuildContext(projectId: string): () => Promise<AiContext> {
-  const project = useProject(projectId);
-  const characters = useCharactersByProject(projectId);
-  const locations = useLocationsByProject(projectId);
-  const styleGuide = useStyleGuideByProject(projectId);
-  const timelineEvents = useTimelineByProject(projectId);
-  const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
-  const relationships = useRelationshipsByProject(projectId);
-  const outlineGridColumns = useOutlineGridColumns(projectId);
-  const outlineGridRows = useOutlineGridRows(projectId);
-  const outlineGridCells = useOutlineGridCells(projectId);
-  const chapters = useChaptersByProject(projectId);
-
-  return useCallback(
-    async () => ({
-      projectTitle: project?.title ?? "",
-      projectDescription: project?.description ?? "",
-      genre: project?.genre ?? "",
-      projectMode: project?.mode ?? "prose",
-      characters: characters ?? [],
-      locations: locations ?? [],
-      styleGuide: styleGuide ?? [],
-      timelineEvents: timelineEvents ?? [],
-      worldbuildingDocs: worldbuildingDocs ?? [],
-      relationships: relationships ?? [],
-      outlineGridColumns: outlineGridColumns ?? [],
-      outlineGridRows: outlineGridRows ?? [],
-      outlineGridCells: outlineGridCells ?? [],
-      chapters: chapters ?? [],
-    }),
-    [
-      project,
-      characters,
-      locations,
-      styleGuide,
-      timelineEvents,
-      worldbuildingDocs,
-      relationships,
-      outlineGridColumns,
-      outlineGridRows,
-      outlineGridCells,
-      chapters,
-    ],
   );
 }

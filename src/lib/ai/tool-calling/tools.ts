@@ -1056,6 +1056,7 @@ import {
 } from "./tools/notes";
 import { proposeEditTool } from "./tools/proposedEdits";
 import { readSummaryTool } from "./tools/summaries";
+import { reportVerificationTool } from "./tools/verification";
 import {
   createWorkUnitTool,
   finalizeTierTool,
@@ -1104,6 +1105,8 @@ export const AI_TOOLS: AiToolDefinition[] = [
   finalizeTierTool,
   proposeEditTool,
   readSummaryTool,
+  // Phase 3: verifier
+  reportVerificationTool,
 ];
 
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(
