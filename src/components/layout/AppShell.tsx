@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { CollabBanner } from "@/components/collab/CollabBanner";
 import { ShareDialog } from "@/components/collab/ShareDialog";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
@@ -106,6 +107,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex h-screen flex-col">
       <TopBar />
+      {isCollabEnabled() && <CollabBanner />}
       <Group orientation="horizontal" id="app-shell">
         {sidebarOpen && (
           <>
