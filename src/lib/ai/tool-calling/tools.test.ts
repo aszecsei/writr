@@ -18,8 +18,8 @@ const projectId = "a1111111-1111-4111-a111-111111111111";
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 34 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(34);
+  it("exports 39 tool definitions", () => {
+    expect(getToolDefinitionsForModel()).toHaveLength(39);
   });
 
   it("has unique tool IDs", () => {
