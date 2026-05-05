@@ -1,0 +1,570 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GuestSessionShell (snapshots) > renders a non-retryable error without Try again 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-red-500 dark:text-red-400"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        Couldn't join the session
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        Collab relay returned 404
+      </p>
+      <div
+        class="flex justify-center gap-3 pt-2"
+      >
+        <button
+          class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders a retryable error with Try again + Close 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-red-500 dark:text-red-400"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        Couldn't join the session
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        Network error contacting collab relay: ECONNREFUSED
+      </p>
+      <div
+        class="flex justify-center gap-3 pt-2"
+      >
+        <button
+          class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          Close
+        </button>
+        <button
+          class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          type="button"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the connected state for a solo guest with host away 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4"
+    >
+      <div>
+        <h2
+          class="text-lg font-semibold"
+        >
+          Joined as 
+          view
+        </h2>
+        <p
+          class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+        >
+          You are the only one connected.
+           
+          Host is away.
+        </p>
+      </div>
+      <div
+        class="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
+      >
+        The collaborative editor will mount here in the next change. For now your session is live and the relay is forwarding awareness updates between peers.
+      </div>
+      <div
+        class="flex justify-end"
+      >
+        <button
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-log-out"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="14"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m16 17 5-5-5-5"
+            />
+            <path
+              d="M21 12H9"
+            />
+            <path
+              d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+            />
+          </svg>
+          Leave
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the connected state for an edit guest with host present 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4"
+    >
+      <div>
+        <h2
+          class="text-lg font-semibold"
+        >
+          Joined as 
+          edit
+        </h2>
+        <p
+          class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+        >
+          3 people connected.
+           
+          Host is present.
+        </p>
+      </div>
+      <div
+        class="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
+      >
+        The collaborative editor will mount here in the next change. For now your session is live and the relay is forwarding awareness updates between peers.
+      </div>
+      <div
+        class="flex justify-end"
+      >
+        <button
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-log-out"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="14"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m16 17 5-5-5-5"
+            />
+            <path
+              d="M21 12H9"
+            />
+            <path
+              d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+            />
+          </svg>
+          Leave
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the connecting state with a spinner 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="flex flex-col items-center gap-4 py-2 text-center"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-loader-circle animate-spin text-neutral-500"
+        fill="none"
+        height="28"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="28"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M21 12a9 9 0 1 1-6.219-8.56"
+        />
+      </svg>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        Joining the session…
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the disabled state when collab is not configured 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-neutral-400 dark:text-neutral-500"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        Collaboration is not enabled
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        This Writr build wasn't configured with a collab relay, so shared sessions can't be joined here.
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the ended state with a Close button 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-neutral-400 dark:text-neutral-500"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        The session has ended
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        The collab relay has forgotten this room. To rejoin, ask the host for a new share link.
+      </p>
+      <div
+        class="flex justify-center gap-3 pt-2"
+      >
+        <button
+          class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the missing-key error 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-red-500 dark:text-red-400"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        Share link is incomplete
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        The encryption key fragment is missing from the URL. Without it the relay can't be opened.
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`GuestSessionShell (snapshots) > renders the missing-token error 1`] = `
+<div
+  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+>
+  <div
+    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+  >
+    <div
+      class="space-y-4 text-center"
+    >
+      <div
+        class="flex justify-center"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-circle-alert text-red-500 dark:text-red-400"
+          fill="none"
+          height="32"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="32"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+          />
+          <line
+            x1="12"
+            x2="12"
+            y1="8"
+            y2="12"
+          />
+          <line
+            x1="12"
+            x2="12.01"
+            y1="16"
+            y2="16"
+          />
+        </svg>
+      </div>
+      <h2
+        class="text-lg font-semibold"
+      >
+        Share link is incomplete
+      </h2>
+      <p
+        class="text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        The link you followed is missing its access token. Ask the person sharing for a fresh link.
+      </p>
+    </div>
+  </div>
+</div>
+`;
