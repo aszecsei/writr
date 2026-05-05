@@ -18,7 +18,9 @@ const GRACE_MS = Number(process.env.GRACE_PERIOD_MS ?? 60_000);
 const IDLE_MS = Number(process.env.IDLE_TIMEOUT_MS ?? 30 * 60_000);
 const MAX_SOCKETS_PER_ROOM = Number(process.env.MAX_SOCKETS_PER_ROOM ?? 16);
 const ROOM_CREATE_PER_HOUR = Number(process.env.ROOM_CREATE_PER_HOUR ?? 5);
-const MAX_BUFFER_BYTES = Number(process.env.MAX_BUFFER_BYTES ?? 4 * 1024 * 1024);
+const MAX_BUFFER_BYTES = Number(
+  process.env.MAX_BUFFER_BYTES ?? 4 * 1024 * 1024,
+);
 
 const rooms = new Map<string, Room>();
 const roomLimiter = new RateLimiter({
@@ -46,7 +48,7 @@ function corsHeaders(origin: string | undefined): Record<string, string> {
   if (!isAllowedOrigin(origin)) return {};
   return {
     "Access-Control-Allow-Origin": origin ?? "*",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }
 
@@ -151,29 +153,49 @@ httpServer.on("upgrade", (req, socket, head) => {
   rejectOrUpgrade(req, socket, head);
 });
 
-function rejectOrUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void {
+function rejectOrUpgrade(
+  req: IncomingMessage,
+  socket: Duplex,
+  head: Buffer,
+): void {
   const reject = (status: number, reason: string) => {
     socket.write(`HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`);
     socket.destroy();
   };
 
   if (!isAllowedOrigin(req.headers.origin)) {
-    return reject(403, "Forbidden");
+    reject(403, "Forbidden");
+    return;
   }
 
-  const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  const url = new URL(
+    req.url ?? "/",
+    `http://${req.headers.host ?? "localhost"}`,
+  );
   const match = /^\/room\/([a-f0-9-]{36})$/.exec(url.pathname);
-  if (!match || !match[1]) return reject(404, "Not Found");
+  if (!match || !match[1]) {
+    reject(404, "Not Found");
+    return;
+  }
 
   const roomUuid = match[1];
   const token = url.searchParams.get("t");
-  if (!token) return reject(401, "Unauthorized");
+  if (!token) {
+    reject(401, "Unauthorized");
+    return;
+  }
 
   const room = rooms.get(roomUuid);
-  if (!room || room.isDestroyed) return reject(404, "Not Found");
+  if (!room || room.isDestroyed) {
+    reject(404, "Not Found");
+    return;
+  }
 
   const role = room.authorize(token);
-  if (!role) return reject(401, "Unauthorized");
+  if (!role) {
+    reject(401, "Unauthorized");
+    return;
+  }
 
   wss.handleUpgrade(req, socket, head, (ws) => {
     handleConnection(ws, room, role);
@@ -242,7 +264,9 @@ function handleConnection(ws: WS, room: Room, role: Role): void {
 function log(event: string, fields: Record<string, unknown> = {}): void {
   // Structured logs without payloads. No display names, no chapter ids,
   // no IPs (rate-limit only). Compatible with most log aggregators.
-  console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...fields }));
+  console.log(
+    JSON.stringify({ ts: new Date().toISOString(), event, ...fields }),
+  );
 }
 
 httpServer.listen(PORT, HOST, () => {

@@ -10,12 +10,16 @@ class MockSocket implements SocketLike {
     this.sent.push(JSON.parse(data) as ServerMessage);
   }
   close(code: number, reason?: string): void {
-    if (!this.closed) this.closed = reason !== undefined ? { code, reason } : { code };
+    if (!this.closed)
+      this.closed = reason !== undefined ? { code, reason } : { code };
   }
 
   systemEvents(): Array<{ event: string; [k: string]: unknown }> {
     return this.sent
-      .filter((m): m is Extract<ServerMessage, { type: "system" }> => m.type === "system")
+      .filter(
+        (m): m is Extract<ServerMessage, { type: "system" }> =>
+          m.type === "system",
+      )
       .map((m) => m.data);
   }
 
@@ -29,11 +33,13 @@ class MockSocket implements SocketLike {
 }
 
 function makeRoom(opts?: Partial<ConstructorParameters<typeof Room>[0]>) {
-  const inviteTokens = opts?.inviteTokens ?? new Map<string, "view" | "review" | "edit">([
-    ["edit-tok", "edit"],
-    ["review-tok", "review"],
-    ["view-tok", "view"],
-  ]);
+  const inviteTokens =
+    opts?.inviteTokens ??
+    new Map<string, "view" | "review" | "edit">([
+      ["edit-tok", "edit"],
+      ["review-tok", "review"],
+      ["view-tok", "view"],
+    ]);
   return new Room({
     uuid: "room-1",
     hostToken: "host-tok",
@@ -56,7 +62,14 @@ function attach(
   return { socket, peerId: result.peerId };
 }
 
-const sampleY = (streamId = 1): { type: "y-update"; docKind: "prose"; streamId: number; payload: string } => ({
+const sampleY = (
+  streamId = 1,
+): {
+  type: "y-update";
+  docKind: "prose";
+  streamId: number;
+  payload: string;
+} => ({
   type: "y-update",
   docKind: "prose",
   streamId,
@@ -154,7 +167,9 @@ describe("Room.attach", () => {
     const room = makeRoom();
     const guest = attach(room, "edit-tok");
     attach(room, "host-tok");
-    expect(guest.socket.systemEvents().some((e) => e.event === "host_connected")).toBe(true);
+    expect(
+      guest.socket.systemEvents().some((e) => e.event === "host_connected"),
+    ).toBe(true);
   });
 });
 
@@ -337,7 +352,9 @@ describe("Room: host disconnect grace", () => {
 
     room.detach(host.peerId);
 
-    const disconnected = guest.socket.systemEvents().find((e) => e.event === "host_disconnected");
+    const disconnected = guest.socket
+      .systemEvents()
+      .find((e) => e.event === "host_disconnected");
     expect(disconnected).toBeDefined();
     expect(typeof disconnected?.deadline).toBe("number");
   });
@@ -353,7 +370,9 @@ describe("Room: host disconnect grace", () => {
     vi.advanceTimersByTime(5_000);
 
     expect(room.isDestroyed).toBe(true);
-    expect(guest.socket.systemEvents().some((e) => e.event === "session_ended")).toBe(true);
+    expect(
+      guest.socket.systemEvents().some((e) => e.event === "session_ended"),
+    ).toBe(true);
     expect(guest.socket.closed?.code).toBe(CLOSE_CODES.SESSION_ENDED);
   });
 
@@ -369,7 +388,9 @@ describe("Room: host disconnect grace", () => {
     vi.advanceTimersByTime(10_000);
 
     expect(room.isDestroyed).toBe(false);
-    expect(guest.socket.systemEvents().some((e) => e.event === "host_connected")).toBe(true);
+    expect(
+      guest.socket.systemEvents().some((e) => e.event === "host_connected"),
+    ).toBe(true);
     expect(reconnect.peerId).toBeTruthy();
   });
 
@@ -387,7 +408,9 @@ describe("Room: idle timeout", () => {
     const { socket } = attach(room, "host-tok");
     vi.advanceTimersByTime(2_000);
     expect(room.isDestroyed).toBe(true);
-    expect(socket.systemEvents().some((e) => e.event === "session_ended")).toBe(true);
+    expect(socket.systemEvents().some((e) => e.event === "session_ended")).toBe(
+      true,
+    );
   });
 
   it("resets idle timer on receive", () => {

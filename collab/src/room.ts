@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
 import {
   CLOSE_CODES,
-  canSend,
   type ClientMessage,
+  canSend,
   clientMessageSchema,
   DOC_KINDS,
   type DocKind,
@@ -255,7 +255,9 @@ export class Room {
     }
   }
 
-  destroy(reason: Extract<SystemEvent, { event: "session_ended" }>["reason"]): void {
+  destroy(
+    reason: Extract<SystemEvent, { event: "session_ended" }>["reason"],
+  ): void {
     if (this.destroyed) return;
     this.destroyed = true;
     this.cancelGrace();
@@ -310,7 +312,10 @@ export class Room {
     const size = Buffer.byteLength(payload, "utf8");
     stream.buffer.push(payload);
     stream.bufferBytes += size;
-    while (stream.bufferBytes > this.maxBufferBytes && stream.buffer.length > 1) {
+    while (
+      stream.bufferBytes > this.maxBufferBytes &&
+      stream.buffer.length > 1
+    ) {
       const removed = stream.buffer.shift();
       if (removed) stream.bufferBytes -= Buffer.byteLength(removed, "utf8");
     }
