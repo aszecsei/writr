@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export type SidebarPanel = "chapters" | "bible";
+export type SidebarPanel = "chapters" | "bible" | "agents";
 
 // Discriminated union for modal state - provides type safety at call sites
 export type ModalState =

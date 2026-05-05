@@ -341,6 +341,17 @@ export async function importBackup(
         db.projectDictionaries,
         db.appSettings,
         db.appDictionary,
+        db.agentRuns,
+        db.readerBibleLog,
+        db.readerBibleView,
+        db.agentNotes,
+        db.agentQuestions,
+        db.workUnits,
+        db.editPlans,
+        db.proposedEdits,
+        db.verifications,
+        db.chapterSummaries,
+        db.snapshotManifests,
       ],
       async () => {
         // Import projects

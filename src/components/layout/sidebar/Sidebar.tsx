@@ -1,16 +1,18 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, FileText, Settings } from "lucide-react";
+import { BookOpen, Bot, FileText, Settings } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { MusicControlBar } from "@/components/radio/MusicControlBar";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
+import { AgentsNav } from "./AgentsNav";
 import { BibleNav } from "./BibleNav";
 import { ChapterList } from "./ChapterList";
 
 const panels: { id: SidebarPanel; label: string; icon: LucideIcon }[] = [
   { id: "chapters", label: "Chapters", icon: FileText },
   { id: "bible", label: "Bible", icon: BookOpen },
+  { id: "agents", label: "Agents", icon: Bot },
 ];
 
 export function Sidebar() {
@@ -49,6 +51,9 @@ export function Sidebar() {
         )}
         {sidebarPanel === "bible" && (
           <BibleNav projectId={projectId} pathname={pathname} />
+        )}
+        {sidebarPanel === "agents" && (
+          <AgentsNav projectId={projectId} pathname={pathname} />
         )}
       </div>
       <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
