@@ -12,7 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Test:** `npm run test` (runs `vitest run`)
 - **Test (watch):** `npm run test:watch` (runs `vitest`)
 
-**Testing:** Vitest with `fake-indexeddb` for IndexedDB mocking. Config in `vitest.config.ts`, setup in `src/test/setup.ts`. Tests are colocated next to source files (e.g., `operations.test.ts` alongside `operations.ts`).
+**Testing:** Vitest with `fake-indexeddb` for IndexedDB mocking. Default test environment is `node`; component tests opt into `jsdom` by adding `// @vitest-environment jsdom` at the top of the file. Config in `vitest.config.ts`; setup in `src/test/setup.ts` (fake-indexeddb) and `src/test/setup-dom.ts` (`@testing-library/jest-dom` matchers). Tests are colocated next to source files (e.g., `operations.test.ts` alongside `operations.ts`).
+
+**Component / snapshot tests:** Use `@testing-library/react`'s `render` and the `toMatchSnapshot()` matcher. Snapshots live next to the test file under `__snapshots__/`. When a feature is gated on an env var (e.g., collab is gated on `NEXT_PUBLIC_COLLAB_URL`), add snapshots of touched UI surfaces with the var unset to lock in the disabled-feature baseline so a future change can't accidentally leak the gated UI.
 
 ## Architecture
 
