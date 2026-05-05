@@ -18,8 +18,6 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type {
-  AgentKind,
-  AgentModelOverride,
   AiProvider,
   EditorWidth,
   GoalCountdownDisplay,
@@ -38,7 +36,6 @@ import {
   applyUiDensity,
 } from "@/lib/theme/apply-theme";
 import { useUiStore } from "@/store/uiStore";
-import { AgentSettings } from "./AgentSettings";
 import { AiSettings } from "./AiSettings";
 import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
@@ -94,14 +91,6 @@ export function AppSettingsDialog() {
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
   const [enableToolCalling, setEnableToolCalling] = useState(false);
-  const emptyAgentOverrides: Record<AgentKind, AgentModelOverride | null> = {
-    reader: null,
-    orchestrator: null,
-    editor: null,
-    verifier: null,
-  };
-  const [agentModelOverrides, setAgentModelOverrides] =
-    useState<Record<AgentKind, AgentModelOverride | null>>(emptyAgentOverrides);
   const [comprehensionContextThreshold, setComprehensionContextThreshold] =
     useState(80_000);
   const [pendingImport, setPendingImport] = useState<{
@@ -149,12 +138,6 @@ export function AppSettingsDialog() {
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
       setEnableToolCalling(settings.enableToolCalling);
-      setAgentModelOverrides({
-        reader: settings.agentModelOverrides.reader ?? null,
-        orchestrator: settings.agentModelOverrides.orchestrator ?? null,
-        editor: settings.agentModelOverrides.editor ?? null,
-        verifier: settings.agentModelOverrides.verifier ?? null,
-      });
       setComprehensionContextThreshold(settings.comprehensionContextThreshold);
     }
   }, [settings, modal.id]);
@@ -217,8 +200,6 @@ export function AppSettingsDialog() {
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
       enableToolCalling !== settings.enableToolCalling ||
-      JSON.stringify(agentModelOverrides) !==
-        JSON.stringify(settings.agentModelOverrides) ||
       comprehensionContextThreshold !== settings.comprehensionContextThreshold);
 
   async function handleSubmit(e: FormEvent) {
@@ -243,7 +224,6 @@ export function AppSettingsDialog() {
       streamResponses,
       reasoningEffort,
       enableToolCalling,
-      agentModelOverrides,
       comprehensionContextThreshold,
     });
     closeModal();
@@ -330,33 +310,14 @@ export function AppSettingsDialog() {
               onReasoningEffortChange={setReasoningEffort}
               onDebugModeChange={setDebugMode}
               onEnableToolCallingChange={setEnableToolCalling}
-              onConfigureAi={() => openModal({ id: "ai-config" })}
-              onManageCustomAgents={() =>
-                openModal({ id: "custom-agents-manager" })
+              onManageAgents={() => openModal({ id: "agents-manager" })}
+              comprehensionContextThreshold={comprehensionContextThreshold}
+              onComprehensionContextThresholdChange={
+                setComprehensionContextThreshold
               }
               inputClass={INPUT_CLASS}
               labelClass={LABEL_CLASS}
             />
-            {enableAiFeatures && (
-              <AgentSettings
-                overrides={agentModelOverrides}
-                globalProvider={aiProvider}
-                globalModel={providerModels[aiProvider]}
-                globalReasoningEffort={reasoningEffort}
-                onChange={(kind, override) =>
-                  setAgentModelOverrides((prev) => ({
-                    ...prev,
-                    [kind]: override,
-                  }))
-                }
-                comprehensionContextThreshold={comprehensionContextThreshold}
-                onComprehensionContextThresholdChange={
-                  setComprehensionContextThreshold
-                }
-                inputClass={INPUT_CLASS}
-                labelClass={LABEL_CLASS}
-              />
-            )}
           </div>
         )}
 

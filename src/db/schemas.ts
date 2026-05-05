@@ -287,17 +287,61 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 // ─── Agents ─────────────────────────────────────────────────────────
 
 /**
- * Built-in pipeline agent kinds. Each can have its own model override
- * configured via AppSettings.agentModelOverrides; null falls back to the
- * global aiProvider/providerModels.
+ * Pipeline-internal agent kinds. These run inside the manuscript review/edit
+ * pipeline (Reader → Orchestrator → Editor → Verifier). Reader and Editor are
+ * also exposed in the AiPanel chat dropdown via their corresponding chat-mode
+ * agent rows; Orchestrator and Verifier are not user-selectable.
  */
-export const AgentKindEnum = z.enum([
+export const PipelineAgentKindEnum = z.enum([
   "reader",
   "orchestrator",
   "editor",
   "verifier",
 ]);
+export type PipelineAgentKind = z.infer<typeof PipelineAgentKindEnum>;
+
+/**
+ * All agent kinds: chat-mode user-facing agents, pipeline-internal agents
+ * (orchestrator, verifier), and user-created agents. Reader/Editor appear in
+ * BOTH the user-facing set (chat mode) and the pipeline-internal set — the
+ * agent row is shared between the two execution paths.
+ */
+export const AgentKindEnum = z.enum([
+  // User-facing chat agents (selectable from AiPanel dropdown).
+  "spark",
+  "scene",
+  "reader",
+  "editor",
+  "character-dialogue",
+  "brainstorm",
+  "chat",
+  // Pipeline-internal (not user-selectable from chat).
+  "orchestrator",
+  "verifier",
+  // User-created via Manage Agents.
+  "user",
+]);
 export type AgentKind = z.infer<typeof AgentKindEnum>;
+
+/** Pipeline kinds as a const set for runtime checks. */
+export const PIPELINE_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
+  "reader",
+  "orchestrator",
+  "editor",
+  "verifier",
+]);
+
+/** Kinds exposed in the AiPanel chat dropdown. */
+export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
+  "spark",
+  "scene",
+  "reader",
+  "editor",
+  "character-dialogue",
+  "brainstorm",
+  "chat",
+  "user",
+]);
 
 export const AgentModelOverrideSchema = z.object({
   provider: AiProviderEnum,
@@ -307,14 +351,24 @@ export const AgentModelOverrideSchema = z.object({
 export type AgentModelOverride = z.infer<typeof AgentModelOverrideSchema>;
 
 /**
- * User-defined agent. Saved configuration for a custom AI workflow — system
- * prompt + tool subset + optional model override + optional per-tool prompt
- * override. Invoked from the AiPanel as an alternative to the legacy
- * task-tool selector. Phase 4 polish.
+ * Unified agent definition row. Backs both the seven user-facing chat agents
+ * (spark, scene, reader, editor, character-dialogue, brainstorm, chat), the
+ * two pipeline-internal agents (orchestrator, verifier), and any user-created
+ * agents (kind="user"). Fields are seeded from bundled defaults when a
+ * built-in agent is first written; "Reset to defaults" rewrites them.
+ *
+ * Built-in agents are global (projectId=null) and singleton-per-kind. User
+ * agents may be project-scoped or global; multiple `kind="user"` rows are
+ * allowed.
+ *
+ * Distinct from the runner-side `Agent` interface in `src/lib/ai/agents/types`
+ * — that's an ephemeral per-invocation runnable; this is the persistent
+ * definition the runner constructs from.
  */
-export const CustomAgentSchema = z.object({
+export const AgentDefinitionSchema = z.object({
   id,
-  /** Per-project so they back up with the project. */
+  kind: AgentKindEnum,
+  /** null = global (built-ins always null; users can opt project-scoped). */
   projectId: projectFk.nullable().default(null),
   name: z.string().min(1),
   description: z.string().default(""),
@@ -327,7 +381,7 @@ export const CustomAgentSchema = z.object({
   createdAt: timestamp,
   updatedAt: timestamp,
 });
-export type CustomAgent = z.infer<typeof CustomAgentSchema>;
+export type AgentDefinition = z.infer<typeof AgentDefinitionSchema>;
 
 // ─── App Settings (singleton) ────────────────────────────────────────
 
@@ -413,26 +467,7 @@ export const AppSettingsSchema = z.object({
    */
   comprehensionContextThreshold: z.number().int().positive().default(80_000),
   enableToolCalling: z.boolean().default(false),
-  agentModelOverrides: z
-    .record(AgentKindEnum, AgentModelOverrideSchema.nullable())
-    .default({
-      reader: null,
-      orchestrator: null,
-      editor: null,
-      verifier: null,
-    }),
   customSystemPrompt: z.string().nullable().default(null),
-  disabledBuiltinTools: z.array(z.string()).default([]),
-  builtinToolOverrides: z.record(z.string(), z.string()).default({}),
-  customTools: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-        prompt: z.string().min(1),
-      }),
-    )
-    .default([]),
   lastExportedAt: z.string().datetime().nullable().default(null),
   updatedAt: timestamp,
 });
@@ -882,15 +917,16 @@ export const AgentRunSchema = z.object({
   currentTier: z.number().int().nonnegative().default(0),
   currentSnapshotManifestId: z.uuid().nullable().default(null),
   readerPasses: z.array(ReaderPassSchema).default([]),
-  /** Snapshot of agent model overrides at run-creation time. */
+  /**
+   * Snapshot of agent model overrides at run-creation time. Historic field —
+   * with the unified Agents table (v32+), per-agent model overrides live on
+   * the AgentDefinition row and the runner reads them on demand. Kept for
+   * backward compat with rows created before the unification; new rows leave
+   * this as a partial map.
+   */
   modelOverrides: z
-    .record(AgentKindEnum, AgentModelOverrideSchema.nullable())
-    .default({
-      reader: null,
-      orchestrator: null,
-      editor: null,
-      verifier: null,
-    }),
+    .record(z.string(), AgentModelOverrideSchema.nullable())
+    .default({}),
   /** Hard cap; pipeline auto-pauses when totalTokenUsage exceeds this. */
   budgetTokens: z.number().int().positive().default(1_000_000),
   totalTokenUsage: AgentRunUsageSchema.default({

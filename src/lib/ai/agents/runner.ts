@@ -32,23 +32,19 @@ function generateId(): string {
 
 /**
  * Resolve which provider, model, API key, and reasoning effort an agent should
- * use for its next invocation. Per-agent overrides (when set on AppSettings)
- * win over the global defaults; "manual" never has overrides.
+ * use for its next invocation. Per-agent overrides — set on `agent.modelOverride`
+ * by the factory that built the agent (chat or pipeline) — win over global
+ * defaults from AppSettings.
+ *
+ * Pipeline factories populate `agent.modelOverride` from the corresponding
+ * AgentDefinition row; chat factories do the same for the row backing the
+ * selected agent. There's no longer a settings-level override map.
  */
 export function resolveAgentModel(
   agent: Agent,
   settings: AppSettings,
 ): ResolvedAgentModel {
-  const inlineOverride = agent.modelOverride;
-  const settingsOverride =
-    agent.kind === "reader" ||
-    agent.kind === "orchestrator" ||
-    agent.kind === "editor" ||
-    agent.kind === "verifier"
-      ? settings.agentModelOverrides[agent.kind]
-      : null;
-
-  const override = inlineOverride ?? settingsOverride ?? undefined;
+  const override = agent.modelOverride;
 
   if (override) {
     return {

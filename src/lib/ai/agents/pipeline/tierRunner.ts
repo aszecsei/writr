@@ -8,6 +8,7 @@ import { getAppSettings } from "@/db/operations/settings";
 import { listWorkUnitsByTier, updateWorkUnit } from "@/db/operations/workUnits";
 import type { ReaderBibleViewEntry, WorkUnit } from "@/db/schemas";
 import type { AiContext } from "../../types";
+import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import { makeEditorAgent } from "../builtins/editor";
 import { makeOrchestratorAgent } from "../builtins/orchestrator";
 import { resolveAgentModel, runAgent } from "../runner";
@@ -59,6 +60,7 @@ export async function planTier(options: PlanTierOptions): Promise<void> {
     humanBriefing,
     context,
   });
+  await applyDefinitionOverride(agent);
 
   const model = resolveAgentModel(agent, settings);
   if (!model.apiKey) {
@@ -260,6 +262,7 @@ async function runOneEditor(
     chapterTitle: chapter?.title ?? "(unknown)",
     context,
   });
+  await applyDefinitionOverride(agent);
 
   const model = resolveAgentModel(agent, settings);
   if (!model.apiKey) {

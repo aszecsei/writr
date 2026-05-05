@@ -10,13 +10,6 @@ import {
 
 const projectId = "a1111111-1111-4111-a111-111111111111";
 
-const noOverrides = {
-  reader: null,
-  orchestrator: null,
-  editor: null,
-  verifier: null,
-};
-
 const ts = "2024-01-01T00:00:00.000Z";
 
 function uuid(seed: number): string {
@@ -33,7 +26,7 @@ describe("updateBudgetTokens", () => {
     const run = await createAgentRun({
       projectId,
       name: "Run A",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
 
@@ -48,7 +41,6 @@ describe("updateBudgetTokens", () => {
     const run = await createAgentRun({
       projectId,
       name: "Run B",
-      modelOverrides: noOverrides,
     });
 
     await expect(updateBudgetTokens(run.id, 0)).rejects.toThrow(
@@ -63,7 +55,6 @@ describe("updateBudgetTokens", () => {
     const run = await createAgentRun({
       projectId,
       name: "Run C",
-      modelOverrides: noOverrides,
     });
 
     await expect(updateBudgetTokens(run.id, -100)).rejects.toThrow(
@@ -75,7 +66,6 @@ describe("updateBudgetTokens", () => {
     const run = await createAgentRun({
       projectId,
       name: "Run D",
-      modelOverrides: noOverrides,
     });
 
     await expect(updateBudgetTokens(run.id, 1.5)).rejects.toThrow(
@@ -269,7 +259,6 @@ describe("deleteAgentRun", () => {
     const run = await createAgentRun({
       projectId,
       name: "In-flight",
-      modelOverrides: noOverrides,
     });
     await seedRunWithChildren(run.id);
 
@@ -288,7 +277,6 @@ describe("deleteAgentRun", () => {
     const run = await createAgentRun({
       projectId,
       name: "Done",
-      modelOverrides: noOverrides,
     });
     await seedRunWithChildren(run.id);
     await updateAgentRunStatus(run.id, "complete");
@@ -306,7 +294,6 @@ describe("deleteAgentRun", () => {
     const run = await createAgentRun({
       projectId,
       name: "Snapshot keep",
-      modelOverrides: noOverrides,
     });
     await seedRunWithChildren(run.id);
     await updateAgentRunStatus(run.id, "complete");
@@ -322,7 +309,6 @@ describe("deleteAgentRun", () => {
     const runA = await createAgentRun({
       projectId,
       name: "A",
-      modelOverrides: noOverrides,
     });
     await seedRunWithChildren(runA.id);
     await updateAgentRunStatus(runA.id, "complete");
@@ -331,7 +317,6 @@ describe("deleteAgentRun", () => {
     const runB = await createAgentRun({
       projectId: otherProjectId,
       name: "B",
-      modelOverrides: noOverrides,
     });
     // Seed a single child row keyed on runB to ensure scoping is by runId.
     await db.readerBibleLog.add({

@@ -1,28 +1,3 @@
-export type BuiltinAiTool =
-  | "generate-prose"
-  | "review-text"
-  | "suggest-edits"
-  | "character-dialogue"
-  | "brainstorm"
-  | "summarize"
-  | "consistency-check";
-
-export const BUILTIN_TOOL_IDS: BuiltinAiTool[] = [
-  "generate-prose",
-  "review-text",
-  "suggest-edits",
-  "character-dialogue",
-  "brainstorm",
-  "summarize",
-  "consistency-check",
-];
-
-/** Tool ID that can be either a built-in tool or a custom tool UUID */
-export type AiToolId = BuiltinAiTool | (string & {});
-
-/** @deprecated Use BuiltinAiTool for built-in tools or AiToolId for all tools */
-export type AiTool = BuiltinAiTool;
-
 export interface CacheControl {
   type: "ephemeral";
 }
@@ -138,7 +113,8 @@ export interface AiSettings {
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
-  toolPromptOverride?: string;
+  /** Pre-resolved system prompt for the agent. Required for chat-mode calls. */
+  agentSystemPrompt?: string;
   images?: { url: string }[];
   toolDefinitions?: import("./tool-calling").ToolDefinitionForModel[];
   skipUserPrompt?: boolean;

@@ -17,6 +17,7 @@ import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { ImageLightbox } from "../bible/ImageLightbox";
 import { MarkdownMessage } from "./MarkdownMessage";
+import { SparkOptions } from "./SparkOptions";
 import { ToolCallMessage } from "./ToolCallMessage";
 
 interface MessageImage {
@@ -35,6 +36,14 @@ interface Message {
   finishReason?: FinishReason;
   images?: MessageImage[];
   toolCalls?: ToolCallEntry[];
+  /**
+   * When set, render this assistant message as Spark option cards (parsed
+   * from `content` via the SPARK_OPTION_DELIMITER) instead of plain markdown.
+   * `sparkCapturedRange` is the editor selection captured at submit time;
+   * picking an option replaces it.
+   */
+  sparkOptions?: boolean;
+  sparkCapturedRange?: { from: number; to: number } | null;
 }
 
 function formatDuration(ms: number): string {
@@ -130,7 +139,7 @@ export function MessageList({
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.length === 0 && (
         <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 py-8">
-          Choose a tool and describe what you need.
+          Choose an agent and describe what you need.
         </p>
       )}
       {messages.map((msg, i) => {
@@ -286,7 +295,14 @@ export function MessageList({
               </div>
             ) : msg.role === "assistant" ? (
               <>
-                <MarkdownMessage content={msg.content} />
+                {msg.sparkOptions ? (
+                  <SparkOptions
+                    content={msg.content}
+                    capturedRange={msg.sparkCapturedRange ?? null}
+                  />
+                ) : (
+                  <MarkdownMessage content={msg.content} />
+                )}
                 {msg.toolCalls?.map((tc) => (
                   <ToolCallMessage
                     key={tc.id}

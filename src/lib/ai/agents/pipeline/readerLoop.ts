@@ -16,6 +16,7 @@ import { countBibleLogEntriesSince } from "@/db/operations/readerBible";
 import { getAppSettings } from "@/db/operations/settings";
 import type { AgentRun, Chapter, ReaderMode } from "@/db/schemas";
 import type { AiMessage } from "../../types";
+import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import {
   buildComprehensionBriefing,
   makeReaderAgent,
@@ -362,6 +363,7 @@ async function runComprehensionPass(
       totalChapters,
       context,
     });
+    await applyDefinitionOverride(agent);
 
     const briefing = buildComprehensionBriefing({
       chapter,
@@ -452,6 +454,7 @@ async function runThematicPass(
     chapterIdsInScope,
     context,
   });
+  await applyDefinitionOverride(agent);
 
   await invokeAgent(agent, runId, settings, signal, onEvent);
 
@@ -483,6 +486,7 @@ async function runSelfAnswerPass(
     chapterIdsInScope,
     context,
   });
+  await applyDefinitionOverride(agent);
 
   await invokeAgent(agent, runId, settings, signal, onEvent);
 

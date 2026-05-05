@@ -8,23 +8,9 @@ import {
   serializeTimelineEvent,
   serializeWorldbuildingTree,
 } from "./serialize";
-import type { AiContext, AiMessage, AiToolId, BuiltinAiTool } from "./types";
+import type { AiContext, AiMessage } from "./types";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
-
-const SCREENPLAY_TOOL_INSTRUCTIONS: Partial<Record<BuiltinAiTool, string>> = {
-  "generate-prose":
-    "Continue writing in Fountain screenplay format. " +
-    "Match the existing tone and style. Output only the new Fountain-formatted content, no commentary.",
-
-  "character-dialogue":
-    "Write dialogue in Fountain screenplay format for the specified characters that is consistent with their " +
-    "established voices and personalities. Include character names (uppercase), parentheticals, and dialogue lines.",
-
-  "suggest-edits":
-    "Suggest concrete line edits to improve the selected screenplay text. " +
-    "Format as a numbered list with the original text and your suggested replacement in Fountain format.",
-};
 
 function buildNovelContext(
   context: AiContext,
@@ -41,7 +27,6 @@ function buildNovelContext(
     ? context.characters.filter((c) => c.role !== "minor")
     : context.characters;
 
-  /** Append a tagged section if `items` is non-empty. */
   function addSection<T>(
     tag: string,
     items: T[],
@@ -115,58 +100,6 @@ export function buildAgenticContext(context: AiContext): string {
   return xml;
 }
 
-export const DEFAULT_TOOL_INSTRUCTIONS: Record<BuiltinAiTool, string> = {
-  "generate-prose":
-    "Continue writing prose in the style and voice of this novel. " +
-    "Match the existing tone, tense, and POV. Output only the new prose, no commentary.",
-
-  "review-text":
-    "Review the provided text for: pacing, clarity, consistency with established " +
-    "characters/setting, grammar, and style adherence. Provide specific, actionable feedback.",
-
-  "suggest-edits":
-    "Suggest concrete line edits to improve the selected text. " +
-    "Format as a numbered list with the original text and your suggested replacement.",
-
-  "character-dialogue":
-    "Write dialogue for the specified characters that is consistent with their " +
-    "established voices and personalities. Include minimal action beats.",
-
-  brainstorm:
-    "Brainstorm ideas related to the user's prompt. Offer 3-5 distinct options " +
-    "with brief descriptions for each.",
-
-  summarize:
-    "Provide a concise summary of the provided text, capturing key plot points, " +
-    "character developments, and thematic elements.",
-
-  "consistency-check":
-    "Analyze the story content for consistency issues. Check for:\n\n" +
-    "## Plot Holes\n" +
-    "- Events referenced but never established\n" +
-    "- Unresolved plot threads or dangling setups\n" +
-    "- Cause-and-effect gaps\n" +
-    "- Contradictory facts about the world or events\n\n" +
-    "## Timeline Contradictions\n" +
-    "- Events occurring in impossible order\n" +
-    "- Characters in two places at once\n" +
-    "- Age/date inconsistencies\n" +
-    "- Travel times that don't make sense\n\n" +
-    "## Character Inconsistencies\n" +
-    "- Personality shifts without justification\n" +
-    "- Dialogue that doesn't match established voice\n" +
-    "- Knowledge the character shouldn't have\n" +
-    "- Contradictory motivations or goals\n" +
-    "- Relationship dynamics that conflict with established history\n\n" +
-    "FORMAT YOUR RESPONSE AS:\n\n" +
-    "### Plot Holes\n[List with severity: CRITICAL/MAJOR/MINOR]\n\n" +
-    "### Timeline Issues\n[List with specific events/dates]\n\n" +
-    "### Character Inconsistencies\n[List with character name]\n\n" +
-    "### Summary\n[Brief assessment and prioritized recommendations]\n\n" +
-    "If no issues found in a category, state 'No issues detected.' " +
-    "Be thorough but avoid false positives.",
-};
-
 interface ImageAttachment {
   url: string;
 }
@@ -176,55 +109,38 @@ interface BuildMessagesOptions {
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
-  toolPromptOverride?: string;
   images?: ImageAttachment[];
   enableToolCalling?: boolean;
   skipUserPrompt?: boolean;
 }
 
-function resolveDefaultToolInstruction(
-  tool: AiToolId,
-  hasSelectedText: boolean,
-  isScreenplay?: boolean,
-): string {
-  // Use screenplay-specific overrides when applicable
-  if (isScreenplay) {
-    const override = SCREENPLAY_TOOL_INSTRUCTIONS[tool as BuiltinAiTool];
-    if (override) return override;
-  }
-
-  if (tool === "suggest-edits" && !hasSelectedText) {
-    return (
-      "Suggest concrete line edits to improve the current chapter. " +
-      "Focus on the weakest passages. " +
-      "Format as a numbered list with the original text and your suggested replacement."
-    );
-  }
-  if (tool in DEFAULT_TOOL_INSTRUCTIONS) {
-    return DEFAULT_TOOL_INSTRUCTIONS[tool as BuiltinAiTool];
-  }
-  return "Follow the user's instructions.";
-}
-
+/**
+ * Assemble messages for a chat-mode AI request.
+ *
+ * `agentSystemPrompt` is the agent's resolved system content (taken from the
+ * AgentDefinition row, with any screenplay suffix already applied). This
+ * function wraps it with the optional `customSystemPrompt` preamble and a
+ * <task>...</task> framing block, then appends:
+ *   1. Story-bible context (full or agentic-minimal)
+ *   2. Optional <chapter>...</chapter> block for the active chapter
+ *   3. Conversation history (with cache_control on the last entry in agentic mode)
+ *   4. The user's prompt (with selected text and image attachments)
+ *   5. Optional assistant prefill
+ *
+ * Replaces the old tool-id-driven `buildMessages(tool, ...)` — agents now
+ * carry their own prompts so there's no need to resolve from a tool id.
+ */
 export function buildMessages(
-  tool: AiToolId,
+  agentSystemPrompt: string,
   userPrompt: string,
   context: AiContext,
   history: AiMessage[] = [],
   options?: BuildMessagesOptions,
 ): AiMessage[] {
-  const toolInstruction =
-    options?.toolPromptOverride ??
-    resolveDefaultToolInstruction(
-      tool,
-      !!context.selectedText,
-      context.projectMode === "screenplay",
-    );
-
   const preamble = options?.customSystemPrompt ?? DEFAULT_SYSTEM_PROMPT;
   const enableToolCalling = options?.enableToolCalling ?? false;
 
-  let systemContent = `${preamble}\n\n<task>\n${toolInstruction}\n</task>`;
+  let systemContent = `${preamble}\n\n<task>\n${agentSystemPrompt}\n</task>`;
 
   if (enableToolCalling) {
     systemContent +=
@@ -303,7 +219,6 @@ export function buildMessages(
           },
         ];
       } else if (Array.isArray(content)) {
-        // Append cache_control to the last text part
         const parts = [...content];
         for (let j = parts.length - 1; j >= 0; j--) {
           if (parts[j].type === "text") {
@@ -361,7 +276,6 @@ export function buildMessages(
   const instructions = options?.postChatInstructions;
   const depth = options?.postChatInstructionsDepth ?? 2;
   if (instructions && depth > 0) {
-    // Collect indices of real user messages (exclude synthetic story-bible and chapter-context messages)
     const syntheticUserCount = 1 + (context.currentChapterContent ? 1 : 0);
     const userIndices: number[] = [];
     let skipped = 0;

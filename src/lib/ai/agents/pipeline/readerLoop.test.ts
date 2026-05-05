@@ -52,13 +52,6 @@ async function seedProjectAndChapters(chapterCount: number): Promise<void> {
   }
 }
 
-const noOverrides = {
-  reader: null,
-  orchestrator: null,
-  editor: null,
-  verifier: null,
-};
-
 beforeEach(async () => {
   await Promise.all([
     db.projects.clear(),
@@ -109,7 +102,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "R1",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
     // Seed an open question so self-answer (pass 3) doesn't short-circuit.
@@ -147,7 +140,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "R2",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
     await createAgentQuestion({
@@ -175,7 +168,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "R3",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
     // No open questions seeded.
@@ -202,7 +195,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "RAcc",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
 
@@ -260,7 +253,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "RReset",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
 
@@ -317,7 +310,7 @@ describe("runReaderLoop — mode dispatch", () => {
     const run = await createAgentRun({
       projectId,
       name: "R4",
-      modelOverrides: noOverrides,
+
       budgetTokens: 1_000_000,
     });
     // Open question that will be marked answered during the self-answer pass.

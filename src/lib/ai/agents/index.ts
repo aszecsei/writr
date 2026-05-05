@@ -1,7 +1,9 @@
+export { applyDefinitionOverride } from "./applyDefinitionOverride";
 export {
   makeAgentBuildMessages,
-  makeManualAgentBuildMessages,
+  makeChatAgentBuildMessages,
 } from "./build-messages";
+export { makeChatAgent } from "./builtins/chatAgent";
 export { resolveAgentModel, runAgent } from "./runner";
 export {
   executeAgentTool,

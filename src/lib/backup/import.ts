@@ -352,7 +352,7 @@ export async function importBackup(
         db.verifications,
         db.chapterSummaries,
         db.snapshotManifests,
-        db.customAgents,
+        db.agents,
       ],
       async () => {
         // Import projects

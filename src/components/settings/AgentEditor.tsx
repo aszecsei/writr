@@ -4,16 +4,13 @@ import { type FormEvent, useEffect, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
-import {
-  createCustomAgent,
-  updateCustomAgent,
-} from "@/db/operations/customAgents";
+import { createAgent, updateAgent } from "@/db/operations/agents";
 import type {
   AgentModelOverride,
   AiProvider,
   ReasoningEffort,
 } from "@/db/schemas";
-import { useCustomAgent } from "@/hooks/data/useCustomAgents";
+import { useAgent } from "@/hooks/data/useAgents";
 import { PROVIDERS } from "@/lib/ai/providers";
 import { AI_TOOLS } from "@/lib/ai/tool-calling";
 import { useProjectStore } from "@/store/projectStore";
@@ -76,14 +73,13 @@ function pickGroup(id: string): string {
   return "Other";
 }
 
-export function CustomAgentEditor() {
+export function AgentEditor() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const projectId = useProjectStore((s) => s.activeProjectId);
 
-  const editingId =
-    modal.id === "custom-agent-editor" ? modal.agentId : undefined;
-  const existing = useCustomAgent(editingId ?? null);
+  const editingId = modal.id === "agent-editor" ? modal.agentId : undefined;
+  const existing = useAgent(editingId ?? null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -101,12 +97,10 @@ export function CustomAgentEditor() {
   const initializedRef = useState({ value: false })[0];
 
   useEffect(() => {
-    if (modal.id !== "custom-agent-editor") {
+    if (modal.id !== "agent-editor") {
       initializedRef.value = false;
       return;
     }
-    // For new agent (no editingId): reset to defaults the first time only.
-    // For edit: wait for existing to load, then sync once.
     if (!editingId && !initializedRef.value) {
       setName("");
       setDescription("");
@@ -138,7 +132,9 @@ export function CustomAgentEditor() {
     }
   }, [modal.id, editingId, existing, initializedRef]);
 
-  if (modal.id !== "custom-agent-editor") return null;
+  if (modal.id !== "agent-editor") return null;
+
+  const isBuiltin = existing && existing.kind !== "user";
 
   function toggleTool(id: string) {
     setAllowedToolIds((prev) => {
@@ -158,19 +154,30 @@ export function CustomAgentEditor() {
           reasoningEffort: overrideReasoning,
         }
       : null;
-    const payload = {
-      projectId: scope === "global" ? null : (projectId ?? null),
-      name: name.trim(),
-      description: description.trim(),
-      systemPrompt: systemPrompt.trim(),
-      allowedToolIds: [...allowedToolIds],
-      modelOverride,
-      assistantPrefill: assistantPrefill,
-    };
-    if (editingId) {
-      await updateCustomAgent(editingId, payload);
+    if (editingId && existing) {
+      await updateAgent(editingId, {
+        name: name.trim(),
+        description: description.trim(),
+        systemPrompt: systemPrompt.trim(),
+        allowedToolIds: [...allowedToolIds],
+        modelOverride,
+        assistantPrefill,
+        // Built-in agents stay global; only user agents can change scope.
+        ...(existing.kind === "user"
+          ? { projectId: scope === "global" ? null : (projectId ?? null) }
+          : {}),
+      });
     } else {
-      await createCustomAgent(payload);
+      await createAgent({
+        kind: "user",
+        projectId: scope === "global" ? null : (projectId ?? null),
+        name: name.trim(),
+        description: description.trim(),
+        systemPrompt: systemPrompt.trim(),
+        allowedToolIds: [...allowedToolIds],
+        modelOverride,
+        assistantPrefill,
+      });
     }
     closeModal();
   }
@@ -178,14 +185,21 @@ export function CustomAgentEditor() {
   const grouped = groupTools();
   const canSubmit = name.trim().length > 0 && systemPrompt.trim().length > 0;
 
+  const headerTitle = editingId
+    ? isBuiltin
+      ? `Edit ${existing?.name ?? "agent"}`
+      : "Edit Agent"
+    : "New Agent";
+
   return (
     <Modal onClose={closeModal} maxWidth="max-w-3xl">
       <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        {editingId ? "Edit Custom Agent" : "New Custom Agent"}
+        {headerTitle}
       </h2>
       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-        Saved AI workflows you can run from the AI panel — pair a system prompt
-        with a tool subset and an optional model override.
+        {isBuiltin
+          ? "Built-in agent. Edit the system prompt, allowed tools, or model override; use Reset to restore defaults."
+          : "Saved AI workflow — pair a system prompt with a tool subset and an optional model override."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -201,17 +215,21 @@ export function CustomAgentEditor() {
               className={INPUT_CLASS}
             />
           </label>
-          <label className={LABEL_CLASS}>
-            Scope
-            <select
-              value={scope}
-              onChange={(e) => setScope(e.target.value as "project" | "global")}
-              className={INPUT_CLASS}
-            >
-              <option value="project">This project only</option>
-              <option value="global">Global (all projects)</option>
-            </select>
-          </label>
+          {!isBuiltin && (
+            <label className={LABEL_CLASS}>
+              Scope
+              <select
+                value={scope}
+                onChange={(e) =>
+                  setScope(e.target.value as "project" | "global")
+                }
+                className={INPUT_CLASS}
+              >
+                <option value="project">This project only</option>
+                <option value="global">Global (all projects)</option>
+              </select>
+            </label>
+          )}
         </div>
 
         <label className={LABEL_CLASS}>
@@ -231,7 +249,7 @@ export function CustomAgentEditor() {
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
             required
-            rows={8}
+            rows={10}
             placeholder="Define the agent's role, output format, and any constraints."
             className={`${INPUT_CLASS} font-mono`}
           />

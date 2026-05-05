@@ -16,6 +16,7 @@ import type {
   WorkUnit,
 } from "@/db/schemas";
 import type { AiContext } from "../../types";
+import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import {
   makeVerifierAgent,
   type VerifierWorkUnitContext,
@@ -114,6 +115,7 @@ export async function verifyTier(
     affectedChapterIds,
     context,
   });
+  await applyDefinitionOverride(agent);
 
   const model = resolveAgentModel(agent, settings);
   if (!model.apiKey) {

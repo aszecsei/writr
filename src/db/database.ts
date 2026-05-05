@@ -1,6 +1,11 @@
 import Dexie, { type EntityTable } from "dexie";
+import {
+  BUILTIN_AGENT_DEFAULTS,
+  type BuiltinAgentDefault,
+} from "@/lib/ai/agents/builtins/defaults";
 import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
 import type {
+  AgentDefinition,
   AgentNote,
   AgentQuestion,
   AgentRun,
@@ -12,7 +17,6 @@ import type {
   Character,
   CharacterRelationship,
   Comment,
-  CustomAgent,
   EditPlan,
   Location,
   OutlineGridCell,
@@ -66,7 +70,7 @@ export class WritrDatabase extends Dexie {
   verifications!: EntityTable<Verification, "id">;
   chapterSummaries!: EntityTable<ChapterSummary, "id">;
   snapshotManifests!: EntityTable<SnapshotManifest, "id">;
-  customAgents!: EntityTable<CustomAgent, "id">;
+  agents!: EntityTable<AgentDefinition, "id">;
 
   constructor() {
     super("writr");
@@ -536,7 +540,9 @@ export class WritrDatabase extends Dexie {
       snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
     });
 
-    // v27: user-defined custom agents (Phase 4 polish).
+    // v27 (legacy): user-defined "custom agents" — this table was renamed to
+    // `agents` in v32 with seeded built-in rows for spark/scene/reader/editor/
+    // character-dialogue/brainstorm/chat/orchestrator/verifier.
     this.version(27).stores({
       projects: "id, title, updatedAt",
       chapters: "id, projectId, [projectId+order], updatedAt",
@@ -746,12 +752,186 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    // v32: collapse the AI Assistant tools, Custom Tools, and Pipeline Agents
+    // settings into a single unified `agents` table. The previous
+    // `customAgents` table is renamed (its rows become kind="user"). Built-in
+    // agent rows are seeded for spark / scene / reader / editor /
+    // character-dialogue / brainstorm / chat / orchestrator / verifier with
+    // any matching settings.agentModelOverrides[kind] copied to the row's
+    // modelOverride field. Old AppSettings fields (customTools,
+    // agentModelOverrides, disabledBuiltinTools, builtinToolOverrides) are
+    // dropped — customTools rows migrate to kind="user" agent rows, and
+    // builtinToolOverrides become per-agent systemPrompt overrides.
+    this.version(32)
+      .stores({
+        projects: "id, title, updatedAt",
+        chapters: "id, projectId, [projectId+order], updatedAt",
+        characters: "id, projectId, name, role",
+        locations: "id, projectId, name, parentLocationId",
+        timelineEvents: "id, projectId, [projectId+order]",
+        styleGuideEntries: "id, projectId, [projectId+order], category",
+        worldbuildingDocs:
+          "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+        characterRelationships:
+          "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+        outlineColumns: "id, projectId, [projectId+order]",
+        outlineCards: "id, projectId, columnId, [columnId+order]",
+        outlineGridColumns: "id, projectId, [projectId+order]",
+        outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+        outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+        writingSprints:
+          "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+        writingSessions:
+          "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+        playlistTracks: "id, projectId, [projectId+order]",
+        comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+        chapterSnapshots: "id, chapterId, projectId, [chapterId+createdAt]",
+        appSettings: "id",
+        appDictionary: "id",
+        projectDictionaries: "id, projectId",
+        agentRuns: "id, projectId, status, [projectId+createdAt]",
+        readerBibleLog:
+          "id, projectId, runId, [projectId+path], [runId+createdAt]",
+        readerBibleView: "id, projectId, runId, [runId+path]",
+        agentNotes: "id, projectId, runId, chapterId, [runId+status]",
+        agentQuestions: "id, projectId, runId, [runId+status]",
+        workUnits: "id, projectId, runId, [runId+tier], [runId+status]",
+        editPlans: "id, projectId, runId",
+        proposedEdits:
+          "id, projectId, runId, workUnitId, chapterId, [workUnitId+status]",
+        verifications: "id, projectId, runId, [runId+tier]",
+        chapterSummaries:
+          "id, projectId, chapterId, [chapterId+sourceContentHash]",
+        snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
+        // New unified agents table. Drops the old `customAgents` table.
+        agents: "id, kind, projectId, [kind+projectId], updatedAt",
+        customAgents: null,
+      })
+      .upgrade(async (tx) => {
+        const timestamp = new Date().toISOString();
+
+        // 1. Migrate existing customAgents rows → agents (kind="user").
+        const oldCustomAgents = await tx
+          .table("customAgents")
+          .toArray()
+          .catch(() => [] as Record<string, unknown>[]);
+        const agents = tx.table("agents");
+        for (const row of oldCustomAgents) {
+          await agents.add({
+            ...row,
+            kind: "user",
+          });
+        }
+
+        // 2. Read old AppSettings to migrate agentModelOverrides + customTools.
+        const settingsRow = await tx
+          .table("appSettings")
+          .get(APP_SETTINGS_ID)
+          .catch(() => undefined);
+        const oldOverrides: Record<
+          string,
+          { provider: string; model: string; reasoningEffort?: string } | null
+        > = settingsRow?.agentModelOverrides ?? {};
+        const oldCustomTools: Array<{
+          id: string;
+          name: string;
+          prompt: string;
+        }> = settingsRow?.customTools ?? [];
+        const oldBuiltinOverrides: Record<string, string> =
+          settingsRow?.builtinToolOverrides ?? {};
+
+        // 3. Seed built-in agents. Each row is created with the bundled
+        //    default; if the user previously set a model override or tool-
+        //    prompt override for the corresponding kind, copy it into the row.
+        //
+        //    `legacyToolOverrideId` maps the new agent kind to the old
+        //    `builtinToolOverrides` key so a user-customized prompt carries
+        //    over: e.g. an override for "review-text" lands on the new Reader
+        //    agent. Sparks/scenes both inherit from the old generate-prose
+        //    override (lossy on purpose — there's nothing more specific).
+        const legacyOverrideMap: Partial<Record<string, string>> = {
+          spark: "generate-prose",
+          scene: "generate-prose",
+          reader: "review-text",
+          editor: "suggest-edits",
+          "character-dialogue": "character-dialogue",
+          brainstorm: "brainstorm",
+        };
+
+        const builtinKinds = [
+          "spark",
+          "scene",
+          "reader",
+          "editor",
+          "character-dialogue",
+          "brainstorm",
+          "chat",
+          "orchestrator",
+          "verifier",
+        ] as const;
+
+        for (const kind of builtinKinds) {
+          const def: BuiltinAgentDefault = BUILTIN_AGENT_DEFAULTS[kind];
+          const modelOverride = oldOverrides[kind] ?? null;
+          const legacyId = legacyOverrideMap[kind];
+          const promptOverride = legacyId
+            ? oldBuiltinOverrides[legacyId]
+            : undefined;
+          await agents.add({
+            id: crypto.randomUUID(),
+            kind,
+            projectId: null,
+            name: def.name,
+            description: def.description,
+            systemPrompt:
+              promptOverride && promptOverride.length > 0
+                ? promptOverride
+                : def.systemPrompt,
+            allowedToolIds: def.allowedToolIds,
+            modelOverride,
+            assistantPrefill: def.assistantPrefill ?? "",
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          });
+        }
+
+        // 4. Migrate customTools → user agents.
+        for (const tool of oldCustomTools) {
+          if (!tool.name?.trim() || !tool.prompt?.trim()) continue;
+          await agents.add({
+            id: tool.id || crypto.randomUUID(),
+            kind: "user",
+            projectId: null,
+            name: tool.name.trim(),
+            description: "",
+            systemPrompt: tool.prompt.trim(),
+            allowedToolIds: [],
+            modelOverride: null,
+            assistantPrefill: "",
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          });
+        }
+
+        // 5. Strip deprecated AppSettings fields.
+        await tx
+          .table("appSettings")
+          .toCollection()
+          .modify((s: Record<string, unknown>) => {
+            delete s.agentModelOverrides;
+            delete s.disabledBuiltinTools;
+            delete s.builtinToolOverrides;
+            delete s.customTools;
+          });
+      });
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(
         "rw",
         this.appSettings,
         this.appDictionary,
+        this.agents,
         async () => {
           const timestamp = new Date().toISOString();
           const settings = await this.appSettings.get(APP_SETTINGS_ID);
@@ -772,6 +952,34 @@ export class WritrDatabase extends Dexie {
                 updatedAt: timestamp,
               }),
             );
+          }
+
+          // Idempotent built-in agent seed. Covers fresh installs (where the
+          // v32 migration didn't run because there was nothing to migrate)
+          // and any case where a built-in row went missing.
+          const existingAgents = await this.agents.toArray();
+          const presentKinds = new Set(
+            existingAgents.filter((a) => a.kind !== "user").map((a) => a.kind),
+          );
+          const builtinKinds = Object.keys(
+            BUILTIN_AGENT_DEFAULTS,
+          ) as (keyof typeof BUILTIN_AGENT_DEFAULTS)[];
+          for (const kind of builtinKinds) {
+            if (presentKinds.has(kind)) continue;
+            const def = BUILTIN_AGENT_DEFAULTS[kind];
+            await this.agents.add({
+              id: crypto.randomUUID(),
+              kind,
+              projectId: null,
+              name: def.name,
+              description: def.description,
+              systemPrompt: def.systemPrompt,
+              allowedToolIds: def.allowedToolIds,
+              modelOverride: null,
+              assistantPrefill: def.assistantPrefill ?? "",
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            });
           }
         },
       );

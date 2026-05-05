@@ -8,10 +8,9 @@ import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
-import { AiConfigDialog } from "@/components/settings/AiConfigDialog";
+import { AgentEditor } from "@/components/settings/AgentEditor";
+import { AgentsManager } from "@/components/settings/AgentsManager";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
-import { CustomAgentEditor } from "@/components/settings/CustomAgentEditor";
-import { CustomAgentsManager } from "@/components/settings/CustomAgentsManager";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import {
   SprintConfigDialog,
@@ -92,9 +91,8 @@ export function AppShell({ children }: AppShellProps) {
         <main className="h-full overflow-y-auto">{children}</main>
         <SprintWidget />
         <AppSettingsDialog />
-        <AiConfigDialog />
-        <CustomAgentsManager />
-        <CustomAgentEditor />
+        <AgentsManager />
+        <AgentEditor />
         <DictionaryManagerDialog />
         <VersionHistoryDialog />
         <SprintConfigDialog />
@@ -128,9 +126,8 @@ export function AppShell({ children }: AppShellProps) {
         )}
       </Group>
       <AppSettingsDialog />
-      <AiConfigDialog />
-      <CustomAgentsManager />
-      <CustomAgentEditor />
+      <AgentsManager />
+      <AgentEditor />
       <DictionaryManagerDialog />
       <VersionHistoryDialog />
       <ExportDialog />

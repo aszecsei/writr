@@ -42,8 +42,9 @@ interface AiSettingsProps {
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
   onEnableToolCallingChange: (enabled: boolean) => void;
-  onConfigureAi: () => void;
-  onManageCustomAgents: () => void;
+  onManageAgents: () => void;
+  comprehensionContextThreshold: number;
+  onComprehensionContextThresholdChange: (value: number) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -102,8 +103,9 @@ export function AiSettings({
   onReasoningEffortChange,
   onDebugModeChange,
   onEnableToolCallingChange,
-  onConfigureAi,
-  onManageCustomAgents,
+  onManageAgents,
+  comprehensionContextThreshold,
+  onComprehensionContextThresholdChange,
   inputClass,
   labelClass,
 }: AiSettingsProps) {
@@ -224,22 +226,37 @@ export function AiSettings({
                 approval)
               </span>
             </label>
+            <label className={labelClass}>
+              Comprehension Context Threshold (tokens)
+              <input
+                type="number"
+                min={1000}
+                step={1000}
+                value={comprehensionContextThreshold}
+                onChange={(e) => {
+                  const next = Number.parseInt(e.target.value, 10);
+                  if (Number.isFinite(next) && next > 0) {
+                    onComprehensionContextThresholdChange(next);
+                  }
+                }}
+                className={inputClass}
+              />
+              <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                When the pipeline Reader's prompt size exceeds this, the
+                comprehension pass soft-resets — starts a fresh segment at the
+                next chapter with empty history. The reader bible carries
+                forward. Lower values trade long-range awareness for lower
+                per-iteration cost. Default 80,000.
+              </span>
+            </label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={onConfigureAi}
+                onClick={onManageAgents}
                 className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
               >
                 <Settings2 size={14} />
-                Configure AI Prompts &amp; Tools
-              </button>
-              <button
-                type="button"
-                onClick={onManageCustomAgents}
-                className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
-              >
-                <Settings2 size={14} />
-                Manage Custom Agents
+                Manage Agents
               </button>
             </div>
           </>

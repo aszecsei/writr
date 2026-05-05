@@ -28,7 +28,6 @@ export default function AgentsListPage() {
   const [deleting, setDeleting] = useState(false);
 
   async function handleCreate() {
-    if (!settings) return;
     setError(null);
     setCreating(true);
     try {
@@ -40,7 +39,6 @@ export default function AgentsListPage() {
       const run = await createAgentRun({
         projectId: params.projectId,
         name: `Run ${new Date().toLocaleString()}`,
-        modelOverrides: settings.agentModelOverrides,
       });
       router.push(`/projects/${params.projectId}/agents/${run.id}`);
     } catch (err) {

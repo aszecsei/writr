@@ -247,6 +247,36 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   useFocusMode(focusModeEnabled, editor, scrollContainerRef);
 
+  // AI-driven inserts: the AiPanel posts markdown via editorStore. Apply at
+  // the requested range (selection-replace) or current cursor, then clear.
+  const pendingInsertion = useEditorStore((s) => s.pendingInsertion);
+  const clearPendingInsertion = useEditorStore((s) => s.clearPendingInsertion);
+  useEffect(() => {
+    if (!pendingInsertion || !editor || editor.isDestroyed) return;
+    const { markdown, replaceRange } = pendingInsertion;
+    const paragraphs = markdown
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    const nodes = paragraphs.map((text) => ({
+      type: "paragraph",
+      content: [{ type: "text", text }],
+    }));
+
+    const chain = editor.chain().focus();
+    if (replaceRange) {
+      chain.insertContentAt(
+        { from: replaceRange.from, to: replaceRange.to },
+        nodes,
+      );
+    } else {
+      const { from } = editor.state.selection;
+      chain.insertContentAt(from, nodes);
+    }
+    chain.run();
+    clearPendingInsertion();
+  }, [pendingInsertion, editor, clearPendingInsertion]);
+
   // Keyboard shortcuts (Ctrl+Shift+P for preview card)
   useEditorKeyboardShortcuts(
     editor,

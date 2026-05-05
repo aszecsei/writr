@@ -63,7 +63,7 @@ export async function deleteAllProjectData(projectId: string): Promise<void> {
   await db.verifications.where({ projectId }).delete();
   await db.chapterSummaries.where({ projectId }).delete();
   await db.snapshotManifests.where({ projectId }).delete();
-  await db.customAgents.where({ projectId }).delete();
+  await db.agents.where({ projectId }).delete();
 }
 
 export async function deleteProject(id: string): Promise<void> {
@@ -98,7 +98,7 @@ export async function deleteProject(id: string): Promise<void> {
       db.verifications,
       db.chapterSummaries,
       db.snapshotManifests,
-      db.customAgents,
+      db.agents,
     ],
     async () => {
       await deleteAllProjectData(id);

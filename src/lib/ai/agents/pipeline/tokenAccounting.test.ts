@@ -21,12 +21,6 @@ async function makeRun(): Promise<string> {
   const run = await createAgentRun({
     projectId: PROJECT_ID,
     name: "test run",
-    modelOverrides: {
-      reader: null,
-      orchestrator: null,
-      editor: null,
-      verifier: null,
-    },
   });
   return run.id;
 }

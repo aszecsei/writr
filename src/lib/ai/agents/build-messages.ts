@@ -1,32 +1,39 @@
 import { buildAgenticContext, buildMessages } from "../prompts";
-import type { AiContext, AiMessage, AiToolId, ContentPart } from "../types";
+import type { AiContext, AiMessage, ContentPart } from "../types";
 import type { BuildMessagesFn } from "./types";
 
-/**
- * Build a `buildMessages` function for the manual chat agent — the synthesized
- * agent the AiPanel uses to preserve its existing task-tool selector UX. This
- * delegates to the legacy `buildMessages()` so behavior is bit-identical.
- */
-export function makeManualAgentBuildMessages(args: {
-  tool: AiToolId;
+export interface ChatAgentBuildMessagesArgs {
+  /** Pre-resolved system prompt taken from the AgentDefinition row. */
+  systemPrompt: string;
+  /** Full project context (story bible). */
   context: AiContext;
-  enableToolCalling: boolean;
+  enableToolCalling?: boolean;
+  /** Forwarded to buildMessages. */
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
-  toolPromptOverride?: string;
   images?: { url: string }[];
-}): BuildMessagesFn {
+}
+
+/**
+ * Build a `buildMessages` function for chat-mode agents (the AiPanel flow).
+ * Wraps `prompts.ts/buildMessages` so chat agents share the same prompt
+ * assembly as the legacy task-tool flow once did — full bible context,
+ * <chapter> injection when an active chapter is set, post-chat instructions,
+ * etc. — but reads its system content from the agent definition row.
+ */
+export function makeChatAgentBuildMessages(
+  args: ChatAgentBuildMessagesArgs,
+): BuildMessagesFn {
   return ({ history, userInput, skipUserPrompt }) =>
-    buildMessages(args.tool, userInput ?? "", args.context, history, {
+    buildMessages(args.systemPrompt, userInput ?? "", args.context, history, {
       postChatInstructions: args.postChatInstructions,
       postChatInstructionsDepth: args.postChatInstructionsDepth,
       assistantPrefill: args.assistantPrefill,
       customSystemPrompt: args.customSystemPrompt,
-      toolPromptOverride: args.toolPromptOverride,
       images: args.images,
-      enableToolCalling: args.enableToolCalling,
+      enableToolCalling: args.enableToolCalling ?? false,
       skipUserPrompt,
     });
 }
@@ -48,9 +55,9 @@ interface AgentBuildMessagesArgs {
 }
 
 /**
- * Build a `buildMessages` function for proper pipeline agents. Skips the
- * legacy task-tool resolution — `systemPrompt` is used verbatim. Reuses the
- * cacheable agentic-context block so prompt caching benefits carry over.
+ * Build a `buildMessages` function for pipeline agents. Uses a minimal
+ * cacheable context block (project metadata + style guide only) — pipeline
+ * agents fetch deeper data on demand via tools.
  */
 export function makeAgentBuildMessages(
   args: AgentBuildMessagesArgs,

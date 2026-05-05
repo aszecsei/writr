@@ -4,6 +4,23 @@ import { immer } from "zustand/middleware/immer";
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export type DocumentType = "chapter" | "worldbuilding" | "style-guide";
 
+/**
+ * Cross-component editor command. The AI panel posts these via
+ * `requestInsertAtCursor` so the active TipTap editor (held as a ref inside
+ * ChapterEditor) can apply them. The editor consumes the command and clears
+ * it. Selection-based commands embed the range directly so the consumer
+ * doesn't have to read from elsewhere on a stale closure.
+ */
+export interface PendingInsertion {
+  /** Markdown to insert. Converted to ProseMirror nodes by the consumer. */
+  markdown: string;
+  /**
+   * When set, replace this range. Otherwise insert at the current cursor.
+   * Captured at submit time so a later cursor move doesn't change the target.
+   */
+  replaceRange?: { from: number; to: number };
+}
+
 interface EditorState {
   activeDocumentId: string | null;
   activeDocumentType: DocumentType | null;
@@ -14,6 +31,7 @@ interface EditorState {
   selectedText: string | null;
   selectedRange: { from: number; to: number } | null;
   contentVersion: number;
+  pendingInsertion: PendingInsertion | null;
 
   setActiveDocument: (id: string, type: DocumentType) => void;
   clearActiveDocument: () => void;
@@ -25,6 +43,8 @@ interface EditorState {
   setSelection: (text: string, from: number, to: number) => void;
   clearSelection: () => void;
   bumpContentVersion: () => void;
+  requestInsertAtCursor: (insertion: PendingInsertion) => void;
+  clearPendingInsertion: () => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -38,6 +58,7 @@ export const useEditorStore = create<EditorState>()(
     selectedText: null,
     selectedRange: null,
     contentVersion: 0,
+    pendingInsertion: null,
 
     setActiveDocument: (id, type) =>
       set((s) => {
@@ -101,6 +122,16 @@ export const useEditorStore = create<EditorState>()(
     bumpContentVersion: () =>
       set((s) => {
         s.contentVersion += 1;
+      }),
+
+    requestInsertAtCursor: (insertion) =>
+      set((s) => {
+        s.pendingInsertion = insertion;
+      }),
+
+    clearPendingInsertion: () =>
+      set((s) => {
+        s.pendingInsertion = null;
       }),
   })),
 );

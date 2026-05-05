@@ -46,7 +46,7 @@ export function Modal({
     >
       <div
         ref={panelRef}
-        className={`modal-panel relative w-full ${maxWidth} rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900`}
+        className={`modal-panel relative w-full ${maxWidth} max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900`}
       >
         <button
           type="button"

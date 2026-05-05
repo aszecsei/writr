@@ -9,8 +9,7 @@ import {
   useState,
 } from "react";
 import { getAppSettings } from "@/db/operations";
-import { getCustomAgent } from "@/db/operations/customAgents";
-import type { AppSettings } from "@/db/schemas";
+import { getAgent } from "@/db/operations/agents";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -28,66 +27,23 @@ import {
 } from "@/hooks/outline/useOutlineGrid";
 import {
   type Agent,
-  makeManualAgentBuildMessages,
+  makeChatAgent,
   type RunAgentCallbacks,
   resolveAgentModel,
   runAgent,
 } from "@/lib/ai/agents";
-import { makeCustomAgent } from "@/lib/ai/agents/builtins/custom";
-import { buildMessages } from "@/lib/ai/prompts";
+import { getAgentBehavior } from "@/lib/ai/agents/builtins/defaults";
 import { PROVIDERS } from "@/lib/ai/providers";
-import type {
-  AiContext,
-  AiMessage,
-  AiToolId,
-  BuiltinAiTool,
-} from "@/lib/ai/types";
-import { BUILTIN_TOOL_IDS } from "@/lib/ai/types";
+import type { AiContext, AiMessage } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { AgentSelector } from "./AgentSelector";
 import { ImageAttachmentPicker } from "./ImageAttachmentPicker";
 import type { Message } from "./MessageList";
 import { MessageList } from "./MessageList";
 import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
-import {
-  customAgentIdFromSelection,
-  isCustomAgentSelection,
-  ToolSelector,
-} from "./ToolSelector";
-
-function formatDebugMessages(messages: AiMessage[], model: string): string {
-  const formatted = messages
-    .map((m) => {
-      const text =
-        typeof m.content === "string"
-          ? m.content
-          : m.content
-              .map((p) =>
-                p.type === "text"
-                  ? p.text
-                  : `[image: ${p.image_url.url.slice(0, 60)}...]`,
-              )
-              .join("");
-      return `--- [${m.role.toUpperCase()}] ---\n${text}`;
-    })
-    .join("\n\n");
-  return `[DRY-RUN] Prompt that would be sent to ${model}:\n\n${formatted}`;
-}
-
-function resolveToolPrompt(
-  toolId: AiToolId,
-  settings: AppSettings,
-): string | undefined {
-  // Check built-in tool overrides
-  if (BUILTIN_TOOL_IDS.includes(toolId as BuiltinAiTool)) {
-    return settings.builtinToolOverrides[toolId];
-  }
-  // Check custom tools
-  const custom = settings.customTools.find((t) => t.id === toolId);
-  return custom?.prompt;
-}
 
 /** Convert UI Message[] to AiMessage[] for the API, including tool call history */
 function messagesToAiHistory(messages: Message[]): AiMessage[] {
@@ -108,7 +64,6 @@ function messagesToAiHistory(messages: Message[]): AiMessage[] {
     } else {
       const msg: AiMessage = { role: m.role, content: m.content };
 
-      // Include tool calls on assistant messages
       if (m.toolCalls?.length) {
         msg.toolCalls = m.toolCalls.map((tc) => ({
           id: tc.id,
@@ -120,7 +75,6 @@ function messagesToAiHistory(messages: Message[]): AiMessage[] {
       result.push(msg);
     }
 
-    // Emit tool result messages after assistant messages that had tool calls
     if (m.toolCalls?.length) {
       for (const tc of m.toolCalls) {
         if (
@@ -163,12 +117,13 @@ export function AiPanel() {
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
   const selectedText = useEditorStore((s) => s.selectedText);
+  const selectedRange = useEditorStore((s) => s.selectedRange);
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const activeChapter = useChapter(
     activeDocumentType === "chapter" ? activeDocumentId : null,
   );
 
-  const [tool, setTool] = useState<AiToolId>("generate-prose");
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -246,7 +201,6 @@ export function AiPanel() {
     activeProjectMode,
   ]);
 
-  /** Wait for user to click Approve or Deny on a write tool call */
   function waitForToolDecision(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       toolCallResolverRef.current = { resolve };
@@ -297,81 +251,38 @@ export function AiPanel() {
     signal: AbortSignal,
     images?: PendingImage[],
   ) {
+    if (!selectedAgentId) {
+      throw new Error("No agent selected.");
+    }
+    const definition = await getAgent(selectedAgentId);
+    if (!definition) {
+      throw new Error("Selected agent no longer exists.");
+    }
+
     const settings = await getAppSettings();
     const context = buildContext();
 
     const aiHistory = messagesToAiHistory(history);
-
-    // Resolve tool prompt override
-    const toolPromptOverride = resolveToolPrompt(tool, settings);
-
     const imageAttachments = images?.map((img) => ({ url: img.url }));
 
-    if (settings.debugMode) {
-      const debugMessages = buildMessages(
-        tool,
-        userMessage,
-        context,
-        aiHistory,
-        {
-          postChatInstructions: settings.postChatInstructions,
-          postChatInstructionsDepth: settings.postChatInstructionsDepth,
-          assistantPrefill: settings.assistantPrefill,
-          customSystemPrompt: settings.customSystemPrompt,
-          toolPromptOverride,
-          images: imageAttachments,
-          enableToolCalling: settings.enableToolCalling ?? false,
-        },
-      );
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: generateId(),
-          role: "assistant",
-          content: formatDebugMessages(
-            debugMessages,
-            settings.providerModels[settings.aiProvider],
-          ),
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-      return;
-    }
+    // Capture the editor selection at submit time so an option insert later
+    // replaces what the user had highlighted, even if they click around.
+    const capturedRange = selectedRange
+      ? { from: selectedRange.from, to: selectedRange.to }
+      : null;
 
-    const enableToolCalling =
-      (settings.enableToolCalling ?? false) && !!projectId;
+    const behavior = getAgentBehavior(definition.kind);
+    const isSpark = behavior === "spark";
 
-    let agent: Agent;
-    if (isCustomAgentSelection(tool)) {
-      const customAgentId = customAgentIdFromSelection(tool);
-      const custom = await getCustomAgent(customAgentId);
-      if (!custom) {
-        throw new Error(`Custom agent not found: ${customAgentId}`);
-      }
-      agent = makeCustomAgent({
-        custom,
-        projectId: projectId ?? "",
-        context,
-      });
-    } else {
-      agent = {
-        id: `manual-${generateId()}`,
-        kind: "manual",
-        enableToolCalling,
-        buildMessages: makeManualAgentBuildMessages({
-          tool,
-          context,
-          enableToolCalling,
-          postChatInstructions: settings.postChatInstructions,
-          postChatInstructionsDepth: settings.postChatInstructionsDepth,
-          assistantPrefill: settings.assistantPrefill,
-          customSystemPrompt: settings.customSystemPrompt,
-          toolPromptOverride,
-          images: imageAttachments,
-        }),
-        agentContext: { projectId: projectId ?? "", agentKind: "manual" },
-      };
-    }
+    const agent: Agent = makeChatAgent({
+      definition,
+      projectId: projectId ?? "",
+      context,
+      customSystemPrompt: settings.customSystemPrompt,
+      postChatInstructions: settings.postChatInstructions,
+      postChatInstructionsDepth: settings.postChatInstructionsDepth,
+      images: imageAttachments,
+    });
 
     const model = resolveAgentModel(agent, settings);
     if (!model.apiKey) {
@@ -424,6 +335,9 @@ export function AiPanel() {
                   reasoning: reasoning ?? m.reasoning,
                   finishReason,
                   durationMs,
+                  // Mark spark messages so MessageList renders option cards.
+                  sparkOptions: isSpark ? true : m.sparkOptions,
+                  sparkCapturedRange: isSpark ? capturedRange : undefined,
                 }
               : m,
           ),
@@ -466,7 +380,8 @@ export function AiPanel() {
       userInput: userMessage,
       history: aiHistory,
       model,
-      stream: settings.streamResponses,
+      // Spark needs the full response in one shot to parse options reliably.
+      stream: isSpark ? false : settings.streamResponses,
       signal,
       ...callbacks,
     });
@@ -500,7 +415,6 @@ export function AiPanel() {
     abortControllerRef.current = controller;
 
     try {
-      // Get current messages for history (before adding user message)
       const history = messages;
       await generateAiResponse(
         userMessage,
@@ -509,13 +423,11 @@ export function AiPanel() {
         attachedImages,
       );
 
-      // Selection is consumed once per submit
       if (selectedText) {
         clearSelection();
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        // Request was cancelled, don't show error
         return;
       }
       setError(err instanceof Error ? err.message : "Request failed");
@@ -531,12 +443,10 @@ export function AiPanel() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    // Resolve any pending tool approval as denied
     if (toolCallResolverRef.current) {
       toolCallResolverRef.current.resolve(false);
       toolCallResolverRef.current = null;
     }
-    // Remove incomplete assistant message
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant" && last.durationMs == null) {
@@ -550,7 +460,6 @@ export function AiPanel() {
   }
 
   function handleDeleteMessage(_id: string, index: number) {
-    // Truncate conversation from that message
     setMessages((prev) => prev.slice(0, index));
   }
 
@@ -573,7 +482,6 @@ export function AiPanel() {
     const msgIndex = messages.findIndex((m) => m.id === editingMessageId);
     if (msgIndex === -1) return;
 
-    // Truncate from that message and add edited message
     const historyBeforeEdit = messages.slice(0, msgIndex);
     const userMsgId = generateId();
     const newUserMsg: Message = {
@@ -614,11 +522,9 @@ export function AiPanel() {
     const msgIndex = messages.findIndex((m) => m.id === id);
     if (msgIndex === -1 || msgIndex === 0) return;
 
-    // Find the preceding user message
     const prevUserMsg = messages[msgIndex - 1];
     if (prevUserMsg.role !== "user") return;
 
-    // Truncate from the assistant message
     const historyBeforeAssistant = messages.slice(0, msgIndex);
     setMessages(historyBeforeAssistant);
     setLoading(true);
@@ -630,7 +536,7 @@ export function AiPanel() {
     try {
       await generateAiResponse(
         prevUserMsg.content,
-        historyBeforeAssistant.slice(0, -1), // Exclude the user message from history
+        historyBeforeAssistant.slice(0, -1),
         controller.signal,
       );
     } catch (err) {
@@ -701,7 +607,7 @@ export function AiPanel() {
             </button>
           )}
         </div>
-        <ToolSelector value={tool} onChange={setTool} />
+        <AgentSelector value={selectedAgentId} onChange={setSelectedAgentId} />
       </div>
 
       <MessageList

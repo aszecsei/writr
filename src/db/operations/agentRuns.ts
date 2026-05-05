@@ -1,7 +1,5 @@
 import { db } from "../database";
 import {
-  type AgentKind,
-  type AgentModelOverride,
   type AgentRun,
   AgentRunSchema,
   type AgentRunStatus,
@@ -19,7 +17,6 @@ export function isTerminalStatus(status: AgentRunStatus): boolean {
 export interface CreateAgentRunInput {
   projectId: string;
   name: string;
-  modelOverrides: Record<AgentKind, AgentModelOverride | null>;
   budgetTokens?: number;
 }
 
@@ -45,7 +42,7 @@ export async function createAgentRun(
     currentTier: 0,
     currentSnapshotManifestId: null,
     readerPasses: [],
-    modelOverrides: input.modelOverrides,
+    modelOverrides: {},
     budgetTokens: input.budgetTokens ?? 1_000_000,
     totalTokenUsage: {
       promptTokens: 0,

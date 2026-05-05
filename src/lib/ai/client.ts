@@ -5,11 +5,10 @@ import type {
   AiResponse,
   AiSettings,
   AiStreamChunk,
-  AiToolId,
 } from "./types";
 
 function buildRequestBody(
-  tool: AiToolId,
+  agentSystemPrompt: string,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
@@ -20,17 +19,16 @@ function buildRequestBody(
     apiKey: settings.apiKey,
     model: settings.model,
     provider: settings.provider,
-    messages: buildMessages(tool, userPrompt, context, history, {
+    messages: buildMessages(agentSystemPrompt, userPrompt, context, history, {
       postChatInstructions: settings.postChatInstructions,
       postChatInstructionsDepth: settings.postChatInstructionsDepth,
       assistantPrefill: settings.assistantPrefill,
       customSystemPrompt: settings.customSystemPrompt,
-      toolPromptOverride: settings.toolPromptOverride,
       images: settings.images,
       enableToolCalling: !!settings.toolDefinitions?.length,
       skipUserPrompt: settings.skipUserPrompt,
     }),
-    temperature: tool === "generate-prose" ? 1.0 : 0.5,
+    temperature: 0.7,
     max_tokens: 24 * 1024,
     stream,
   };
@@ -76,7 +74,7 @@ async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
 }
 
 export async function callAi(
-  tool: AiToolId,
+  agentSystemPrompt: string,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
@@ -84,7 +82,14 @@ export async function callAi(
   signal?: AbortSignal,
 ): Promise<AiResponse> {
   const response = await fetchAi(
-    buildRequestBody(tool, userPrompt, context, settings, false, history),
+    buildRequestBody(
+      agentSystemPrompt,
+      userPrompt,
+      context,
+      settings,
+      false,
+      history,
+    ),
     signal,
   );
   return await response.json();
@@ -122,7 +127,7 @@ export async function describeImage(
 }
 
 export async function* streamAi(
-  tool: AiToolId,
+  agentSystemPrompt: string,
   userPrompt: string,
   context: AiContext,
   settings: AiSettings,
@@ -130,7 +135,14 @@ export async function* streamAi(
   signal?: AbortSignal,
 ): AsyncGenerator<AiStreamChunk> {
   const response = await fetchAi(
-    buildRequestBody(tool, userPrompt, context, settings, true, history),
+    buildRequestBody(
+      agentSystemPrompt,
+      userPrompt,
+      context,
+      settings,
+      true,
+      history,
+    ),
     signal,
   );
 
