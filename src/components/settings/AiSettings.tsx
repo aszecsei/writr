@@ -43,6 +43,7 @@ interface AiSettingsProps {
   onDebugModeChange: (enabled: boolean) => void;
   onEnableToolCallingChange: (enabled: boolean) => void;
   onConfigureAi: () => void;
+  onManageCustomAgents: () => void;
   inputClass: string;
   labelClass: string;
 }
@@ -102,6 +103,7 @@ export function AiSettings({
   onDebugModeChange,
   onEnableToolCallingChange,
   onConfigureAi,
+  onManageCustomAgents,
   inputClass,
   labelClass,
 }: AiSettingsProps) {
@@ -222,14 +224,24 @@ export function AiSettings({
                 approval)
               </span>
             </label>
-            <button
-              type="button"
-              onClick={onConfigureAi}
-              className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
-            >
-              <Settings2 size={14} />
-              Configure AI Prompts &amp; Tools
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onConfigureAi}
+                className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
+              >
+                <Settings2 size={14} />
+                Configure AI Prompts &amp; Tools
+              </button>
+              <button
+                type="button"
+                onClick={onManageCustomAgents}
+                className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
+              >
+                <Settings2 size={14} />
+                Manage Custom Agents
+              </button>
+            </div>
           </>
         )}
       </div>

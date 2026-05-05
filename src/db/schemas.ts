@@ -306,6 +306,29 @@ export const AgentModelOverrideSchema = z.object({
 });
 export type AgentModelOverride = z.infer<typeof AgentModelOverrideSchema>;
 
+/**
+ * User-defined agent. Saved configuration for a custom AI workflow — system
+ * prompt + tool subset + optional model override + optional per-tool prompt
+ * override. Invoked from the AiPanel as an alternative to the legacy
+ * task-tool selector. Phase 4 polish.
+ */
+export const CustomAgentSchema = z.object({
+  id,
+  /** Per-project so they back up with the project. */
+  projectId: projectFk.nullable().default(null),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  systemPrompt: z.string().min(1),
+  /** Tool ids the agent may use. Empty = no tools (text-only). */
+  allowedToolIds: z.array(z.string()).default([]),
+  modelOverride: AgentModelOverrideSchema.nullable().default(null),
+  /** Optional assistant prefill; piped through to the runner. */
+  assistantPrefill: z.string().default(""),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type CustomAgent = z.infer<typeof CustomAgentSchema>;
+
 // ─── App Settings (singleton) ────────────────────────────────────────
 
 export const PrimaryColorEnum = z.enum([

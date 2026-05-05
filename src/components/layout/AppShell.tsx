@@ -10,6 +10,8 @@ import { ExportDialog } from "@/components/export/ExportDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
 import { AiConfigDialog } from "@/components/settings/AiConfigDialog";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
+import { CustomAgentEditor } from "@/components/settings/CustomAgentEditor";
+import { CustomAgentsManager } from "@/components/settings/CustomAgentsManager";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import {
   SprintConfigDialog,
@@ -91,6 +93,8 @@ export function AppShell({ children }: AppShellProps) {
         <SprintWidget />
         <AppSettingsDialog />
         <AiConfigDialog />
+        <CustomAgentsManager />
+        <CustomAgentEditor />
         <DictionaryManagerDialog />
         <VersionHistoryDialog />
         <SprintConfigDialog />
@@ -125,6 +129,8 @@ export function AppShell({ children }: AppShellProps) {
       </Group>
       <AppSettingsDialog />
       <AiConfigDialog />
+      <CustomAgentsManager />
+      <CustomAgentEditor />
       <DictionaryManagerDialog />
       <VersionHistoryDialog />
       <ExportDialog />

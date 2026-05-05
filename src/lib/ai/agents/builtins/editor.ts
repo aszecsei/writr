@@ -2,6 +2,7 @@ import type { ReaderBibleViewEntry, WorkUnit } from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
+import { withScreenplaySuffix } from "./screenplay";
 
 const EDITOR_TOOLS = [
   "bible_read",
@@ -65,6 +66,8 @@ export function makeEditorAgent(input: MakeEditorAgentInput): Agent {
     },
   ];
 
+  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+
   return {
     id: `editor:${input.runId}:wu-${input.workUnit.id}`,
     kind: "editor",
@@ -73,7 +76,7 @@ export function makeEditorAgent(input: MakeEditorAgentInput): Agent {
     allowedToolIds: EDITOR_TOOLS,
     maxIterations: 32,
     buildMessages: makeAgentBuildMessages({
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       context: input.context,
       initialMessages,
       enableToolCalling: true,
@@ -83,7 +86,7 @@ export function makeEditorAgent(input: MakeEditorAgentInput): Agent {
       runId: input.runId,
       agentKind: "editor",
     },
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt,
   };
 }
 

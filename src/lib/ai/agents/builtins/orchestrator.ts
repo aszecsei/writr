@@ -2,6 +2,7 @@ import type { AgentNote, AgentQuestion } from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
+import { withScreenplaySuffix } from "./screenplay";
 
 const ORCHESTRATOR_TOOLS = [
   "bible_read",
@@ -89,6 +90,8 @@ export function makeOrchestratorAgent(
     },
   ];
 
+  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+
   return {
     id: `orchestrator:${input.runId}:tier-${input.tier}`,
     kind: "orchestrator",
@@ -97,7 +100,7 @@ export function makeOrchestratorAgent(
     allowedToolIds: ORCHESTRATOR_TOOLS,
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       context: input.context,
       initialMessages,
       enableToolCalling: true,
@@ -107,7 +110,7 @@ export function makeOrchestratorAgent(
       runId: input.runId,
       agentKind: "orchestrator",
     },
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt,
   };
 }
 

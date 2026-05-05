@@ -2,6 +2,7 @@ import type { ProposedEdit, WorkUnit } from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
+import { withScreenplaySuffix } from "./screenplay";
 
 const VERIFIER_TOOLS = [
   "bible_read",
@@ -78,6 +79,8 @@ export function makeVerifierAgent(input: MakeVerifierAgentInput): Agent {
     },
   ];
 
+  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+
   return {
     id: `verifier:${input.runId}:tier-${input.tier}`,
     kind: "verifier",
@@ -86,7 +89,7 @@ export function makeVerifierAgent(input: MakeVerifierAgentInput): Agent {
     allowedToolIds: VERIFIER_TOOLS,
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       context: input.context,
       initialMessages,
       enableToolCalling: true,
@@ -96,7 +99,7 @@ export function makeVerifierAgent(input: MakeVerifierAgentInput): Agent {
       runId: input.runId,
       agentKind: "verifier",
     },
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt,
   };
 }
 

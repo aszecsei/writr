@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai/agents/pipeline/runEngine";
 import { EditApprovalPanel } from "./EditApprovalPanel";
 import { NotesQuestionsPanel } from "./NotesQuestionsPanel";
+import { PauseResumeBanner } from "./PauseResumeBanner";
 import { PlanView } from "./PlanView";
 import { ReaderBibleView } from "./ReaderBibleView";
 import { SnapshotsPanel } from "./SnapshotsPanel";
@@ -142,6 +143,8 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
             {actionError}
           </p>
         )}
+
+        <PauseResumeBanner run={run} projectId={projectId} />
 
         <div className="mt-4 flex gap-2">
           {TABS.map((t) => (
