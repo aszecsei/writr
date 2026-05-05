@@ -64,6 +64,29 @@ describe("CollabClient: lifecycle", () => {
     });
   });
 
+  it("defaults to 'view' role when none is provided at construction", () => {
+    const transport = new MockTransport();
+    const client = new CollabClient({ transport, key });
+    expect(client.role).toBe("view");
+  });
+
+  it("updates role from the server welcome message", async () => {
+    const transport = new MockTransport();
+    const client = new CollabClient({ transport, key });
+    expect(client.role).toBe("view");
+    await deliver(client, {
+      type: "welcome",
+      peerId: "p",
+      role: "edit",
+      peerCount: 1,
+      hostPresent: false,
+    });
+    expect(client.role).toBe("edit");
+    // After welcome, formerly-blocked outgoing y-update should now be allowed.
+    await client.sendYUpdate("prose", new Uint8Array([1]));
+    expect(transport.sent.filter((m) => m.type === "y-update")).toHaveLength(1);
+  });
+
   it("emits close and refuses further sends after close", async () => {
     const transport = new MockTransport();
     const client = new CollabClient({ transport, key, role: "edit" });

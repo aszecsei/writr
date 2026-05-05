@@ -62,13 +62,19 @@ export interface ClientEventMap {
 export interface CollabClientOptions {
   transport: CollabTransport;
   key: RoomKey;
-  role: Role;
+  /**
+   * Role hint at construction. Used for client-side outgoing gating until the
+   * server confirms the actual role in its `welcome` message. Defaults to
+   * `"view"` (most restrictive) so unknown-role guests don't accidentally
+   * send anything before welcome arrives. The server is always authoritative.
+   */
+  role?: Role;
 }
 
 const DEFAULT_STREAM_ID = 1;
 
 export class CollabClient {
-  readonly role: Role;
+  private roleValue: Role;
   private readonly transport: CollabTransport;
   private readonly key: RoomKey;
   private readonly listeners = new Map<
@@ -85,7 +91,11 @@ export class CollabClient {
   constructor(opts: CollabClientOptions) {
     this.transport = opts.transport;
     this.key = opts.key;
-    this.role = opts.role;
+    this.roleValue = opts.role ?? "view";
+  }
+
+  get role(): Role {
+    return this.roleValue;
   }
 
   get peerId(): string | null {
@@ -144,6 +154,7 @@ export class CollabClient {
     switch (message.type) {
       case "welcome":
         this.peerIdValue = message.peerId;
+        this.roleValue = message.role;
         this.emit("welcome", {
           peerId: message.peerId,
           role: message.role,
