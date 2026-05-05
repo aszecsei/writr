@@ -94,6 +94,8 @@ export interface HostConnection {
   hostToken: string;
   keyEncoded: string;
   shareUrls: ShareUrls;
+  peerId: string;
+  peerCount: number;
 }
 
 export async function connectAsHost(
@@ -113,8 +115,9 @@ export async function connectAsHost(
   const client = new CollabClient({ transport, key, role: "host" });
   wireWebSocketToClient(ws, client);
 
+  let hostWelcome: Awaited<ReturnType<typeof waitForWelcome>>;
   try {
-    await waitForWelcome(client, opts.signal);
+    hostWelcome = await waitForWelcome(client, opts.signal);
   } catch (err) {
     client.close();
     throw err;
@@ -151,6 +154,8 @@ export async function connectAsHost(
     hostToken: room.hostToken,
     keyEncoded,
     shareUrls,
+    peerId: hostWelcome.peerId,
+    peerCount: hostWelcome.peerCount,
   };
 }
 
@@ -169,6 +174,7 @@ export interface GuestConnection {
   role: Role;
   peerId: string;
   hostPresent: boolean;
+  peerCount: number;
 }
 
 export async function connectAsGuest(
@@ -196,6 +202,7 @@ export async function connectAsGuest(
     role: welcome.role,
     peerId: welcome.peerId,
     hostPresent: welcome.hostPresent,
+    peerCount: welcome.peerCount,
   };
 }
 
