@@ -18,8 +18,8 @@ const projectId = "a1111111-1111-4111-a111-111111111111";
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 40 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(40);
+  it("exports 41 tool definitions", () => {
+    expect(getToolDefinitionsForModel()).toHaveLength(41);
   });
 
   it("has unique tool IDs", () => {
@@ -505,6 +505,86 @@ describe("list/read tools (agentic discovery)", () => {
       ctx,
     );
     expect(result.success).toBe(false);
+  });
+
+  it("read_chapter refuses chapters past maxReadableChapterOrder", async () => {
+    const ch1 = makeChapter({ projectId, title: "Ch1", order: 0 });
+    const ch2 = makeChapter({ projectId, title: "Ch2", order: 1 });
+    await db.chapters.bulkAdd([ch1, ch2]);
+    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const allowed = await executeTool(
+      "read_chapter",
+      { id: ch1.id },
+      boundedCtx,
+    );
+    expect(allowed.success).toBe(true);
+    const blocked = await executeTool(
+      "read_chapter",
+      { id: ch2.id },
+      boundedCtx,
+    );
+    expect(blocked.success).toBe(false);
+    expect(blocked.message).toMatch(/beyond the current reading position/);
+  });
+
+  it("read_chapter_range and search_chapter respect maxReadableChapterOrder", async () => {
+    const ch1 = makeChapter({
+      projectId,
+      title: "Ch1",
+      order: 0,
+      content: "alpha\n\nbeta",
+    });
+    const ch2 = makeChapter({
+      projectId,
+      title: "Ch2",
+      order: 1,
+      content: "alpha\n\ngamma",
+    });
+    await db.chapters.bulkAdd([ch1, ch2]);
+    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const range = await executeTool(
+      "read_chapter_range",
+      { id: ch2.id, start: 1 },
+      boundedCtx,
+    );
+    expect(range.success).toBe(false);
+    const search = await executeTool(
+      "search_chapter",
+      { id: ch2.id, query: "alpha" },
+      boundedCtx,
+    );
+    expect(search.success).toBe(false);
+  });
+
+  it("list_chapters and search_chapters filter to bounded chapters", async () => {
+    const ch1 = makeChapter({
+      projectId,
+      title: "Ch1",
+      order: 0,
+      content: "shared term",
+    });
+    const ch2 = makeChapter({
+      projectId,
+      title: "Ch2",
+      order: 1,
+      content: "shared term",
+    });
+    await db.chapters.bulkAdd([ch1, ch2]);
+    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const list = await executeTool("list_chapters", {}, boundedCtx);
+    expect(list.success).toBe(true);
+    const listChapters = list.data?.chapters as { id: string }[];
+    expect(listChapters).toHaveLength(1);
+    expect(listChapters[0].id).toBe(ch1.id);
+    const search = await executeTool(
+      "search_chapters",
+      { query: "shared" },
+      boundedCtx,
+    );
+    expect(search.success).toBe(true);
+    const matches = search.data?.matches as { id: string }[];
+    expect(matches).toHaveLength(1);
+    expect(matches[0].id).toBe(ch1.id);
   });
 
   it("list_locations returns all locations", async () => {

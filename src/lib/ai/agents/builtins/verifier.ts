@@ -3,6 +3,7 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { withVoiceMandate } from "./voice";
 
 const VERIFIER_TOOLS = [
   "bible_read",
@@ -25,7 +26,7 @@ Per work unit:
   - goalAchieved: did the edit accomplish the stated goal? Read the affected chapter and judge.
   - contradictions: does the new content contradict any reader-bible facts? Use bible_read on relevant paths.
   - continuityBreaks: does the edit break continuity with adjacent chapters (e.g. references a scene that no longer fits)?
-  - voiceMismatches: does the new prose match the manuscript's voice? Compare against the voice/ paths in the bible.
+  - voiceMismatches: does the new prose match the manuscript's voice? Compare against the voice/ paths in the bible. This includes drift toward sanitization — if the manuscript renders violence, sex, or transgressive content plainly and the new prose euphemizes, hedges, or softens it, file a voiceMismatch. The editor should match the writer's directness, not retreat from it.
 
 Tier-wide (workUnitId omitted):
   - Look at the chapter set as a whole. Are there reader-knowledge inconsistencies? Has any character behavior become unreadable across the tier?
@@ -72,14 +73,12 @@ export function makeVerifierAgent(input: MakeVerifierAgentInput): Agent {
       role: "user",
       content: buildVerifierBriefing(input),
     },
-    {
-      role: "assistant",
-      content:
-        "Understood. I'll verify each work unit, then run a tier-wide drift sweep.",
-    },
   ];
 
-  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+  const systemPrompt = withScreenplaySuffix(
+    withVoiceMandate(SYSTEM_PROMPT),
+    input.context,
+  );
 
   return {
     id: `verifier:${input.runId}:tier-${input.tier}`,

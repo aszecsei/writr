@@ -1,24 +1,38 @@
 import { countAgentNotesSince } from "@/db/operations/agentNotes";
-import { countAgentQuestionsSince } from "@/db/operations/agentQuestions";
+import {
+  countAgentQuestionsOpen,
+  countAgentQuestionsSince,
+} from "@/db/operations/agentQuestions";
 import {
   appendReaderPass,
   finishReaderPass,
   getAgentRun,
-  updateAgentRun,
+  patchActiveReaderPass,
   updateAgentRunStatus,
 } from "@/db/operations/agentRuns";
+import { getChaptersByProject } from "@/db/operations/chapters";
 import { now } from "@/db/operations/helpers";
 import { countBibleLogEntriesSince } from "@/db/operations/readerBible";
 import { getAppSettings } from "@/db/operations/settings";
-import type { AppSettings } from "@/db/schemas";
-import { makeReaderAgent } from "../builtins/reader";
+import type { AgentRun, Chapter, ReaderMode } from "@/db/schemas";
+import type { AiMessage } from "../../types";
+import {
+  buildComprehensionBriefing,
+  makeReaderAgent,
+} from "../builtins/reader";
 import { resolveAgentModel, runAgent } from "../runner";
-import type {
-  IterationEndInfo,
-  RunAgentCallbacks,
-  ToolCallUpdateInfo,
-} from "../types";
+import type { Agent, RunAgentCallbacks, RunAgentResult } from "../types";
 import type { PipelineEvent, PipelineEventEmitter } from "./events";
+import { withTokenAccounting } from "./tokenAccounting";
+
+/**
+ * Status reason written to the agent run when the cumulative token usage
+ * reaches `budgetTokens`. Exported so the dashboard UI can detect this
+ * specific paused state and surface a "Raise Budget" affordance — keep
+ * the literal in one place to avoid drift.
+ */
+export const BUDGET_EXCEEDED_REASON =
+  "Token budget exceeded; pause and raise budget to continue.";
 
 export interface ReaderLoopOptions {
   runId: string;
@@ -39,14 +53,28 @@ export interface ReaderLoopOptions {
   buildContext: () => Promise<import("../../types").AiContext>;
 }
 
-const DEFAULT_MAX_PASSES = 4;
+const DEFAULT_MAX_PASSES = 12;
 const DEFAULT_DELTA_THRESHOLD = 0.05;
 
 /**
- * Run the Reader iteratively across multiple passes. Termination is the
- * combination of: relative delta below threshold OR max passes reached.
+ * Run the Reader across a state-driven sequence of passes:
  *
- * Returns the final number of passes completed.
+ *   comprehension (one or more passes)
+ *     Forward-only chapter walk. A single pass accumulates conversation
+ *     history across consecutive chapters so the agent can directly
+ *     reference prior chapter text. When the per-iteration prompt-token
+ *     count exceeds `comprehensionContextThreshold`, the pass ends mid-walk
+ *     and the outer loop schedules another comprehension pass starting at
+ *     the next chapter ("soft reset"). The reader bible carries forward.
+ *
+ *   thematic (one pass)
+ *     Single whole-work invocation; motifs/symbols/subtext.
+ *
+ *   self-answer (one or more passes)
+ *     Single whole-work invocation; resolves open questions. Loops until
+ *     relative delta falls below threshold or no questions remain.
+ *
+ * Returns the number of passes completed and the reason for stopping.
  */
 export async function runReaderLoop(
   options: ReaderLoopOptions,
@@ -64,6 +92,12 @@ export async function runReaderLoop(
 
   await updateAgentRunStatus(runId, "reading");
 
+  // Resolve the chapter set once up front so `pickNextMode` can decide when
+  // comprehension is fully covered. Chapter reorders mid-run will not be
+  // reflected — accept that since runs are short.
+  const allChapters = await getChaptersByProject(projectId);
+  const chaptersInScope = filterChapters(allChapters, chapterIdsInScope);
+
   let priorTotal = 0;
   let passNumber = 0;
   let exitReason: "delta" | "max" | "aborted" = "max";
@@ -73,78 +107,85 @@ export async function runReaderLoop(
       exitReason = "aborted";
       break;
     }
-    passNumber += 1;
 
-    const run = await getAgentRun(runId);
-    if (!run) throw new Error(`Agent run not found: ${runId}`);
-
-    // Budget check before launching another pass.
-    const budgetExceeded =
-      run.totalTokenUsage.promptTokens + run.totalTokenUsage.completionTokens >=
-      run.budgetTokens;
-    if (budgetExceeded) {
-      await updateAgentRunStatus(
-        runId,
-        "awaiting-plan-approval",
-        "Token budget exceeded; pause and raise budget to continue.",
-      );
-      onEvent?.({
-        type: "budget-exceeded",
-        runId,
-        usage: run.totalTokenUsage,
-        budget: run.budgetTokens,
-      });
+    const budgetCheck = await checkBudget(runId, onEvent);
+    if (budgetCheck === "exceeded") {
       exitReason = "aborted";
       break;
     }
 
+    const run = await getAgentRun(runId);
+    if (!run) throw new Error(`Agent run not found: ${runId}`);
+
+    const next = pickNextMode(run, chaptersInScope);
+    if (next === null) {
+      // All modes exhausted — comprehension + thematic done, no questions.
+      exitReason = "delta";
+      break;
+    }
+
+    passNumber += 1;
+    const { mode, startFromOrder } = next;
     const passStartIso = now();
     await appendReaderPass(runId, {
       passNumber,
+      mode,
       startedAt: passStartIso,
       completedAt: null,
       newBibleEntries: 0,
       newNotes: 0,
       newQuestions: 0,
+      // Filled in by `patchActiveReaderPass` after each comprehension
+      // chapter completes; remains null for thematic / self-answer.
+      firstChapterOrder: null,
+      lastChapterOrder: null,
     });
 
-    onEvent?.({ type: "reader-pass-start", runId, passNumber });
+    onEvent?.({ type: "reader-pass-start", runId, passNumber, mode });
 
-    const settings = await getAppSettings();
-    const context = await buildContext();
-    const agent = makeReaderAgent({
-      runId,
-      projectId,
-      passNumber,
-      chapterIdsInScope,
-      previousPasses: run.readerPasses,
-      context,
-    });
-
-    const model = resolveAgentModel(agent, settings);
-    if (!model.apiKey) {
-      await updateAgentRunStatus(
-        runId,
-        "error",
-        `No API key configured for provider '${model.provider}'.`,
-      );
-      throw new Error(`No API key configured for provider '${model.provider}'`);
+    let passResult: PassOutcome;
+    switch (mode) {
+      case "comprehension":
+        passResult = await runComprehensionPass(
+          runId,
+          projectId,
+          passNumber,
+          chaptersInScope,
+          startFromOrder ?? 0,
+          signal,
+          onEvent,
+          buildContext,
+        );
+        break;
+      case "thematic":
+        passResult = await runThematicPass(
+          runId,
+          projectId,
+          passNumber,
+          chapterIdsInScope,
+          signal,
+          onEvent,
+          buildContext,
+        );
+        break;
+      case "self-answer":
+        passResult = await runSelfAnswerPass(
+          runId,
+          projectId,
+          passNumber,
+          chapterIdsInScope,
+          signal,
+          onEvent,
+          buildContext,
+        );
+        break;
     }
 
-    const callbacks = makePipelineCallbacks(runId, onEvent, settings);
-
-    await runAgent({
-      agent,
-      // No userInput — the agent's initialMessages carry the briefing.
-      userInput: undefined,
-      history: [],
-      model,
-      stream: settings.streamResponses,
-      signal,
-      ...callbacks,
-    });
-
-    if (signal?.aborted) {
+    if (passResult === "aborted") {
+      exitReason = "aborted";
+      break;
+    }
+    if (passResult === "budget-exceeded") {
       exitReason = "aborted";
       break;
     }
@@ -166,6 +207,7 @@ export async function runReaderLoop(
       type: "reader-pass-complete",
       runId,
       passNumber,
+      mode,
       delta: { newBibleEntries, newNotes, newQuestions },
     });
 
@@ -173,17 +215,25 @@ export async function runReaderLoop(
     const relative = priorTotal === 0 ? Infinity : totalDelta / priorTotal;
     priorTotal += totalDelta;
 
-    // Pass 1 always runs to completion regardless of delta — pass 2 onwards
-    // can short-circuit when reconciliation has settled.
-    if (passNumber >= 2 && relative < deltaThreshold) {
-      exitReason = "delta";
-      break;
+    // Thematic always runs to completion. Comprehension may end mid-walk
+    // (soft reset) and the outer loop will schedule another comprehension
+    // pass via pickNextMode. Self-answer is the only mode that can
+    // short-circuit the whole loop, and it additionally stops when there
+    // are no remaining open questions.
+    if (mode === "self-answer") {
+      if (relative < deltaThreshold) {
+        exitReason = "delta";
+        break;
+      }
+      const remaining = await countAgentQuestionsOpen(runId);
+      if (remaining === 0) {
+        exitReason = "delta";
+        break;
+      }
     }
   }
 
-  if (exitReason === "max") {
-    await updateAgentRunStatus(runId, "awaiting-plan-approval");
-  } else if (exitReason === "delta") {
+  if (exitReason === "max" || exitReason === "delta") {
     await updateAgentRunStatus(runId, "awaiting-plan-approval");
   } else if (exitReason === "aborted" && !signal?.aborted) {
     // Budget pause — leave status as awaiting-plan-approval.
@@ -195,44 +245,329 @@ export async function runReaderLoop(
 }
 
 /**
- * Build the runAgent callbacks that thread token-usage updates back into the
- * agentRuns row and emit pipeline events for UI consumers.
+ * State-driven pass dispatcher. Returns the next mode the loop should run,
+ * along with `startFromOrder` for comprehension resumption. Returns `null`
+ * when there is nothing left to do.
+ *
+ *   - If any chapter has not yet been covered by a comprehension pass →
+ *     comprehension, starting at the first uncovered chapter.
+ *   - Else if no thematic pass has run → thematic.
+ *   - Else if open questions remain → self-answer.
+ *   - Else → null.
  */
-function makePipelineCallbacks(
+function pickNextMode(
+  run: AgentRun,
+  chaptersInScope: Chapter[],
+): { mode: ReaderMode; startFromOrder?: number } | null {
+  const comprehensionPasses = run.readerPasses.filter(
+    (p) => p.mode === "comprehension",
+  );
+  const lastComprehensionEnd = comprehensionPasses.reduce<number | null>(
+    (acc, p) =>
+      p.lastChapterOrder === null
+        ? acc
+        : acc === null
+          ? p.lastChapterOrder
+          : Math.max(acc, p.lastChapterOrder),
+    null,
+  );
+  const lastChapterOrderInScope =
+    chaptersInScope.length > 0
+      ? Math.max(...chaptersInScope.map((c) => c.order))
+      : -1;
+
+  const allComprehensionDone =
+    chaptersInScope.length === 0 ||
+    (lastComprehensionEnd !== null &&
+      lastComprehensionEnd >= lastChapterOrderInScope);
+
+  if (!allComprehensionDone) {
+    const startFromOrder =
+      lastComprehensionEnd === null ? 0 : lastComprehensionEnd + 1;
+    return { mode: "comprehension", startFromOrder };
+  }
+
+  const hasThematic = run.readerPasses.some((p) => p.mode === "thematic");
+  if (!hasThematic) return { mode: "thematic" };
+
+  return { mode: "self-answer" };
+}
+
+type PassOutcome = "completed" | "aborted" | "budget-exceeded";
+
+/**
+ * Comprehension pass (one segment): walk chapters in canonical order
+ * starting at `startFromOrder`, threading conversation history across
+ * chapters in a single accumulating segment. The per-chapter briefing is
+ * pushed into segmentHistory as a user message so the model sees prior
+ * chapter content directly when reading the current one. After each
+ * chapter, if `lastIterationPromptTokens` exceeds the configured threshold,
+ * the segment ends — the outer loop will schedule a new comprehension pass
+ * starting at the next chapter (soft reset). The reader bible is the
+ * persistent memory across segments.
+ */
+async function runComprehensionPass(
+  runId: string,
+  projectId: string,
+  passNumber: number,
+  chaptersInScope: Chapter[],
+  startFromOrder: number,
+  signal: AbortSignal | undefined,
+  onEvent: PipelineEventEmitter | undefined,
+  buildContext: () => Promise<import("../../types").AiContext>,
+): Promise<PassOutcome> {
+  const segmentChapters = chaptersInScope.filter(
+    (c) => c.order >= startFromOrder,
+  );
+  if (segmentChapters.length === 0) return "completed";
+
+  const totalChapters = chaptersInScope.length;
+  let segmentHistory: AiMessage[] = [];
+  let firstChapterInSegmentRecorded = false;
+
+  for (let i = 0; i < segmentChapters.length; i++) {
+    if (signal?.aborted) return "aborted";
+
+    // Re-check budget between chapters so a long pass can pause cleanly
+    // rather than blow past the configured token budget.
+    const budgetCheck = await checkBudget(runId, onEvent);
+    if (budgetCheck === "exceeded") return "budget-exceeded";
+
+    const chapter = segmentChapters[i];
+    // chapterIndex is the chapter's 1-based position in the full scope, not
+    // within this segment, so the agent sees a stable chapter number across
+    // soft resets.
+    const chapterIndex =
+      chaptersInScope.findIndex((c) => c.id === chapter.id) + 1;
+
+    onEvent?.({
+      type: "reader-chapter-start",
+      runId,
+      passNumber,
+      chapterId: chapter.id,
+      chapterIndex,
+      totalChapters,
+    });
+
+    const chapterStartIso = now();
+    const settings = await getAppSettings();
+    const context = await buildContext();
+    const agent = makeReaderAgent({
+      runId,
+      projectId,
+      passNumber,
+      mode: "comprehension",
+      chapter,
+      chapterIndex,
+      totalChapters,
+      context,
+    });
+
+    const briefing = buildComprehensionBriefing({
+      chapter,
+      chapterIndex,
+      totalChapters,
+      segmentPosition: i === 0 ? "first" : "continuing",
+    });
+    // Append the briefing as a user message into the segment history so it
+    // persists across runAgent iterations *and* across chapters within this
+    // segment. (runAgent's `userInput` parameter only flows on iteration 1.)
+    segmentHistory = [...segmentHistory, { role: "user", content: briefing }];
+
+    const result = await invokeAgent(
+      agent,
+      runId,
+      settings,
+      signal,
+      onEvent,
+      segmentHistory,
+    );
+
+    if (signal?.aborted || result.aborted) return "aborted";
+
+    segmentHistory = result.history;
+
+    // Patch the in-flight pass row with cumulative coverage so the UI sees
+    // progress chapter-by-chapter inside a long segment.
+    if (!firstChapterInSegmentRecorded) {
+      await patchActiveReaderPass(runId, {
+        firstChapterOrder: chapter.order,
+        lastChapterOrder: chapter.order,
+      });
+      firstChapterInSegmentRecorded = true;
+    } else {
+      await patchActiveReaderPass(runId, { lastChapterOrder: chapter.order });
+    }
+
+    const [newBibleEntries, newNotes, newQuestions] = await Promise.all([
+      countBibleLogEntriesSince(runId, chapterStartIso),
+      countAgentNotesSince(runId, chapterStartIso),
+      countAgentQuestionsSince(runId, chapterStartIso),
+    ]);
+
+    onEvent?.({
+      type: "reader-chapter-complete",
+      runId,
+      passNumber,
+      chapterId: chapter.id,
+      chapterIndex,
+      totalChapters,
+      delta: { newBibleEntries, newNotes, newQuestions },
+    });
+
+    // Soft-reset trigger: if this iteration's prompt size crossed the
+    // configured threshold, end the segment after this chapter. The outer
+    // loop will schedule another comprehension pass starting at the next
+    // chapter with empty history. Reader bible carries forward.
+    const postRun = await getAgentRun(runId);
+    if (
+      postRun &&
+      postRun.lastIterationPromptTokens >
+        settings.comprehensionContextThreshold &&
+      i < segmentChapters.length - 1
+    ) {
+      return "completed";
+    }
+  }
+
+  return "completed";
+}
+
+async function runThematicPass(
+  runId: string,
+  projectId: string,
+  passNumber: number,
+  chapterIdsInScope: string[] | undefined,
+  signal: AbortSignal | undefined,
+  onEvent: PipelineEventEmitter | undefined,
+  buildContext: () => Promise<import("../../types").AiContext>,
+): Promise<PassOutcome> {
+  const settings = await getAppSettings();
+  const context = await buildContext();
+  const agent = makeReaderAgent({
+    runId,
+    projectId,
+    passNumber,
+    mode: "thematic",
+    chapterIdsInScope,
+    context,
+  });
+
+  await invokeAgent(agent, runId, settings, signal, onEvent);
+
+  if (signal?.aborted) return "aborted";
+  return "completed";
+}
+
+async function runSelfAnswerPass(
+  runId: string,
+  projectId: string,
+  passNumber: number,
+  chapterIdsInScope: string[] | undefined,
+  signal: AbortSignal | undefined,
+  onEvent: PipelineEventEmitter | undefined,
+  buildContext: () => Promise<import("../../types").AiContext>,
+): Promise<PassOutcome> {
+  // Skip self-answer entirely when there are no questions to resolve. This
+  // keeps the loop cheap on projects that don't accumulate questions.
+  const remaining = await countAgentQuestionsOpen(runId);
+  if (remaining === 0) return "completed";
+
+  const settings = await getAppSettings();
+  const context = await buildContext();
+  const agent = makeReaderAgent({
+    runId,
+    projectId,
+    passNumber,
+    mode: "self-answer",
+    chapterIdsInScope,
+    context,
+  });
+
+  await invokeAgent(agent, runId, settings, signal, onEvent);
+
+  if (signal?.aborted) return "aborted";
+  return "completed";
+}
+
+function filterChapters(
+  all: Chapter[],
+  chapterIdsInScope: string[] | undefined,
+): Chapter[] {
+  if (!chapterIdsInScope || chapterIdsInScope.length === 0) return all;
+  const inScope = new Set(chapterIdsInScope);
+  return all.filter((c) => inScope.has(c.id));
+}
+
+async function invokeAgent(
+  agent: Agent,
+  runId: string,
+  settings: Awaited<ReturnType<typeof getAppSettings>>,
+  signal: AbortSignal | undefined,
+  onEvent: PipelineEventEmitter | undefined,
+  history: AiMessage[] = [],
+): Promise<RunAgentResult> {
+  const model = resolveAgentModel(agent, settings);
+  if (!model.apiKey) {
+    await updateAgentRunStatus(
+      runId,
+      "error",
+      `No API key configured for provider '${model.provider}'.`,
+    );
+    throw new Error(`No API key configured for provider '${model.provider}'`);
+  }
+
+  const origin = { agentKind: agent.kind, agentId: agent.id };
+  const baseCallbacks: RunAgentCallbacks = {
+    onIterationStart: (info) =>
+      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
+    onIterationEnd: (info) =>
+      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
+    onChunk: ({ messageId, chunk }) =>
+      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
+    onToolCallsCollected: (info) =>
+      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
+    onToolCallUpdate: (info) =>
+      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
+  };
+  const callbacks = withTokenAccounting(runId, baseCallbacks);
+
+  return runAgent({
+    agent,
+    // The per-chapter briefing is supplied via `history` (pushed by the
+    // comprehension loop) for thematic/self-answer agents that still rely
+    // on initialMessages for their briefing, history will simply be empty.
+    userInput: undefined,
+    history,
+    model,
+    stream: settings.streamResponses,
+    signal,
+    ...callbacks,
+  });
+}
+
+async function checkBudget(
   runId: string,
   onEvent: PipelineEventEmitter | undefined,
-  settings: AppSettings,
-): RunAgentCallbacks {
-  const _ = settings; // reserved for future per-iteration overrides
-  return {
-    onIterationStart: (info) => {
-      onEvent?.({ type: "agent-iteration-start", runId, info });
-    },
-    onIterationEnd: async (info: IterationEndInfo) => {
-      // Approximate token usage by character count (1 token ≈ 4 chars). We
-      // don't yet thread real usage from the adapter response; this is a
-      // conservative budget proxy until we wire that through.
-      const approxTokens = Math.ceil(
-        (info.content.length + (info.reasoning?.length ?? 0)) / 4,
-      );
-      const run = await getAgentRun(runId);
-      if (!run) return;
-      const next = {
-        promptTokens: run.totalTokenUsage.promptTokens,
-        completionTokens: run.totalTokenUsage.completionTokens + approxTokens,
-      };
-      await updateAgentRun(runId, { totalTokenUsage: next });
-      onEvent?.({ type: "agent-iteration-end", runId, info });
-    },
-    onToolCallsCollected: (info) => {
-      onEvent?.({ type: "agent-tool-calls", runId, info });
-    },
-    onToolCallUpdate: (info: ToolCallUpdateInfo) => {
-      onEvent?.({ type: "agent-tool-update", runId, info });
-    },
-    // No `approveToolCall` — pipeline tools auto-approve (writes go to
-    // staging tables; the only human gates are at plan/edit approval time).
-  };
+): Promise<"ok" | "exceeded"> {
+  const run = await getAgentRun(runId);
+  if (!run) throw new Error(`Agent run not found: ${runId}`);
+  const used =
+    run.totalTokenUsage.promptTokens + run.totalTokenUsage.completionTokens;
+  if (used < run.budgetTokens) return "ok";
+
+  await updateAgentRunStatus(
+    runId,
+    "awaiting-plan-approval",
+    BUDGET_EXCEEDED_REASON,
+  );
+  onEvent?.({
+    type: "budget-exceeded",
+    runId,
+    usage: run.totalTokenUsage,
+    budget: run.budgetTokens,
+  });
+  return "exceeded";
 }
 
 export type { PipelineEvent };

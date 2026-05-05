@@ -258,6 +258,92 @@ describe("createAnthropicAdapter", () => {
       }
     });
 
+    it("preserves tool message content when wrapped in a cache_control text part", async () => {
+      // Regression: `withTrailingCacheControl` wraps the most recent history
+      // message's string content into a TextContentPart array so Anthropic
+      // prompt caching spans tool-calling iterations. Previously the tool
+      // branch checked `typeof content === "string"` and silently dropped the
+      // array, sending an empty tool_result back to the model on every
+      // follow-up turn — exactly what reproduced as "I received an empty
+      // result" after a successful list_chapters call.
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: "text", text: "ok" }],
+        model: "claude-sonnet-4-5-20250929",
+        stop_reason: "end_turn",
+        usage: { input_tokens: 10, output_tokens: 5 },
+      });
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_1",
+          content: [
+            {
+              type: "text",
+              text: '{"success":true,"chapters":["one","two"]}',
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+        },
+      ];
+
+      await adapter.complete("sk-ant-test", { ...baseParams, messages });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      const toolResultMsg = createCall.messages[1];
+      expect(toolResultMsg.role).toBe("user");
+      expect(toolResultMsg.content[0]).toEqual({
+        type: "tool_result",
+        tool_use_id: "call_1",
+        content: '{"success":true,"chapters":["one","two"]}',
+        cache_control: { type: "ephemeral" },
+      });
+    });
+
+    it("attaches cache_control to the last tool entry only", async () => {
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: "text", text: "ok" }],
+        model: "claude-sonnet-4-5-20250929",
+        stop_reason: "end_turn",
+        usage: { input_tokens: 10, output_tokens: 5 },
+      });
+
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        tools: [
+          {
+            id: "tool_a",
+            name: "tool_a",
+            description: "A",
+            parameters: { type: "object", properties: {} },
+          },
+          {
+            id: "tool_b",
+            name: "tool_b",
+            description: "B",
+            parameters: { type: "object", properties: {} },
+          },
+          {
+            id: "tool_c",
+            name: "tool_c",
+            description: "C",
+            parameters: { type: "object", properties: {} },
+          },
+        ],
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.tools).toHaveLength(3);
+      expect(createCall.tools[0].cache_control).toBeUndefined();
+      expect(createCall.tools[1].cache_control).toBeUndefined();
+      expect(createCall.tools[2].cache_control).toEqual({ type: "ephemeral" });
+    });
+
     it("flattens plain-text content parts without images or cache_control", async () => {
       mockCreate.mockResolvedValueOnce({
         content: [{ type: "text", text: "ok" }],
@@ -351,6 +437,79 @@ describe("createAnthropicAdapter", () => {
         { type: "content", text: "Just text" },
         { type: "stop", finishReason: "stop" },
       ]);
+    });
+
+    it("emits usage on stop with cache tokens folded into prompt_tokens", async () => {
+      const events = [
+        {
+          type: "message_start",
+          message: {
+            usage: {
+              input_tokens: 100,
+              cache_creation_input_tokens: 50,
+              cache_read_input_tokens: 200,
+              output_tokens: 0,
+            },
+          },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "answer" },
+        },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "end_turn" },
+          usage: { output_tokens: 30 },
+        },
+      ];
+
+      mockStream.mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const event of events) yield event;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-ant-test", baseParams)) {
+        results.push(chunk);
+      }
+
+      const stop = results.find(
+        (c): c is { type: "stop"; usage: unknown } =>
+          (c as { type?: string }).type === "stop",
+      );
+      expect(stop?.usage).toEqual({
+        // 100 input + 50 cache creation + 200 cache read = 350
+        prompt_tokens: 350,
+        completion_tokens: 30,
+        total_tokens: 380,
+        cache_creation_tokens: 50,
+        cache_read_tokens: 200,
+      });
+    });
+
+    it("complete() folds cache tokens into prompt_tokens and surfaces them discretely", async () => {
+      mockCreate.mockResolvedValueOnce({
+        content: [{ type: "text", text: "ok" }],
+        model: "claude-sonnet-4-5-20250929",
+        stop_reason: "end_turn",
+        usage: {
+          input_tokens: 100,
+          cache_creation_input_tokens: 50,
+          cache_read_input_tokens: 200,
+          output_tokens: 30,
+        },
+      });
+
+      const result = await adapter.complete("sk-ant-test", baseParams);
+
+      expect(result.usage).toEqual({
+        prompt_tokens: 350,
+        completion_tokens: 30,
+        total_tokens: 380,
+        cache_creation_tokens: 50,
+        cache_read_tokens: 200,
+      });
     });
   });
 });

@@ -13,6 +13,7 @@ import { makeOrchestratorAgent } from "../builtins/orchestrator";
 import { resolveAgentModel, runAgent } from "../runner";
 import type { RunAgentCallbacks } from "../types";
 import type { PipelineEventEmitter } from "./events";
+import { withTokenAccounting } from "./tokenAccounting";
 
 export interface PlanTierOptions {
   runId: string;
@@ -72,16 +73,20 @@ export async function planTier(options: PlanTierOptions): Promise<void> {
   // Ensure a plan row exists so the orchestrator's finalize_tier can attach.
   await upsertEditPlan({ projectId, runId });
 
-  const callbacks: RunAgentCallbacks = {
+  const origin = { agentKind: agent.kind, agentId: agent.id };
+  const baseCallbacks: RunAgentCallbacks = {
     onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, info }),
+      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
     onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, info }),
+      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
+    onChunk: ({ messageId, chunk }) =>
+      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
     onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, info }),
+      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
     onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, info }),
+      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
   };
+  const callbacks = withTokenAccounting(runId, baseCallbacks);
 
   await runAgent({
     agent,
@@ -245,7 +250,7 @@ async function runOneEditor(
   await updateWorkUnit(unit.id, { status: "in-progress" });
 
   const chapter = await getChapter(unit.placement.chapterId);
-  const bibleRefs = await loadBibleRefs(projectId, unit.bibleRefs);
+  const bibleRefs = await loadBibleRefs(runId, unit.bibleRefs);
 
   const agent = makeEditorAgent({
     runId,
@@ -261,16 +266,20 @@ async function runOneEditor(
     throw new Error(`No API key configured for provider '${model.provider}'`);
   }
 
-  const callbacks: RunAgentCallbacks = {
+  const origin = { agentKind: agent.kind, agentId: agent.id };
+  const baseCallbacks: RunAgentCallbacks = {
     onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, info }),
+      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
     onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, info }),
+      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
+    onChunk: ({ messageId, chunk }) =>
+      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
     onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, info }),
+      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
     onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, info }),
+      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
   };
+  const callbacks = withTokenAccounting(runId, baseCallbacks);
 
   await runAgent({
     agent,
@@ -286,7 +295,7 @@ async function runOneEditor(
 }
 
 async function loadBibleRefs(
-  projectId: string,
+  runId: string,
   refs: string[],
 ): Promise<ReaderBibleViewEntry[]> {
   const out: ReaderBibleViewEntry[] = [];
@@ -294,12 +303,12 @@ async function loadBibleRefs(
     try {
       // Treat the ref as either an exact path or a path prefix — agents
       // sometimes pass "characters/Kira" expecting all sub-paths.
-      const exact = await readBibleAtPath(projectId, ref);
+      const exact = await readBibleAtPath(runId, ref);
       if (exact) {
         out.push(exact);
         continue;
       }
-      const prefixed = await listBiblePaths(projectId, ref);
+      const prefixed = await listBiblePaths(runId, ref);
       out.push(...prefixed);
     } catch {
       // Invalid path — silently skip; the agent can still see what it has.

@@ -3,6 +3,7 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { withVoiceMandate } from "./voice";
 
 const ORCHESTRATOR_TOOLS = [
   "bible_read",
@@ -83,14 +84,12 @@ export function makeOrchestratorAgent(
       role: "user",
       content: buildOrchestratorBriefing(input),
     },
-    {
-      role: "assistant",
-      content:
-        "Understood. I'll start by listing the open notes and questions, then build work units that address them.",
-    },
   ];
 
-  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+  const systemPrompt = withScreenplaySuffix(
+    withVoiceMandate(SYSTEM_PROMPT),
+    input.context,
+  );
 
   return {
     id: `orchestrator:${input.runId}:tier-${input.tier}`,

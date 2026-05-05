@@ -1,10 +1,18 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BUTTON_PRIMARY } from "@/components/ui/form-styles";
-import { createAgentRun, getActiveAgentRun } from "@/db/operations/agentRuns";
+import {
+  createAgentRun,
+  deleteAgentRun,
+  getActiveAgentRun,
+  isTerminalStatus,
+} from "@/db/operations/agentRuns";
+import type { AgentRun } from "@/db/schemas";
 import { useAgentRunsByProject } from "@/hooks/data/useAgentRun";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 
@@ -15,6 +23,9 @@ export default function AgentsListPage() {
   const settings = useAppSettings();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AgentRun | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleCreate() {
     if (!settings) return;
@@ -36,6 +47,22 @@ export default function AgentsListPage() {
       setError(err instanceof Error ? err.message : "Failed to create run");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteAgentRun(pendingDelete.id);
+      setPendingDelete(null);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete run",
+      );
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -69,6 +96,11 @@ export default function AgentsListPage() {
         {error && (
           <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>
         )}
+        {deleteError && (
+          <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+            {deleteError}
+          </p>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto px-8 py-6">
         {runs && runs.length === 0 && (
@@ -78,31 +110,82 @@ export default function AgentsListPage() {
         )}
         {runs && runs.length > 0 && (
           <ul className="space-y-2">
-            {runs.map((run) => (
-              <li key={run.id}>
-                <Link
-                  href={`/projects/${params.projectId}/agents/${run.id}`}
-                  className="block rounded-md border border-neutral-200 bg-white px-4 py-3 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+            {runs.map((run) => {
+              const canDelete = isTerminalStatus(run.status);
+              return (
+                <li
+                  key={run.id}
+                  className="group relative rounded-md border border-neutral-200 bg-white transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                      {run.name}
-                    </span>
-                    <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {run.status}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                    Tier {run.currentTier} · {run.readerPasses.length} reader
-                    pass{run.readerPasses.length === 1 ? "" : "es"} · Created{" "}
-                    {new Date(run.createdAt).toLocaleString()}
-                  </div>
-                </Link>
-              </li>
-            ))}
+                  <Link
+                    href={`/projects/${params.projectId}/agents/${run.id}`}
+                    className="block px-4 py-3 pr-12"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                        {run.name}
+                      </span>
+                      <span className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                        {run.status}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                      Tier {run.currentTier} · {run.readerPasses.length} reader
+                      pass{run.readerPasses.length === 1 ? "" : "es"} · Created{" "}
+                      {new Date(run.createdAt).toLocaleString()}
+                    </div>
+                  </Link>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      aria-label={`Delete run ${run.name}`}
+                      title="Delete run"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteError(null);
+                        setPendingDelete(run);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 group-hover:opacity-100 dark:text-neutral-500 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete agent run?"
+          variant="danger"
+          confirmLabel={deleting ? "Deleting…" : "Delete Run"}
+          message={
+            <>
+              <p>
+                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                  {pendingDelete.name}
+                </span>{" "}
+                will be removed along with its reader-bible log, notes,
+                questions, work units, plans, proposed edits, verifications, and
+                tier snapshot manifests.
+              </p>
+              <p className="mt-2">
+                Chapter snapshots remain available in version history. This
+                cannot be undone.
+              </p>
+            </>
+          }
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (deleting) return;
+            setPendingDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

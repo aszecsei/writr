@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { AiMessage, AiToolCall, FinishReason } from "../types";
-import { generateToolUseId } from "./helpers";
+import { extractTextContent, generateToolUseId } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface OpenAiAdapterConfig {
@@ -25,6 +25,43 @@ function normalizeFinishReason(raw: string | null | undefined): FinishReason {
 
 function isAnthropicModel(model: string): boolean {
   return model.startsWith("anthropic/");
+}
+
+/**
+ * Extract cache token counts from an OpenAI-compatible usage object.
+ *
+ * OpenRouter exposes prompt-cache stats two different ways depending on the
+ * upstream route:
+ *   - `prompt_tokens_details.cached_tokens` — OpenAI-style "cached input"
+ *     count (what was *read* from the cache).
+ *   - `cache_write_tokens` — top-level field on the OpenRouter response,
+ *     mapping to Anthropic's `cache_creation_input_tokens`.
+ *
+ * Both are optional — non-OpenRouter providers won't return them, and
+ * OpenRouter omits them on routes that don't support caching.
+ */
+function extractCacheUsage(usage: unknown): {
+  cache_creation_tokens?: number;
+  cache_read_tokens?: number;
+} {
+  const u = usage as
+    | {
+        prompt_tokens_details?: { cached_tokens?: number };
+        cache_write_tokens?: number;
+      }
+    | null
+    | undefined;
+  if (!u) return {};
+  const cacheRead = u.prompt_tokens_details?.cached_tokens;
+  const cacheWrite = u.cache_write_tokens;
+  return {
+    ...(typeof cacheWrite === "number" && cacheWrite > 0
+      ? { cache_creation_tokens: cacheWrite }
+      : {}),
+    ...(typeof cacheRead === "number" && cacheRead > 0
+      ? { cache_read_tokens: cacheRead }
+      : {}),
+  };
 }
 
 function isClaude46(model: string): boolean {
@@ -53,28 +90,47 @@ function buildReasoningParam(params: CompletionParams): object {
 }
 
 /**
- * Strip `cache_control` from content parts — OpenAI-compatible APIs don't
- * support it, and SDK types may reject it.
+ * Convert AiMessages to OpenAI chat-completion message params.
+ *
+ * For non-Anthropic models, strips `cache_control` from content parts —
+ * OpenAI-compatible APIs don't support it and the SDK types may reject it.
+ *
+ * For Anthropic models routed through OpenRouter, preserves `cache_control`
+ * on text content parts. OpenRouter accepts the Anthropic-style breakpoint
+ * markers on text parts within message content arrays (and on tool messages
+ * and assistant-with-tool-calls messages). Without this, the trailing
+ * cache_control set by `withTrailingCacheControl()` is silently dropped on
+ * every tool-calling iteration, defeating prompt caching.
  */
 function convertMessages(
   messages: AiMessage[],
   isAnthropic: boolean,
 ): OpenAI.ChatCompletionMessageParam[] {
   if (isAnthropic) {
-    // For Anthropic models through OpenRouter, pass messages with minimal transformation
-    // but still handle tool-related roles
     return messages.map((msg) => {
       if (msg.role === "tool") {
+        // Send tool result as a single text content part so cache_control
+        // (attached by withTrailingCacheControl on the most recent message)
+        // survives the conversion. OpenAI's tool message type expects string
+        // content; OpenRouter's Anthropic route accepts an array of text
+        // parts here, so cast through unknown.
+        const { text, cacheControl } = extractTextContent(msg.content);
         return {
           role: "tool" as const,
           tool_call_id: msg.toolCallId ?? "",
-          content: typeof msg.content === "string" ? msg.content : "",
-        };
+          content: cacheControl
+            ? [{ type: "text", text, cache_control: cacheControl }]
+            : text,
+        } as unknown as OpenAI.ChatCompletionMessageParam;
       }
       if (msg.role === "assistant" && msg.toolCalls?.length) {
+        const { text, cacheControl } = extractTextContent(msg.content);
+        const content = cacheControl
+          ? [{ type: "text" as const, text, cache_control: cacheControl }]
+          : text || null;
         return {
           role: "assistant" as const,
-          content: typeof msg.content === "string" ? msg.content : "",
+          content,
           tool_calls: msg.toolCalls.map((tc) => ({
             id: tc.id,
             type: "function" as const,
@@ -83,7 +139,7 @@ function convertMessages(
               arguments: JSON.stringify(tc.arguments),
             },
           })),
-        } as OpenAI.ChatCompletionMessageParam;
+        } as unknown as OpenAI.ChatCompletionMessageParam;
       }
       if (typeof msg.content === "string") {
         return {
@@ -91,6 +147,9 @@ function convertMessages(
           content: msg.content,
         };
       }
+      // Content is already a parts array. Pass through verbatim — any
+      // cache_control on text parts is preserved for OpenRouter to forward
+      // to Anthropic's backend.
       return {
         role: msg.role,
         content: msg.content,
@@ -103,13 +162,14 @@ function convertMessages(
       return {
         role: "tool" as const,
         tool_call_id: msg.toolCallId ?? "",
-        content: typeof msg.content === "string" ? msg.content : "",
+        content: extractTextContent(msg.content).text,
       };
     }
     if (msg.role === "assistant" && msg.toolCalls?.length) {
+      const text = extractTextContent(msg.content).text;
       return {
         role: "assistant" as const,
-        content: typeof msg.content === "string" ? msg.content || null : null,
+        content: text || null,
         tool_calls: msg.toolCalls.map((tc) => ({
           id: tc.id,
           type: "function" as const,
@@ -146,16 +206,25 @@ function convertMessages(
 
 function buildToolsParam(params: CompletionParams): object {
   if (!params.tools?.length) return {};
+  // For Anthropic via OpenRouter, attach cache_control to the LAST tool entry
+  // so the entire tools section is cached as a single breakpoint. Tools are
+  // stable across iterations — high-leverage cache target. Other providers
+  // don't honor cache_control on tools, so leave them alone.
+  const isAnthropic = isAnthropicModel(params.model);
+  const lastIdx = params.tools.length - 1;
   return {
-    tools: params.tools.map((t) => ({
+    tools: params.tools.map((t, i) => ({
       type: "function" as const,
       function: {
         name: t.id,
         description: t.description,
         parameters: t.parameters,
       },
+      ...(isAnthropic && i === lastIdx
+        ? { cache_control: { type: "ephemeral" as const } }
+        : {}),
     })),
-  };
+  } as unknown as { tools: OpenAI.ChatCompletionTool[] };
 }
 
 export function createOpenAiAdapter(
@@ -181,6 +250,9 @@ export function createOpenAiAdapter(
       temperature: params.temperature,
       max_tokens: params.maxTokens,
       stream,
+      // Ask for usage on streaming responses. Without this, OpenAI-compatible
+      // APIs omit the usage object entirely from the stream.
+      ...(stream ? { stream_options: { include_usage: true } } : {}),
       ...buildReasoningParam(params),
       ...buildToolsParam(params),
     };
@@ -232,6 +304,7 @@ export function createOpenAiAdapter(
               prompt_tokens: response.usage.prompt_tokens,
               completion_tokens: response.usage.completion_tokens ?? 0,
               total_tokens: response.usage.total_tokens,
+              ...extractCacheUsage(response.usage),
             }
           : undefined,
         finishReason: normalizeFinishReason(choice?.finish_reason),
@@ -262,8 +335,14 @@ export function createOpenAiAdapter(
       // finalization chunk twice; emitting per-chunk would duplicate tool_use
       // payloads downstream.
       let finalFinishReason: string | null = null;
+      // Captured from the final chunk when `stream_options.include_usage` is
+      // honored upstream. May remain null if a provider strips it.
+      let finalUsage: OpenAI.CompletionUsage | null = null;
 
       for await (const chunk of stream) {
+        if (chunk.usage) {
+          finalUsage = chunk.usage;
+        }
         const choice = chunk.choices[0];
         const delta = choice?.delta as
           | (OpenAI.ChatCompletionChunk.Choice.Delta & {
@@ -334,6 +413,16 @@ export function createOpenAiAdapter(
         yield {
           type: "stop" as const,
           finishReason: normalizeFinishReason(finalFinishReason),
+          ...(finalUsage
+            ? {
+                usage: {
+                  prompt_tokens: finalUsage.prompt_tokens,
+                  completion_tokens: finalUsage.completion_tokens ?? 0,
+                  total_tokens: finalUsage.total_tokens,
+                  ...extractCacheUsage(finalUsage),
+                },
+              }
+            : {}),
         };
       }
     },

@@ -3,6 +3,7 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { withVoiceMandate } from "./voice";
 
 const EDITOR_TOOLS = [
   "bible_read",
@@ -59,14 +60,12 @@ export function makeEditorAgent(input: MakeEditorAgentInput): Agent {
       role: "user",
       content: buildEditorBriefing(input),
     },
-    {
-      role: "assistant",
-      content:
-        "Understood. I'll re-check the placement and constraints, read the relevant chapter, then propose the edit(s).",
-    },
   ];
 
-  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+  const systemPrompt = withScreenplaySuffix(
+    withVoiceMandate(SYSTEM_PROMPT),
+    input.context,
+  );
 
   return {
     id: `editor:${input.runId}:wu-${input.workUnit.id}`,

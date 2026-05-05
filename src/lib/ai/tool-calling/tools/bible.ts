@@ -46,7 +46,7 @@ export const bibleReadTool = defineTool({
   async execute(params, context) {
     if (!context.runId) return fail("bible_read requires a run context");
     try {
-      const entry = await readBibleAtPath(context.projectId, params.path);
+      const entry = await readBibleAtPath(context.runId, params.path);
       return ok(
         entry
           ? `Read bible path '${entry.path}'`
@@ -161,10 +161,7 @@ export const bibleListTool = defineTool({
   async execute(params, context) {
     if (!context.runId) return fail("bible_list requires a run context");
     try {
-      const entries = await listBiblePaths(
-        context.projectId,
-        params.pathPrefix,
-      );
+      const entries = await listBiblePaths(context.runId, params.pathPrefix);
       return ok(`Found ${entries.length} bible paths`, {
         paths: entries.map((e) => ({
           path: e.path,

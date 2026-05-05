@@ -47,7 +47,13 @@ export async function createAgentRun(
     readerPasses: [],
     modelOverrides: input.modelOverrides,
     budgetTokens: input.budgetTokens ?? 1_000_000,
-    totalTokenUsage: { promptTokens: 0, completionTokens: 0 },
+    totalTokenUsage: {
+      promptTokens: 0,
+      completionTokens: 0,
+      cacheCreationTokens: 0,
+      cacheReadTokens: 0,
+    },
+    lastIterationPromptTokens: 0,
     requiresIncrementalReread: false,
     statusReason: null,
     createdAt: timestamp,
@@ -96,6 +102,7 @@ export async function updateAgentRun(
       | "currentSnapshotManifestId"
       | "requiresIncrementalReread"
       | "totalTokenUsage"
+      | "lastIterationPromptTokens"
       | "name"
     >
   >,
@@ -122,7 +129,14 @@ export async function appendReaderPass(
 export async function finishReaderPass(
   runId: string,
   patch: Partial<
-    Pick<ReaderPass, "newBibleEntries" | "newNotes" | "newQuestions">
+    Pick<
+      ReaderPass,
+      | "newBibleEntries"
+      | "newNotes"
+      | "newQuestions"
+      | "firstChapterOrder"
+      | "lastChapterOrder"
+    >
   >,
 ): Promise<void> {
   await db.transaction("rw", db.agentRuns, async () => {
@@ -143,6 +157,55 @@ export async function finishReaderPass(
 }
 
 /**
+ * Patch the most recent (still-running) reader pass without marking it
+ * complete. Used by the comprehension segment loop to record progress
+ * (`lastChapterOrder`) after each chapter inside a long segment so the UI
+ * sees the pass advancing in real time.
+ */
+export async function patchActiveReaderPass(
+  runId: string,
+  patch: Partial<
+    Pick<
+      ReaderPass,
+      | "firstChapterOrder"
+      | "lastChapterOrder"
+      | "newBibleEntries"
+      | "newNotes"
+      | "newQuestions"
+    >
+  >,
+): Promise<void> {
+  await db.transaction("rw", db.agentRuns, async () => {
+    const run = await db.agentRuns.get(runId);
+    if (!run || run.readerPasses.length === 0) return;
+    const passes = [...run.readerPasses];
+    const lastIdx = passes.length - 1;
+    passes[lastIdx] = { ...passes[lastIdx], ...patch };
+    await db.agentRuns.update(runId, {
+      readerPasses: passes,
+      updatedAt: now(),
+    });
+  });
+}
+
+/**
+ * Update the run's hard token budget cap. Explicit user-triggered admin
+ * action; kept separate from `updateAgentRun` so per-iteration writes can't
+ * accidentally clobber the budget.
+ */
+export async function updateBudgetTokens(
+  runId: string,
+  budgetTokens: number,
+): Promise<void> {
+  if (!Number.isInteger(budgetTokens) || budgetTokens <= 0) {
+    throw new Error(
+      `budgetTokens must be a positive integer (received ${budgetTokens})`,
+    );
+  }
+  await db.agentRuns.update(runId, { budgetTokens, updatedAt: now() });
+}
+
+/**
  * Add to the run's cumulative token usage. Returns the new totals so callers
  * can detect budget overruns without re-fetching the row.
  */
@@ -150,7 +213,12 @@ export async function addTokenUsage(
   runId: string,
   delta: Partial<AgentRunUsage>,
 ): Promise<AgentRunUsage> {
-  let next: AgentRunUsage = { promptTokens: 0, completionTokens: 0 };
+  let next: AgentRunUsage = {
+    promptTokens: 0,
+    completionTokens: 0,
+    cacheCreationTokens: 0,
+    cacheReadTokens: 0,
+  };
   await db.transaction("rw", db.agentRuns, async () => {
     const run = await db.agentRuns.get(runId);
     if (!run) throw new Error(`Agent run not found: ${runId}`);
@@ -159,6 +227,12 @@ export async function addTokenUsage(
         run.totalTokenUsage.promptTokens + (delta.promptTokens ?? 0),
       completionTokens:
         run.totalTokenUsage.completionTokens + (delta.completionTokens ?? 0),
+      cacheCreationTokens:
+        (run.totalTokenUsage.cacheCreationTokens ?? 0) +
+        (delta.cacheCreationTokens ?? 0),
+      cacheReadTokens:
+        (run.totalTokenUsage.cacheReadTokens ?? 0) +
+        (delta.cacheReadTokens ?? 0),
     };
     await db.agentRuns.update(runId, {
       totalTokenUsage: next,
@@ -168,6 +242,50 @@ export async function addTokenUsage(
   return next;
 }
 
+/**
+ * Delete a terminal agent run and all of its run-scoped child rows in one
+ * transaction. Refuses to delete in-flight runs — caller must cancel first
+ * (mirrors the "one in-flight run per project" invariant in createAgentRun).
+ *
+ * Does NOT touch chapterSnapshots: those rows are keyed by chapterId and are
+ * independently surfaced in the chapter Version History UI. SnapshotManifests
+ * reference them by id, but deleting the manifest is enough to detach the run
+ * from them; the underlying snapshots remain as user-visible undo points.
+ */
 export async function deleteAgentRun(id: string): Promise<void> {
-  await db.agentRuns.delete(id);
+  const run = await db.agentRuns.get(id);
+  if (!run) throw new Error(`Agent run not found: ${id}`);
+  if (!isTerminalStatus(run.status)) {
+    throw new Error(
+      `Cannot delete agent run ${id}: status is "${run.status}". Cancel the run before deleting.`,
+    );
+  }
+
+  await db.transaction(
+    "rw",
+    [
+      db.agentRuns,
+      db.readerBibleLog,
+      db.readerBibleView,
+      db.agentNotes,
+      db.agentQuestions,
+      db.workUnits,
+      db.editPlans,
+      db.proposedEdits,
+      db.verifications,
+      db.snapshotManifests,
+    ],
+    async () => {
+      await db.readerBibleLog.where({ runId: id }).delete();
+      await db.readerBibleView.where({ runId: id }).delete();
+      await db.agentNotes.where({ runId: id }).delete();
+      await db.agentQuestions.where({ runId: id }).delete();
+      await db.workUnits.where({ runId: id }).delete();
+      await db.editPlans.where({ runId: id }).delete();
+      await db.proposedEdits.where({ runId: id }).delete();
+      await db.verifications.where({ runId: id }).delete();
+      await db.snapshotManifests.where({ runId: id }).delete();
+      await db.agentRuns.delete(id);
+    },
+  );
 }

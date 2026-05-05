@@ -9,6 +9,7 @@ import {
   useWorkUnitsByRun,
   useWorkUnitsByTier,
 } from "@/hooks/data/usePlan";
+import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
 import {
   startExecuteTier,
   startIncrementalReread,
@@ -59,6 +60,7 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
         tier: planningTier,
         humanBriefing: briefing.trim() || undefined,
         buildContext,
+        onEvent: createActivityEmitter(),
       });
       setBriefing("");
     } catch (err) {
@@ -76,6 +78,7 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
         runId,
         projectId,
         buildContext,
+        onEvent: createActivityEmitter(),
       });
     } catch (err) {
       setError(
@@ -95,6 +98,7 @@ export function PlanView({ runId, projectId }: PlanViewProps) {
         projectId,
         tier: planningTier,
         buildContext,
+        onEvent: createActivityEmitter(),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to execute tier");

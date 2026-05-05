@@ -98,7 +98,7 @@ export async function applyTier(
 
   // 2) Reader bible + notes + work units snapshot inline on the manifest.
   const [bibleView, notesSnapshot] = await Promise.all([
-    listBiblePaths(projectId),
+    listBiblePaths(runId),
     listAgentNotes({ runId }),
   ]);
 

@@ -294,6 +294,50 @@ describe("createGoogleAdapter", () => {
       const call = mockGenerateContent.mock.calls[0][0];
       expect(call.config.thinkingConfig).toBeUndefined();
     });
+
+    it("preserves tool message content when wrapped in a cache_control text part", async () => {
+      // Regression: `withTrailingCacheControl` wraps the most recent tool
+      // result into a TextContentPart array. Previously the tool branch
+      // parsed `typeof content === "string" ? content : "{}"`, so the array
+      // form became `{}` and the model saw an empty function response.
+      mockGenerateContent.mockResolvedValueOnce({
+        candidates: [
+          {
+            content: { parts: [{ text: "ok" }] },
+            finishReason: "STOP",
+          },
+        ],
+      });
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+        },
+        {
+          role: "tool",
+          toolCallId: "list_chapters",
+          content: [
+            {
+              type: "text",
+              text: '{"success":true,"chapters":["one"]}',
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+        },
+      ];
+
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const call = mockGenerateContent.mock.calls[0][0];
+      const toolMsg = call.contents[1];
+      expect(toolMsg.role).toBe("user");
+      expect(toolMsg.parts[0].functionResponse).toEqual({
+        name: "list_chapters",
+        response: { success: true, chapters: ["one"] },
+      });
+    });
   });
 
   describe("stream", () => {
@@ -371,6 +415,80 @@ describe("createGoogleAdapter", () => {
         { type: "content", text: "Result" },
         { type: "stop", finishReason: "stop" },
       ]);
+    });
+
+    it("attaches the final usageMetadata to the stop chunk", async () => {
+      const responses = [
+        {
+          candidates: [{ content: { parts: [{ text: "Hello" }] } }],
+          usageMetadata: {
+            promptTokenCount: 100,
+            candidatesTokenCount: 5,
+            totalTokenCount: 105,
+          },
+        },
+        {
+          candidates: [
+            {
+              content: { parts: [{ text: " world" }] },
+              finishReason: "STOP",
+            },
+          ],
+          // Final chunk carries the run-final running totals.
+          usageMetadata: {
+            promptTokenCount: 100,
+            candidatesTokenCount: 12,
+            totalTokenCount: 112,
+          },
+        },
+      ];
+
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          for (const r of responses) yield r;
+        })(),
+      );
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("key", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results.at(-1)).toEqual({
+        type: "stop",
+        finishReason: "stop",
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 12,
+          total_tokens: 112,
+        },
+      });
+    });
+
+    it("omits usage on stop when no usageMetadata was reported", async () => {
+      const responses = [
+        {
+          candidates: [
+            {
+              content: { parts: [{ text: "Hi" }] },
+              finishReason: "STOP",
+            },
+          ],
+        },
+      ];
+
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          for (const r of responses) yield r;
+        })(),
+      );
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("key", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results.at(-1)).toEqual({ type: "stop", finishReason: "stop" });
     });
   });
 

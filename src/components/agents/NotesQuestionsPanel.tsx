@@ -9,6 +9,7 @@ import {
 import { updateAgentNote } from "@/db/operations/agentNotes";
 import {
   answerAgentQuestion,
+  clearProposedAnswer,
   dismissAgentQuestion,
 } from "@/db/operations/agentQuestions";
 import type { AgentNote, AgentNoteSeverity, AgentQuestion } from "@/db/schemas";
@@ -150,12 +151,26 @@ function QuestionRow({ question }: { question: AgentQuestion }) {
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleAnswer() {
-    if (!draft.trim()) return;
+  async function handleAnswer(answer: string) {
+    if (!answer.trim()) return;
     setSubmitting(true);
     try {
-      await answerAgentQuestion(question.id, draft.trim());
+      await answerAgentQuestion(question.id, answer.trim());
       setDraft("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleAcceptProposal() {
+    if (!question.proposedAnswer) return;
+    await handleAnswer(question.proposedAnswer);
+  }
+
+  async function handleRejectProposal() {
+    setSubmitting(true);
+    try {
+      await clearProposedAnswer(question.id);
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +204,39 @@ function QuestionRow({ question }: { question: AgentQuestion }) {
           {question.humanAnswer}
         </p>
       )}
+      {question.status === "open" && question.proposedAnswer && (
+        <div className="mt-2 rounded border border-dashed border-primary-300 bg-primary-50/50 p-2 dark:border-primary-800 dark:bg-primary-900/20">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs uppercase tracking-wide text-primary-700 dark:text-primary-300">
+              Proposed by reader
+              {question.proposedByPassNumber !== null
+                ? ` (pass ${question.proposedByPassNumber})`
+                : ""}
+            </span>
+          </div>
+          <p className="mt-1 text-neutral-900 dark:text-neutral-100">
+            {question.proposedAnswer}
+          </p>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleRejectProposal}
+              disabled={submitting}
+              className={BUTTON_CANCEL}
+            >
+              Reject
+            </button>
+            <button
+              type="button"
+              onClick={handleAcceptProposal}
+              disabled={submitting}
+              className={BUTTON_PRIMARY}
+            >
+              {submitting ? "Saving…" : "Accept"}
+            </button>
+          </div>
+        </div>
+      )}
       {question.status === "open" && (
         <div className="mt-3 space-y-2">
           <textarea
@@ -209,7 +257,7 @@ function QuestionRow({ question }: { question: AgentQuestion }) {
             </button>
             <button
               type="button"
-              onClick={handleAnswer}
+              onClick={() => handleAnswer(draft)}
               disabled={!draft.trim() || submitting}
               className={BUTTON_PRIMARY}
             >

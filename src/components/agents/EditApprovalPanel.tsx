@@ -11,6 +11,7 @@ import {
   useProposedEditsByRun,
   useWorkUnitsByTier,
 } from "@/hooks/data/usePlan";
+import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
 import { startApplyTier } from "@/lib/ai/agents/pipeline/runEngine";
 import { EditDiffCard } from "./EditDiffCard";
 
@@ -81,6 +82,7 @@ export function EditApprovalPanel({
         tier,
         approvedEditIds: approvedIds,
         buildContext,
+        onEvent: createActivityEmitter(),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply tier");

@@ -2,8 +2,6 @@ import { buildAgenticContext, buildMessages } from "../prompts";
 import type { AiContext, AiMessage, AiToolId, ContentPart } from "../types";
 import type { BuildMessagesFn } from "./types";
 
-const UNDERSTOOD_REPLY = "Understood.";
-
 /**
  * Build a `buildMessages` function for the manual chat agent — the synthesized
  * agent the AiPanel uses to preserve its existing task-tool selector UX. This
@@ -67,8 +65,22 @@ function assembleAgentMessages(
   userInput: string | undefined,
   skipUserPrompt: boolean | undefined,
 ): AiMessage[] {
+  // The Anthropic API caps total cache_control breakpoints per request at 4.
+  // We currently use four: (1) system prompt, (2) project context user
+  // message, (3) last tool entry (set by the adapter), (4) trailing history
+  // message (set by withTrailingCacheControl when enableToolCalling). Adding
+  // any more breakpoints will silently drop the oldest.
   const messages: AiMessage[] = [
-    { role: "system", content: args.systemPrompt },
+    {
+      role: "system",
+      content: [
+        {
+          type: "text",
+          text: args.systemPrompt,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+    },
   ];
 
   // Cacheable project context (small — style guide + metadata only).
@@ -83,7 +95,6 @@ function assembleAgentMessages(
       },
     ],
   });
-  messages.push({ role: "assistant", content: UNDERSTOOD_REPLY });
 
   if (args.initialMessages) {
     messages.push(...args.initialMessages);
@@ -112,6 +123,18 @@ function assembleAgentMessages(
 
   if (args.assistantPrefill) {
     messages.push({ role: "assistant", content: args.assistantPrefill });
+    return messages;
+  }
+
+  // Anthropic via OpenRouter (Azure-routed) rejects messages that end with
+  // role:"assistant". Pipeline agents are invoked with no userInput on the
+  // first iteration; without this guard, a stray assistant message in
+  // initialMessages or history would trip Azure's prefill restriction.
+  while (
+    messages.length > 0 &&
+    messages[messages.length - 1].role === "assistant"
+  ) {
+    messages.pop();
   }
 
   return messages;

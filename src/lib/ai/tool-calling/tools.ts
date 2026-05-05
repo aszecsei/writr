@@ -542,7 +542,13 @@ const searchChaptersTool = defineTool({
   requiresApproval: false,
   async execute(params, context) {
     const query = params.query;
-    const chapters = await getChaptersByProject(context.projectId);
+    const allChapters = await getChaptersByProject(context.projectId);
+    const chapters =
+      context.maxReadableChapterOrder !== undefined
+        ? allChapters.filter(
+            (ch) => ch.order <= (context.maxReadableChapterOrder as number),
+          )
+        : allChapters;
     const matches = chapters
       .filter(
         (ch) =>
@@ -646,7 +652,13 @@ const listChaptersTool = defineTool({
   inputSchema: z.object({}).strip(),
   requiresApproval: false,
   async execute(_params, context) {
-    const chapters = await getChaptersByProject(context.projectId);
+    const allChapters = await getChaptersByProject(context.projectId);
+    const chapters =
+      context.maxReadableChapterOrder !== undefined
+        ? allChapters.filter(
+            (c) => c.order <= (context.maxReadableChapterOrder as number),
+          )
+        : allChapters;
     return ok(`Found ${chapters.length} chapters`, {
       chapters: chapters.map((c) => ({
         id: c.id,
@@ -676,6 +688,14 @@ const readChapterTool = defineTool({
   async execute(params, context) {
     const chapter = await getChapter(params.id);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
 
     // Editor agents in the same tier should see staged proposed edits from
     // earlier editors so chapter N+1's editor can acknowledge chapter N's
@@ -736,9 +756,17 @@ const readChapterRangeTool = defineTool({
     })
     .strip(),
   requiresApproval: false,
-  async execute(params) {
+  async execute(params, context) {
     const chapter = await getChapter(params.id);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
     const paragraphs = splitParagraphs(chapter.content);
     const total = paragraphs.length;
     const start = Math.max(1, Math.min(params.start, total));
@@ -786,9 +814,17 @@ const searchChapterTool = defineTool({
     })
     .strip(),
   requiresApproval: false,
-  async execute(params) {
+  async execute(params, context) {
     const chapter = await getChapter(params.id);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
     const paragraphs = splitParagraphs(chapter.content);
     const ctxSize = params.context_paragraphs ?? 1;
     const queryLower = params.query.toLowerCase();
@@ -1052,6 +1088,7 @@ import {
   listNotesTool,
   listQuestionsTool,
   noteTool,
+  proposeAnswerTool,
   questionTool,
 } from "./tools/notes";
 import { proposeEditTool } from "./tools/proposedEdits";
@@ -1099,6 +1136,7 @@ export const AI_TOOLS: AiToolDefinition[] = [
   questionTool,
   listNotesTool,
   listQuestionsTool,
+  proposeAnswerTool,
   // Phase 2: orchestrator + editor
   createWorkUnitTool,
   updateWorkUnitTool,

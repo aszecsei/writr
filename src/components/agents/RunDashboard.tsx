@@ -2,18 +2,25 @@
 
 import { useState } from "react";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
-import { updateAgentRunStatus } from "@/db/operations/agentRuns";
+import {
+  isTerminalStatus,
+  updateAgentRunStatus,
+} from "@/db/operations/agentRuns";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
+import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
+import { BUDGET_EXCEEDED_REASON } from "@/lib/ai/agents/pipeline/readerLoop";
 import {
   cancelRun,
   getRunController,
   startReaderPhase,
 } from "@/lib/ai/agents/pipeline/runEngine";
+import { ActivityPanel } from "./ActivityPanel";
 import { EditApprovalPanel } from "./EditApprovalPanel";
 import { NotesQuestionsPanel } from "./NotesQuestionsPanel";
 import { PauseResumeBanner } from "./PauseResumeBanner";
 import { PlanView } from "./PlanView";
+import { RaiseBudgetDialog } from "./RaiseBudgetDialog";
 import { ReaderBibleView } from "./ReaderBibleView";
 import { SnapshotsPanel } from "./SnapshotsPanel";
 import { VerificationPanel } from "./VerificationPanel";
@@ -25,6 +32,7 @@ interface RunDashboardProps {
 
 type Tab =
   | "overview"
+  | "activity"
   | "bible"
   | "notes"
   | "plan"
@@ -34,6 +42,7 @@ type Tab =
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "activity", label: "Activity" },
   { id: "bible", label: "Reader Bible" },
   { id: "notes", label: "Notes & Questions" },
   { id: "plan", label: "Plan" },
@@ -46,6 +55,7 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
   const run = useAgentRun(runId);
   const [tab, setTab] = useState<Tab>("overview");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [editingBudget, setEditingBudget] = useState(false);
 
   const buildContext = useAgentRunContext(projectId);
 
@@ -58,6 +68,7 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
         runId,
         projectId,
         buildContext,
+        onEvent: createActivityEmitter(),
       });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to start");
@@ -74,6 +85,8 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
   const tokenUsage =
     run.totalTokenUsage.promptTokens + run.totalTokenUsage.completionTokens;
   const budgetPct = Math.min(100, (tokenUsage / run.budgetTokens) * 100);
+  const isBudgetExceeded = run.statusReason === BUDGET_EXCEEDED_REASON;
+  const canEditBudget = !isTerminalStatus(run.status);
 
   return (
     <div className="flex h-full flex-col">
@@ -95,6 +108,15 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
             )}
           </div>
           <div className="flex gap-2">
+            {isBudgetExceeded && !isInFlight && (
+              <button
+                type="button"
+                onClick={() => setEditingBudget(true)}
+                className={BUTTON_PRIMARY}
+              >
+                Raise Budget
+              </button>
+            )}
             {(run.status === "idle" ||
               run.status === "awaiting-plan-approval") &&
               !isInFlight && (
@@ -125,6 +147,15 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
             <span>
               Tokens: {tokenUsage.toLocaleString()} /{" "}
               {run.budgetTokens.toLocaleString()}
+              {canEditBudget && (
+                <button
+                  type="button"
+                  onClick={() => setEditingBudget(true)}
+                  className="ml-2 text-primary-600 hover:underline dark:text-primary-400"
+                >
+                  Edit
+                </button>
+              )}
             </span>
             <span>{budgetPct.toFixed(1)}%</span>
           </div>
@@ -136,6 +167,22 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
               style={{ width: `${budgetPct}%` }}
             />
           </div>
+          {run.lastIterationPromptTokens > 0 && (
+            <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              Context: {run.lastIterationPromptTokens.toLocaleString()} tokens
+              <span className="ml-1 text-neutral-400 dark:text-neutral-500">
+                (last iteration)
+              </span>
+            </div>
+          )}
+          {(run.totalTokenUsage.cacheReadTokens > 0 ||
+            run.totalTokenUsage.cacheCreationTokens > 0) && (
+            <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              Cache: {run.totalTokenUsage.cacheReadTokens.toLocaleString()} read
+              · {run.totalTokenUsage.cacheCreationTokens.toLocaleString()}{" "}
+              written
+            </div>
+          )}
         </div>
 
         {actionError && (
@@ -178,25 +225,41 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm">
-                  {run.readerPasses.map((p) => (
-                    <li
-                      key={p.passNumber}
-                      className="rounded bg-neutral-50 px-3 py-2 dark:bg-neutral-900/50"
-                    >
-                      <span className="font-medium">Pass {p.passNumber}</span> ·{" "}
-                      <span className="text-neutral-500 dark:text-neutral-400">
-                        {p.completedAt
-                          ? `+${p.newBibleEntries} bible · +${p.newNotes} notes · +${p.newQuestions} questions`
-                          : "in progress…"}
-                      </span>
-                    </li>
-                  ))}
+                  {run.readerPasses.map((p) => {
+                    const showRange =
+                      p.mode === "comprehension" &&
+                      p.firstChapterOrder !== null &&
+                      p.lastChapterOrder !== null &&
+                      p.lastChapterOrder >= p.firstChapterOrder;
+                    return (
+                      <li
+                        key={p.passNumber}
+                        className="rounded bg-neutral-50 px-3 py-2 dark:bg-neutral-900/50"
+                      >
+                        <span className="font-medium">Pass {p.passNumber}</span>{" "}
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                          ({p.mode}
+                          {showRange
+                            ? ` · ch ${(p.firstChapterOrder as number) + 1}-${(p.lastChapterOrder as number) + 1}`
+                            : ""}
+                          )
+                        </span>{" "}
+                        ·{" "}
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                          {p.completedAt
+                            ? `+${p.newBibleEntries} bible · +${p.newNotes} notes · +${p.newQuestions} questions`
+                            : "in progress…"}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>
           </div>
         )}
-        {tab === "bible" && <ReaderBibleView projectId={projectId} />}
+        {tab === "activity" && <ActivityPanel runId={runId} />}
+        {tab === "bible" && <ReaderBibleView runId={runId} />}
         {tab === "notes" && <NotesQuestionsPanel runId={runId} />}
         {tab === "plan" && <PlanView runId={runId} projectId={projectId} />}
         {tab === "edits" && (
@@ -207,6 +270,10 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
           <SnapshotsPanel runId={runId} projectId={projectId} />
         )}
       </div>
+
+      {editingBudget && (
+        <RaiseBudgetDialog run={run} onClose={() => setEditingBudget(false)} />
+      )}
     </div>
   );
 }

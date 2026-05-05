@@ -102,6 +102,8 @@ export function AppSettingsDialog() {
   };
   const [agentModelOverrides, setAgentModelOverrides] =
     useState<Record<AgentKind, AgentModelOverride | null>>(emptyAgentOverrides);
+  const [comprehensionContextThreshold, setComprehensionContextThreshold] =
+    useState(80_000);
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
     filename: string;
@@ -153,6 +155,7 @@ export function AppSettingsDialog() {
         editor: settings.agentModelOverrides.editor ?? null,
         verifier: settings.agentModelOverrides.verifier ?? null,
       });
+      setComprehensionContextThreshold(settings.comprehensionContextThreshold);
     }
   }, [settings, modal.id]);
 
@@ -215,7 +218,8 @@ export function AppSettingsDialog() {
       reasoningEffort !== settings.reasoningEffort ||
       enableToolCalling !== settings.enableToolCalling ||
       JSON.stringify(agentModelOverrides) !==
-        JSON.stringify(settings.agentModelOverrides));
+        JSON.stringify(settings.agentModelOverrides) ||
+      comprehensionContextThreshold !== settings.comprehensionContextThreshold);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -240,6 +244,7 @@ export function AppSettingsDialog() {
       reasoningEffort,
       enableToolCalling,
       agentModelOverrides,
+      comprehensionContextThreshold,
     });
     closeModal();
   }
@@ -343,6 +348,10 @@ export function AppSettingsDialog() {
                     ...prev,
                     [kind]: override,
                   }))
+                }
+                comprehensionContextThreshold={comprehensionContextThreshold}
+                onComprehensionContextThresholdChange={
+                  setComprehensionContextThreshold
                 }
                 inputClass={INPUT_CLASS}
                 labelClass={LABEL_CLASS}

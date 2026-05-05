@@ -105,7 +105,7 @@ export async function appendBibleOp(
       await db.readerBibleLog.add(entry);
 
       const existing = await db.readerBibleView
-        .where({ projectId: input.projectId, path })
+        .where({ runId: input.runId, path })
         .first();
 
       if (input.op === "delete") {
@@ -128,6 +128,7 @@ export async function appendBibleOp(
         const view = ReaderBibleViewEntrySchema.parse({
           id: generateId(),
           projectId: input.projectId,
+          runId: input.runId,
           path,
           value: nextValue,
           lastUpdatedAt: timestamp,
@@ -141,21 +142,21 @@ export async function appendBibleOp(
   return entry;
 }
 
-/** Read the current view value at `path`. Returns undefined if no entry. */
+/** Read the current view value at `path` for a given run. */
 export async function readBibleAtPath(
-  projectId: string,
+  runId: string,
   path: string,
 ): Promise<ReaderBibleViewEntry | undefined> {
   const normalized = normalizeBiblePath(path);
-  return db.readerBibleView.where({ projectId, path: normalized }).first();
+  return db.readerBibleView.where({ runId, path: normalized }).first();
 }
 
-/** List view entries under a path prefix (or everything when prefix is empty). */
+/** List view entries for a run under a path prefix (or all when omitted). */
 export async function listBiblePaths(
-  projectId: string,
+  runId: string,
   pathPrefix?: string,
 ): Promise<ReaderBibleViewEntry[]> {
-  const all = await db.readerBibleView.where({ projectId }).toArray();
+  const all = await db.readerBibleView.where({ runId }).toArray();
   if (!pathPrefix) return all.sort((a, b) => a.path.localeCompare(b.path));
   const prefix = pathPrefix.endsWith("/") ? pathPrefix : `${pathPrefix}/`;
   return all
@@ -172,11 +173,11 @@ export async function listBiblePaths(
  * scope (they're typically post-pass corrections that should always apply).
  */
 export async function computeReaderBibleAsOf(
-  projectId: string,
+  runId: string,
   asOfChapter: number,
 ): Promise<Map<string, unknown>> {
   const entries = await db.readerBibleLog
-    .where({ projectId })
+    .where({ runId })
     .filter(
       (e) =>
         e.asOfChapter == null ||

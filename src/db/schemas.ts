@@ -406,6 +406,12 @@ export const AppSettingsSchema = z.object({
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),
+  /**
+   * Per-iteration prompt-token threshold above which the comprehension pass
+   * soft-resets — ends the current segment and starts a fresh one at the
+   * next chapter with empty history. The reader bible carries forward.
+   */
+  comprehensionContextThreshold: z.number().int().positive().default(80_000),
   enableToolCalling: z.boolean().default(false),
   agentModelOverrides: z
     .record(AgentKindEnum, AgentModelOverrideSchema.nullable())
@@ -560,6 +566,13 @@ export const READER_BIBLE_TOP_LEVEL_PATHS = [
   "voice",
   "open_threads",
   "reader_knowledge",
+  // Thematic reader namespaces. Motifs are recurring concrete imagery; symbols
+  // are motifs promoted with an interpretive claim and ≥2 grounded occurrences;
+  // subtext covers what surface scenes are *also* about (juxtapositions,
+  // omissions live as sub-keys here).
+  "motifs",
+  "symbols",
+  "subtext",
 ] as const;
 
 export const ReaderBibleOpEnum = z.enum(["set", "merge", "delete"]);
@@ -583,10 +596,12 @@ export const ReaderBibleLogEntrySchema = z.object({
 });
 export type ReaderBibleLogEntry = z.infer<typeof ReaderBibleLogEntrySchema>;
 
-/** Materialized current view per (projectId, path). */
+/** Materialized current view per (runId, path). Bibles are scoped per agent
+ * run so reading-passes from one run never leak into another run's context. */
 export const ReaderBibleViewEntrySchema = z.object({
   id,
   projectId: projectFk,
+  runId: z.uuid(),
   path: z.string().min(1),
   value: z.unknown(),
   lastUpdatedAt: timestamp,
@@ -662,6 +677,13 @@ export const AgentQuestionSchema = z.object({
   references: z.array(AgentReferenceSchema).default([]),
   status: AgentQuestionStatusEnum.default("open"),
   humanAnswer: z.string().nullable().default(null),
+  /**
+   * Resolution proposed by a self-answer reader pass. The question stays
+   * `open` until a human ratifies the proposal — agents are advisory.
+   */
+  proposedAnswer: z.string().nullable().default(null),
+  proposedAt: timestamp.nullable().default(null),
+  proposedByPassNumber: z.number().int().positive().nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -803,19 +825,52 @@ export const AgentRunStatusEnum = z.enum([
 ]);
 export type AgentRunStatus = z.infer<typeof AgentRunStatusEnum>;
 
+/**
+ * Mode for one reader pass. Each mode has a distinct prompt, tool whitelist,
+ * and termination semantics (see `runReaderLoop` and `makeReaderAgent`):
+ *  - `comprehension` — forward-only, one chapter inlined per agent invocation.
+ *  - `thematic`      — single whole-work invocation; hypothesize-and-confirm
+ *                       motifs/symbols/subtext via search across chapters.
+ *  - `self-answer`   — re-read to resolve open `question(...)` entries; the
+ *                       agent proposes resolutions but does not mark them
+ *                       answered (humans ratify).
+ *
+ * Older `readerPasses` rows written before this field existed default to
+ * `"comprehension"` on Zod parse, since pass-1 was always comprehension.
+ */
+export const ReaderModeEnum = z.enum([
+  "comprehension",
+  "thematic",
+  "self-answer",
+]);
+export type ReaderMode = z.infer<typeof ReaderModeEnum>;
+
 export const ReaderPassSchema = z.object({
   passNumber: z.number().int().positive(),
+  mode: ReaderModeEnum.default("comprehension"),
   startedAt: timestamp,
   completedAt: timestamp.nullable().default(null),
   newBibleEntries: z.number().int().nonnegative().default(0),
   newNotes: z.number().int().nonnegative().default(0),
   newQuestions: z.number().int().nonnegative().default(0),
+  /**
+   * Range of chapter `order` values this pass covered. Only meaningful when
+   * `mode === "comprehension"` — comprehension may run as multiple segments
+   * (passes), each covering a contiguous chapter range. `null` for
+   * thematic / self-answer passes and for legacy rows.
+   */
+  firstChapterOrder: z.number().int().nonnegative().nullable().default(null),
+  lastChapterOrder: z.number().int().nonnegative().nullable().default(null),
 });
 export type ReaderPass = z.infer<typeof ReaderPassSchema>;
 
 export const AgentRunUsageSchema = z.object({
   promptTokens: z.number().int().nonnegative().default(0),
   completionTokens: z.number().int().nonnegative().default(0),
+  /** Cumulative tokens written into the prompt cache across this run. */
+  cacheCreationTokens: z.number().int().nonnegative().default(0),
+  /** Cumulative tokens served from the prompt cache across this run. */
+  cacheReadTokens: z.number().int().nonnegative().default(0),
 });
 export type AgentRunUsage = z.infer<typeof AgentRunUsageSchema>;
 
@@ -841,7 +896,14 @@ export const AgentRunSchema = z.object({
   totalTokenUsage: AgentRunUsageSchema.default({
     promptTokens: 0,
     completionTokens: 0,
+    cacheCreationTokens: 0,
+    cacheReadTokens: 0,
   }),
+  /**
+   * Most recent iteration's prompt_tokens. Used by the UI to surface current
+   * rolling context-window pressure separately from the cumulative budget.
+   */
+  lastIterationPromptTokens: z.number().int().nonnegative().default(0),
   /**
    * Set true when verifier surfaces drift; UI requires an incremental Reader
    * pass before the next plan-approval gate unlocks.

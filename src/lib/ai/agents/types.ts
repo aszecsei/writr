@@ -5,7 +5,7 @@ import type {
   ReasoningEffort,
 } from "@/db/schemas";
 import type { ToolCallEntry, ToolExecutionContext } from "../tool-calling";
-import type { AiMessage, AiStreamChunk, FinishReason } from "../types";
+import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
 
 /**
  * "Manual" represents the synthesized agent that backs the AiPanel chat — its
@@ -89,6 +89,12 @@ export interface IterationEndInfo {
   reasoning?: string;
   finishReason?: FinishReason;
   durationMs: number;
+  /**
+   * Token usage as reported by the provider. Undefined when the upstream
+   * stream omitted usage (some OpenRouter routes) — pipeline accounting falls
+   * back to its prior value in that case.
+   */
+  usage?: AiUsage;
 }
 
 export interface ToolCallsCollectedInfo {

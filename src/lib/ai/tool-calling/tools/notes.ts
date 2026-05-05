@@ -7,7 +7,9 @@ import {
 import {
   countAgentQuestionsSince,
   createAgentQuestion,
+  getAgentQuestion,
   listAgentQuestions,
+  proposeAgentQuestionAnswer,
 } from "@/db/operations/agentQuestions";
 import {
   AgentNoteCategoryEnum,
@@ -236,7 +238,64 @@ export const listQuestionsTool = defineTool({
         description: q.description,
         status: q.status,
         humanAnswer: q.humanAnswer,
+        proposedAnswer: q.proposedAnswer,
+        proposedAt: q.proposedAt,
+        proposedByPassNumber: q.proposedByPassNumber,
       })),
+    });
+  },
+});
+
+// ─── propose_answer ─────────────────────────────────────────────────
+
+export const proposeAnswerTool = defineTool({
+  id: "propose_answer",
+  name: "Propose Answer to Question",
+  description:
+    "Record a proposed resolution for an open question, based on what the manuscript shows. " +
+    "The question stays `open` until a human ratifies the proposal — agents are advisory. " +
+    "Use this only after re-reading the relevant chapters and writing supporting `note`s / `bible_write`s.",
+  parameters: {
+    type: "object",
+    properties: {
+      questionId: {
+        type: "string",
+        description:
+          'Id of the question to propose an answer for. Use `list_questions(status="open")` to find candidates.',
+      },
+      proposedAnswer: {
+        type: "string",
+        description:
+          "Concise resolution grounded in textual evidence. Cite chapters/quotes inline.",
+      },
+    },
+    required: ["questionId", "proposedAnswer"],
+  },
+  inputSchema: z.object({
+    questionId: z.string().uuid(),
+    proposedAnswer: z.string().min(1),
+  }),
+  requiresApproval: false,
+  async execute(params, context) {
+    if (!context.runId) return fail("propose_answer requires a run context");
+    if (context.passNumber === undefined) {
+      return fail("propose_answer requires a pass number on the agent context");
+    }
+    const question = await getAgentQuestion(params.questionId);
+    if (!question) return fail(`Question not found: ${params.questionId}`);
+    if (question.runId !== context.runId) {
+      return fail("Question belongs to a different run");
+    }
+    if (question.status !== "open") {
+      return fail(`Cannot propose an answer for a ${question.status} question`);
+    }
+    await proposeAgentQuestionAnswer({
+      id: params.questionId,
+      proposedAnswer: params.proposedAnswer,
+      passNumber: context.passNumber,
+    });
+    return ok("Recorded proposed answer for human review", {
+      questionId: params.questionId,
     });
   },
 });

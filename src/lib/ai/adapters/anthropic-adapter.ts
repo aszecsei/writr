@@ -5,7 +5,11 @@ import type {
   ContentPart,
   FinishReason,
 } from "../types";
-import { generateToolUseId, parseBase64ImageDataUrl } from "./helpers";
+import {
+  extractTextContent,
+  generateToolUseId,
+  parseBase64ImageDataUrl,
+} from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 function normalizeStopReason(
@@ -91,22 +95,27 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         }
       }
     } else if (msg.role === "tool") {
-      // Anthropic expects tool results as user messages with tool_result content blocks
+      // Anthropic expects tool results as user messages with tool_result content blocks.
+      // Propagate cache_control to the tool_result block so the caching marker
+      // attached by `withTrailingCacheControl` survives the conversion.
+      const { text, cacheControl } = extractTextContent(msg.content);
       nonSystemMessages.push({
         role: "user",
         content: [
           {
             type: "tool_result",
             tool_use_id: msg.toolCallId ?? "",
-            content: typeof msg.content === "string" ? msg.content : "",
+            content: text,
+            ...(cacheControl ? { cache_control: cacheControl } : {}),
           },
         ],
       } as Anthropic.MessageParam);
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
       // Assistant message with tool use blocks
       const content: Anthropic.ContentBlockParam[] = [];
-      if (typeof msg.content === "string" && msg.content) {
-        content.push({ type: "text", text: msg.content });
+      const text = extractTextContent(msg.content).text;
+      if (text) {
+        content.push({ type: "text", text });
       }
       for (const tc of msg.toolCalls) {
         content.push({
@@ -207,11 +216,19 @@ function buildToolsParam(
   params: CompletionParams,
 ): { tools: Anthropic.Tool[] } | object {
   if (!params.tools?.length) return {};
+  // Attach cache_control to the LAST tool entry — Anthropic treats this as a
+  // single breakpoint that caches the entire tools section. Tools are stable
+  // across iterations, so this is a high-leverage breakpoint for tool-calling
+  // agents. (Counts toward the 4-breakpoint per-request cap.)
+  const lastIdx = params.tools.length - 1;
   return {
-    tools: params.tools.map((t) => ({
+    tools: params.tools.map((t, i) => ({
       name: t.id,
       description: t.description,
       input_schema: t.parameters as unknown as Anthropic.Tool.InputSchema,
+      ...(i === lastIdx
+        ? { cache_control: { type: "ephemeral" as const } }
+        : {}),
     })),
   };
 }
@@ -266,15 +283,26 @@ export function createAnthropicAdapter(): ProviderAdapter {
         }
       }
 
+      const cacheCreationTokens =
+        response.usage.cache_creation_input_tokens ?? 0;
+      const cacheReadTokens = response.usage.cache_read_input_tokens ?? 0;
+      const promptTokens =
+        response.usage.input_tokens + cacheCreationTokens + cacheReadTokens;
+      const completionTokens = response.usage.output_tokens;
       return {
         content: text,
         reasoning: reasoning || undefined,
         model: response.model,
         usage: {
-          prompt_tokens: response.usage.input_tokens,
-          completion_tokens: response.usage.output_tokens,
-          total_tokens:
-            response.usage.input_tokens + response.usage.output_tokens,
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: promptTokens + completionTokens,
+          ...(cacheCreationTokens > 0
+            ? { cache_creation_tokens: cacheCreationTokens }
+            : {}),
+          ...(cacheReadTokens > 0
+            ? { cache_read_tokens: cacheReadTokens }
+            : {}),
         },
         finishReason: normalizeStopReason(response.stop_reason),
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
@@ -296,8 +324,32 @@ export function createAnthropicAdapter(): ProviderAdapter {
         inputJson: string;
       } | null = null;
 
+      // Accumulate usage across stream events. message_start carries the
+      // initial input/cache split; message_delta carries cumulative output
+      // and (since 2024-10) finalized input/cache values. Stays null until
+      // we see at least one usage payload — keeps `stop` clean on tests/
+      // upstream paths that omit usage.
+      let usageSeen = false;
+      let inputTokens = 0;
+      let cacheCreationTokens = 0;
+      let cacheReadTokens = 0;
+      let outputTokens = 0;
+
       for await (const event of stream) {
-        if (event.type === "content_block_start") {
+        if (event.type === "message_start") {
+          const usage = (
+            event as unknown as {
+              message: { usage?: Record<string, number | undefined> };
+            }
+          ).message.usage;
+          if (usage) {
+            usageSeen = true;
+            inputTokens = usage.input_tokens ?? 0;
+            cacheCreationTokens = usage.cache_creation_input_tokens ?? 0;
+            cacheReadTokens = usage.cache_read_input_tokens ?? 0;
+            outputTokens = usage.output_tokens ?? 0;
+          }
+        } else if (event.type === "content_block_start") {
           const block = (
             event as {
               content_block: { type: string; id?: string; name?: string };
@@ -330,10 +382,49 @@ export function createAnthropicAdapter(): ProviderAdapter {
             currentToolUse = null;
           }
         } else if (event.type === "message_delta") {
+          // The final message_delta carries cumulative output_tokens (and
+          // sometimes refines input/cache figures).
+          const usage = (
+            event as unknown as {
+              usage?: Record<string, number | undefined>;
+            }
+          ).usage;
+          if (usage) {
+            usageSeen = true;
+            if (typeof usage.output_tokens === "number") {
+              outputTokens = usage.output_tokens;
+            }
+            if (typeof usage.input_tokens === "number") {
+              inputTokens = usage.input_tokens;
+            }
+            if (typeof usage.cache_creation_input_tokens === "number") {
+              cacheCreationTokens = usage.cache_creation_input_tokens;
+            }
+            if (typeof usage.cache_read_input_tokens === "number") {
+              cacheReadTokens = usage.cache_read_input_tokens;
+            }
+          }
           if (event.delta.stop_reason) {
+            const promptTokens =
+              inputTokens + cacheCreationTokens + cacheReadTokens;
             yield {
               type: "stop" as const,
               finishReason: normalizeStopReason(event.delta.stop_reason),
+              ...(usageSeen
+                ? {
+                    usage: {
+                      prompt_tokens: promptTokens,
+                      completion_tokens: outputTokens,
+                      total_tokens: promptTokens + outputTokens,
+                      ...(cacheCreationTokens > 0
+                        ? { cache_creation_tokens: cacheCreationTokens }
+                        : {}),
+                      ...(cacheReadTokens > 0
+                        ? { cache_read_tokens: cacheReadTokens }
+                        : {}),
+                    },
+                  }
+                : {}),
             };
           }
         }

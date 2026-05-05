@@ -61,6 +61,8 @@ interface AgentSettingsProps {
   globalModel: string;
   globalReasoningEffort: ReasoningEffort;
   onChange: (kind: AgentKind, override: AgentModelOverride | null) => void;
+  comprehensionContextThreshold: number;
+  onComprehensionContextThresholdChange: (value: number) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -71,6 +73,8 @@ export function AgentSettings({
   globalModel,
   globalReasoningEffort,
   onChange,
+  comprehensionContextThreshold,
+  onComprehensionContextThresholdChange,
   inputClass,
   labelClass,
 }: AgentSettingsProps) {
@@ -99,6 +103,28 @@ export function AgentSettings({
             labelClass={labelClass}
           />
         ))}
+        <label className={labelClass}>
+          Comprehension context threshold (tokens)
+          <input
+            type="number"
+            min={1000}
+            step={1000}
+            value={comprehensionContextThreshold}
+            onChange={(e) => {
+              const next = Number.parseInt(e.target.value, 10);
+              if (Number.isFinite(next) && next > 0) {
+                onComprehensionContextThresholdChange(next);
+              }
+            }}
+            className={inputClass}
+          />
+          <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+            When the comprehension pass's prompt size exceeds this, the reader
+            soft-resets — starts a fresh segment at the next chapter with empty
+            history. Lower values trade long-range awareness for lower
+            per-iteration cost. Default 80,000.
+          </span>
+        </label>
       </div>
     </fieldset>
   );

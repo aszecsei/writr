@@ -25,6 +25,20 @@ export interface ToolExecutionContext {
    * agent so a later editor in the same tier sees in-flight changes.
    */
   agentKind?: string;
+  /**
+   * Highest chapter `order` the agent is permitted to access. Used by the
+   * comprehension reader to preserve forward-only reading: chapter-reading
+   * tools refuse to return content for chapters with `order` greater than
+   * this bound, and list/search tools filter results to `order <= bound`.
+   * Undefined means no bound (full project access).
+   */
+  maxReadableChapterOrder?: number;
+  /**
+   * Reader-pass number this tool call belongs to (1-based). Set when a reader
+   * agent is constructed inside a multi-pass loop so per-pass tools (e.g.
+   * `propose_answer`) can stamp their writes with the originating pass.
+   */
+  passNumber?: number;
 }
 
 /** JSON Schema subset used to describe a single property */

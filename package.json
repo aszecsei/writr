@@ -16,6 +16,7 @@
     "@dnd-kit/helpers": "^0.3.2",
     "@dnd-kit/react": "^0.3.2",
     "@google/genai": "^1.43.0",
+    "@microlink/react-json-view": "^1.31.20",
     "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-character-count": "^3.20.0",
     "@tiptap/extension-image": "^3.20.0",

@@ -35,7 +35,7 @@ export interface RevertTierResult {
 export async function revertTier(
   options: RevertTierOptions,
 ): Promise<RevertTierResult> {
-  const { runId, projectId, manifestId } = options;
+  const { runId, manifestId } = options;
 
   const target = await getSnapshotManifest(manifestId);
   if (!target) throw new Error(`Snapshot manifest not found: ${manifestId}`);
@@ -56,14 +56,14 @@ export async function revertTier(
   }
 
   // 2) Restore reader-bible view from the manifest. Truncate the log.
+  // Bibles are per-run, so only this run's view + log are touched — other
+  // runs' bibles remain untouched.
   await db.transaction(
     "rw",
     db.readerBibleView,
     db.readerBibleLog,
     async () => {
-      const existingView = await db.readerBibleView
-        .where({ projectId })
-        .toArray();
+      const existingView = await db.readerBibleView.where({ runId }).toArray();
       for (const row of existingView) {
         await db.readerBibleView.delete(row.id);
       }
@@ -71,7 +71,7 @@ export async function revertTier(
         await db.readerBibleView.put(row);
       }
       // Truncate log to entries created at or before the manifest.
-      const log = await db.readerBibleLog.where({ projectId }).toArray();
+      const log = await db.readerBibleLog.where({ runId }).toArray();
       for (const entry of log) {
         if (entry.createdAt > target.createdAt) {
           await db.readerBibleLog.delete(entry.id);

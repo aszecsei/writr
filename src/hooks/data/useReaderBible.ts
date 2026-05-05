@@ -4,27 +4,27 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import type { ReaderBibleLogEntry, ReaderBibleViewEntry } from "@/db/schemas";
 
-/** Live view of all reader-bible entries for a project, sorted by path. */
+/** Live view of all reader-bible entries for a run, sorted by path. */
 export function useReaderBible(
-  projectId: string | null,
+  runId: string | null,
 ): ReaderBibleViewEntry[] | undefined {
   return useLiveQuery(async () => {
-    if (!projectId) return [];
-    const all = await db.readerBibleView.where({ projectId }).toArray();
+    if (!runId) return [];
+    const all = await db.readerBibleView.where({ runId }).toArray();
     return all.sort((a, b) => a.path.localeCompare(b.path));
-  }, [projectId]);
+  }, [runId]);
 }
 
 /** Live view of a single reader-bible path (or null when missing). */
 export function useReaderBiblePath(
-  projectId: string | null,
+  runId: string | null,
   path: string | null,
 ): ReaderBibleViewEntry | null | undefined {
   return useLiveQuery(async () => {
-    if (!projectId || !path) return null;
-    const entry = await db.readerBibleView.where({ projectId, path }).first();
+    if (!runId || !path) return null;
+    const entry = await db.readerBibleView.where({ runId, path }).first();
     return entry ?? null;
-  }, [projectId, path]);
+  }, [runId, path]);
 }
 
 /** Live log entries for a run (chronological). */

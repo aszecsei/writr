@@ -1,10 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import ReactJson from "@microlink/react-json-view";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useReaderBible } from "@/hooks/data/useReaderBible";
 
 interface ReaderBibleViewProps {
-  projectId: string;
+  runId: string;
+}
+
+function useIsDark(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const obs = new MutationObserver(cb);
+      obs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+      return () => obs.disconnect();
+    },
+    () => document.documentElement.classList.contains("dark"),
+    () => false,
+  );
 }
 
 interface TreeNode {
@@ -19,8 +35,9 @@ interface TreeNode {
  * Tree view of the reader's bible, grouped by path. Click a leaf path to view
  * the JSON value. Read-only — reader writes happen via the agent.
  */
-export function ReaderBibleView({ projectId }: ReaderBibleViewProps) {
-  const entries = useReaderBible(projectId);
+export function ReaderBibleView({ runId }: ReaderBibleViewProps) {
+  const entries = useReaderBible(runId);
+  const isDark = useIsDark();
   const [selected, setSelected] = useState<string | null>(null);
 
   const tree = useMemo(() => buildTree(entries ?? []), [entries]);
@@ -29,10 +46,10 @@ export function ReaderBibleView({ projectId }: ReaderBibleViewProps) {
     return entries.find((e) => e.path === selected) ?? null;
   }, [selected, entries]);
 
-  if (!entries) return <div className="p-4 text-sm">Loading…</div>;
+  if (!entries) return <div className="h-full p-4 text-sm">Loading…</div>;
   if (entries.length === 0) {
     return (
-      <div className="p-4 text-sm text-neutral-500 dark:text-neutral-400">
+      <div className="h-full p-4 text-sm text-neutral-500 dark:text-neutral-400">
         The reader hasn't recorded anything yet. Start a reading pass to
         populate the bible.
       </div>
@@ -40,8 +57,8 @@ export function ReaderBibleView({ projectId }: ReaderBibleViewProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div className="overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-700 dark:bg-neutral-900/50">
+    <div className="grid h-full min-h-0 grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="min-h-0 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-700 dark:bg-neutral-900/50">
         <TreeNodeView
           node={tree}
           depth={0}
@@ -49,15 +66,15 @@ export function ReaderBibleView({ projectId }: ReaderBibleViewProps) {
           onSelect={setSelected}
         />
       </div>
-      <div className="rounded-md border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="flex min-h-0 flex-col overflow-y-auto rounded-md border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
         {selectedEntry ? (
           <>
             <h4 className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
               {selectedEntry.path}
             </h4>
-            <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-neutral-900 dark:text-neutral-100">
-              {JSON.stringify(selectedEntry.value, null, 2)}
-            </pre>
+            <div className="mt-2">
+              <ValueView value={selectedEntry.value} isDark={isDark} />
+            </div>
           </>
         ) : (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -66,6 +83,32 @@ export function ReaderBibleView({ projectId }: ReaderBibleViewProps) {
         )}
       </div>
     </div>
+  );
+}
+
+function ValueView({ value, isDark }: { value: unknown; isDark: boolean }) {
+  const isObjectLike = value !== null && typeof value === "object";
+
+  if (isObjectLike) {
+    return (
+      <ReactJson
+        src={value as object}
+        name={false}
+        theme={isDark ? "monokai" : "rjv-default"}
+        collapsed={2}
+        enableClipboard={false}
+        displayDataTypes={false}
+        displayObjectSize
+        quotesOnKeys={false}
+        style={{ background: "transparent", fontSize: "0.75rem" }}
+      />
+    );
+  }
+
+  return (
+    <pre className="whitespace-pre-wrap break-words text-xs text-neutral-900 dark:text-neutral-100">
+      {JSON.stringify(value)}
+    </pre>
   );
 }
 

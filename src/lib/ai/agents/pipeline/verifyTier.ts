@@ -23,6 +23,7 @@ import {
 import { resolveAgentModel, runAgent } from "../runner";
 import type { RunAgentCallbacks } from "../types";
 import type { PipelineEventEmitter } from "./events";
+import { withTokenAccounting } from "./tokenAccounting";
 
 export interface VerifyTierOptions {
   runId: string;
@@ -124,16 +125,20 @@ export async function verifyTier(
     throw new Error(`No API key configured for provider '${model.provider}'`);
   }
 
-  const callbacks: RunAgentCallbacks = {
+  const origin = { agentKind: agent.kind, agentId: agent.id };
+  const baseCallbacks: RunAgentCallbacks = {
     onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, info }),
+      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
     onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, info }),
+      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
+    onChunk: ({ messageId, chunk }) =>
+      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
     onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, info }),
+      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
     onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, info }),
+      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
   };
+  const callbacks = withTokenAccounting(runId, baseCallbacks);
 
   await runAgent({
     agent,

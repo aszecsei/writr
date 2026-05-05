@@ -5,7 +5,7 @@ import type {
   ContentPart,
   FinishReason,
 } from "../types";
-import { parseBase64ImageDataUrl } from "./helpers";
+import { extractTextContent, parseBase64ImageDataUrl } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface GoogleAdapterConfig {
@@ -79,15 +79,14 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
       }
     } else if (msg.role === "tool") {
       // Google expects function responses in user role messages
+      const responseText = extractTextContent(msg.content).text;
       nonSystemMessages.push({
         role: "user",
         parts: [
           {
             functionResponse: {
               name: msg.toolCallId ?? "unknown",
-              response: JSON.parse(
-                typeof msg.content === "string" ? msg.content : "{}",
-              ),
+              response: responseText ? JSON.parse(responseText) : {},
             },
           },
         ],
@@ -95,8 +94,9 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
       // Assistant message with function calls
       const parts: GooglePart[] = [];
-      if (typeof msg.content === "string" && msg.content) {
-        parts.push({ text: msg.content });
+      const text = extractTextContent(msg.content).text;
+      if (text) {
+        parts.push({ text });
       }
       for (const tc of msg.toolCalls) {
         parts.push({
@@ -247,7 +247,21 @@ export function createGoogleAdapter(
         buildRequestPayload(params, signal),
       );
 
+      // Capture usage and the terminating finish reason — Google streams
+      // usageMetadata on every chunk (running totals) and finishReason only on
+      // the final candidate. Emit `stop` once after the stream drains so the
+      // attached usage reflects the run-final values.
+      let finalFinishReason: string | null = null;
+      let finalUsage: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      } | null = null;
+
       for await (const response of stream) {
+        if (response.usageMetadata) {
+          finalUsage = response.usageMetadata;
+        }
         const candidate = response.candidates?.[0];
         if (candidate?.content?.parts) {
           for (const part of candidate.content.parts) {
@@ -271,12 +285,25 @@ export function createGoogleAdapter(
             }
           }
         }
-        if (candidate?.finishReason) {
-          yield {
-            type: "stop" as const,
-            finishReason: normalizeFinishReason(candidate.finishReason),
-          };
+        if (candidate?.finishReason && !finalFinishReason) {
+          finalFinishReason = candidate.finishReason;
         }
+      }
+
+      if (finalFinishReason) {
+        yield {
+          type: "stop" as const,
+          finishReason: normalizeFinishReason(finalFinishReason),
+          ...(finalUsage
+            ? {
+                usage: {
+                  prompt_tokens: finalUsage.promptTokenCount ?? 0,
+                  completion_tokens: finalUsage.candidatesTokenCount ?? 0,
+                  total_tokens: finalUsage.totalTokenCount ?? 0,
+                },
+              }
+            : {}),
+        };
       }
     },
   };

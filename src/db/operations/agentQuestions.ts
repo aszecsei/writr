@@ -26,6 +26,9 @@ export async function createAgentQuestion(
     references: input.references ?? [],
     status: "open",
     humanAnswer: null,
+    proposedAnswer: null,
+    proposedAt: null,
+    proposedByPassNumber: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   });
@@ -80,4 +83,43 @@ export async function countAgentQuestionsSince(
     .where({ runId })
     .filter((q) => q.createdAt > sinceIso)
     .count();
+}
+
+export async function countAgentQuestionsOpen(runId: string): Promise<number> {
+  return db.agentQuestions
+    .where({ runId })
+    .filter((q) => q.status === "open")
+    .count();
+}
+
+export interface ProposeAgentQuestionAnswerInput {
+  id: string;
+  proposedAnswer: string;
+  passNumber: number;
+}
+
+/**
+ * Record a proposed resolution from a self-answer reader pass. Question
+ * status is left unchanged — the human still ratifies via
+ * `answerAgentQuestion` (Accept) or `clearProposedAnswer` (Reject).
+ */
+export async function proposeAgentQuestionAnswer(
+  input: ProposeAgentQuestionAnswerInput,
+): Promise<void> {
+  const timestamp = now();
+  await db.agentQuestions.update(input.id, {
+    proposedAnswer: input.proposedAnswer,
+    proposedAt: timestamp,
+    proposedByPassNumber: input.passNumber,
+    updatedAt: timestamp,
+  });
+}
+
+export async function clearProposedAnswer(id: string): Promise<void> {
+  await db.agentQuestions.update(id, {
+    proposedAnswer: null,
+    proposedAt: null,
+    proposedByPassNumber: null,
+    updatedAt: now(),
+  });
 }

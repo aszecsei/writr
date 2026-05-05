@@ -580,6 +580,172 @@ export class WritrDatabase extends Dexie {
       customAgents: "id, projectId, [projectId+name], updatedAt",
     });
 
+    // v28: backfill `lastIterationPromptTokens` on agent runs so existing
+    // rows satisfy the new non-optional schema field.
+    this.version(28).upgrade((tx) =>
+      tx
+        .table("agentRuns")
+        .toCollection()
+        .modify((r) => {
+          if (r.lastIterationPromptTokens === undefined) {
+            r.lastIterationPromptTokens = 0;
+          }
+        }),
+    );
+
+    // v29: scope reader bible view per-run. The view used to be keyed on
+    // (projectId, path), which caused multiple runs in the same project to
+    // share — and clobber — bible state. Now keyed on (runId, path). Existing
+    // rows are wiped and rebuilt by replaying the log per run.
+    this.version(29)
+      .stores({
+        projects: "id, title, updatedAt",
+        chapters: "id, projectId, [projectId+order], updatedAt",
+        characters: "id, projectId, name, role",
+        locations: "id, projectId, name, parentLocationId",
+        timelineEvents: "id, projectId, [projectId+order]",
+        styleGuideEntries: "id, projectId, [projectId+order], category",
+        worldbuildingDocs:
+          "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+        characterRelationships:
+          "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+        outlineColumns: "id, projectId, [projectId+order]",
+        outlineCards: "id, projectId, columnId, [columnId+order]",
+        outlineGridColumns: "id, projectId, [projectId+order]",
+        outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+        outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+        writingSprints:
+          "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+        writingSessions:
+          "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+        playlistTracks: "id, projectId, [projectId+order]",
+        comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+        chapterSnapshots: "id, chapterId, projectId, [chapterId+createdAt]",
+        appSettings: "id",
+        appDictionary: "id",
+        projectDictionaries: "id, projectId",
+        agentRuns: "id, projectId, status, [projectId+createdAt]",
+        readerBibleLog:
+          "id, projectId, runId, [projectId+path], [runId+createdAt]",
+        readerBibleView: "id, projectId, runId, [runId+path]",
+        agentNotes: "id, projectId, runId, chapterId, [runId+status]",
+        agentQuestions: "id, projectId, runId, [runId+status]",
+        workUnits: "id, projectId, runId, [runId+tier], [runId+status]",
+        editPlans: "id, projectId, runId",
+        proposedEdits:
+          "id, projectId, runId, workUnitId, chapterId, [workUnitId+status]",
+        verifications: "id, projectId, runId, [runId+tier]",
+        chapterSummaries:
+          "id, projectId, chapterId, [chapterId+sourceContentHash]",
+        snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
+        customAgents: "id, projectId, [projectId+name], updatedAt",
+      })
+      .upgrade(async (tx) => {
+        const view = tx.table("readerBibleView");
+        const log = tx.table("readerBibleLog");
+
+        await view.clear();
+
+        const allLog = await log.toArray();
+        // Group log entries by runId, preserving chronological order so the
+        // replay applies merge/set/delete in the correct sequence.
+        allLog.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+        const viewByKey = new Map<
+          string,
+          {
+            id: string;
+            projectId: string;
+            runId: string;
+            path: string;
+            value: unknown;
+            lastUpdatedAt: string;
+            lastLogEntryId: string;
+          }
+        >();
+
+        const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+          v !== null && typeof v === "object" && !Array.isArray(v);
+        const deepMerge = (prev: unknown, next: unknown): unknown => {
+          if (isPlainObject(prev) && isPlainObject(next)) {
+            const out: Record<string, unknown> = { ...prev };
+            for (const [k, v] of Object.entries(next)) {
+              out[k] =
+                k in out && isPlainObject(out[k]) && isPlainObject(v)
+                  ? deepMerge(out[k], v)
+                  : v;
+            }
+            return out;
+          }
+          return next;
+        };
+
+        for (const entry of allLog as Array<{
+          id: string;
+          projectId: string;
+          runId: string;
+          path: string;
+          op: "set" | "merge" | "delete";
+          value: unknown;
+          createdAt: string;
+        }>) {
+          const key = `${entry.runId}::${entry.path}`;
+          if (entry.op === "delete") {
+            viewByKey.delete(key);
+            continue;
+          }
+          const existing = viewByKey.get(key);
+          const nextValue =
+            entry.op === "merge" && existing
+              ? deepMerge(existing.value, entry.value)
+              : entry.value;
+          viewByKey.set(key, {
+            id: existing?.id ?? crypto.randomUUID(),
+            projectId: entry.projectId,
+            runId: entry.runId,
+            path: entry.path,
+            value: nextValue,
+            lastUpdatedAt: entry.createdAt,
+            lastLogEntryId: entry.id,
+          });
+        }
+
+        if (viewByKey.size > 0) {
+          await view.bulkAdd(Array.from(viewByKey.values()));
+        }
+      });
+
+    // v30: backfill `comprehensionContextThreshold` on the singleton
+    // settings row so existing installs satisfy the new non-optional field.
+    this.version(30).upgrade((tx) =>
+      tx
+        .table("appSettings")
+        .toCollection()
+        .modify((s) => {
+          if (s.comprehensionContextThreshold === undefined) {
+            s.comprehensionContextThreshold = 80_000;
+          }
+        }),
+    );
+
+    // v31: backfill `cacheCreationTokens` / `cacheReadTokens` on existing
+    // agent runs so they satisfy the new non-optional schema fields.
+    this.version(31).upgrade((tx) =>
+      tx
+        .table("agentRuns")
+        .toCollection()
+        .modify((r) => {
+          if (r.totalTokenUsage) {
+            if (r.totalTokenUsage.cacheCreationTokens === undefined) {
+              r.totalTokenUsage.cacheCreationTokens = 0;
+            }
+            if (r.totalTokenUsage.cacheReadTokens === undefined) {
+              r.totalTokenUsage.cacheReadTokens = 0;
+            }
+          }
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

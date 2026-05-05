@@ -9,6 +9,7 @@ import type {
   AiResponse,
   AiStreamChunk,
   AiToolCall,
+  AiUsage,
   FinishReason,
 } from "../types";
 import {
@@ -210,6 +211,7 @@ export async function runAgent(
     let assistantContent = "";
     let assistantReasoning: string | undefined;
     let finishReason: FinishReason | undefined;
+    let iterationUsage: AiUsage | undefined;
     const collectedToolCalls: ToolCallPayload[] = [];
 
     const response = await fetch("/api/ai", {
@@ -260,6 +262,7 @@ export async function runAgent(
 
           if (chunk.type === "stop") {
             finishReason = chunk.finishReason;
+            if (chunk.usage) iterationUsage = chunk.usage;
             continue;
           }
           if (chunk.type === "tool_use") {
@@ -281,6 +284,7 @@ export async function runAgent(
       assistantContent = data.content;
       assistantReasoning = data.reasoning;
       finishReason = data.finishReason;
+      iterationUsage = data.usage;
       if (data.toolCalls) {
         for (const tc of data.toolCalls) {
           collectedToolCalls.push({
@@ -312,6 +316,7 @@ export async function runAgent(
       reasoning: assistantReasoning,
       finishReason,
       durationMs,
+      usage: iterationUsage,
     });
 
     // No tool calls — this iteration finished the run.

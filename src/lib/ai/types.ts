@@ -99,15 +99,21 @@ export type FinishReason =
   | "tool_use"
   | "unknown";
 
+export interface AiUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  /** Tokens written into the prompt cache (a.k.a. "cache creation"). */
+  cache_creation_tokens?: number;
+  /** Tokens served from the prompt cache (a.k.a. "cache read" / "cache hits"). */
+  cache_read_tokens?: number;
+}
+
 export interface AiResponse {
   content: string;
   reasoning?: string;
   model: string;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+  usage?: AiUsage;
   finishReason?: FinishReason;
   toolCalls?: AiToolCall[];
 }
@@ -121,7 +127,7 @@ export type AiStreamChunk =
       name: string;
       input: Record<string, unknown>;
     }
-  | { type: "stop"; finishReason: FinishReason };
+  | { type: "stop"; finishReason: FinishReason; usage?: AiUsage };
 
 export interface AiSettings {
   apiKey: string;
