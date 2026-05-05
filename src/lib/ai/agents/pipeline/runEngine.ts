@@ -1,7 +1,9 @@
 import { getAgentRun } from "@/db/operations/agentRuns";
 import type { AiContext } from "../../types";
+import { type ApplyTierResult, applyTier } from "./applyTier";
 import type { PipelineEventEmitter } from "./events";
 import { runReaderLoop } from "./readerLoop";
+import { executeTier, planTier } from "./tierRunner";
 
 /**
  * Module-level registry of in-flight run controllers. The dashboard "Cancel"
@@ -66,4 +68,89 @@ export async function startReaderPhase(
   } finally {
     runControllers.delete(options.runId);
   }
+}
+
+export interface StartPlanTierOptions {
+  runId: string;
+  projectId: string;
+  tier: number;
+  humanBriefing?: string;
+  onEvent?: PipelineEventEmitter;
+  buildContext: () => Promise<AiContext>;
+}
+
+export async function startPlanTier(
+  options: StartPlanTierOptions,
+): Promise<void> {
+  const existing = runControllers.get(options.runId);
+  if (existing) {
+    throw new Error(
+      `Run ${options.runId} is already in flight. Cancel it before restarting.`,
+    );
+  }
+  const run = await getAgentRun(options.runId);
+  if (!run) throw new Error(`Agent run not found: ${options.runId}`);
+
+  const controller = new AbortController();
+  runControllers.set(options.runId, controller);
+  try {
+    await planTier({
+      runId: options.runId,
+      projectId: options.projectId,
+      tier: options.tier,
+      humanBriefing: options.humanBriefing,
+      signal: controller.signal,
+      onEvent: options.onEvent,
+      buildContext: options.buildContext,
+    });
+  } finally {
+    runControllers.delete(options.runId);
+  }
+}
+
+export interface StartExecuteTierOptions {
+  runId: string;
+  projectId: string;
+  tier: number;
+  onEvent?: PipelineEventEmitter;
+  buildContext: () => Promise<AiContext>;
+}
+
+export async function startExecuteTier(
+  options: StartExecuteTierOptions,
+): Promise<void> {
+  const existing = runControllers.get(options.runId);
+  if (existing) {
+    throw new Error(
+      `Run ${options.runId} is already in flight. Cancel it before restarting.`,
+    );
+  }
+  const controller = new AbortController();
+  runControllers.set(options.runId, controller);
+  try {
+    await executeTier({
+      runId: options.runId,
+      projectId: options.projectId,
+      tier: options.tier,
+      signal: controller.signal,
+      onEvent: options.onEvent,
+      buildContext: options.buildContext,
+    });
+  } finally {
+    runControllers.delete(options.runId);
+  }
+}
+
+export interface StartApplyTierOptions {
+  runId: string;
+  projectId: string;
+  tier: number;
+  approvedEditIds: string[];
+  manifestName?: string;
+}
+
+export async function startApplyTier(
+  options: StartApplyTierOptions,
+): Promise<ApplyTierResult> {
+  return applyTier(options);
 }

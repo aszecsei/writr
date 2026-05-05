@@ -673,9 +673,31 @@ const readChapterTool = defineTool({
   },
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
-  async execute(params) {
+  async execute(params, context) {
     const chapter = await getChapter(params.id);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
+
+    // Editor agents in the same tier should see staged proposed edits from
+    // earlier editors so chapter N+1's editor can acknowledge chapter N's
+    // new scene. Other agent kinds always see the persisted chapter content.
+    if (context.agentKind === "editor" && context.runId) {
+      const { getChapterWithStagedEdits } = await import(
+        "@/lib/ai/agents/pipeline/stagedChapterContent"
+      );
+      const staged = await getChapterWithStagedEdits(context.runId, params.id);
+      if (staged) {
+        return ok(
+          `Chapter "${chapter.title}" (${staged.wordCount} words, with staged edits)`,
+          {
+            id: chapter.id,
+            title: chapter.title,
+            content: staged.content,
+            staged: true,
+          },
+        );
+      }
+    }
+
     return ok(`Chapter "${chapter.title}" (${chapter.wordCount} words)`, {
       id: chapter.id,
       title: chapter.title,
@@ -1032,6 +1054,13 @@ import {
   noteTool,
   questionTool,
 } from "./tools/notes";
+import { proposeEditTool } from "./tools/proposedEdits";
+import { readSummaryTool } from "./tools/summaries";
+import {
+  createWorkUnitTool,
+  finalizeTierTool,
+  updateWorkUnitTool,
+} from "./tools/workUnits";
 
 export const AI_TOOLS: AiToolDefinition[] = [
   createCharacterTool,
@@ -1069,6 +1098,12 @@ export const AI_TOOLS: AiToolDefinition[] = [
   questionTool,
   listNotesTool,
   listQuestionsTool,
+  // Phase 2: orchestrator + editor
+  createWorkUnitTool,
+  updateWorkUnitTool,
+  finalizeTierTool,
+  proposeEditTool,
+  readSummaryTool,
 ];
 
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(

@@ -25,7 +25,9 @@ import {
   startReaderPhase,
 } from "@/lib/ai/agents/pipeline/runEngine";
 import type { AiContext } from "@/lib/ai/types";
+import { EditApprovalPanel } from "./EditApprovalPanel";
 import { NotesQuestionsPanel } from "./NotesQuestionsPanel";
+import { PlanView } from "./PlanView";
 import { ReaderBibleView } from "./ReaderBibleView";
 
 interface RunDashboardProps {
@@ -33,12 +35,14 @@ interface RunDashboardProps {
   projectId: string;
 }
 
-type Tab = "overview" | "bible" | "notes";
+type Tab = "overview" | "bible" | "notes" | "plan" | "edits";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "bible", label: "Reader Bible" },
   { id: "notes", label: "Notes & Questions" },
+  { id: "plan", label: "Plan" },
+  { id: "edits", label: "Edits" },
 ];
 
 export function RunDashboard({ runId, projectId }: RunDashboardProps) {
@@ -237,6 +241,10 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
         )}
         {tab === "bible" && <ReaderBibleView projectId={projectId} />}
         {tab === "notes" && <NotesQuestionsPanel runId={runId} />}
+        {tab === "plan" && <PlanView runId={runId} projectId={projectId} />}
+        {tab === "edits" && (
+          <EditApprovalPanel runId={runId} projectId={projectId} />
+        )}
       </div>
     </div>
   );
