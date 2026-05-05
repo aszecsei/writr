@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { ShareDialog } from "@/components/collab/ShareDialog";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
@@ -19,6 +20,7 @@ import {
 } from "@/components/sprint";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useFocusModeShortcuts } from "@/hooks/ui/useFocusModeShortcuts";
+import { isCollabEnabled } from "@/lib/collab/config";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./TopBar";
@@ -135,6 +137,7 @@ export function AppShell({ children }: AppShellProps) {
       <SprintConfigDialog />
       <SprintHistoryDialog />
       <SprintWidget />
+      {isCollabEnabled() && <ShareDialog />}
     </div>
   );
 }
