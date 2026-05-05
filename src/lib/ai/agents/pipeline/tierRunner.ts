@@ -137,15 +137,28 @@ export async function executeTier(options: ExecuteTierOptions): Promise<void> {
   // Only include the units listed by the plan (in case the orchestrator left
   // unattached drafts behind).
   const byId = new Map(allUnits.map((u) => [u.id, u]));
-  const units = planTier.workUnitIds
+  const planUnits = planTier.workUnitIds
     .map((id) => byId.get(id))
     .filter((u): u is WorkUnit => !!u);
+
+  // Skip units that already finished a prior execution (resume idempotency —
+  // PauseResumeBanner re-invokes executeTier after a stranded run).
+  const units = planUnits.filter(
+    (u) =>
+      u.status !== "awaiting-approval" &&
+      u.status !== "approved" &&
+      u.status !== "applied" &&
+      u.status !== "rejected" &&
+      u.status !== "superseded",
+  );
 
   if (units.length === 0) {
     await updateAgentRunStatus(
       runId,
       "awaiting-edit-approval",
-      `Tier ${tier} had no work units to execute`,
+      planUnits.length === 0
+        ? `Tier ${tier} had no work units to execute`
+        : `Tier ${tier} already executed — ${planUnits.length} work unit${planUnits.length === 1 ? "" : "s"} ready for review`,
     );
     return;
   }

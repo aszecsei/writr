@@ -326,6 +326,9 @@ export function AppSettingsDialog() {
               onDebugModeChange={setDebugMode}
               onEnableToolCallingChange={setEnableToolCalling}
               onConfigureAi={() => openModal({ id: "ai-config" })}
+              onManageCustomAgents={() =>
+                openModal({ id: "custom-agents-manager" })
+              }
               inputClass={INPUT_CLASS}
               labelClass={LABEL_CLASS}
             />

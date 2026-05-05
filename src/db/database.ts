@@ -12,6 +12,7 @@ import type {
   Character,
   CharacterRelationship,
   Comment,
+  CustomAgent,
   EditPlan,
   Location,
   OutlineGridCell,
@@ -65,6 +66,7 @@ export class WritrDatabase extends Dexie {
   verifications!: EntityTable<Verification, "id">;
   chapterSummaries!: EntityTable<ChapterSummary, "id">;
   snapshotManifests!: EntityTable<SnapshotManifest, "id">;
+  customAgents!: EntityTable<CustomAgent, "id">;
 
   constructor() {
     super("writr");
@@ -532,6 +534,50 @@ export class WritrDatabase extends Dexie {
       chapterSummaries:
         "id, projectId, chapterId, [chapterId+sourceContentHash]",
       snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
+    });
+
+    // v27: user-defined custom agents (Phase 4 polish).
+    this.version(27).stores({
+      projects: "id, title, updatedAt",
+      chapters: "id, projectId, [projectId+order], updatedAt",
+      characters: "id, projectId, name, role",
+      locations: "id, projectId, name, parentLocationId",
+      timelineEvents: "id, projectId, [projectId+order]",
+      styleGuideEntries: "id, projectId, [projectId+order], category",
+      worldbuildingDocs:
+        "id, projectId, *tags, parentDocId, [projectId+parentDocId]",
+      characterRelationships:
+        "id, projectId, sourceCharacterId, targetCharacterId, [projectId+sourceCharacterId], [projectId+targetCharacterId]",
+      outlineColumns: "id, projectId, [projectId+order]",
+      outlineCards: "id, projectId, columnId, [columnId+order]",
+      outlineGridColumns: "id, projectId, [projectId+order]",
+      outlineGridRows: "id, projectId, linkedChapterId, [projectId+order]",
+      outlineGridCells: "id, projectId, rowId, columnId, [rowId+columnId]",
+      writingSprints:
+        "id, projectId, chapterId, status, startedAt, [projectId+startedAt]",
+      writingSessions:
+        "id, projectId, chapterId, date, [projectId+date], [date+hourOfDay]",
+      playlistTracks: "id, projectId, [projectId+order]",
+      comments: "id, projectId, chapterId, [chapterId+fromOffset], status",
+      chapterSnapshots: "id, chapterId, projectId, [chapterId+createdAt]",
+      appSettings: "id",
+      appDictionary: "id",
+      projectDictionaries: "id, projectId",
+      agentRuns: "id, projectId, status, [projectId+createdAt]",
+      readerBibleLog:
+        "id, projectId, runId, [projectId+path], [runId+createdAt]",
+      readerBibleView: "id, [projectId+path], projectId",
+      agentNotes: "id, projectId, runId, chapterId, [runId+status]",
+      agentQuestions: "id, projectId, runId, [runId+status]",
+      workUnits: "id, projectId, runId, [runId+tier], [runId+status]",
+      editPlans: "id, projectId, runId",
+      proposedEdits:
+        "id, projectId, runId, workUnitId, chapterId, [workUnitId+status]",
+      verifications: "id, projectId, runId, [runId+tier]",
+      chapterSummaries:
+        "id, projectId, chapterId, [chapterId+sourceContentHash]",
+      snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
+      customAgents: "id, projectId, [projectId+name], updatedAt",
     });
 
     // Seed singleton rows so liveQuery hooks never need to write

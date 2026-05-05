@@ -2,6 +2,7 @@ import type { ReaderPass } from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
+import { withScreenplaySuffix } from "./screenplay";
 
 const READER_TOOLS = [
   "list_chapters",
@@ -101,6 +102,8 @@ export function makeReaderAgent(input: MakeReaderAgentInput): Agent {
     },
   ];
 
+  const systemPrompt = withScreenplaySuffix(SYSTEM_PROMPT, input.context);
+
   return {
     id: `reader:${input.runId}:pass-${input.passNumber}`,
     kind: "reader",
@@ -109,7 +112,7 @@ export function makeReaderAgent(input: MakeReaderAgentInput): Agent {
     allowedToolIds: READER_TOOLS,
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       context: input.context,
       initialMessages,
       enableToolCalling: true,
@@ -119,7 +122,7 @@ export function makeReaderAgent(input: MakeReaderAgentInput): Agent {
       runId: input.runId,
       agentKind: "reader",
     },
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt,
   };
 }
 

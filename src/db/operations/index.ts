@@ -19,6 +19,7 @@ export * from "./chapterSummaries";
 export * from "./chapters";
 export * from "./characters";
 export * from "./comments";
+export * from "./customAgents";
 export * from "./dictionary";
 export * from "./editPlans";
 export * from "./locations";

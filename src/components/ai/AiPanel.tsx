@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { getAppSettings } from "@/db/operations";
+import { getCustomAgent } from "@/db/operations/customAgents";
 import type { AppSettings } from "@/db/schemas";
 import {
   useCharactersByProject,
@@ -32,6 +33,7 @@ import {
   resolveAgentModel,
   runAgent,
 } from "@/lib/ai/agents";
+import { makeCustomAgent } from "@/lib/ai/agents/builtins/custom";
 import { buildMessages } from "@/lib/ai/prompts";
 import { PROVIDERS } from "@/lib/ai/providers";
 import type {
@@ -49,7 +51,11 @@ import { MessageList } from "./MessageList";
 import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
-import { ToolSelector } from "./ToolSelector";
+import {
+  customAgentIdFromSelection,
+  isCustomAgentSelection,
+  ToolSelector,
+} from "./ToolSelector";
 
 function formatDebugMessages(messages: AiMessage[], model: string): string {
   const formatted = messages
@@ -335,23 +341,37 @@ export function AiPanel() {
     const enableToolCalling =
       (settings.enableToolCalling ?? false) && !!projectId;
 
-    const agent: Agent = {
-      id: `manual-${generateId()}`,
-      kind: "manual",
-      enableToolCalling,
-      buildMessages: makeManualAgentBuildMessages({
-        tool,
+    let agent: Agent;
+    if (isCustomAgentSelection(tool)) {
+      const customAgentId = customAgentIdFromSelection(tool);
+      const custom = await getCustomAgent(customAgentId);
+      if (!custom) {
+        throw new Error(`Custom agent not found: ${customAgentId}`);
+      }
+      agent = makeCustomAgent({
+        custom,
+        projectId: projectId ?? "",
         context,
+      });
+    } else {
+      agent = {
+        id: `manual-${generateId()}`,
+        kind: "manual",
         enableToolCalling,
-        postChatInstructions: settings.postChatInstructions,
-        postChatInstructionsDepth: settings.postChatInstructionsDepth,
-        assistantPrefill: settings.assistantPrefill,
-        customSystemPrompt: settings.customSystemPrompt,
-        toolPromptOverride,
-        images: imageAttachments,
-      }),
-      agentContext: { projectId: projectId ?? "", agentKind: "manual" },
-    };
+        buildMessages: makeManualAgentBuildMessages({
+          tool,
+          context,
+          enableToolCalling,
+          postChatInstructions: settings.postChatInstructions,
+          postChatInstructionsDepth: settings.postChatInstructionsDepth,
+          assistantPrefill: settings.assistantPrefill,
+          customSystemPrompt: settings.customSystemPrompt,
+          toolPromptOverride,
+          images: imageAttachments,
+        }),
+        agentContext: { projectId: projectId ?? "", agentKind: "manual" },
+      };
+    }
 
     const model = resolveAgentModel(agent, settings);
     if (!model.apiKey) {

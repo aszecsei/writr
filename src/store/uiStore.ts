@@ -28,7 +28,9 @@ export type ModalState =
   | { id: "ruby-editor"; currentAnnotation?: string }
   | { id: "dictionary-manager" }
   | { id: "version-history"; chapterId: string; projectId: string }
-  | { id: "ai-config" };
+  | { id: "ai-config" }
+  | { id: "custom-agents-manager" }
+  | { id: "custom-agent-editor"; agentId?: string };
 
 export type ModalId = ModalState["id"];
 
