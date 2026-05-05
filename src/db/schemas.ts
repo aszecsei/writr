@@ -284,6 +284,28 @@ export const ReasoningEffortEnum = z.enum([
 ]);
 export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 
+// ─── Agents ─────────────────────────────────────────────────────────
+
+/**
+ * Built-in pipeline agent kinds. Each can have its own model override
+ * configured via AppSettings.agentModelOverrides; null falls back to the
+ * global aiProvider/providerModels.
+ */
+export const AgentKindEnum = z.enum([
+  "reader",
+  "orchestrator",
+  "editor",
+  "verifier",
+]);
+export type AgentKind = z.infer<typeof AgentKindEnum>;
+
+export const AgentModelOverrideSchema = z.object({
+  provider: AiProviderEnum,
+  model: z.string().min(1),
+  reasoningEffort: ReasoningEffortEnum.optional(),
+});
+export type AgentModelOverride = z.infer<typeof AgentModelOverrideSchema>;
+
 // ─── App Settings (singleton) ────────────────────────────────────────
 
 export const PrimaryColorEnum = z.enum([
@@ -362,6 +384,14 @@ export const AppSettingsSchema = z.object({
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),
   enableToolCalling: z.boolean().default(false),
+  agentModelOverrides: z
+    .record(AgentKindEnum, AgentModelOverrideSchema.nullable())
+    .default({
+      reader: null,
+      orchestrator: null,
+      editor: null,
+      verifier: null,
+    }),
   customSystemPrompt: z.string().nullable().default(null),
   disabledBuiltinTools: z.array(z.string()).default([]),
   builtinToolOverrides: z.record(z.string(), z.string()).default({}),

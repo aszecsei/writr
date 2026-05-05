@@ -17,6 +17,14 @@ export interface ToolResult {
 
 export interface ToolExecutionContext {
   projectId: string;
+  /** ID of the agent run this tool call belongs to. Set by the agent runner. */
+  runId?: string;
+  /**
+   * Kind of agent invoking the tool. Tools may branch on this — for example,
+   * `read_chapter` overlays staged proposed edits when called from an editor
+   * agent so a later editor in the same tier sees in-flight changes.
+   */
+  agentKind?: string;
 }
 
 /** JSON Schema subset used to describe a single property */
