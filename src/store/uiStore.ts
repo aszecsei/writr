@@ -29,7 +29,8 @@ export type ModalState =
   | { id: "dictionary-manager" }
   | { id: "version-history"; chapterId: string; projectId: string }
   | { id: "agents-manager" }
-  | { id: "agent-editor"; agentId?: string };
+  | { id: "agent-editor"; agentId?: string }
+  | { id: "share-collab-session" };
 
 export type ModalId = ModalState["id"];
 
