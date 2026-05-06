@@ -43,6 +43,11 @@ interface AttachedSocket {
   peerId: string;
 }
 
+interface PendingState {
+  /** The requestId the guest sent on `join-request`, once they've sent it. */
+  requestId: string | null;
+}
+
 const PEER_ID_BYTES = 8;
 const DEFAULT_GRACE_MS = 60_000;
 const DEFAULT_IDLE_MS = 30 * 60_000;
@@ -59,6 +64,13 @@ export class Room {
   private readonly inviteTokens: ReadonlyMap<string, Exclude<Role, "host">>;
   private readonly sockets = new Map<string, AttachedSocket>();
   private readonly streams = new Map<DocKind, Stream>();
+  /**
+   * Non-host peers who have connected but haven't been admitted by the
+   * host yet. They've received `welcome` but no buffer; they cannot send
+   * doc traffic and other peers don't see them. Promoted to active on
+   * `join-approved`, dropped on `join-denied` or socket close.
+   */
+  private readonly pending = new Map<string, PendingState>();
   private hostPeerId: string | null = null;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
   private graceDeadline: number | null = null;
@@ -125,31 +137,37 @@ export class Room {
     if (role === "host") {
       this.hostPeerId = peerId;
       this.cancelGrace();
+    } else {
+      this.pending.set(peerId, { requestId: null });
     }
 
+    // peerCount in welcome reflects only admitted peers (excluding any
+    // pending guests, plus the just-attached pending guest).
+    const admittedCount = this.sockets.size - this.pending.size;
     this.send(socket, {
       type: "welcome",
       peerId,
       role,
-      peerCount: this.sockets.size,
+      peerCount: admittedCount + (role === "host" ? 0 : 1),
       hostPresent: this.hostPeerId !== null,
     });
 
-    for (const [docKind, stream] of this.streams) {
-      if (stream.buffer.length > 0) {
-        this.send(socket, {
-          type: "buffer",
-          docKind,
-          streamId: stream.currentStreamId,
-          updates: [...stream.buffer],
-        });
-      }
-    }
-
     if (role === "host") {
+      // Host gets the buffer immediately and is announced as connected.
+      for (const [docKind, stream] of this.streams) {
+        if (stream.buffer.length > 0) {
+          this.send(socket, {
+            type: "buffer",
+            docKind,
+            streamId: stream.currentStreamId,
+            updates: [...stream.buffer],
+          });
+        }
+      }
       this.broadcastSystem({ event: "host_connected" }, peerId);
+      this.broadcastSystem({ event: "peer_joined", peerId, role }, peerId);
     }
-    this.broadcastSystem({ event: "peer_joined", peerId, role }, peerId);
+    // For pending guests, buffer + peer_joined fire on join-approved instead.
 
     this.resetIdle();
 
@@ -161,8 +179,25 @@ export class Room {
     if (!this.sockets.has(peerId)) return;
 
     const wasHost = this.hostPeerId === peerId;
+    const pending = this.pending.get(peerId);
     this.sockets.delete(peerId);
-    this.broadcastSystem({ event: "peer_left", peerId }, peerId);
+    this.pending.delete(peerId);
+
+    if (pending) {
+      // Pending peer dropped: tell the host so the approval modal can clear.
+      // No peer_left broadcast — other peers never knew about this guest.
+      if (pending.requestId !== null) {
+        this.sendToHost({
+          type: "system",
+          data: {
+            event: "join_request_cancelled",
+            requestId: pending.requestId,
+          },
+        });
+      }
+    } else {
+      this.broadcastSystem({ event: "peer_left", peerId }, peerId);
+    }
 
     if (wasHost) {
       this.hostPeerId = null;
@@ -191,6 +226,18 @@ export class Room {
     const gate = canSend(entry.role, message);
     if (!gate.allowed) {
       this.rejectAndClose(entry, gate.reason, "Operation not permitted");
+      return;
+    }
+
+    // Pending guests can only send `join-request`. Anything else is a
+    // protocol violation (their key isn't established yet, so doc traffic
+    // would be undecryptable anyway).
+    if (this.pending.has(peerId) && message.type !== "join-request") {
+      this.rejectAndClose(
+        entry,
+        "join-rejected",
+        "Pending guest cannot send doc traffic before approval",
+      );
       return;
     }
 
@@ -248,7 +295,141 @@ export class Room {
           updates: [...stream.buffer],
         });
       })
+      .with({ type: "join-request" }, (m) => {
+        const pending = this.pending.get(peerId);
+        if (!pending) {
+          // Already admitted — reject re-handshake.
+          this.send(entry.socket, {
+            type: "error",
+            code: "join-rejected",
+            message: "Already admitted; cannot send another join-request",
+          });
+          return;
+        }
+        // Only one outstanding request per pending guest. If they send
+        // again, treat the new requestId as the canonical one (cancelling
+        // the old).
+        if (pending.requestId !== null) {
+          this.sendToHost({
+            type: "system",
+            data: {
+              event: "join_request_cancelled",
+              requestId: pending.requestId,
+            },
+          });
+        }
+        pending.requestId = m.requestId;
+        this.sendToHost({
+          type: "join-request",
+          requestId: m.requestId,
+          guestPub: m.guestPub,
+          displayName: m.displayName,
+          color: m.color,
+          from: peerId,
+        });
+      })
+      .with({ type: "join-approved" }, (m) => {
+        this.handleJoinResolution(entry, m.to, "approved", {
+          requestId: m.requestId,
+          encryptedRoomKey: m.encryptedRoomKey,
+        });
+      })
+      .with({ type: "join-denied" }, (m) => {
+        const denial: { requestId: string; reason?: string } = {
+          requestId: m.requestId,
+        };
+        if (m.reason !== undefined) denial.reason = m.reason;
+        this.handleJoinResolution(entry, m.to, "denied", denial);
+      })
       .exhaustive();
+  }
+
+  private handleJoinResolution(
+    host: AttachedSocket,
+    targetPeerId: string,
+    decision: "approved" | "denied",
+    payload:
+      | { requestId: string; encryptedRoomKey: string }
+      | { requestId: string; reason?: string },
+  ): void {
+    const target = this.sockets.get(targetPeerId);
+    const pending = this.pending.get(targetPeerId);
+    if (!target || !pending) {
+      this.send(host.socket, {
+        type: "error",
+        code: "join-rejected",
+        message: "Target guest is not pending",
+      });
+      return;
+    }
+    if (pending.requestId !== payload.requestId) {
+      this.send(host.socket, {
+        type: "error",
+        code: "join-rejected",
+        message: "Request id does not match the pending guest's request",
+      });
+      return;
+    }
+
+    if (decision === "approved") {
+      const approved = payload as {
+        requestId: string;
+        encryptedRoomKey: string;
+      };
+      // Promote out of pending FIRST so the buffer + peer_joined paths
+      // count this peer as admitted.
+      this.pending.delete(targetPeerId);
+      this.send(target.socket, {
+        type: "join-approved",
+        requestId: approved.requestId,
+        encryptedRoomKey: approved.encryptedRoomKey,
+      });
+      // Catch the new peer up on the buffer.
+      for (const [docKind, stream] of this.streams) {
+        if (stream.buffer.length > 0) {
+          this.send(target.socket, {
+            type: "buffer",
+            docKind,
+            streamId: stream.currentStreamId,
+            updates: [...stream.buffer],
+          });
+        }
+      }
+      // Announce them to everyone else (host included).
+      this.broadcastSystem(
+        { event: "peer_joined", peerId: targetPeerId, role: target.role },
+        targetPeerId,
+      );
+    } else {
+      const denied = payload as { requestId: string; reason?: string };
+      const denial: {
+        type: "join-denied";
+        requestId: string;
+        reason?: string;
+      } = {
+        type: "join-denied",
+        requestId: denied.requestId,
+      };
+      if (denied.reason !== undefined) denial.reason = denied.reason;
+      this.send(target.socket, denial);
+      // Tear the pending guest down without triggering the
+      // join_request_cancelled path in detach() — the host just denied,
+      // so a follow-up "cancelled" would be misleading.
+      this.pending.delete(targetPeerId);
+      this.sockets.delete(targetPeerId);
+      try {
+        target.socket.close(CLOSE_CODES.FORBIDDEN, "join-denied");
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  private sendToHost(message: ServerMessage): void {
+    if (this.hostPeerId === null) return;
+    const host = this.sockets.get(this.hostPeerId);
+    if (!host) return;
+    this.send(host.socket, message);
   }
 
   destroy(
