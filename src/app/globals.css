@@ -345,6 +345,32 @@ ruby rt {
   border-radius: 2px;
 }
 
+/* Collaboration carets (TipTap @tiptap/extension-collaboration-caret) */
+.collaboration-carets__caret {
+  border-left: 1px solid;
+  border-right: 1px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-carets__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  border-radius: 3px 3px 3px 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+  padding: 0.1rem 0.3rem;
+  user-select: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Search and replace highlights */
 .search-match {
   background-color: rgba(250, 204, 21, 0.4);
