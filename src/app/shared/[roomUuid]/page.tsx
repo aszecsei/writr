@@ -2,6 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CollabProseEditor } from "@/components/collab/CollabProseEditor";
 import {
   GuestSessionShell,
   type GuestState,
@@ -110,11 +111,23 @@ export default function SharedSessionPage() {
     collabError,
   ]);
 
+  // When connected, provide the live editor as the shell's connected slot.
+  // The 'view' role gets a read-only editor; edit/review can type.
+  const connectedContent =
+    state.kind === "connected" && session && role !== "host" ? (
+      <CollabProseEditor
+        doc={session.getDoc("prose")}
+        awareness={session.awareness}
+        editable={role === "edit"}
+      />
+    ) : undefined;
+
   return (
     <GuestSessionShell
       state={state}
       onLeave={handleClose}
       onRetry={handleRetry}
+      connectedContent={connectedContent}
     />
   );
 }
