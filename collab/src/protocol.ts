@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { z } from "zod";
 
 export const ROLES = ["view", "review", "edit", "host"] as const;
@@ -110,21 +111,26 @@ export function canSend(
   role: Role,
   message: ClientMessage,
 ): { allowed: true } | { allowed: false; reason: ErrorCode } {
-  switch (message.type) {
-    case "awareness":
-    case "request-buffer":
-      return { allowed: true };
-    case "y-update":
-      if (role === "view") return { allowed: false, reason: "unauthorized" };
-      if (role === "review" && message.docKind !== "comments") {
-        return { allowed: false, reason: "unauthorized" };
+  return match(message)
+    .with({ type: P.union("awareness", "request-buffer") }, () => ({
+      allowed: true as const,
+    }))
+    .with({ type: "y-update" }, (m) => {
+      if (role === "view") {
+        return { allowed: false as const, reason: "unauthorized" as const };
       }
-      return { allowed: true };
-    case "meta":
-    case "rotate-stream":
-      if (role !== "host") return { allowed: false, reason: "unauthorized" };
-      return { allowed: true };
-  }
+      if (role === "review" && m.docKind !== "comments") {
+        return { allowed: false as const, reason: "unauthorized" as const };
+      }
+      return { allowed: true as const };
+    })
+    .with({ type: P.union("meta", "rotate-stream") }, () => {
+      if (role !== "host") {
+        return { allowed: false as const, reason: "unauthorized" as const };
+      }
+      return { allowed: true as const };
+    })
+    .exhaustive();
 }
 
 export { peerIdSchema, roleSchema };

@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { match } from "ts-pattern";
 import {
   CLOSE_CODES,
   type ClientMessage,
@@ -195,64 +196,59 @@ export class Room {
 
     this.resetIdle();
 
-    switch (message.type) {
-      case "y-update": {
-        const stream = this.streams.get(message.docKind);
+    match(message)
+      .with({ type: "y-update" }, (m) => {
+        const stream = this.streams.get(m.docKind);
         if (!stream) return;
-        if (message.streamId !== stream.currentStreamId) return;
-        this.appendBuffer(stream, message.payload);
+        if (m.streamId !== stream.currentStreamId) return;
+        this.appendBuffer(stream, m.payload);
         this.relay(peerId, {
           type: "y-update",
-          docKind: message.docKind,
-          streamId: message.streamId,
-          payload: message.payload,
+          docKind: m.docKind,
+          streamId: m.streamId,
+          payload: m.payload,
           from: peerId,
         });
-        return;
-      }
-      case "awareness": {
+      })
+      .with({ type: "awareness" }, (m) => {
         this.relay(peerId, {
           type: "awareness",
-          payload: message.payload,
+          payload: m.payload,
           from: peerId,
         });
-        return;
-      }
-      case "meta": {
+      })
+      .with({ type: "meta" }, (m) => {
         this.relay(peerId, {
           type: "meta",
-          streamId: message.streamId,
-          payload: message.payload,
+          streamId: m.streamId,
+          payload: m.payload,
           from: peerId,
         });
-        return;
-      }
-      case "rotate-stream": {
-        const stream = this.streams.get(message.docKind);
+      })
+      .with({ type: "rotate-stream" }, (m) => {
+        const stream = this.streams.get(m.docKind);
         if (!stream) return;
-        if (message.newStreamId <= stream.currentStreamId) return;
-        stream.currentStreamId = message.newStreamId;
+        if (m.newStreamId <= stream.currentStreamId) return;
+        stream.currentStreamId = m.newStreamId;
         stream.buffer = [];
         stream.bufferBytes = 0;
         this.broadcast({
           type: "rotate-stream",
-          docKind: message.docKind,
-          newStreamId: message.newStreamId,
+          docKind: m.docKind,
+          newStreamId: m.newStreamId,
         });
-        return;
-      }
-      case "request-buffer": {
-        const stream = this.streams.get(message.docKind);
+      })
+      .with({ type: "request-buffer" }, (m) => {
+        const stream = this.streams.get(m.docKind);
         if (!stream) return;
         this.send(entry.socket, {
           type: "buffer",
-          docKind: message.docKind,
+          docKind: m.docKind,
           streamId: stream.currentStreamId,
           updates: [...stream.buffer],
         });
-        return;
-      }
-    }
+      })
+      .exhaustive();
   }
 
   destroy(
