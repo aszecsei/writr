@@ -49,6 +49,13 @@ export interface CollabExtensionConfig {
   userName?: string;
   /** Hex color for the caret + selection highlight. */
   userColor?: string;
+  /**
+   * Fires after Yjs has rendered the prose Y.Doc into PM at least once.
+   * Callers gate `editor`-bound work (e.g. comment-anchor encoding) on
+   * this signal so they don't operate against a half-built y-prosemirror
+   * mapping. See `CollabProseEditor.tsx` for the canonical pattern.
+   */
+  onFirstRender?: () => void;
 }
 
 export interface ExtensionOptions {
@@ -132,7 +139,10 @@ export function createExtensions(options?: ExtensionOptions) {
     SearchAndReplace,
     ...(collab
       ? [
-          Collaboration.configure({ document: collab.doc }),
+          Collaboration.configure({
+            document: collab.doc,
+            onFirstRender: collab.onFirstRender,
+          }),
           CollaborationCaret.configure({
             // The caret extension only reads `provider.awareness`; the
             // CollabClient already pumps encrypted awareness updates

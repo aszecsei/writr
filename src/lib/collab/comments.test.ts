@@ -275,6 +275,37 @@ describe("YjsCommentsAdapter", () => {
     expect(adapterA.comments).toHaveLength(0);
   });
 
+  it("seedFromDexie writes null anchors when editor is null (host readiness gate)", () => {
+    // Production wiring: ChapterEditor / CollabProseEditor pass `editor: null`
+    // to useCommentsAdapter until Collaboration.onFirstRender fires. This
+    // test locks in the invariant the gate relies on — that seeding without
+    // an editor produces non-anchored entries (anchorFrom/anchorTo === null).
+    // Anchored entries encoded against a half-built y-prosemirror mapping
+    // resolve to end-of-doc and are the root cause of the host-comment-shift
+    // bug; null anchors fall back to initialFrom/initialTo (Dexie's correct
+    // offsets) until the editor binds and a future write replaces them.
+    const dummy = {
+      id: "44444444-4444-4444-8444-444444444444",
+      projectId: PROJECT_ID,
+      chapterId: CHAPTER_ID,
+      content: "seed",
+      color: "yellow" as const,
+      fromOffset: 50,
+      toOffset: 60,
+      anchorText: "world",
+      status: "active" as const,
+      resolvedAt: null,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+    };
+    adapterA.seedFromDexie([dummy]);
+    const entry = docs.a.getMap("byId").get(dummy.id) as Y.Map<unknown>;
+    expect(entry.get("anchorFrom")).toBeNull();
+    expect(entry.get("anchorTo")).toBeNull();
+    expect(entry.get("initialFrom")).toBe(50);
+    expect(entry.get("initialTo")).toBe(60);
+  });
+
   it("seedFromDexie is a no-op when the map already has comments", async () => {
     await adapterA.create({ fromOffset: 1, toOffset: 2, content: "first" });
     docs.sync();

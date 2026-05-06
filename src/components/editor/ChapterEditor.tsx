@@ -2,7 +2,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { Comment } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -99,6 +99,20 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
 
+  // Prose readiness gate: the comments adapter resolves Y.RelativePosition
+  // anchors against the editor's PM state, which is meaningful only once
+  // Yjs has flushed its first sync into the editor. Until then, anchor
+  // encoding falls back to the end of the (empty) fragment and gets
+  // baked into the Comments plugin's positionMap (which then refuses to
+  // overwrite). Mirror the guest's gate in CollabProseEditor.tsx.
+  const [proseReady, setProseReady] = useState(false);
+  // Reset on collab doc identity change — a fresh Y.Doc means a fresh sync.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: collabDoc identity is the intentional trigger
+  useEffect(() => {
+    setProseReady(false);
+  }, [collabDoc]);
+  const onProseFirstRender = useCallback(() => setProseReady(true), []);
+
   // Spellcheck setup
   const {
     spellcheckerRef,
@@ -145,12 +159,19 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         awareness: collabAwareness,
         userName: collabIdentity?.name ?? "Host",
         userColor: collabIdentity?.color ?? "#10b981",
+        onFirstRender: onProseFirstRender,
       };
     }
     return isScreenplay
       ? createScreenplayExtensions(opts)
       : createExtensions(opts);
-  }, [isScreenplay, collabDoc, collabAwareness, collabIdentity]);
+  }, [
+    isScreenplay,
+    collabDoc,
+    collabAwareness,
+    collabIdentity,
+    onProseFirstRender,
+  ]);
 
   // Recreate the editor whenever the extension set changes (e.g., toggling
   // collab mode or switching between prose / screenplay).
@@ -173,11 +194,21 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     [extensions],
   );
 
+  // Hand the editor to the comments adapter only after Yjs has flushed
+  // its first sync into PM. Before that, anchor encoding produces stale
+  // offsets that pollute the Comments plugin's positionMap (which refuses
+  // to overwrite once seeded). Solo mode passes the editor straight through.
+  const editorForComments = isCollabHost
+    ? proseReady
+      ? editor
+      : null
+    : editor;
+
   // Comments adapter (Dexie when solo; Yjs-backed during a host session)
   const commentsAdapter = useCommentsAdapter({
     projectId: activeProjectId ?? "",
     chapterId,
-    editor,
+    editor: editorForComments,
   });
 
   // Comment synchronization (ref sync + reconciliation)
