@@ -1,5 +1,238 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`ShareDialogContent (snapshots) > renders the connected state with project-mode descriptions 1`] = `
+<div
+  class="space-y-4"
+>
+  <div>
+    <h2
+      class="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+    >
+      Share session
+    </h2>
+    <p
+      class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
+    >
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
+      <code>
+        #h=
+      </code>
+       fragment.
+    </p>
+  </div>
+  <div
+    class="space-y-4"
+  >
+    <div
+      class="flex items-center justify-between text-sm"
+    >
+      <span
+        class="text-neutral-600 dark:text-neutral-400"
+      >
+        2 people connected.
+      </span>
+    </div>
+    <div
+      class="space-y-1"
+    >
+      <div
+        class="flex items-baseline justify-between"
+      >
+        <span
+          class="text-sm font-medium text-neutral-900 dark:text-neutral-100"
+        >
+          Edit
+        </span>
+        <span
+          class="text-xs text-neutral-500 dark:text-neutral-400"
+        >
+          Can edit prose and add comments. + read-only project browse
+        </span>
+      </div>
+      <div
+        class="flex gap-2"
+      >
+        <input
+          aria-label="Edit share URL"
+          class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+          readonly=""
+          value="https://writr.app/shared/r1?t=edit-tok#h=h&p=1"
+        />
+        <button
+          aria-label="Copy Edit URL"
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-copy"
+            fill="none"
+            height="12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="14"
+              rx="2"
+              ry="2"
+              width="14"
+              x="8"
+              y="8"
+            />
+            <path
+              d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+            />
+          </svg>
+          Copy
+        </button>
+      </div>
+    </div>
+    <div
+      class="space-y-1"
+    >
+      <div
+        class="flex items-baseline justify-between"
+      >
+        <span
+          class="text-sm font-medium text-neutral-900 dark:text-neutral-100"
+        >
+          Review
+        </span>
+        <span
+          class="text-xs text-neutral-500 dark:text-neutral-400"
+        >
+          Read-only on prose; can leave comments. + read-only project browse
+        </span>
+      </div>
+      <div
+        class="flex gap-2"
+      >
+        <input
+          aria-label="Review share URL"
+          class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+          readonly=""
+          value="https://writr.app/shared/r1?t=review-tok#h=h&p=1"
+        />
+        <button
+          aria-label="Copy Review URL"
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-copy"
+            fill="none"
+            height="12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="14"
+              rx="2"
+              ry="2"
+              width="14"
+              x="8"
+              y="8"
+            />
+            <path
+              d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+            />
+          </svg>
+          Copy
+        </button>
+      </div>
+    </div>
+    <div
+      class="space-y-1"
+    >
+      <div
+        class="flex items-baseline justify-between"
+      >
+        <span
+          class="text-sm font-medium text-neutral-900 dark:text-neutral-100"
+        >
+          View
+        </span>
+        <span
+          class="text-xs text-neutral-500 dark:text-neutral-400"
+        >
+          Read-only. + read-only project browse
+        </span>
+      </div>
+      <div
+        class="flex gap-2"
+      >
+        <input
+          aria-label="View share URL"
+          class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+          readonly=""
+          value="https://writr.app/shared/r1?t=view-tok#h=h&p=1"
+        />
+        <button
+          aria-label="Copy View URL"
+          class="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-copy"
+            fill="none"
+            height="12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="14"
+              rx="2"
+              ry="2"
+              width="14"
+              x="8"
+              y="8"
+            />
+            <path
+              d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+            />
+          </svg>
+          Copy
+        </button>
+      </div>
+    </div>
+    <div
+      class="flex justify-end gap-3 pt-2"
+    >
+      <button
+        class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        type="button"
+      >
+        Close
+      </button>
+      <button
+        class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-red-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-600 dark:hover:bg-red-700"
+        type="button"
+      >
+        End session
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
 exports[`ShareDialogContent (snapshots) > renders the connected state with three labeled URLs and an end button 1`] = `
 <div
   class="space-y-4"
@@ -308,20 +541,45 @@ exports[`ShareDialogContent (snapshots) > renders the ended state with a prior e
     Rate limited by collab relay
   </div>
   <div
-    class="flex justify-end gap-3"
+    class="space-y-4"
   >
-    <button
-      class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-      type="button"
+    <label
+      class="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300"
     >
-      Cancel
-    </button>
-    <button
-      class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-      type="button"
+      <input
+        aria-label="Share entire project"
+        class="mt-0.5"
+        type="checkbox"
+      />
+      <span>
+        <span
+          class="font-medium"
+        >
+          Share entire project
+        </span>
+        <span
+          class="block text-xs text-neutral-500 dark:text-neutral-400"
+        >
+          Guests can browse the rest of the project read-only; their edit/review/view privileges still apply to the active chapter.
+        </span>
+      </span>
+    </label>
+    <div
+      class="flex justify-end gap-3"
     >
-      Try again
-    </button>
+      <button
+        class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+        type="button"
+      >
+        Try again
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -586,20 +844,45 @@ exports[`ShareDialogContent (snapshots) > renders the idle state with a Start sh
     </p>
   </div>
   <div
-    class="flex justify-end gap-3"
+    class="space-y-4"
   >
-    <button
-      class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-      type="button"
+    <label
+      class="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300"
     >
-      Cancel
-    </button>
-    <button
-      class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-      type="button"
+      <input
+        aria-label="Share entire project"
+        class="mt-0.5"
+        type="checkbox"
+      />
+      <span>
+        <span
+          class="font-medium"
+        >
+          Share entire project
+        </span>
+        <span
+          class="block text-xs text-neutral-500 dark:text-neutral-400"
+        >
+          Guests can browse the rest of the project read-only; their edit/review/view privileges still apply to the active chapter.
+        </span>
+      </span>
+    </label>
+    <div
+      class="flex justify-end gap-3"
     >
-      Start sharing
-    </button>
+      <button
+        class="rounded-md px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+        type="button"
+      >
+        Start sharing
+      </button>
+    </div>
   </div>
 </div>
 `;

@@ -32,12 +32,12 @@ export function ShareDialog() {
   // localStorage key guests use. No prompt — the host already has UI
   // around the share dialog itself; we just stamp comments with their
   // display name (defaulting to "Host").
-  const start = async () => {
+  const start = async (opts: { projectMode: boolean }) => {
     const identity = buildIdentity({
       role: "host",
       name: readStoredDisplayName(),
     });
-    await startAsHost({ identity });
+    await startAsHost({ identity, projectMode: opts.projectMode });
   };
 
   return (
@@ -60,7 +60,7 @@ interface ShareDialogContentProps {
   peerCount: number;
   shareUrls: ShareUrls | null;
   errorMessage: string | null;
-  onStart: () => Promise<void>;
+  onStart: (opts: { projectMode: boolean }) => Promise<void>;
   onEnd: () => void;
   onClose: () => void;
 }
@@ -137,34 +137,54 @@ function IdleState({
   onClose,
   hadPriorError,
 }: {
-  onStart: () => Promise<void>;
+  onStart: (opts: { projectMode: boolean }) => Promise<void>;
   onClose: () => void;
   hadPriorError: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [projectMode, setProjectMode] = useState(false);
   const handleStart = useCallback(async () => {
     setBusy(true);
     try {
-      await onStart();
+      await onStart({ projectMode });
     } catch {
       // Error surfaced via store; UI re-renders with error message
     } finally {
       setBusy(false);
     }
-  }, [onStart]);
+  }, [onStart, projectMode]);
   return (
-    <div className="flex justify-end gap-3">
-      <button type="button" onClick={onClose} className={BUTTON_CANCEL}>
-        Cancel
-      </button>
-      <button
-        type="button"
-        onClick={handleStart}
-        disabled={busy}
-        className={BUTTON_PRIMARY}
-      >
-        {busy ? "Starting…" : hadPriorError ? "Try again" : "Start sharing"}
-      </button>
+    <div className="space-y-4">
+      <label className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+        <input
+          type="checkbox"
+          checked={projectMode}
+          onChange={(e) => setProjectMode(e.currentTarget.checked)}
+          disabled={busy}
+          className="mt-0.5"
+          aria-label="Share entire project"
+        />
+        <span>
+          <span className="font-medium">Share entire project</span>
+          <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+            Guests can browse the rest of the project read-only; their
+            edit/review/view privileges still apply to the active chapter.
+          </span>
+        </span>
+      </label>
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onClose} className={BUTTON_CANCEL}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={busy}
+          className={BUTTON_PRIMARY}
+        >
+          {busy ? "Starting…" : hadPriorError ? "Try again" : "Start sharing"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -191,6 +211,8 @@ function ConnectedState({
   onEnd: () => void;
   onClose: () => void;
 }) {
+  const projectSuffix =
+    shareUrls.mode === "project" ? " + read-only project browse" : "";
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm">
@@ -208,17 +230,17 @@ function ConnectedState({
 
       <ShareLinkRow
         label="Edit"
-        description="Can edit prose and add comments."
+        description={`Can edit prose and add comments.${projectSuffix}`}
         url={shareUrls.edit}
       />
       <ShareLinkRow
         label="Review"
-        description="Read-only on prose; can leave comments."
+        description={`Read-only on prose; can leave comments.${projectSuffix}`}
         url={shareUrls.review}
       />
       <ShareLinkRow
         label="View"
-        description="Read-only."
+        description={`Read-only.${projectSuffix}`}
         url={shareUrls.view}
       />
 

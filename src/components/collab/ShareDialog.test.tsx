@@ -9,9 +9,17 @@ import { ShareDialog, ShareDialogContent } from "./ShareDialog";
 const ORIGINAL_ENV = process.env.NEXT_PUBLIC_COLLAB_URL;
 
 const SAMPLE_URLS: ShareUrls = {
+  mode: "chapter",
   edit: "https://writr.app/shared/r1?t=edit-tok#h=h",
   review: "https://writr.app/shared/r1?t=review-tok#h=h",
   view: "https://writr.app/shared/r1?t=view-tok#h=h",
+};
+
+const SAMPLE_PROJECT_URLS: ShareUrls = {
+  mode: "project",
+  edit: "https://writr.app/shared/r1?t=edit-tok#h=h&p=1",
+  review: "https://writr.app/shared/r1?t=review-tok#h=h&p=1",
+  view: "https://writr.app/shared/r1?t=view-tok#h=h&p=1",
 };
 
 beforeEach(() => {
@@ -101,6 +109,71 @@ describe("ShareDialogContent (snapshots)", () => {
       />,
     );
     expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it("renders the connected state with project-mode descriptions", () => {
+    const { container } = render(
+      <ShareDialogContent
+        status="connected"
+        peerCount={2}
+        shareUrls={SAMPLE_PROJECT_URLS}
+        errorMessage={null}
+        onStart={async () => {}}
+        onEnd={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+});
+
+describe("ShareDialogContent (project-mode toggle)", () => {
+  it("passes projectMode=true to onStart when the checkbox is ticked", async () => {
+    const onStart = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <ShareDialogContent
+        status="idle"
+        peerCount={0}
+        shareUrls={null}
+        errorMessage={null}
+        onStart={onStart}
+        onEnd={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    const checkbox = within(container as unknown as HTMLElement).getByLabelText(
+      "Share entire project",
+    ) as HTMLInputElement;
+    checkbox.click();
+    const startButton = within(container as unknown as HTMLElement).getByRole(
+      "button",
+      { name: /start sharing/i },
+    );
+    startButton.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onStart).toHaveBeenCalledWith({ projectMode: true });
+  });
+
+  it("passes projectMode=false when the checkbox is left unchecked", async () => {
+    const onStart = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <ShareDialogContent
+        status="idle"
+        peerCount={0}
+        shareUrls={null}
+        errorMessage={null}
+        onStart={onStart}
+        onEnd={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    const startButton = within(container as unknown as HTMLElement).getByRole(
+      "button",
+      { name: /start sharing/i },
+    );
+    startButton.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onStart).toHaveBeenCalledWith({ projectMode: false });
   });
 });
 
