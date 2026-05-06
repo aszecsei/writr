@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { attachClientToStore } from "@/lib/collab/attach";
+import type { CollabClient } from "@/lib/collab/client";
 import { getCollabBaseUrl, isCollabEnabled } from "@/lib/collab/config";
 import { exportX25519PrivJwk, importX25519PrivJwk } from "@/lib/collab/crypto";
 import {
@@ -131,6 +132,7 @@ export function useCollabManager(): UseCollabManager {
   const detachRef = useRef<(() => void) | null>(null);
   const joinHandleRef = useRef<JoinRequestHandle | null>(null);
   const roomUuidRef = useRef<string | null>(null);
+  const clientRef = useRef<CollabClient | null>(null);
 
   const teardown = useCallback(() => {
     joinHandleRef.current?.detach();
@@ -139,6 +141,7 @@ export function useCollabManager(): UseCollabManager {
     detachRef.current = null;
     sessionRef.current?.destroy();
     sessionRef.current = null;
+    clientRef.current = null;
     clearHostKey(roomUuidRef.current);
     roomUuidRef.current = null;
     useCollabStore.getState().reset();
@@ -166,6 +169,20 @@ export function useCollabManager(): UseCollabManager {
         detachRef.current = detach;
         sessionRef.current = conn.session;
         roomUuidRef.current = conn.roomUuid;
+        clientRef.current = conn.client;
+
+        // Track peer_left so we know when an approved guest goes offline
+        // (and clear their tracked peerId so a stale kick-peer can't fire).
+        const offSystemForPeerLeft = conn.client.on("system", (event) => {
+          if (event.event === "peer_left") {
+            useCollabStore.getState().clearGuestPeerId(event.peerId);
+          }
+        });
+        const previousDetach = detachRef.current;
+        detachRef.current = () => {
+          offSystemForPeerLeft();
+          previousDetach?.();
+        };
 
         await persistHostKey(conn.roomUuid, conn.hostPriv, conn.hostPubEncoded);
 
@@ -185,6 +202,13 @@ export function useCollabManager(): UseCollabManager {
           roomUuid: conn.roomUuid,
           isApproved: (guestPub) =>
             Boolean(useCollabStore.getState().approvedGuests[guestPub]),
+          onAutoApproved: (req) => {
+            useCollabStore.getState().approveGuestPub(req.guestPub, {
+              displayName: req.displayName,
+              color: req.color,
+              peerId: req.from,
+            });
+          },
           onIncoming: (req) => {
             const collab = useCollabStore.getState();
             collab.addPendingJoinRequest({
@@ -192,6 +216,7 @@ export function useCollabManager(): UseCollabManager {
               guestPub: req.guestPub,
               displayName: req.displayName,
               color: req.color,
+              from: req.from,
               receivedAt: Date.now(),
             });
             const ui = useUiStore.getState();
@@ -312,6 +337,7 @@ export function useCollabManager(): UseCollabManager {
     collab.approveGuestPub(req.guestPub, {
       displayName: req.displayName,
       color: req.color,
+      peerId: req.from,
     });
     collab.removePendingJoinRequest(requestId);
     const ui = useUiStore.getState();
@@ -344,7 +370,13 @@ export function useCollabManager(): UseCollabManager {
   );
 
   const revokeGuest = useCallback<UseCollabManager["revokeGuest"]>((pub) => {
+    const entry = useCollabStore.getState().approvedGuests[pub];
     useCollabStore.getState().revokeGuestPub(pub);
+    // If the guest is currently connected, evict them server-side so
+    // they actually drop out of the session (not just lose auto-approve).
+    if (entry?.peerId && clientRef.current) {
+      clientRef.current.sendKickPeer(entry.peerId);
+    }
   }, []);
 
   const end = useCallback(() => teardown(), [teardown]);

@@ -289,6 +289,18 @@ export interface AttachJoinRequestHandlerOptions {
    * before the host responded.
    */
   onCancelled: (requestId: string) => void;
+  /**
+   * Called after a join-request is auto-approved (because `isApproved`
+   * returned true for the guest's pubkey). The host UI is bypassed in
+   * this path, so the manager uses this hook to update its store.
+   */
+  onAutoApproved?: (req: {
+    requestId: string;
+    guestPub: string;
+    displayName: string;
+    color: string;
+    from: string;
+  }) => void;
 }
 
 export interface JoinRequestHandle {
@@ -348,7 +360,9 @@ export function attachJoinRequestHandler(
       color: req.color,
     });
     if (opts.isApproved(req.guestPub)) {
-      void approve(req.requestId);
+      void approve(req.requestId).then(() => {
+        opts.onAutoApproved?.(req);
+      });
       return;
     }
     opts.onIncoming(req);

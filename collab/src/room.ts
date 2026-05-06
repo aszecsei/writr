@@ -27,6 +27,11 @@ export interface RoomOptions {
   idleTimeoutMs?: number;
   maxSockets?: number;
   maxBufferBytes?: number;
+  /**
+   * How long a non-host peer can remain in the join-request limbo before
+   * the server times them out and closes the socket. Defaults to 120s.
+   */
+  joinTimeoutMs?: number;
   onDestroy?: (uuid: string) => void;
   now?: () => number;
 }
@@ -46,6 +51,8 @@ interface AttachedSocket {
 interface PendingState {
   /** The requestId the guest sent on `join-request`, once they've sent it. */
   requestId: string | null;
+  /** Timer that fires `join-timeout` if the host hasn't decided in time. */
+  timeoutTimer: ReturnType<typeof setTimeout> | null;
 }
 
 const PEER_ID_BYTES = 8;
@@ -53,6 +60,7 @@ const DEFAULT_GRACE_MS = 60_000;
 const DEFAULT_IDLE_MS = 30 * 60_000;
 const DEFAULT_MAX_SOCKETS = 16;
 const DEFAULT_MAX_BUFFER_BYTES = 4 * 1024 * 1024;
+const DEFAULT_JOIN_TIMEOUT_MS = 120_000;
 
 export type AttachResult =
   | { ok: true; peerId: string }
@@ -81,6 +89,7 @@ export class Room {
   private readonly idleTimeoutMs: number;
   private readonly maxSockets: number;
   private readonly maxBufferBytes: number;
+  private readonly joinTimeoutMs: number;
   private readonly onDestroy: ((uuid: string) => void) | undefined;
   private readonly now: () => number;
 
@@ -92,6 +101,7 @@ export class Room {
     this.idleTimeoutMs = opts.idleTimeoutMs ?? DEFAULT_IDLE_MS;
     this.maxSockets = opts.maxSockets ?? DEFAULT_MAX_SOCKETS;
     this.maxBufferBytes = opts.maxBufferBytes ?? DEFAULT_MAX_BUFFER_BYTES;
+    this.joinTimeoutMs = opts.joinTimeoutMs ?? DEFAULT_JOIN_TIMEOUT_MS;
     this.onDestroy = opts.onDestroy;
     this.now = opts.now ?? Date.now;
 
@@ -138,7 +148,11 @@ export class Room {
       this.hostPeerId = peerId;
       this.cancelGrace();
     } else {
-      this.pending.set(peerId, { requestId: null });
+      const timeoutTimer = setTimeout(
+        () => this.timeoutPending(peerId),
+        this.joinTimeoutMs,
+      );
+      this.pending.set(peerId, { requestId: null, timeoutTimer });
     }
 
     // peerCount in welcome reflects only admitted peers (excluding any
@@ -186,6 +200,7 @@ export class Room {
     if (pending) {
       // Pending peer dropped: tell the host so the approval modal can clear.
       // No peer_left broadcast — other peers never knew about this guest.
+      if (pending.timeoutTimer) clearTimeout(pending.timeoutTimer);
       if (pending.requestId !== null) {
         this.sendToHost({
           type: "system",
@@ -341,7 +356,48 @@ export class Room {
         if (m.reason !== undefined) denial.reason = m.reason;
         this.handleJoinResolution(entry, m.to, "denied", denial);
       })
+      .with({ type: "kick-peer" }, (m) => {
+        this.handleKickPeer(entry, m.peerId);
+      })
       .exhaustive();
+  }
+
+  private handleKickPeer(host: AttachedSocket, targetPeerId: string): void {
+    if (targetPeerId === host.peerId) {
+      // Host trying to kick themselves: ignore.
+      return;
+    }
+    const target = this.sockets.get(targetPeerId);
+    if (!target) {
+      this.send(host.socket, {
+        type: "error",
+        code: "unauthorized",
+        message: "Target peer not found",
+      });
+      return;
+    }
+    if (target.role === "host") {
+      // Defensive — there should never be a non-self host target.
+      this.send(host.socket, {
+        type: "error",
+        code: "unauthorized",
+        message: "Cannot kick the host",
+      });
+      return;
+    }
+    this.send(target.socket, {
+      type: "error",
+      code: "unauthorized",
+      message: "Removed by host",
+    });
+    try {
+      target.socket.close(CLOSE_CODES.FORBIDDEN, "kicked");
+    } catch {
+      // ignore
+    }
+    // detach() handles the peer_left broadcast (or pending teardown if
+    // somehow they were still pending when kicked).
+    this.detach(targetPeerId);
   }
 
   private handleJoinResolution(
@@ -378,6 +434,7 @@ export class Room {
       };
       // Promote out of pending FIRST so the buffer + peer_joined paths
       // count this peer as admitted.
+      if (pending.timeoutTimer) clearTimeout(pending.timeoutTimer);
       this.pending.delete(targetPeerId);
       this.send(target.socket, {
         type: "join-approved",
@@ -415,6 +472,7 @@ export class Room {
       // Tear the pending guest down without triggering the
       // join_request_cancelled path in detach() — the host just denied,
       // so a follow-up "cancelled" would be misleading.
+      if (pending.timeoutTimer) clearTimeout(pending.timeoutTimer);
       this.pending.delete(targetPeerId);
       this.sockets.delete(targetPeerId);
       try {
@@ -432,6 +490,46 @@ export class Room {
     this.send(host.socket, message);
   }
 
+  private timeoutPending(peerId: string): void {
+    if (this.destroyed) return;
+    const pending = this.pending.get(peerId);
+    const entry = this.sockets.get(peerId);
+    if (!pending || !entry) return;
+
+    // Tell the host (if any) that the request is gone, so the approval
+    // modal clears.
+    if (pending.requestId !== null) {
+      this.sendToHost({
+        type: "system",
+        data: {
+          event: "join_request_cancelled",
+          requestId: pending.requestId,
+        },
+      });
+    }
+
+    // Tell the guest why their socket is closing.
+    this.send(entry.socket, {
+      type: "error",
+      code: "join-timeout",
+      message: "Host did not respond in time",
+    });
+
+    // Tear down WITHOUT going through detach() — we already notified the
+    // host (or skipped that if no host yet).
+    this.pending.delete(peerId);
+    this.sockets.delete(peerId);
+    try {
+      entry.socket.close(CLOSE_CODES.FORBIDDEN, "join-timeout");
+    } catch {
+      // ignore
+    }
+
+    if (this.sockets.size === 0 && !this.hostConnected) {
+      this.destroy("idle");
+    }
+  }
+
   destroy(
     reason: Extract<SystemEvent, { event: "session_ended" }>["reason"],
   ): void {
@@ -442,6 +540,10 @@ export class Room {
       clearTimeout(this.idleTimer);
       this.idleTimer = null;
     }
+    for (const pending of this.pending.values()) {
+      if (pending.timeoutTimer) clearTimeout(pending.timeoutTimer);
+    }
+    this.pending.clear();
 
     const farewell: ServerMessage = {
       type: "system",

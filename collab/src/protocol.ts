@@ -69,6 +69,11 @@ const joinDeniedClientSchema = z.object({
   to: peerIdSchema,
 });
 
+const kickPeerClientSchema = z.object({
+  type: z.literal("kick-peer"),
+  peerId: peerIdSchema,
+});
+
 export const clientMessageSchema = z.discriminatedUnion("type", [
   yUpdateSchema,
   awarenessSchema,
@@ -78,6 +83,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   joinRequestClientSchema,
   joinApprovedClientSchema,
   joinDeniedClientSchema,
+  kickPeerClientSchema,
 ]);
 
 export type ClientMessage = z.infer<typeof clientMessageSchema>;
@@ -191,8 +197,13 @@ export function canSend(
       }
       return { allowed: true as const };
     })
+    .with({ type: "kick-peer" }, () => {
+      if (role !== "host") {
+        return { allowed: false as const, reason: "unauthorized" as const };
+      }
+      return { allowed: true as const };
+    })
     .exhaustive();
 }
 
 export { peerIdSchema, roleSchema };
-

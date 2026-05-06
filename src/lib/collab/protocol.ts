@@ -149,7 +149,8 @@ export type ClientMessage =
       encryptedRoomKey: string;
       to: string;
     }
-  | { type: "join-denied"; requestId: string; reason?: string; to: string };
+  | { type: "join-denied"; requestId: string; reason?: string; to: string }
+  | { type: "kick-peer"; peerId: string };
 
 export const CLOSE_CODES = {
   NORMAL: 1000,
@@ -179,5 +180,6 @@ export function canSendClient(role: Role, message: ClientMessage): boolean {
       { type: P.union("join-approved", "join-denied") },
       () => role === "host",
     )
+    .with({ type: "kick-peer" }, () => role === "host")
     .exhaustive();
 }

@@ -9,9 +9,9 @@ import { isCollabManageParticipantsModal, useUiStore } from "@/store/uiStore";
 /**
  * Host-only modal listing previously-approved guests and exposing a
  * Revoke action per guest. Revoking removes the pubkey from the
- * auto-approve set so the next join-request will surface the modal
- * again. Currently-connected guests are NOT actively disconnected by
- * Revoke; that requires server-side support and is out of scope for v1.
+ * auto-approve set AND, if the guest is currently connected, evicts
+ * them via `kick-peer`. They reconnecting later will surface the
+ * approval modal again.
  */
 export function ManageParticipantsDialog() {
   const modal = useUiStore((s) => s.modal);
@@ -35,8 +35,9 @@ export function ManageParticipantsDialog() {
           <h2 className="text-lg font-semibold">Participants</h2>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
             Guests you've approved this session. Revoking removes the
-            auto-approve; they'll be prompted again next time. It does not
-            disconnect anyone currently connected.
+            auto-approve, and if the guest is currently connected they're
+            disconnected immediately. They can rejoin only with your
+            re-approval.
           </p>
         </div>
 

@@ -42,6 +42,9 @@ export interface PendingJoinRequest {
   guestPub: string;
   displayName: string;
   color: string;
+  /** The peerId the relay assigned to this guest's connection. Needed
+   *  to address the join-approved / join-denied response back. */
+  from: string;
   receivedAt: number;
 }
 
@@ -54,6 +57,9 @@ export interface ApprovedGuest {
   displayName: string;
   color: string;
   approvedAt: number;
+  /** The peerId of the guest's currently-active connection, or null if
+   *  they're not connected. Used to evict on revoke. */
+  peerId: string | null;
 }
 
 export interface CollabState {
@@ -97,9 +103,12 @@ export interface CollabState {
   clearPendingJoinRequests: () => void;
   approveGuestPub: (
     guestPub: string,
-    info: { displayName: string; color: string },
+    info: { displayName: string; color: string; peerId: string },
   ) => void;
   revokeGuestPub: (guestPub: string) => void;
+  /** Clear the peerId on whichever approved-guest entry currently holds
+   *  it. Called when peer_left fires. */
+  clearGuestPeerId: (peerId: string) => void;
   setDeniedReason: (reason: string | null) => void;
   reset: () => void;
 }
@@ -119,6 +128,7 @@ const INITIAL: Omit<
   | "clearPendingJoinRequests"
   | "approveGuestPub"
   | "revokeGuestPub"
+  | "clearGuestPeerId"
   | "setDeniedReason"
   | "reset"
 > = {
@@ -177,6 +187,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
           displayName: info.displayName,
           color: info.color,
           approvedAt: Date.now(),
+          peerId: info.peerId,
         },
       },
     })),
@@ -186,6 +197,20 @@ export const useCollabStore = create<CollabState>()((set) => ({
       const next = { ...s.approvedGuests };
       delete next[guestPub];
       return { approvedGuests: next };
+    }),
+  clearGuestPeerId: (peerId) =>
+    set((s) => {
+      let touched = false;
+      const next: Record<string, ApprovedGuest> = {};
+      for (const [pub, g] of Object.entries(s.approvedGuests)) {
+        if (g.peerId === peerId) {
+          next[pub] = { ...g, peerId: null };
+          touched = true;
+        } else {
+          next[pub] = g;
+        }
+      }
+      return touched ? { approvedGuests: next } : {};
     }),
   setDeniedReason: (reason) => set({ deniedReason: reason }),
   reset: () => set({ ...INITIAL }),

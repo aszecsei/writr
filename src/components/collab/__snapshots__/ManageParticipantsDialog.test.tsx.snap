@@ -42,7 +42,7 @@ exports[`ManageParticipantsDialog (snapshots) > renders a list of approved guest
       <p
         class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
       >
-        Guests you've approved this session. Revoking removes the auto-approve; they'll be prompted again next time. It does not disconnect anyone currently connected.
+        Guests you've approved this session. Revoking removes the auto-approve, and if the guest is currently connected they're disconnected immediately. They can rejoin only with your re-approval.
       </p>
     </div>
     <ul
@@ -145,7 +145,7 @@ exports[`ManageParticipantsDialog (snapshots) > renders empty-state when no gues
       <p
         class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
       >
-        Guests you've approved this session. Revoking removes the auto-approve; they'll be prompted again next time. It does not disconnect anyone currently connected.
+        Guests you've approved this session. Revoking removes the auto-approve, and if the guest is currently connected they're disconnected immediately. They can rejoin only with your re-approval.
       </p>
     </div>
     <p
@@ -209,7 +209,7 @@ exports[`ManageParticipantsDialog (snapshots) > shows a 'waiting to join' shortc
       <p
         class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
       >
-        Guests you've approved this session. Revoking removes the auto-approve; they'll be prompted again next time. It does not disconnect anyone currently connected.
+        Guests you've approved this session. Revoking removes the auto-approve, and if the guest is currently connected they're disconnected immediately. They can rejoin only with your re-approval.
       </p>
     </div>
     <button

@@ -336,6 +336,10 @@ export class CollabClient {
     });
   }
 
+  sendKickPeer(peerId: string): void {
+    this.dispatch({ type: "kick-peer", peerId });
+  }
+
   close(
     code: number = CLOSE_CODES.NORMAL,
     reason: string = "client-close",

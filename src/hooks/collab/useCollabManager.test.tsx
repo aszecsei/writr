@@ -588,6 +588,128 @@ describe("useCollabManager: host approval flow", () => {
     expect(useUiStore.getState().modal.id).toBe("collab-approve-join");
   });
 
+  it("revokeGuest sends kick-peer when the guest is currently connected", async () => {
+    const { result, ws } = await setUpHost();
+    const guestKeypair = await generateX25519Keypair();
+
+    act(() => {
+      ws.fireServer({
+        type: "join-request",
+        requestId: "req-1",
+        guestPub: guestKeypair.pubEncoded,
+        displayName: "Grace",
+        color: "#aabbcc",
+        from: "p-grace",
+      });
+    });
+    await flush();
+    await act(async () => {
+      await result.current.approveJoinRequest("req-1");
+    });
+
+    // Sanity: peerId is tracked.
+    expect(
+      useCollabStore.getState().approvedGuests[guestKeypair.pubEncoded]?.peerId,
+    ).toBe("p-grace");
+
+    ws.sent = [];
+    act(() => {
+      result.current.revokeGuest(guestKeypair.pubEncoded);
+    });
+
+    const kickMsg = ws.sent.find((s) => s.includes("kick-peer"));
+    expect(kickMsg).toBeDefined();
+    const parsed = JSON.parse(kickMsg as string) as {
+      type: string;
+      peerId: string;
+    };
+    expect(parsed).toEqual({ type: "kick-peer", peerId: "p-grace" });
+  });
+
+  it("revokeGuest does NOT send kick-peer when the guest is not connected", async () => {
+    const { result, ws } = await setUpHost();
+    const guestKeypair = await generateX25519Keypair();
+
+    act(() => {
+      ws.fireServer({
+        type: "join-request",
+        requestId: "req-1",
+        guestPub: guestKeypair.pubEncoded,
+        displayName: "Hank",
+        color: "#aabbcc",
+        from: "p-hank",
+      });
+    });
+    await flush();
+    await act(async () => {
+      await result.current.approveJoinRequest("req-1");
+    });
+
+    // Simulate guest disconnecting — peer_left clears the tracked peerId.
+    act(() => {
+      ws.fireServer({
+        type: "system",
+        data: { event: "peer_left", peerId: "p-hank" },
+      });
+    });
+    expect(
+      useCollabStore.getState().approvedGuests[guestKeypair.pubEncoded]?.peerId,
+    ).toBeNull();
+
+    ws.sent = [];
+    act(() => {
+      result.current.revokeGuest(guestKeypair.pubEncoded);
+    });
+
+    expect(ws.sent.find((s) => s.includes("kick-peer"))).toBeUndefined();
+  });
+
+  it("auto-approve refreshes the tracked peerId in approvedGuests", async () => {
+    const { result, ws } = await setUpHost();
+    const guestKeypair = await generateX25519Keypair();
+
+    // First approval: peerId p-1.
+    act(() => {
+      ws.fireServer({
+        type: "join-request",
+        requestId: "req-1",
+        guestPub: guestKeypair.pubEncoded,
+        displayName: "Iris",
+        color: "#aabbcc",
+        from: "p-1",
+      });
+    });
+    await flush();
+    await act(async () => {
+      await result.current.approveJoinRequest("req-1");
+    });
+    expect(
+      useCollabStore.getState().approvedGuests[guestKeypair.pubEncoded]?.peerId,
+    ).toBe("p-1");
+
+    // Guest disconnects, then reconnects with a new peerId. Auto-approve
+    // path should update the tracked peerId.
+    act(() => {
+      ws.fireServer({
+        type: "system",
+        data: { event: "peer_left", peerId: "p-1" },
+      });
+      ws.fireServer({
+        type: "join-request",
+        requestId: "req-2",
+        guestPub: guestKeypair.pubEncoded,
+        displayName: "Iris",
+        color: "#aabbcc",
+        from: "p-2",
+      });
+    });
+    await flush();
+
+    expect(
+      useCollabStore.getState().approvedGuests[guestKeypair.pubEncoded]?.peerId,
+    ).toBe("p-2");
+  });
+
   it("queues subsequent requests; the next one surfaces after approve", async () => {
     const { result, ws } = await setUpHost();
     const a = await generateX25519Keypair();
