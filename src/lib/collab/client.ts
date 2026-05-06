@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import { decryptPayload, encryptPayload, type RoomKey } from "./crypto";
 import {
   CLOSE_CODES,
@@ -163,103 +164,89 @@ export class CollabClient {
     }
     const message: ServerMessage = result.data;
 
-    switch (message.type) {
-      case "welcome":
-        this.peerIdValue = message.peerId;
-        this.roleValue = message.role;
+    await match(message)
+      .with({ type: "welcome" }, async (m) => {
+        this.peerIdValue = m.peerId;
+        this.roleValue = m.role;
         this.emit("welcome", {
-          peerId: message.peerId,
-          role: message.role,
-          peerCount: message.peerCount,
-          hostPresent: message.hostPresent,
+          peerId: m.peerId,
+          role: m.role,
+          peerCount: m.peerCount,
+          hostPresent: m.hostPresent,
         });
-        return;
-
-      case "y-update": {
-        const update = await this.tryDecrypt(message.payload, "y-update");
+      })
+      .with({ type: "y-update" }, async (m) => {
+        const update = await this.tryDecrypt(m.payload, "y-update");
         if (!update) return;
         this.emit("y-update", {
-          docKind: message.docKind,
-          streamId: message.streamId,
+          docKind: m.docKind,
+          streamId: m.streamId,
           update,
-          from: message.from,
+          from: m.from,
         });
-        return;
-      }
-
-      case "awareness": {
-        const update = await this.tryDecrypt(message.payload, "awareness");
+      })
+      .with({ type: "awareness" }, async (m) => {
+        const update = await this.tryDecrypt(m.payload, "awareness");
         if (!update) return;
-        this.emit("awareness", { update, from: message.from });
-        return;
-      }
-
-      case "meta": {
-        const plaintext = await this.tryDecrypt(message.payload, "meta");
+        this.emit("awareness", { update, from: m.from });
+      })
+      .with({ type: "meta" }, async (m) => {
+        const plaintext = await this.tryDecrypt(m.payload, "meta");
         if (!plaintext) return;
         this.emit("meta", {
-          streamId: message.streamId,
+          streamId: m.streamId,
           plaintext,
-          from: message.from,
+          from: m.from,
         });
-        return;
-      }
-
-      case "rotate-stream":
-        this.streamIds.set(message.docKind, message.newStreamId);
+      })
+      .with({ type: "rotate-stream" }, async (m) => {
+        this.streamIds.set(m.docKind, m.newStreamId);
         this.emit("rotate-stream", {
-          docKind: message.docKind,
-          newStreamId: message.newStreamId,
+          docKind: m.docKind,
+          newStreamId: m.newStreamId,
         });
-        return;
-
-      case "buffer": {
-        this.streamIds.set(message.docKind, message.streamId);
+      })
+      .with({ type: "buffer" }, async (m) => {
+        this.streamIds.set(m.docKind, m.streamId);
         const updates: Uint8Array[] = [];
-        for (const encoded of message.updates) {
+        for (const encoded of m.updates) {
           const u = await this.tryDecrypt(encoded, "buffer");
           if (u) updates.push(u);
         }
         this.emit("buffer", {
-          docKind: message.docKind,
-          streamId: message.streamId,
+          docKind: m.docKind,
+          streamId: m.streamId,
           updates,
         });
-        return;
-      }
-
-      case "system":
-        this.emit("system", message.data);
-        return;
-
-      case "error":
-        this.emit("error", { kind: message.code, message: message.message });
-        return;
-
-      case "join-request":
+      })
+      .with({ type: "system" }, async (m) => {
+        this.emit("system", m.data);
+      })
+      .with({ type: "error" }, async (m) => {
+        this.emit("error", { kind: m.code, message: m.message });
+      })
+      .with({ type: "join-request" }, async (m) => {
         this.emit("join-request", {
-          requestId: message.requestId,
-          guestPub: message.guestPub,
-          displayName: message.displayName,
-          color: message.color,
-          from: message.from,
+          requestId: m.requestId,
+          guestPub: m.guestPub,
+          displayName: m.displayName,
+          color: m.color,
+          from: m.from,
         });
-        return;
-
-      case "join-approved":
+      })
+      .with({ type: "join-approved" }, async (m) => {
         this.emit("join-approved", {
-          requestId: message.requestId,
-          encryptedRoomKey: message.encryptedRoomKey,
+          requestId: m.requestId,
+          encryptedRoomKey: m.encryptedRoomKey,
         });
-        return;
-
-      case "join-denied":
+      })
+      .with({ type: "join-denied" }, async (m) => {
         this.emit("join-denied", {
-          requestId: message.requestId,
-          reason: message.reason,
+          requestId: m.requestId,
+          reason: m.reason,
         });
-        return;
-    }
+      })
+      .exhaustive();
   }
 
   handleClose(code: number, reason: string): void {

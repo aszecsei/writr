@@ -1,4 +1,5 @@
 // Mirrors collab/src/protocol.ts. Keep in sync with the sidecar.
+import { match, P } from "ts-pattern";
 import { z } from "zod";
 
 export const ROLES = ["view", "review", "edit", "host"] as const;
@@ -165,21 +166,18 @@ export const CLOSE_CODES = {
 } as const;
 
 export function canSendClient(role: Role, message: ClientMessage): boolean {
-  switch (message.type) {
-    case "awareness":
-    case "request-buffer":
-      return true;
-    case "y-update":
+  return match(message)
+    .with({ type: P.union("awareness", "request-buffer") }, () => true)
+    .with({ type: "y-update" }, (m) => {
       if (role === "view") return false;
-      if (role === "review" && message.docKind !== "comments") return false;
+      if (role === "review" && m.docKind !== "comments") return false;
       return true;
-    case "meta":
-    case "rotate-stream":
-      return role === "host";
-    case "join-request":
-      return role !== "host";
-    case "join-approved":
-    case "join-denied":
-      return role === "host";
-  }
+    })
+    .with({ type: P.union("meta", "rotate-stream") }, () => role === "host")
+    .with({ type: "join-request" }, () => role !== "host")
+    .with(
+      { type: P.union("join-approved", "join-denied") },
+      () => role === "host",
+    )
+    .exhaustive();
 }

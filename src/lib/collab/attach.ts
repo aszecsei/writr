@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import type { CollabError, useCollabStore } from "@/store/collabStore";
 import type { CollabClient } from "./client";
 import { CLOSE_CODES } from "./protocol";
@@ -44,30 +45,29 @@ export function attachClientToStore(
   unsubs.push(
     client.on("system", (event) => {
       const s = store.getState();
-      switch (event.event) {
-        case "host_disconnected":
+      match(event)
+        .with({ event: "host_disconnected" }, (e) => {
           s.setHostPresent(false);
-          s.setHostGraceDeadline(event.deadline);
+          s.setHostGraceDeadline(e.deadline);
           s.setStatus("host_disconnected");
-          return;
-        case "host_connected":
+        })
+        .with({ event: "host_connected" }, () => {
           s.setHostPresent(true);
           s.setHostGraceDeadline(null);
           s.setStatus("connected");
-          return;
-        case "session_ended":
+        })
+        .with({ event: "session_ended" }, () => {
           s.setStatus("ended");
-          return;
-        case "peer_joined":
+        })
+        .with({ event: "peer_joined" }, () => {
           s.setPeerCount(s.peerCount + 1);
-          return;
-        case "peer_left":
+        })
+        .with({ event: "peer_left" }, () => {
           s.setPeerCount(Math.max(0, s.peerCount - 1));
-          return;
-        case "join_request_cancelled":
-          // Handled by attachJoinRequestHandler — no store mutation here.
-          return;
-      }
+        })
+        // Handled by attachJoinRequestHandler — no store mutation here.
+        .with({ event: "join_request_cancelled" }, () => {})
+        .exhaustive();
     }),
   );
 

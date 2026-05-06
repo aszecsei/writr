@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import type { CollabClient } from "./client";
 import {
   deriveWrapKey,
@@ -9,6 +10,15 @@ import {
 } from "./crypto";
 import { type Role, serverMessageSchema } from "./protocol";
 import type { WebSocketLike } from "./transport";
+
+const FATAL_HANDSHAKE_ERROR_CODES = [
+  "join-rejected",
+  "join-timeout",
+  "unauthorized",
+  "invalid-token",
+  "room-not-found",
+  "room-full",
+] as const;
 
 export class JoinDeniedError extends Error {
   readonly reason: string | undefined;
@@ -103,17 +113,17 @@ export function runGuestHandshake(
       }
       const msg = result.data;
 
-      switch (msg.type) {
-        case "welcome":
+      await match(msg)
+        .with({ type: "welcome" }, async (m) => {
           if (welcome) {
             buffered.push(raw);
             return;
           }
           welcome = {
-            peerId: msg.peerId,
-            role: msg.role,
-            peerCount: msg.peerCount,
-            hostPresent: msg.hostPresent,
+            peerId: m.peerId,
+            role: m.role,
+            peerCount: m.peerCount,
+            hostPresent: m.hostPresent,
           };
           try {
             ws.send(
@@ -129,15 +139,14 @@ export function runGuestHandshake(
             settle();
             reject(err instanceof Error ? err : new Error(String(err)));
           }
-          return;
-
-        case "join-approved":
-          if (msg.requestId !== requestId) {
+        })
+        .with({ type: "join-approved" }, async (m) => {
+          if (m.requestId !== requestId) {
             buffered.push(raw);
             return;
           }
           try {
-            const roomKey = await unwrapRoomKey(wrapKey, msg.encryptedRoomKey);
+            const roomKey = await unwrapRoomKey(wrapKey, m.encryptedRoomKey);
             if (!welcome) {
               settle();
               reject(new Error("join-approved arrived before welcome"));
@@ -153,37 +162,25 @@ export function runGuestHandshake(
               ),
             );
           }
-          return;
-
-        case "join-denied":
-          if (msg.requestId !== requestId) {
+        })
+        .with({ type: "join-denied" }, async (m) => {
+          if (m.requestId !== requestId) {
             buffered.push(raw);
             return;
           }
           settle();
-          reject(new JoinDeniedError(msg.reason));
-          return;
-
-        case "error":
-          if (
-            msg.code === "join-rejected" ||
-            msg.code === "join-timeout" ||
-            msg.code === "unauthorized" ||
-            msg.code === "invalid-token" ||
-            msg.code === "room-not-found" ||
-            msg.code === "room-full"
-          ) {
+          reject(new JoinDeniedError(m.reason));
+        })
+        .with(
+          { type: "error", code: P.union(...FATAL_HANDSHAKE_ERROR_CODES) },
+          async (m) => {
             settle();
-            reject(new Error(`Collab handshake failed: ${msg.code}`));
-            return;
-          }
+            reject(new Error(`Collab handshake failed: ${m.code}`));
+          },
+        )
+        .otherwise(async () => {
           buffered.push(raw);
-          return;
-
-        default:
-          buffered.push(raw);
-          return;
-      }
+        });
     };
 
     const onClose = (event: { code: number; reason: string }) => {
