@@ -1,5 +1,7 @@
 import Bold from "@tiptap/extension-bold";
 import CharacterCount from "@tiptap/extension-character-count";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import Document from "@tiptap/extension-document";
 import Image from "@tiptap/extension-image";
 import Italic from "@tiptap/extension-italic";
@@ -12,6 +14,8 @@ import Underline from "@tiptap/extension-underline";
 import { UndoRedo } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
+import type { Awareness } from "y-protocols/awareness";
+import type * as Y from "yjs";
 import type { Comment } from "@/db/schemas";
 import type { SpellcheckService } from "@/lib/spellcheck";
 import { Comments } from "./Comments";
@@ -32,6 +36,21 @@ import {
 } from "./screenplay";
 import { TypewriterScrolling } from "./TypewriterScrolling";
 
+/**
+ * When passed to `createExtensions`, the editor will bind to a shared
+ * Y.Doc and emit awareness updates over the supplied Awareness instance.
+ * StarterKit's UndoRedo is disabled so we don't double-track history
+ * against Yjs.
+ */
+export interface CollabExtensionConfig {
+  doc: Y.Doc;
+  awareness: Awareness;
+  /** Display name surfaced over the local user's caret. */
+  userName?: string;
+  /** Hex color for the caret + selection highlight. */
+  userColor?: string;
+}
+
 export interface ExtensionOptions {
   typewriterScrollingRef?: { current: boolean };
   commentsRef?: { current: Comment[] };
@@ -48,13 +67,25 @@ export interface ExtensionOptions {
   ) => void;
   onSelectionChange?: (text: string, from: number, to: number) => void;
   onSelectionClear?: () => void;
+  /**
+   * If present, the prose extensions will be augmented with the TipTap
+   * Collaboration + CollaborationCaret extensions, and StarterKit's
+   * UndoRedo will be disabled (Yjs ships its own history).
+   */
+  collab?: CollabExtensionConfig;
 }
 
 export function createExtensions(options?: ExtensionOptions) {
+  const collab = options?.collab;
+  const starterKitConfig: Parameters<typeof StarterKit.configure>[0] = {
+    heading: { levels: [1, 2, 3] },
+  };
+  if (collab) {
+    // Suppress StarterKit's history so it doesn't fight Yjs.
+    (starterKitConfig as Record<string, unknown>).undoRedo = false;
+  }
   return [
-    StarterKit.configure({
-      heading: { levels: [1, 2, 3] },
-    }),
+    StarterKit.configure(starterKitConfig),
     Placeholder.configure({
       placeholder: "Start writing...",
     }),
@@ -99,6 +130,21 @@ export function createExtensions(options?: ExtensionOptions) {
       onSelectionClear: options?.onSelectionClear,
     }),
     SearchAndReplace,
+    ...(collab
+      ? [
+          Collaboration.configure({ document: collab.doc }),
+          CollaborationCaret.configure({
+            // The caret extension only reads `provider.awareness`; the
+            // CollabClient already pumps encrypted awareness updates
+            // into this instance, so a stub provider is sufficient.
+            provider: { awareness: collab.awareness },
+            user: {
+              name: collab.userName ?? "Host",
+              color: collab.userColor ?? "#10b981",
+            },
+          }),
+        ]
+      : []),
   ];
 }
 
