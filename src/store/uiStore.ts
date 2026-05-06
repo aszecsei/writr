@@ -30,7 +30,14 @@ export type ModalState =
   | { id: "version-history"; chapterId: string; projectId: string }
   | { id: "agents-manager" }
   | { id: "agent-editor"; agentId?: string }
-  | { id: "share-collab-session" };
+  | { id: "share-collab-session" }
+  | {
+      id: "collab-approve-join";
+      requestId: string;
+      displayName: string;
+      color: string;
+    }
+  | { id: "collab-manage-participants" };
 
 export type ModalId = ModalState["id"];
 
@@ -114,3 +121,7 @@ export const isPreviewCardModal = createModalGuard("preview-card");
 export const isLinkEditorModal = createModalGuard("link-editor");
 export const isRubyEditorModal = createModalGuard("ruby-editor");
 export const isVersionHistoryModal = createModalGuard("version-history");
+export const isCollabApproveJoinModal = createModalGuard("collab-approve-join");
+export const isCollabManageParticipantsModal = createModalGuard(
+  "collab-manage-participants",
+);

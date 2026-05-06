@@ -109,6 +109,38 @@ describe("CollabBannerContent (snapshots)", () => {
     );
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
+
+  it("renders a 'N waiting' pill when the host has pending join requests", () => {
+    const { container } = render(
+      <CollabBannerContent
+        viewerRole="host"
+        status="connected"
+        peerCount={1}
+        hostPresent={true}
+        graceDeadline={null}
+        pendingCount={2}
+        onManageParticipants={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it("renders a Manage button for hosts with no pending requests", () => {
+    const { container } = render(
+      <CollabBannerContent
+        viewerRole="host"
+        status="connected"
+        peerCount={1}
+        hostPresent={true}
+        graceDeadline={null}
+        pendingCount={0}
+        onManageParticipants={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
 });
 
 describe("CollabBanner (gating regression net)", () => {

@@ -10,7 +10,7 @@ import {
 } from "@/components/collab/GuestSessionShell";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import { useCommentsMeta } from "@/hooks/collab/useCommentsMeta";
-import { readShareKeyFromFragment } from "@/lib/collab/crypto";
+import { readHostPubFromFragment } from "@/lib/collab/crypto";
 import { buildIdentity, readStoredDisplayName } from "@/lib/collab/identity";
 import { useCollabStore } from "@/store/collabStore";
 
@@ -20,8 +20,8 @@ export default function SharedSessionPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("t");
 
-  const [keyEncoded, setKeyEncoded] = useState<string | null>(null);
-  const [keyResolved, setKeyResolved] = useState(false);
+  const [hostPubEncoded, setHostPubEncoded] = useState<string | null>(null);
+  const [hostPubResolved, setHostPubResolved] = useState(false);
   const [identity, setIdentityState] = useState<{
     name: string;
     color: string;
@@ -34,12 +34,13 @@ export default function SharedSessionPage() {
   const hostPresent = useCollabStore((s) => s.hostPresent);
   const collabError = useCollabStore((s) => s.error);
   const session = useCollabStore((s) => s.session);
+  const deniedReason = useCollabStore((s) => s.deniedReason);
 
-  // Read the encryption key from the URL fragment. Fragments are not sent
-  // to the server, so this happens entirely client-side after mount.
+  // Read the host's public key from the URL fragment. Fragments are not
+  // sent to the server, so this happens entirely client-side after mount.
   useEffect(() => {
-    setKeyEncoded(readShareKeyFromFragment(window.location.hash));
-    setKeyResolved(true);
+    setHostPubEncoded(readHostPubFromFragment(window.location.hash));
+    setHostPubResolved(true);
   }, []);
 
   // If the user has joined a room before, reuse their stored display name
@@ -51,30 +52,37 @@ export default function SharedSessionPage() {
     }
   }, []);
 
-  // Auto-join once we have all four inputs (key, token, room, identity)
-  // and the feature is enabled. After a retry, end() clears the store and
-  // this effect re-fires on the resulting status/session change.
+  // Auto-join once we have all four inputs (host pubkey, token, room,
+  // identity) and the feature is enabled. After a retry, end() clears
+  // the store and this effect re-fires on the resulting status change.
   useEffect(() => {
     if (!enabled) return;
-    if (!keyResolved) return;
-    if (!token || !keyEncoded || !params.roomUuid) return;
+    if (!hostPubResolved) return;
+    if (!token || !hostPubEncoded || !params.roomUuid) return;
     if (!identity) return;
     if (session) return;
-    if (status === "connecting" || status === "connected") return;
+    if (
+      status === "connecting" ||
+      status === "awaiting_approval" ||
+      status === "connected" ||
+      status === "denied"
+    ) {
+      return;
+    }
     if (collabError) return;
     void joinAsGuest({
       roomUuid: params.roomUuid,
       token,
-      keyEncoded,
+      hostPubEncoded,
       identity,
     }).catch(() => {
-      // Failure is recorded on collabStore.error; the UI will reflect it.
+      // Failure is recorded on collabStore.error or status=denied; UI reflects it.
     });
   }, [
     enabled,
-    keyResolved,
+    hostPubResolved,
     token,
-    keyEncoded,
+    hostPubEncoded,
     params.roomUuid,
     identity,
     session,
@@ -97,7 +105,7 @@ export default function SharedSessionPage() {
   const state = useMemo<GuestState>(() => {
     if (!enabled) return { kind: "disabled" };
     if (!token) return { kind: "missing-token" };
-    if (keyResolved && !keyEncoded) return { kind: "missing-key" };
+    if (hostPubResolved && !hostPubEncoded) return { kind: "missing-host-key" };
     if (status === "connected" && session && role) {
       return {
         kind: "connected",
@@ -106,8 +114,14 @@ export default function SharedSessionPage() {
         hostPresent,
       };
     }
+    if (status === "denied") {
+      return { kind: "denied", reason: deniedReason };
+    }
     if (status === "ended") {
       return { kind: "ended", reason: "session_ended" };
+    }
+    if (status === "awaiting_approval") {
+      return { kind: "awaiting-approval" };
     }
     if (collabError) {
       return {
@@ -120,14 +134,15 @@ export default function SharedSessionPage() {
   }, [
     enabled,
     token,
-    keyResolved,
-    keyEncoded,
+    hostPubResolved,
+    hostPubEncoded,
     status,
     session,
     role,
     peerCount,
     hostPresent,
     collabError,
+    deniedReason,
   ]);
 
   // Comments meta (chapterId / projectId) is host-written on the
@@ -138,7 +153,7 @@ export default function SharedSessionPage() {
 
   // Block the auto-join until the user picks a display name. Stored names
   // skip this prompt entirely.
-  if (enabled && keyResolved && token && keyEncoded && !identity) {
+  if (enabled && hostPubResolved && token && hostPubEncoded && !identity) {
     return <DisplayNamePrompt onSubmit={setIdentityState} />;
   }
 

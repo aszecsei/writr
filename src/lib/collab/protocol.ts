@@ -16,6 +16,8 @@ export const ERROR_CODES = [
   "room-full",
   "room-not-found",
   "internal",
+  "join-rejected",
+  "join-timeout",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
@@ -24,6 +26,9 @@ const docKindSchema = z.enum(DOC_KINDS);
 const streamIdSchema = z.number().int().min(1);
 const base64Schema = z.string().regex(/^[A-Za-z0-9+/_-]*={0,2}$/);
 const peerIdSchema = z.string().min(1).max(64);
+const requestIdSchema = z.string().min(1).max(64);
+const displayNameSchema = z.string().min(1).max(64);
+const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 const systemEventSchema = z.discriminatedUnion("event", [
   z.object({
@@ -43,6 +48,10 @@ const systemEventSchema = z.discriminatedUnion("event", [
   z.object({
     event: z.literal("peer_left"),
     peerId: peerIdSchema,
+  }),
+  z.object({
+    event: z.literal("join_request_cancelled"),
+    requestId: requestIdSchema,
   }),
 ]);
 
@@ -92,6 +101,24 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
     code: z.enum(ERROR_CODES),
     message: z.string(),
   }),
+  z.object({
+    type: z.literal("join-request"),
+    requestId: requestIdSchema,
+    guestPub: base64Schema,
+    displayName: displayNameSchema,
+    color: colorSchema,
+    from: peerIdSchema,
+  }),
+  z.object({
+    type: z.literal("join-approved"),
+    requestId: requestIdSchema,
+    encryptedRoomKey: base64Schema,
+  }),
+  z.object({
+    type: z.literal("join-denied"),
+    requestId: requestIdSchema,
+    reason: z.string().max(200).optional(),
+  }),
 ]);
 
 export type ServerMessage = z.infer<typeof serverMessageSchema>;
@@ -107,7 +134,21 @@ export type ClientMessage =
   | { type: "awareness"; payload: string }
   | { type: "meta"; streamId: number; payload: string }
   | { type: "rotate-stream"; docKind: DocKind; newStreamId: number }
-  | { type: "request-buffer"; docKind: DocKind };
+  | { type: "request-buffer"; docKind: DocKind }
+  | {
+      type: "join-request";
+      requestId: string;
+      guestPub: string;
+      displayName: string;
+      color: string;
+    }
+  | {
+      type: "join-approved";
+      requestId: string;
+      encryptedRoomKey: string;
+      to: string;
+    }
+  | { type: "join-denied"; requestId: string; reason?: string; to: string };
 
 export const CLOSE_CODES = {
   NORMAL: 1000,
@@ -134,6 +175,11 @@ export function canSendClient(role: Role, message: ClientMessage): boolean {
       return true;
     case "meta":
     case "rotate-stream":
+      return role === "host";
+    case "join-request":
+      return role !== "host";
+    case "join-approved":
+    case "join-denied":
       return role === "host";
   }
 }

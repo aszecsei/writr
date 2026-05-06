@@ -12,9 +12,11 @@ import type { CollabSession } from "@/lib/collab/session";
 export type CollabStatus =
   | "idle"
   | "connecting"
+  | "awaiting_approval"
   | "connected"
   | "host_disconnected"
-  | "ended";
+  | "ended"
+  | "denied";
 
 export interface CollabError {
   kind: ErrorCode | "transport" | "decrypt" | "invalid-message" | "abort";
@@ -29,6 +31,29 @@ export interface CollabError {
 export interface CollabIdentity {
   name: string;
   color: string;
+}
+
+/**
+ * A guest waiting for the host to approve their request to join.
+ * Host-only state. The host's approval modal reads the head of this queue.
+ */
+export interface PendingJoinRequest {
+  requestId: string;
+  guestPub: string;
+  displayName: string;
+  color: string;
+  receivedAt: number;
+}
+
+/**
+ * A guest the host has approved during this session, indexed by their
+ * X25519 public key. Subsequent join-requests with a known pubkey are
+ * auto-approved without surfacing the modal.
+ */
+export interface ApprovedGuest {
+  displayName: string;
+  color: string;
+  approvedAt: number;
 }
 
 export interface CollabState {
@@ -46,6 +71,15 @@ export interface CollabState {
   error: CollabError | null;
   /** Display name + color used for caret + comment authorship. */
   identity: CollabIdentity | null;
+  /** Host-only: queue of guests waiting for approval, oldest first. */
+  pendingJoinRequests: PendingJoinRequest[];
+  /** Host-only: keyed by guestPub (base64url). */
+  approvedGuests: Record<string, ApprovedGuest>;
+  /**
+   * Guest-only. Reason string surfaced on the denied screen when the host
+   * rejects the join-request.
+   */
+  deniedReason: string | null;
 
   setSession: (
     session: CollabSession,
@@ -58,6 +92,15 @@ export interface CollabState {
   setShareUrls: (urls: ShareUrls | null) => void;
   setError: (error: CollabError | null) => void;
   setIdentity: (identity: CollabIdentity | null) => void;
+  addPendingJoinRequest: (req: PendingJoinRequest) => void;
+  removePendingJoinRequest: (requestId: string) => void;
+  clearPendingJoinRequests: () => void;
+  approveGuestPub: (
+    guestPub: string,
+    info: { displayName: string; color: string },
+  ) => void;
+  revokeGuestPub: (guestPub: string) => void;
+  setDeniedReason: (reason: string | null) => void;
   reset: () => void;
 }
 
@@ -71,6 +114,12 @@ const INITIAL: Omit<
   | "setShareUrls"
   | "setError"
   | "setIdentity"
+  | "addPendingJoinRequest"
+  | "removePendingJoinRequest"
+  | "clearPendingJoinRequests"
+  | "approveGuestPub"
+  | "revokeGuestPub"
+  | "setDeniedReason"
   | "reset"
 > = {
   session: null,
@@ -83,6 +132,9 @@ const INITIAL: Omit<
   shareUrls: null,
   error: null,
   identity: null,
+  pendingJoinRequests: [],
+  approvedGuests: {},
+  deniedReason: null,
 };
 
 export const useCollabStore = create<CollabState>()((set) => ({
@@ -103,6 +155,39 @@ export const useCollabStore = create<CollabState>()((set) => ({
   setShareUrls: (shareUrls) => set({ shareUrls }),
   setError: (error) => set({ error }),
   setIdentity: (identity) => set({ identity }),
+  addPendingJoinRequest: (req) =>
+    set((s) => {
+      if (s.pendingJoinRequests.some((p) => p.requestId === req.requestId)) {
+        return {};
+      }
+      return { pendingJoinRequests: [...s.pendingJoinRequests, req] };
+    }),
+  removePendingJoinRequest: (requestId) =>
+    set((s) => ({
+      pendingJoinRequests: s.pendingJoinRequests.filter(
+        (p) => p.requestId !== requestId,
+      ),
+    })),
+  clearPendingJoinRequests: () => set({ pendingJoinRequests: [] }),
+  approveGuestPub: (guestPub, info) =>
+    set((s) => ({
+      approvedGuests: {
+        ...s.approvedGuests,
+        [guestPub]: {
+          displayName: info.displayName,
+          color: info.color,
+          approvedAt: Date.now(),
+        },
+      },
+    })),
+  revokeGuestPub: (guestPub) =>
+    set((s) => {
+      if (!(guestPub in s.approvedGuests)) return {};
+      const next = { ...s.approvedGuests };
+      delete next[guestPub];
+      return { approvedGuests: next };
+    }),
+  setDeniedReason: (reason) => set({ deniedReason: reason }),
   reset: () => set({ ...INITIAL }),
 }));
 

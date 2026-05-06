@@ -64,6 +64,9 @@ export function attachClientToStore(
         case "peer_left":
           s.setPeerCount(Math.max(0, s.peerCount - 1));
           return;
+        case "join_request_cancelled":
+          // Handled by attachJoinRequestHandler — no store mutation here.
+          return;
       }
     }),
   );

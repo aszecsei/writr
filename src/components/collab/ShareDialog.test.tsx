@@ -9,9 +9,9 @@ import { ShareDialog, ShareDialogContent } from "./ShareDialog";
 const ORIGINAL_ENV = process.env.NEXT_PUBLIC_COLLAB_URL;
 
 const SAMPLE_URLS: ShareUrls = {
-  edit: "https://writr.app/shared/r1?t=edit-tok#k=k",
-  review: "https://writr.app/shared/r1?t=review-tok#k=k",
-  view: "https://writr.app/shared/r1?t=view-tok#k=k",
+  edit: "https://writr.app/shared/r1?t=edit-tok#h=h",
+  review: "https://writr.app/shared/r1?t=review-tok#h=h",
+  view: "https://writr.app/shared/r1?t=view-tok#h=h",
 };
 
 beforeEach(() => {

@@ -57,6 +57,18 @@ export interface ClientEventMap {
   system: (event: SystemEvent) => void;
   error: (event: ClientErrorEvent) => void;
   close: (data: { code: number; reason: string }) => void;
+  "join-request": (data: {
+    requestId: string;
+    guestPub: string;
+    displayName: string;
+    color: string;
+    from: string;
+  }) => void;
+  "join-approved": (data: {
+    requestId: string;
+    encryptedRoomKey: string;
+  }) => void;
+  "join-denied": (data: { requestId: string; reason?: string }) => void;
 }
 
 export interface CollabClientOptions {
@@ -223,6 +235,30 @@ export class CollabClient {
       case "error":
         this.emit("error", { kind: message.code, message: message.message });
         return;
+
+      case "join-request":
+        this.emit("join-request", {
+          requestId: message.requestId,
+          guestPub: message.guestPub,
+          displayName: message.displayName,
+          color: message.color,
+          from: message.from,
+        });
+        return;
+
+      case "join-approved":
+        this.emit("join-approved", {
+          requestId: message.requestId,
+          encryptedRoomKey: message.encryptedRoomKey,
+        });
+        return;
+
+      case "join-denied":
+        this.emit("join-denied", {
+          requestId: message.requestId,
+          reason: message.reason,
+        });
+        return;
     }
   }
 
@@ -270,6 +306,47 @@ export class CollabClient {
 
   requestBuffer(docKind: DocKind): void {
     this.dispatch({ type: "request-buffer", docKind });
+  }
+
+  sendJoinRequest(data: {
+    requestId: string;
+    guestPub: string;
+    displayName: string;
+    color: string;
+  }): void {
+    this.dispatch({
+      type: "join-request",
+      requestId: data.requestId,
+      guestPub: data.guestPub,
+      displayName: data.displayName,
+      color: data.color,
+    });
+  }
+
+  sendJoinApproved(data: {
+    requestId: string;
+    encryptedRoomKey: string;
+    to: string;
+  }): void {
+    this.dispatch({
+      type: "join-approved",
+      requestId: data.requestId,
+      encryptedRoomKey: data.encryptedRoomKey,
+      to: data.to,
+    });
+  }
+
+  sendJoinDenied(data: {
+    requestId: string;
+    reason?: string;
+    to: string;
+  }): void {
+    this.dispatch({
+      type: "join-denied",
+      requestId: data.requestId,
+      reason: data.reason,
+      to: data.to,
+    });
   }
 
   close(

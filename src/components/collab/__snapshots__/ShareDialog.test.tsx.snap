@@ -13,9 +13,10 @@ exports[`ShareDialogContent (snapshots) > renders the connected state with three
     <p
       class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
     >
-      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; encryption keys live only in the link's 
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
       <code>
-        #k=
+        #h=
       </code>
        fragment.
     </p>
@@ -56,7 +57,7 @@ exports[`ShareDialogContent (snapshots) > renders the connected state with three
           aria-label="Edit share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=edit-tok#k=k"
+          value="https://writr.app/shared/r1?t=edit-tok#h=h"
         />
         <button
           aria-label="Copy Edit URL"
@@ -116,7 +117,7 @@ exports[`ShareDialogContent (snapshots) > renders the connected state with three
           aria-label="Review share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=review-tok#k=k"
+          value="https://writr.app/shared/r1?t=review-tok#h=h"
         />
         <button
           aria-label="Copy Review URL"
@@ -176,7 +177,7 @@ exports[`ShareDialogContent (snapshots) > renders the connected state with three
           aria-label="View share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=view-tok#k=k"
+          value="https://writr.app/shared/r1?t=view-tok#h=h"
         />
         <button
           aria-label="Copy View URL"
@@ -245,9 +246,10 @@ exports[`ShareDialogContent (snapshots) > renders the connecting state with a sp
     <p
       class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
     >
-      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; encryption keys live only in the link's 
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
       <code>
-        #k=
+        #h=
       </code>
        fragment.
     </p>
@@ -292,9 +294,10 @@ exports[`ShareDialogContent (snapshots) > renders the ended state with a prior e
     <p
       class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
     >
-      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; encryption keys live only in the link's 
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
       <code>
-        #k=
+        #h=
       </code>
        fragment.
     </p>
@@ -336,9 +339,10 @@ exports[`ShareDialogContent (snapshots) > renders the host_disconnected (grace) 
     <p
       class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
     >
-      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; encryption keys live only in the link's 
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
       <code>
-        #k=
+        #h=
       </code>
        fragment.
     </p>
@@ -384,7 +388,7 @@ exports[`ShareDialogContent (snapshots) > renders the host_disconnected (grace) 
           aria-label="Edit share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=edit-tok#k=k"
+          value="https://writr.app/shared/r1?t=edit-tok#h=h"
         />
         <button
           aria-label="Copy Edit URL"
@@ -444,7 +448,7 @@ exports[`ShareDialogContent (snapshots) > renders the host_disconnected (grace) 
           aria-label="Review share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=review-tok#k=k"
+          value="https://writr.app/shared/r1?t=review-tok#h=h"
         />
         <button
           aria-label="Copy Review URL"
@@ -504,7 +508,7 @@ exports[`ShareDialogContent (snapshots) > renders the host_disconnected (grace) 
           aria-label="View share URL"
           class="flex-1 truncate rounded-md border border-neutral-300 bg-neutral-50 px-2 py-1.5 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           readonly=""
-          value="https://writr.app/shared/r1?t=view-tok#k=k"
+          value="https://writr.app/shared/r1?t=view-tok#h=h"
         />
         <button
           aria-label="Copy View URL"
@@ -573,9 +577,10 @@ exports[`ShareDialogContent (snapshots) > renders the idle state with a Start sh
     <p
       class="mt-1 text-sm text-neutral-600 dark:text-neutral-400"
     >
-      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; encryption keys live only in the link's 
+      Generate three share links — one per role. Anyone with a link can join while your tab is open. The relay never sees your content; the host identity that gates the handshake lives only in the link's
+       
       <code>
-        #k=
+        #h=
       </code>
        fragment.
     </p>

@@ -1,4 +1,5 @@
 const IV_BYTES = 12;
+const HKDF_INFO = "writr.collab.roomKeyWrap.v1";
 
 export type RoomKey = CryptoKey;
 
@@ -26,7 +27,7 @@ export async function importRoomKey(encoded: string): Promise<RoomKey> {
 }
 
 export async function encryptPayload(
-  key: RoomKey,
+  key: CryptoKey,
   plaintext: Uint8Array,
 ): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -42,7 +43,7 @@ export async function encryptPayload(
 }
 
 export async function decryptPayload(
-  key: RoomKey,
+  key: CryptoKey,
   encoded: string,
 ): Promise<Uint8Array> {
   const bytes = base64urlToBytes(encoded);
@@ -59,28 +60,126 @@ export async function decryptPayload(
   return new Uint8Array(plaintext);
 }
 
+export interface X25519Keypair {
+  priv: CryptoKey;
+  pub: CryptoKey;
+  pubEncoded: string;
+}
+
+export async function generateX25519Keypair(): Promise<X25519Keypair> {
+  const pair = (await crypto.subtle.generateKey({ name: "X25519" }, true, [
+    "deriveBits",
+  ])) as CryptoKeyPair;
+  const rawPub = await crypto.subtle.exportKey("raw", pair.publicKey);
+  return {
+    priv: pair.privateKey,
+    pub: pair.publicKey,
+    pubEncoded: bytesToBase64url(new Uint8Array(rawPub)),
+  };
+}
+
+export async function exportX25519PrivJwk(
+  priv: CryptoKey,
+): Promise<JsonWebKey> {
+  return crypto.subtle.exportKey("jwk", priv);
+}
+
+export async function importX25519PrivJwk(jwk: JsonWebKey): Promise<CryptoKey> {
+  return crypto.subtle.importKey("jwk", jwk, { name: "X25519" }, true, [
+    "deriveBits",
+  ]);
+}
+
+export async function importX25519PubFromEncoded(
+  encoded: string,
+): Promise<CryptoKey> {
+  const raw = base64urlToBytes(encoded);
+  return crypto.subtle.importKey(
+    "raw",
+    raw as BufferSource,
+    { name: "X25519" },
+    true,
+    [],
+  );
+}
+
+export async function deriveWrapKey(
+  localPriv: CryptoKey,
+  peerPub: CryptoKey,
+  roomUuid: string,
+): Promise<CryptoKey> {
+  const sharedBits = await crypto.subtle.deriveBits(
+    { name: "X25519", public: peerPub },
+    localPriv,
+    256,
+  );
+  const hkdfBase = await crypto.subtle.importKey(
+    "raw",
+    sharedBits,
+    "HKDF",
+    false,
+    ["deriveKey"],
+  );
+  const salt = new TextEncoder().encode(roomUuid);
+  const info = new TextEncoder().encode(HKDF_INFO);
+  return crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: salt as BufferSource,
+      info: info as BufferSource,
+    },
+    hkdfBase,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+export async function wrapRoomKey(
+  wrapKey: CryptoKey,
+  roomKey: RoomKey,
+): Promise<string> {
+  const raw = await crypto.subtle.exportKey("raw", roomKey);
+  return encryptPayload(wrapKey, new Uint8Array(raw));
+}
+
+export async function unwrapRoomKey(
+  wrapKey: CryptoKey,
+  encoded: string,
+): Promise<RoomKey> {
+  const raw = await decryptPayload(wrapKey, encoded);
+  return crypto.subtle.importKey(
+    "raw",
+    raw as BufferSource,
+    { name: "AES-GCM" },
+    true,
+    ["encrypt", "decrypt"],
+  );
+}
+
 export interface ShareLinkParams {
   origin: string;
   roomUuid: string;
   token: string;
-  keyEncoded: string;
+  hostPubEncoded: string;
 }
 
 export function buildShareUrl({
   origin,
   roomUuid,
   token,
-  keyEncoded,
+  hostPubEncoded,
 }: ShareLinkParams): string {
-  return `${origin}/shared/${encodeURIComponent(roomUuid)}?t=${encodeURIComponent(token)}#k=${encodeURIComponent(keyEncoded)}`;
+  return `${origin}/shared/${encodeURIComponent(roomUuid)}?t=${encodeURIComponent(token)}#h=${encodeURIComponent(hostPubEncoded)}`;
 }
 
-export function readShareKeyFromFragment(fragment: string): string | null {
+export function readHostPubFromFragment(fragment: string): string | null {
   const trimmed = fragment.startsWith("#") ? fragment.slice(1) : fragment;
   if (!trimmed) return null;
   const params = new URLSearchParams(trimmed);
-  const k = params.get("k");
-  return k && /^[A-Za-z0-9_-]+$/.test(k) ? k : null;
+  const h = params.get("h");
+  return h && /^[A-Za-z0-9_-]+$/.test(h) ? h : null;
 }
 
 export function bytesToBase64url(bytes: Uint8Array): string {

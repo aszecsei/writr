@@ -8,8 +8,10 @@ import type { Role } from "@/lib/collab/protocol";
 export type GuestState =
   | { kind: "disabled" }
   | { kind: "missing-token" }
-  | { kind: "missing-key" }
+  | { kind: "missing-host-key" }
   | { kind: "connecting" }
+  | { kind: "awaiting-approval" }
+  | { kind: "denied"; reason: string | null }
   | { kind: "error"; message: string; retryable: boolean }
   | { kind: "ended"; reason: "session_ended" | "left" }
   | {
@@ -88,12 +90,12 @@ function Body({
           description="The link you followed is missing its access token. Ask the person sharing for a fresh link."
         />
       );
-    case "missing-key":
+    case "missing-host-key":
       return (
         <Message
           tone="error"
-          title="Share link is incomplete"
-          description="The encryption key fragment is missing from the URL. Without it the relay can't be opened."
+          title="This invitation link is invalid"
+          description="The host key fragment is missing or malformed. Ask the person sharing for a fresh link."
         />
       );
     case "connecting":
@@ -108,6 +110,41 @@ function Body({
             Joining the session…
           </p>
         </div>
+      );
+    case "awaiting-approval":
+      return (
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <Loader2
+            size={28}
+            className="animate-spin text-neutral-500"
+            aria-hidden="true"
+          />
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            Waiting for the host to approve your request…
+          </p>
+        </div>
+      );
+    case "denied":
+      return (
+        <Message
+          tone="error"
+          title="The host declined your request"
+          description={
+            state.reason ??
+            "You weren't admitted to this collaborative session."
+          }
+          actions={
+            onLeave && (
+              <button
+                type="button"
+                onClick={onLeave}
+                className={BUTTON_PRIMARY}
+              >
+                Back to home
+              </button>
+            )
+          }
+        />
       );
     case "error":
       return (

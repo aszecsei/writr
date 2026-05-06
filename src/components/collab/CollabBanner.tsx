@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import type { Role } from "@/lib/collab/protocol";
 import { useCollabStore } from "@/store/collabStore";
+import { useUiStore } from "@/store/uiStore";
 
 /**
  * Slim row that appears above the main content when a collab session is
@@ -19,6 +20,8 @@ export function CollabBanner() {
   const peerCount = useCollabStore((s) => s.peerCount);
   const hostPresent = useCollabStore((s) => s.hostPresent);
   const hostGraceDeadline = useCollabStore((s) => s.hostGraceDeadline);
+  const pendingCount = useCollabStore((s) => s.pendingJoinRequests.length);
+  const openModal = useUiStore((s) => s.openModal);
 
   if (!enabled) return null;
   if (!session || !role) return null;
@@ -32,7 +35,11 @@ export function CollabBanner() {
       peerCount={peerCount}
       hostPresent={hostPresent}
       graceDeadline={remainingMs}
+      pendingCount={pendingCount}
       onLeave={end}
+      onManageParticipants={() =>
+        openModal({ id: "collab-manage-participants" })
+      }
     />
   );
 }
@@ -44,6 +51,10 @@ export interface CollabBannerContentProps {
   hostPresent: boolean;
   /** Epoch ms when the host-grace timer expires; null when not in grace. */
   graceDeadline: number | null;
+  /** Host-only: number of guests waiting in the approval queue. */
+  pendingCount?: number;
+  /** Host-only: opens the manage-participants modal. */
+  onManageParticipants?: () => void;
   onLeave: () => void;
   /**
    * Fixed "now" for snapshot tests so the rendered countdown is
@@ -62,6 +73,8 @@ export function CollabBannerContent({
   peerCount,
   hostPresent,
   graceDeadline,
+  pendingCount = 0,
+  onManageParticipants,
   onLeave,
   nowOverride,
 }: CollabBannerContentProps) {
@@ -100,10 +113,28 @@ export function CollabBannerContent({
           <span>{hostPresent ? "Host present" : "Host away"}</span>
         </>
       )}
+      {isHost && pendingCount > 0 && (
+        <button
+          type="button"
+          onClick={onManageParticipants}
+          className="ml-auto inline-flex items-center gap-1 rounded border border-current/30 bg-amber-200/40 px-2 py-0.5 text-xs font-medium hover:bg-amber-200/60 dark:bg-amber-500/20 dark:hover:bg-amber-500/30"
+        >
+          {pendingCount === 1 ? "1 waiting" : `${pendingCount} waiting`}
+        </button>
+      )}
+      {isHost && onManageParticipants && (
+        <button
+          type="button"
+          onClick={onManageParticipants}
+          className={`${isHost && pendingCount > 0 ? "" : "ml-auto"} inline-flex items-center gap-1 rounded border border-current/30 px-2 py-0.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5`}
+        >
+          Manage
+        </button>
+      )}
       <button
         type="button"
         onClick={onLeave}
-        className="ml-auto inline-flex items-center gap-1 rounded border border-current/30 px-2 py-0.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5"
+        className={`${isHost && (pendingCount > 0 || onManageParticipants) ? "" : "ml-auto"} inline-flex items-center gap-1 rounded border border-current/30 px-2 py-0.5 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5`}
       >
         <LogOut size={12} aria-hidden="true" />
         {isHost ? "End session" : "Leave"}

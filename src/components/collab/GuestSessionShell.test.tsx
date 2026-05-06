@@ -18,9 +18,9 @@ describe("GuestSessionShell (snapshots)", () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it("renders the missing-key error", () => {
+  it("renders the missing-host-key error", () => {
     const { container } = render(
-      <GuestSessionShell state={{ kind: "missing-key" }} />,
+      <GuestSessionShell state={{ kind: "missing-host-key" }} />,
     );
     expect(container.firstChild).toMatchSnapshot();
   });
@@ -28,6 +28,33 @@ describe("GuestSessionShell (snapshots)", () => {
   it("renders the connecting state with a spinner", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "connecting" }} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it("renders the awaiting-approval state with a spinner", () => {
+    const { container } = render(
+      <GuestSessionShell state={{ kind: "awaiting-approval" }} />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it("renders the denied state with a Back to home button", () => {
+    const { container } = render(
+      <GuestSessionShell
+        state={{ kind: "denied", reason: "not on the list" }}
+        onLeave={vi.fn()}
+      />,
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it("renders the denied state with a null reason (host gave none)", () => {
+    const { container } = render(
+      <GuestSessionShell
+        state={{ kind: "denied", reason: null }}
+        onLeave={vi.fn()}
+      />,
     );
     expect(container.firstChild).toMatchSnapshot();
   });
