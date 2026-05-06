@@ -149,15 +149,15 @@ export function buildMessages(
       "The context above contains only the project's style guide for voice/tone reference.\n" +
       "Use tools to discover all other project data on demand:\n\n" +
       "DISCOVERY PATTERN:\n" +
-      "1. Use list_* tools (list_characters, list_locations, list_chapters, list_timeline_events, list_style_guide, list_worldbuilding_docs) to find entity IDs.\n" +
-      "2. Use get_* tools (get_character, get_location, get_chapter, get_timeline_event, get_style_guide_entry, get_worldbuilding_doc) for full details.\n" +
+      "1. `list({ category })` returns the index for one category. Categories: character, location, timeline, chapter, style_guide, worldbuilding.\n" +
+      '2. `get({ requests: [{ category, ids }, ...] })` fetches full details. One call can batch across categories — e.g. requests=[{category:"character", ids:[...]}, {category:"location", ids:[...]}]. Singletons (outline) take no ids; summaries take chapter ids.\n' +
       "3. For chapter content, prefer PARTIAL retrieval to save tokens:\n" +
-      "   a. get_chapter returns metadata including totalParagraphs and hasSceneBreaks.\n" +
+      '   a. `get({ requests: [{ category: "chapter", ids: [<id>] }] })` returns metadata including totalParagraphs and hasSceneBreaks.\n' +
       "   b. get_chapter_structure to see scene boundaries with paragraph numbers and previews.\n" +
       "   c. search_chapter to find specific passages by keyword within one chapter.\n" +
       "   d. read_chapter_range to read a range of paragraphs (e.g., paragraphs 1-20).\n" +
       "   e. read_chapter ONLY when you truly need the entire chapter.\n" +
-      "4. Use get_outline to get the full outline grid.\n" +
+      '4. Use `get({ requests: [{ category: "outline" }] })` to get the full outline grid.\n' +
       "5. Use search_project to search across ALL entity types by keyword (chapters, characters, locations, etc.).\n" +
       "6. Use search_chapters for chapter-content-only keyword search.\n\n" +
       "Fetch only what you need for the current task — don't retrieve everything upfront.\n" +

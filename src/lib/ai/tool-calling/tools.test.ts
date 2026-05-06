@@ -4,12 +4,6 @@ import {
   makeChapter,
   makeCharacter,
   makeLocation,
-  makeOutlineGridCell,
-  makeOutlineGridColumn,
-  makeOutlineGridRow,
-  makeStyleGuideEntry,
-  makeTimelineEvent,
-  makeWorldbuildingDoc,
   resetIdCounter,
 } from "@/test/helpers";
 import { AI_TOOL_MAP, executeTool, getToolDefinitionsForModel } from "./tools";
@@ -18,14 +12,41 @@ const projectId = "a1111111-1111-4111-a111-111111111111";
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 41 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(41);
+  it("exports 29 tool definitions", () => {
+    expect(getToolDefinitionsForModel()).toHaveLength(29);
   });
 
   it("has unique tool IDs", () => {
     const defs = getToolDefinitionsForModel();
     const ids = defs.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("registers the consolidated list and get tools", () => {
+    expect(AI_TOOL_MAP.get("list")).toBeDefined();
+    expect(AI_TOOL_MAP.get("get")).toBeDefined();
+  });
+
+  it("does not register the obsolete per-entity read tools", () => {
+    const removed = [
+      "list_characters",
+      "list_locations",
+      "list_timeline_events",
+      "list_chapters",
+      "list_style_guide",
+      "list_worldbuilding_docs",
+      "get_character",
+      "get_location",
+      "get_timeline_event",
+      "get_chapter",
+      "get_style_guide_entry",
+      "get_worldbuilding_doc",
+      "get_outline",
+      "read_summary",
+    ];
+    for (const id of removed) {
+      expect(AI_TOOL_MAP.get(id)).toBeUndefined();
+    }
   });
 });
 
@@ -50,29 +71,6 @@ describe("character tools", () => {
     expect(chars[0].role).toBe("protagonist");
   });
 
-  it("get_character returns character details", async () => {
-    const char = makeCharacter({
-      projectId,
-      name: "Bob",
-      role: "antagonist",
-    });
-    await db.characters.add(char);
-
-    const result = await executeTool("get_character", { id: char.id }, ctx);
-    expect(result.success).toBe(true);
-    expect(result.data?.name).toBe("Bob");
-    expect(result.data?.role).toBe("antagonist");
-  });
-
-  it("get_character fails for unknown ID", async () => {
-    const result = await executeTool(
-      "get_character",
-      { id: "nonexistent" },
-      ctx,
-    );
-    expect(result.success).toBe(false);
-  });
-
   it("update_character modifies fields", async () => {
     const char = makeCharacter({ projectId, name: "Carol" });
     await db.characters.add(char);
@@ -86,19 +84,6 @@ describe("character tools", () => {
 
     const updated = await db.characters.get(char.id);
     expect(updated?.role).toBe("protagonist");
-  });
-
-  it("list_characters returns all characters", async () => {
-    await db.characters.bulkAdd([
-      makeCharacter({ projectId, name: "A" }),
-      makeCharacter({ projectId, name: "B" }),
-    ]);
-
-    const result = await executeTool("list_characters", {}, ctx);
-    expect(result.success).toBe(true);
-    expect(
-      (result.data?.characters as { id: string; name: string }[]).length,
-    ).toBe(2);
   });
 });
 
@@ -119,17 +104,6 @@ describe("location tools", () => {
 
     const locs = await db.locations.where({ projectId }).toArray();
     expect(locs).toHaveLength(1);
-  });
-
-  it("get_location returns location details", async () => {
-    const loc = await executeTool("create_location", { name: "Castle" }, ctx);
-    const result = await executeTool(
-      "get_location",
-      { id: loc.data?.id as string },
-      ctx,
-    );
-    expect(result.success).toBe(true);
-    expect(result.data?.name).toBe("Castle");
   });
 
   it("update_location modifies fields", async () => {
@@ -166,21 +140,6 @@ describe("timeline event tools", () => {
     expect(result.data?.title).toBe("The Battle");
   });
 
-  it("get_timeline_event returns event details", async () => {
-    const created = await executeTool(
-      "create_timeline_event",
-      { title: "Coronation" },
-      ctx,
-    );
-    const result = await executeTool(
-      "get_timeline_event",
-      { id: created.data?.id as string },
-      ctx,
-    );
-    expect(result.success).toBe(true);
-    expect(result.data?.title).toBe("Coronation");
-  });
-
   it("update_timeline_event modifies fields", async () => {
     const created = await executeTool(
       "create_timeline_event",
@@ -212,22 +171,6 @@ describe("chapter tools", () => {
     );
     expect(result.success).toBe(true);
     expect(result.data?.title).toBe("Chapter 1");
-  });
-
-  it("get_chapter returns chapter details", async () => {
-    const created = await executeTool(
-      "create_chapter",
-      { title: "Chapter 2" },
-      ctx,
-    );
-    const result = await executeTool(
-      "get_chapter",
-      { id: created.data?.id as string },
-      ctx,
-    );
-    expect(result.success).toBe(true);
-    expect(result.data?.title).toBe("Chapter 2");
-    expect(result.data?.status).toBe("draft");
   });
 
   it("update_chapter modifies title and status", async () => {
@@ -416,27 +359,10 @@ describe("parameter validation", () => {
     expect(result.message).toContain("Invalid parameters");
   });
 
-  it("rejects missing id on get_character", async () => {
-    const result = await executeTool("get_character", {}, ctx);
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Invalid parameters");
-  });
-
-  it("rejects empty string id on get_character", async () => {
-    const result = await executeTool("get_character", { id: "" }, ctx);
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Invalid parameters");
-  });
-
   it("rejects missing query on search_chapters", async () => {
     const result = await executeTool("search_chapters", {}, ctx);
     expect(result.success).toBe(false);
     expect(result.message).toContain("Invalid parameters");
-  });
-
-  it("accepts empty params for list_characters", async () => {
-    const result = await executeTool("list_characters", {}, ctx);
-    expect(result.success).toBe(true);
   });
 
   it("strips unknown extra params without rejection", async () => {
@@ -449,11 +375,6 @@ describe("parameter validation", () => {
     expect(result.data?.name).toBe("Elena");
   });
 
-  it("error message includes field name and reason", async () => {
-    const result = await executeTool("get_character", {}, ctx);
-    expect(result.message).toContain("id");
-  });
-
   it("does not modify DB when validation fails", async () => {
     await executeTool("create_character", {}, ctx);
     const chars = await db.characters.where({ projectId }).toArray();
@@ -461,29 +382,10 @@ describe("parameter validation", () => {
   });
 });
 
-describe("list/read tools (agentic discovery)", () => {
+describe("chapter content read tools", () => {
   beforeEach(async () => {
     resetIdCounter();
-    await Promise.all([
-      db.chapters.clear(),
-      db.locations.clear(),
-      db.timelineEvents.clear(),
-      db.styleGuideEntries.clear(),
-      db.worldbuildingDocs.clear(),
-      db.outlineGridColumns.clear(),
-      db.outlineGridRows.clear(),
-      db.outlineGridCells.clear(),
-    ]);
-  });
-
-  it("list_chapters returns all chapters", async () => {
-    await db.chapters.bulkAdd([
-      makeChapter({ projectId, title: "Ch1" }),
-      makeChapter({ projectId, title: "Ch2" }),
-    ]);
-    const result = await executeTool("list_chapters", {}, ctx);
-    expect(result.success).toBe(true);
-    expect((result.data?.chapters as { id: string }[]).length).toBe(2);
+    await db.chapters.clear();
   });
 
   it("read_chapter returns full content", async () => {
@@ -556,7 +458,7 @@ describe("list/read tools (agentic discovery)", () => {
     expect(search.success).toBe(false);
   });
 
-  it("list_chapters and search_chapters filter to bounded chapters", async () => {
+  it("search_chapters filters to bounded chapters", async () => {
     const ch1 = makeChapter({
       projectId,
       title: "Ch1",
@@ -571,11 +473,6 @@ describe("list/read tools (agentic discovery)", () => {
     });
     await db.chapters.bulkAdd([ch1, ch2]);
     const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
-    const list = await executeTool("list_chapters", {}, boundedCtx);
-    expect(list.success).toBe(true);
-    const listChapters = list.data?.chapters as { id: string }[];
-    expect(listChapters).toHaveLength(1);
-    expect(listChapters[0].id).toBe(ch1.id);
     const search = await executeTool(
       "search_chapters",
       { query: "shared" },
@@ -585,158 +482,6 @@ describe("list/read tools (agentic discovery)", () => {
     const matches = search.data?.matches as { id: string }[];
     expect(matches).toHaveLength(1);
     expect(matches[0].id).toBe(ch1.id);
-  });
-
-  it("list_locations returns all locations", async () => {
-    await db.locations.bulkAdd([
-      makeLocation({ projectId, name: "Forest" }),
-      makeLocation({ projectId, name: "Castle" }),
-    ]);
-    const result = await executeTool("list_locations", {}, ctx);
-    expect(result.success).toBe(true);
-    expect((result.data?.locations as { id: string }[]).length).toBe(2);
-  });
-
-  it("list_timeline_events returns all events", async () => {
-    await db.timelineEvents.bulkAdd([
-      makeTimelineEvent({ projectId, title: "Battle" }),
-      makeTimelineEvent({ projectId, title: "Peace" }),
-    ]);
-    const result = await executeTool("list_timeline_events", {}, ctx);
-    expect(result.success).toBe(true);
-    expect((result.data?.events as { id: string }[]).length).toBe(2);
-  });
-
-  it("list_style_guide returns all entries", async () => {
-    await db.styleGuideEntries.bulkAdd([
-      makeStyleGuideEntry({ projectId, title: "POV", content: "First person" }),
-    ]);
-    const result = await executeTool("list_style_guide", {}, ctx);
-    expect(result.success).toBe(true);
-    expect((result.data?.entries as { id: string }[]).length).toBe(1);
-  });
-
-  it("get_style_guide_entry returns full content", async () => {
-    const entry = makeStyleGuideEntry({
-      projectId,
-      title: "Tense",
-      content: "Past tense throughout",
-    });
-    await db.styleGuideEntries.add(entry);
-    const result = await executeTool(
-      "get_style_guide_entry",
-      { id: entry.id },
-      ctx,
-    );
-    expect(result.success).toBe(true);
-    expect(result.data?.content).toBe("Past tense throughout");
-  });
-
-  it("get_style_guide_entry fails for unknown ID", async () => {
-    const result = await executeTool(
-      "get_style_guide_entry",
-      { id: "nonexistent" },
-      ctx,
-    );
-    expect(result.success).toBe(false);
-  });
-
-  it("list_worldbuilding_docs returns all docs", async () => {
-    await db.worldbuildingDocs.bulkAdd([
-      makeWorldbuildingDoc({ projectId, title: "Magic System" }),
-      makeWorldbuildingDoc({ projectId, title: "Geography" }),
-    ]);
-    const result = await executeTool("list_worldbuilding_docs", {}, ctx);
-    expect(result.success).toBe(true);
-    expect((result.data?.docs as { id: string }[]).length).toBe(2);
-  });
-
-  it("get_worldbuilding_doc returns full content", async () => {
-    const doc = makeWorldbuildingDoc({
-      projectId,
-      title: "Lore",
-      content: "Ancient history of the realm",
-    });
-    await db.worldbuildingDocs.add(doc);
-    const result = await executeTool(
-      "get_worldbuilding_doc",
-      { id: doc.id },
-      ctx,
-    );
-    expect(result.success).toBe(true);
-    expect(result.data?.content).toBe("Ancient history of the realm");
-  });
-
-  it("get_worldbuilding_doc fails for unknown ID", async () => {
-    const result = await executeTool(
-      "get_worldbuilding_doc",
-      { id: "nonexistent" },
-      ctx,
-    );
-    expect(result.success).toBe(false);
-  });
-
-  it("get_outline returns serialized outline", async () => {
-    const col = makeOutlineGridColumn({ projectId, title: "Act" });
-    const ch = makeChapter({ projectId, title: "Chapter 1" });
-    const row = makeOutlineGridRow({
-      projectId,
-      linkedChapterId: ch.id,
-    });
-    const cell = makeOutlineGridCell({
-      projectId,
-      rowId: row.id,
-      columnId: col.id,
-      content: "Hero departs",
-    });
-    await Promise.all([
-      db.outlineGridColumns.add(col),
-      db.outlineGridRows.add(row),
-      db.outlineGridCells.add(cell),
-      db.chapters.add(ch),
-    ]);
-    const result = await executeTool("get_outline", {}, ctx);
-    expect(result.success).toBe(true);
-    expect(result.data?.outline).toContain("Hero departs");
-    expect(result.data?.outline).toContain("Act");
-  });
-
-  it("get_outline returns message when no outline exists", async () => {
-    const result = await executeTool("get_outline", {}, ctx);
-    expect(result.success).toBe(true);
-    expect(result.message).toContain("No outline");
-  });
-});
-
-describe("enhanced get_chapter", () => {
-  beforeEach(async () => {
-    resetIdCounter();
-    await db.chapters.clear();
-  });
-
-  it("includes totalParagraphs and hasSceneBreaks in response", async () => {
-    const ch = makeChapter({
-      projectId,
-      title: "Test",
-      content: "Para one.\n\nPara two.\n\n---\n\nPara three.",
-    });
-    await db.chapters.add(ch);
-    const result = await executeTool("get_chapter", { id: ch.id }, ctx);
-    expect(result.success).toBe(true);
-    expect(result.data?.totalParagraphs).toBe(4);
-    expect(result.data?.hasSceneBreaks).toBe(true);
-  });
-
-  it("hasSceneBreaks is false when no breaks", async () => {
-    const ch = makeChapter({
-      projectId,
-      title: "Test",
-      content: "Para one.\n\nPara two.",
-    });
-    await db.chapters.add(ch);
-    const result = await executeTool("get_chapter", { id: ch.id }, ctx);
-    expect(result.data?.hasSceneBreaks).toBe(false);
-    expect(result.data?.totalParagraphs).toBe(2);
   });
 });
 
@@ -850,7 +595,6 @@ describe("search_chapter", () => {
       snippet: string;
     }[];
     expect(matches[0].paragraph).toBe(2);
-    // Default context_paragraphs=1, so snippet includes paragraphs 1-3
     expect(matches[0].snippet).toContain("The sun rose.");
     expect(matches[0].snippet).toContain("The dragon appeared.");
     expect(matches[0].snippet).toContain("It breathed fire.");
@@ -995,25 +739,14 @@ describe("get_chapter_structure", () => {
 describe("requiresApproval", () => {
   it("read tools do not require approval", () => {
     const readTools = [
-      "get_character",
-      "get_location",
-      "get_timeline_event",
-      "get_chapter",
+      "list",
+      "get",
       "search_chapters",
       "search_project",
-      "list_characters",
-      "list_chapters",
       "read_chapter",
       "read_chapter_range",
       "search_chapter",
       "get_chapter_structure",
-      "list_locations",
-      "list_timeline_events",
-      "list_style_guide",
-      "get_style_guide_entry",
-      "list_worldbuilding_docs",
-      "get_worldbuilding_doc",
-      "get_outline",
     ];
     for (const id of readTools) {
       expect(AI_TOOL_MAP.get(id)?.requiresApproval).toBe(false);

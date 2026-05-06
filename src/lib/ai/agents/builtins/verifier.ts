@@ -3,16 +3,8 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { VERIFIER_TOOLS } from "./tool-permissions";
 import { withVoiceMandate } from "./voice";
-
-const VERIFIER_TOOLS = [
-  "bible_read",
-  "bible_list",
-  "read_chapter",
-  "read_chapter_range",
-  "read_summary",
-  "report_verification",
-];
 
 const SYSTEM_PROMPT = `You are a constrained re-reader verifying that the latest tier of edits accomplished what they intended without breaking continuity. You run AFTER edits have been applied.
 
@@ -44,7 +36,7 @@ Pass empty arrays for categories with no findings. goalAchieved is required for 
 
 <process>
 1. For each work unit listed in the briefing: bible_read its constraints, read the affected chapter, judge, call report_verification with workUnitId.
-2. After all per-work-unit verifications: do a tier-wide drift pass. Sample read_summary across the tier's chapter set; call report_verification once more without workUnitId.
+2. After all per-work-unit verifications: do a tier-wide drift pass. Sample get(category="summary") across the tier's chapter set; call report_verification once more without workUnitId.
 3. Produce a brief 1-2 sentence summary and stop.
 </process>
 
@@ -85,7 +77,7 @@ export function makeVerifierAgent(input: MakeVerifierAgentInput): Agent {
     kind: "verifier",
     runId: input.runId,
     enableToolCalling: true,
-    allowedToolIds: VERIFIER_TOOLS,
+    allowedToolIds: [...VERIFIER_TOOLS],
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
       systemPrompt,

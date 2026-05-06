@@ -313,11 +313,11 @@ describe("createGoogleAdapter", () => {
         {
           role: "assistant",
           content: "",
-          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
         },
         {
           role: "tool",
-          toolCallId: "list_chapters",
+          toolCallId: "list",
           content: [
             {
               type: "text",
@@ -334,7 +334,7 @@ describe("createGoogleAdapter", () => {
       const toolMsg = call.contents[1];
       expect(toolMsg.role).toBe("user");
       expect(toolMsg.parts[0].functionResponse).toEqual({
-        name: "list_chapters",
+        name: "list",
         response: { success: true, chapters: ["one"] },
       });
     });

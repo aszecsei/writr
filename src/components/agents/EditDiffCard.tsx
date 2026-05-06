@@ -5,7 +5,7 @@ import { InlineDiff } from "@/components/editor/VersionHistoryDialog";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import type { ProposedEdit } from "@/db/schemas";
 import { useChapter } from "@/hooks/data/useChapter";
-import { applyEditsToContent } from "@/lib/ai/agents/pipeline/stagedChapterContent";
+import { applyEditsToContent } from "@/lib/ai/agents/pipeline";
 
 const SEAM_WORDS = 80;
 

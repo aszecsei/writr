@@ -3,20 +3,8 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { ORCHESTRATOR_TOOLS } from "./tool-permissions";
 import { withVoiceMandate } from "./voice";
-
-const ORCHESTRATOR_TOOLS = [
-  "bible_read",
-  "bible_list",
-  "read_summary",
-  "read_chapter",
-  "list_chapters",
-  "list_notes",
-  "list_questions",
-  "create_work_unit",
-  "update_work_unit",
-  "finalize_tier",
-];
 
 const SYSTEM_PROMPT = `You are an editorial orchestrator. The reader has produced notes and questions about the manuscript. Your job is to convert open notes into a tiered edit plan composed of "work units."
 
@@ -55,7 +43,7 @@ The user is going to plan one tier at a time. Focus on the CURRENT tier you are 
 
 <process>
 1. Use list_notes(status="open") and list_questions(status="open") to see what needs addressing.
-2. Use bible_read / bible_list / read_summary to understand context. Avoid read_chapter unless absolutely necessary.
+2. Use bible_read / bible_list / get(category="summary") to understand context. Avoid read_chapter unless absolutely necessary.
 3. For each cluster of related notes, call create_work_unit. Build up the tier.
 4. When you've covered the notes in scope for this tier, call finalize_tier with the ordered list of work-unit ids.
 5. After finalize_tier, produce a brief 2-4 sentence summary of the tier and stop.
@@ -96,7 +84,7 @@ export function makeOrchestratorAgent(
     kind: "orchestrator",
     runId: input.runId,
     enableToolCalling: true,
-    allowedToolIds: ORCHESTRATOR_TOOLS,
+    allowedToolIds: [...ORCHESTRATOR_TOOLS],
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
       systemPrompt,

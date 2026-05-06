@@ -56,6 +56,10 @@ export interface ToolParameterProperty {
   enum?: string[];
   /** Element schema when `type` is `"array"` */
   items?: ToolParameterProperty;
+  /** Nested object properties when `type` is `"object"`. */
+  properties?: Record<string, ToolParameterProperty>;
+  /** Required nested-object property names. */
+  required?: string[];
 }
 
 /** JSON Schema subset for tool parameters */
@@ -65,10 +69,33 @@ export interface ToolParametersSchema {
   required?: string[];
 }
 
+/**
+ * Domain tag for a tool. Lets agent-management UIs group tools and lets
+ * future code filter by category instead of matching on tool ids.
+ */
+export type ToolCategory =
+  | "chapter"
+  | "character"
+  | "location"
+  | "timeline"
+  | "style-guide"
+  | "worldbuilding"
+  | "outline"
+  | "search"
+  | "bible"
+  | "work-unit"
+  | "edit"
+  | "note"
+  | "summary"
+  | "verification"
+  | "read";
+
 export interface AiToolDefinition {
   id: string;
   name: string;
   description: string;
+  /** Domain tag for grouping / filtering. Optional for forward compatibility. */
+  category?: ToolCategory;
   parameters: ToolParametersSchema;
   inputSchema: z.ZodType;
   requiresApproval: boolean;

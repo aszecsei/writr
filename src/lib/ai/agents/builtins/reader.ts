@@ -3,72 +3,35 @@ import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import {
+  READER_COMPREHENSION_TOOLS,
+  READER_SELF_ANSWER_TOOLS,
+  READER_THEMATIC_TOOLS,
+} from "./tool-permissions";
 import { withVoiceMandate } from "./voice";
 
-// ─── Per-mode tool whitelists ──────────────────────────────────────
+// ─── Chat-mode prompt (REVIEW agent in AiPanel) ────────────────────
 //
-// Comprehension is intentionally minimal: the agent must read the inlined
-// chapter and write observations only — no chapter-reading tools, so it cannot
-// backtrack or jump ahead. Thematic adds search + read tools so the model can
-// enumerate every occurrence of a hypothesised motif. Self-answer gets the
-// full reconciliation toolset plus `propose_answer` for surfacing resolutions
-// to the human.
+// The reader kind has a chat variant too: a generic developmental-review
+// agent invoked from the AiPanel with no pipeline run behind it. Its prompt
+// lives here alongside the pipeline-mode prompts so all reader variants
+// evolve together. `defaults.ts` imports it for the agent-definitions seed.
 
-const COMPREHENSION_TOOLS = [
-  "bible_read",
-  "bible_write",
-  "bible_list",
-  "note",
-  "question",
-  "list_notes",
-  "list_questions",
-  // Read-back tools, gated by `maxReadableChapterOrder` in
-  // ToolExecutionContext: chapter-reading tools refuse content beyond the
-  // current reading position. `search_project` remains excluded — it surfaces
-  // the user's authored bible, which the comprehension reader has no access
-  // to by design.
-  "list_chapters",
-  "read_chapter",
-  "read_chapter_range",
-  "search_chapter",
-  "search_chapters",
-];
+export const READER_CHAT_PROMPT = `You are a developmental reader providing a focused review. Adapt your output to what the writer asked for; common modes:
 
-const THEMATIC_TOOLS = [
-  ...COMPREHENSION_TOOLS,
-  "search_chapter",
-  "search_chapters",
-  "search_project",
-  "read_chapter",
-  "read_chapter_range",
-];
+- General review: pacing, clarity, character consistency, voice adherence, prose quality. Be specific and actionable. Quote short passages when calling out issues.
+- Summary: provide a concise summary capturing key plot points, character developments, and thematic elements.
+- Consistency check: scan for plot holes, timeline contradictions, character inconsistencies (knowledge they shouldn't have, voice drift, contradictory motivations). Format with severity (CRITICAL / MAJOR / MINOR) and end with a brief prioritized recommendation.
 
-const SELF_ANSWER_TOOLS = [
-  "list_chapters",
-  "read_chapter",
-  "read_chapter_range",
-  "search_chapter",
-  "search_chapters",
-  "search_project",
-  "get_chapter_structure",
-  "get_outline",
-  "bible_read",
-  "bible_write",
-  "bible_list",
-  "note",
-  "question",
-  "list_notes",
-  "list_questions",
-  "propose_answer",
-];
+If the user gives no specific framing, do a general review. Always ground feedback in the text — quote, then comment. Don't invent issues that aren't there; "no notable issues" is a valid finding.`;
 
-// ─── Per-mode system prompts ───────────────────────────────────────
+// ─── Per-mode pipeline system prompts ──────────────────────────────
 
 const COMPREHENSION_SYSTEM_PROMPT = `You are a meticulous developmental reader experiencing a manuscript for the first time.
 
-This is a comprehension pass. You read chapters in forward order. The current chapter's full text is in the most recent briefing. Earlier chapters from this segment are above in this conversation — refer to them directly when checking for repeated phrasing, callbacks, or voice consistency. Earlier chapters from previous segments are no longer in this conversation but can be re-read with read_chapter / read_chapter_range / search_chapter / search_chapters / list_chapters.
+This is a comprehension pass. You read chapters in forward order. The current chapter's full text is in the most recent briefing. Earlier chapters from this segment are above in this conversation — refer to them directly when checking for repeated phrasing, callbacks, or voice consistency. Earlier chapters from previous segments are no longer in this conversation but can be re-read with read_chapter / read_chapter_range / search_chapter / search_chapters / list(category="chapter").
 
-Forward-only is a hard rule. NEVER call read_chapter / read_chapter_range / search_chapter on a chapter index greater than the current one — those tools will refuse, but don't try. list_chapters and search_chapters are bounded for you automatically.
+Forward-only is a hard rule. NEVER call read_chapter / read_chapter_range / search_chapter on a chapter index greater than the current one — those tools will refuse, but don't try. list(category="chapter") and search_chapters are bounded for you automatically.
 
 Your role is OBSERVATION ONLY. You never propose edits. For the chapter in front of you:
 1. Read the entire chapter carefully.
@@ -351,7 +314,7 @@ function makeComprehensionAgent(input: MakeReaderAgentInput): Agent {
     kind: "reader",
     runId: input.runId,
     enableToolCalling: true,
-    allowedToolIds: COMPREHENSION_TOOLS,
+    allowedToolIds: [...READER_COMPREHENSION_TOOLS],
     maxIterations: 32,
     buildMessages: makeAgentBuildMessages({
       systemPrompt,
@@ -397,7 +360,7 @@ function makeThematicAgent(input: MakeReaderAgentInput): Agent {
     kind: "reader",
     runId: input.runId,
     enableToolCalling: true,
-    allowedToolIds: THEMATIC_TOOLS,
+    allowedToolIds: [...READER_THEMATIC_TOOLS],
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
       systemPrompt,
@@ -441,7 +404,7 @@ function makeSelfAnswerAgent(input: MakeReaderAgentInput): Agent {
     kind: "reader",
     runId: input.runId,
     enableToolCalling: true,
-    allowedToolIds: SELF_ANSWER_TOOLS,
+    allowedToolIds: [...READER_SELF_ANSWER_TOOLS],
     maxIterations: 64,
     buildMessages: makeAgentBuildMessages({
       systemPrompt,

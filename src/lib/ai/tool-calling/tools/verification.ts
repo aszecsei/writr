@@ -2,15 +2,8 @@ import { z } from "zod";
 import { createVerification } from "@/db/operations/verifications";
 import { getWorkUnit } from "@/db/operations/workUnits";
 import { AgentReferenceKindEnum } from "@/db/schemas";
-import { defineTool, type ToolResult } from "../types";
-
-function ok(message: string, data?: Record<string, unknown>): ToolResult {
-  return { success: true, message, data };
-}
-
-function fail(message: string): ToolResult {
-  return { success: false, message };
-}
+import { defineTool } from "../types";
+import { fail, ok } from "./helpers";
 
 const findingsArraySchema = z.array(
   z.object({
@@ -47,6 +40,7 @@ function parseFindings(raw: string | undefined): Findings | Error {
 
 export const reportVerificationTool = defineTool({
   id: "report_verification",
+  category: "verification",
   name: "Report Verification",
   description:
     "Record a verification result. Call ONCE per work unit (workUnitId set), and once tier-wide (workUnitId omitted) for cross-cutting drift. " +

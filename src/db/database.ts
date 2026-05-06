@@ -925,6 +925,46 @@ export class WritrDatabase extends Dexie {
           });
       });
 
+    // v33: rewrite agent allowedToolIds to use the consolidated `list` /
+    // `get` tools (with per-category scoping like `list:chapter`,
+    // `get:summary`). The 14 obsolete per-entity read tools were removed in
+    // the same change; this migration upgrades both seeded built-in rows
+    // (covers installs that ran v32 before the rewrite) and user-created
+    // agents that opted into any of those tool ids.
+    this.version(33).upgrade(async (tx) => {
+      const idMap: Record<string, string> = {
+        list_characters: "list:character",
+        list_locations: "list:location",
+        list_timeline_events: "list:timeline",
+        list_chapters: "list:chapter",
+        list_style_guide: "list:style_guide",
+        list_worldbuilding_docs: "list:worldbuilding",
+        get_character: "get:character",
+        get_location: "get:location",
+        get_timeline_event: "get:timeline",
+        get_chapter: "get:chapter",
+        get_style_guide_entry: "get:style_guide",
+        get_worldbuilding_doc: "get:worldbuilding",
+        get_outline: "get:outline",
+        read_summary: "get:summary",
+      };
+      await tx
+        .table("agents")
+        .toCollection()
+        .modify((a: { allowedToolIds?: string[] }) => {
+          if (!Array.isArray(a.allowedToolIds)) return;
+          const seen = new Set<string>();
+          const next: string[] = [];
+          for (const id of a.allowedToolIds) {
+            const mapped = idMap[id] ?? id;
+            if (seen.has(mapped)) continue;
+            seen.add(mapped);
+            next.push(mapped);
+          }
+          a.allowedToolIds = next;
+        });
+    });
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

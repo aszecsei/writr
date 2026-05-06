@@ -8,13 +8,13 @@ import {
 } from "@/db/operations/agentRuns";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
-import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
-import { BUDGET_EXCEEDED_REASON } from "@/lib/ai/agents/pipeline/readerLoop";
 import {
+  BUDGET_EXCEEDED_REASON,
   cancelRun,
+  createActivityEmitter,
   getRunController,
   startReaderPhase,
-} from "@/lib/ai/agents/pipeline/runEngine";
+} from "@/lib/ai/agents/pipeline";
 import { ActivityPanel } from "./ActivityPanel";
 import { EditApprovalPanel } from "./EditApprovalPanel";
 import { NotesQuestionsPanel } from "./NotesQuestionsPanel";

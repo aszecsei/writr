@@ -3,6 +3,7 @@ import type { AiContext } from "../../types";
 import { makeChatAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
 import { withScreenplaySuffix } from "./screenplay";
+import { withVoiceMandate } from "./voice";
 
 export interface MakeChatAgentInput {
   definition: AgentDefinition;
@@ -36,7 +37,10 @@ export function makeChatAgent(input: MakeChatAgentInput): Agent {
   const { definition, projectId, context } = input;
   const enableToolCalling = definition.allowedToolIds.length > 0;
 
-  const baseSystemPrompt = definition.systemPrompt;
+  // Apply the shared voice mandate at runtime (consistent with how pipeline
+  // factories wrap their prompts). Stored row content is the role description
+  // only; the mandate isn't duplicated in every agentDefinition row.
+  const baseSystemPrompt = withVoiceMandate(definition.systemPrompt);
   const withSuffix = input.systemPromptSuffix
     ? `${baseSystemPrompt}\n\n${input.systemPromptSuffix}`
     : baseSystemPrompt;

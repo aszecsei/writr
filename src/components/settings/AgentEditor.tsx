@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
+import { TriStateCheckbox } from "@/components/ui/TriStateCheckbox";
 import { createAgent, updateAgent } from "@/db/operations/agents";
 import type {
   AgentModelOverride,
@@ -12,9 +13,18 @@ import type {
 } from "@/db/schemas";
 import { useAgent } from "@/hooks/data/useAgents";
 import { PROVIDERS } from "@/lib/ai/providers";
-import { AI_TOOLS } from "@/lib/ai/tool-calling";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import {
+  ALL_READ_TOOL_IDS,
+  MUTATIONS_GROUPS,
+  READS_GROUPS,
+  readsMasterState,
+  rowState,
+  type ToolPickerRow,
+  toggleAllReads,
+  toggleRow,
+} from "./agent-tool-picker";
 
 const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
   { value: "openrouter", label: "OpenRouter" },
@@ -34,44 +44,6 @@ const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
   { value: "minimal", label: "Minimal" },
   { value: "none", label: "None" },
 ];
-
-/** Group tools for the checkbox picker. The grouping is heuristic — keeps the
- * picker scannable without a separate metadata column on each tool. */
-function groupTools() {
-  const groups = new Map<string, typeof AI_TOOLS>();
-  for (const tool of AI_TOOLS) {
-    const group = pickGroup(tool.id);
-    const list = groups.get(group) ?? [];
-    list.push(tool);
-    groups.set(group, list);
-  }
-  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-}
-
-function pickGroup(id: string): string {
-  if (id.startsWith("bible_")) return "Reader Bible";
-  if (
-    id === "note" ||
-    id === "question" ||
-    id.startsWith("list_notes") ||
-    id.startsWith("list_questions")
-  )
-    return "Notes & Questions";
-  if (id.includes("work_unit") || id === "finalize_tier") return "Work Units";
-  if (id === "propose_edit") return "Edits";
-  if (id === "report_verification") return "Verification";
-  if (id === "read_summary") return "Summaries";
-  if (id.endsWith("_chapter") || id.includes("chapter_")) return "Chapters";
-  if (id.endsWith("_character") || id.includes("character_"))
-    return "Characters";
-  if (id.endsWith("_location") || id.includes("location_")) return "Locations";
-  if (id.includes("timeline_")) return "Timeline";
-  if (id.includes("style_guide")) return "Style Guide";
-  if (id.includes("worldbuilding")) return "Worldbuilding";
-  if (id.includes("outline")) return "Outline";
-  if (id.includes("search_")) return "Search";
-  return "Other";
-}
 
 export function AgentEditor() {
   const modal = useUiStore((s) => s.modal);
@@ -136,13 +108,12 @@ export function AgentEditor() {
 
   const isBuiltin = existing && existing.kind !== "user";
 
-  function toggleTool(id: string) {
-    setAllowedToolIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function toggleRowIds(row: ToolPickerRow) {
+    setAllowedToolIds((prev) => toggleRow(row, prev));
+  }
+
+  function toggleAllReadIds() {
+    setAllowedToolIds((prev) => toggleAllReads(prev));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -182,8 +153,12 @@ export function AgentEditor() {
     closeModal();
   }
 
-  const grouped = groupTools();
   const canSubmit = name.trim().length > 0 && systemPrompt.trim().length > 0;
+  const masterReadsState = readsMasterState(allowedToolIds);
+  const readsActiveCount = ALL_READ_TOOL_IDS.reduce(
+    (n, id) => n + (allowedToolIds.has(id) ? 1 : 0),
+    0,
+  );
 
   const headerTitle = editingId
     ? isBuiltin
@@ -270,36 +245,112 @@ export function AgentEditor() {
           <legend className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Allowed Tools ({allowedToolIds.size})
           </legend>
-          <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
             Tools the agent may invoke. Empty = text-only (no tool calling).
-            Pipeline tools (bible, notes, work units, propose_edit,
-            report_verification) require an active agent run for context — only
+            Pipeline-only tools require an active agent run for context — only
             useful inside the manuscript pipeline.
           </p>
-          <div className="max-h-[40vh] space-y-3 overflow-y-auto">
-            {grouped.map(([group, tools]) => (
-              <div key={group}>
-                <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  {group}
-                </h4>
-                <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
-                  {tools.map((t) => (
-                    <label
-                      key={t.id}
-                      className="flex items-start gap-2 text-xs text-neutral-700 dark:text-neutral-300"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={allowedToolIds.has(t.id)}
-                        onChange={() => toggleTool(t.id)}
-                        className="mt-0.5 h-3 w-3 rounded border-neutral-300 dark:border-neutral-600"
-                      />
-                      <span className="font-mono">{t.id}</span>
-                    </label>
-                  ))}
-                </div>
+
+          <div className="max-h-[50vh] space-y-4 overflow-y-auto">
+            {/* Reads section: master toggle + per-category rows. */}
+            <section>
+              <label
+                htmlFor="agent-tool-master-reads"
+                className="flex items-center gap-2 border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-800 dark:border-neutral-700 dark:text-neutral-200"
+              >
+                <TriStateCheckbox
+                  id="agent-tool-master-reads"
+                  state={masterReadsState}
+                  onToggle={toggleAllReadIds}
+                  className="h-3.5 w-3.5 rounded border-neutral-300 dark:border-neutral-600"
+                  ariaLabel="Toggle all reads"
+                />
+                <span>
+                  Reads{" "}
+                  <span className="font-normal text-neutral-500 dark:text-neutral-400">
+                    ({readsActiveCount}/{ALL_READ_TOOL_IDS.length})
+                  </span>
+                </span>
+              </label>
+
+              <div className="mt-2 space-y-3 pl-5">
+                {READS_GROUPS.map((group) => (
+                  <div key={group.heading}>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      {group.heading}
+                    </h4>
+                    <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                      {group.rows.map((row) => (
+                        <label
+                          key={row.key}
+                          htmlFor={`agent-tool-${row.key}`}
+                          className="flex items-start gap-2 text-xs text-neutral-700 dark:text-neutral-300"
+                        >
+                          <TriStateCheckbox
+                            id={`agent-tool-${row.key}`}
+                            state={rowState(row, allowedToolIds)}
+                            onToggle={() => toggleRowIds(row)}
+                            className="mt-0.5 h-3 w-3 rounded border-neutral-300 dark:border-neutral-600"
+                            ariaLabel={`Toggle ${row.label}`}
+                          />
+                          <span className="leading-tight">
+                            <span>
+                              {row.label}
+                              {row.pipeline && (
+                                <span className="ml-1 text-[10px] uppercase tracking-wide text-neutral-400">
+                                  pipeline
+                                </span>
+                              )}
+                            </span>
+                            {row.hint && (
+                              <span className="block font-mono text-[10px] text-neutral-500 dark:text-neutral-400">
+                                {row.hint}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </section>
+
+            {/* Mutations: flat per-tool checkboxes, grouped by entity. */}
+            <section>
+              <h3 className="border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-800 dark:border-neutral-700 dark:text-neutral-200">
+                Mutations
+              </h3>
+              <div className="mt-2 space-y-3">
+                {MUTATIONS_GROUPS.map((group) => (
+                  <div key={group.heading}>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      {group.heading}
+                    </h4>
+                    <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                      {group.rows.map((row) => (
+                        <label
+                          key={row.key}
+                          htmlFor={`agent-tool-${row.key}`}
+                          className="flex items-start gap-2 text-xs text-neutral-700 dark:text-neutral-300"
+                        >
+                          <TriStateCheckbox
+                            id={`agent-tool-${row.key}`}
+                            state={rowState(row, allowedToolIds)}
+                            onToggle={() => toggleRowIds(row)}
+                            className="mt-0.5 h-3 w-3 rounded border-neutral-300 dark:border-neutral-600"
+                            ariaLabel={`Toggle ${row.label}`}
+                          />
+                          <span className="font-mono leading-tight">
+                            {row.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </fieldset>
 

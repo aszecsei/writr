@@ -64,7 +64,10 @@ describe("makeReaderAgent — comprehension mode", () => {
     expect(agent.allowedToolIds).toContain("read_chapter_range");
     expect(agent.allowedToolIds).toContain("search_chapter");
     expect(agent.allowedToolIds).toContain("search_chapters");
-    expect(agent.allowedToolIds).toContain("list_chapters");
+    // Chapter list permission is scoped — readers cannot list characters/etc.
+    expect(agent.allowedToolIds).toContain("list:chapter");
+    expect(agent.allowedToolIds).not.toContain("list:character");
+    expect(agent.allowedToolIds).not.toContain("list");
     // Still forbidden: search_project (would expose authored bible) and
     // propose_answer (self-answer-only).
     expect(agent.allowedToolIds).not.toContain("search_project");
@@ -170,7 +173,7 @@ describe("makeReaderAgent — thematic mode", () => {
     expect(agent.allowedToolIds).toContain("read_chapter_range");
     expect(agent.allowedToolIds).toContain("bible_write");
     expect(agent.allowedToolIds).not.toContain("propose_answer");
-    expect(agent.allowedToolIds).not.toContain("get_outline");
+    expect(agent.allowedToolIds).not.toContain("get:outline");
   });
 
   it("encodes mode into the agent id and omits chapter suffix", () => {

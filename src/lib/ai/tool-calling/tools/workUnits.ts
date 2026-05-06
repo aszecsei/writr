@@ -5,15 +5,8 @@ import {
   listWorkUnitsByTier,
   updateWorkUnit,
 } from "@/db/operations/workUnits";
-import { defineTool, type ToolResult } from "../types";
-
-function ok(message: string, data?: Record<string, unknown>): ToolResult {
-  return { success: true, message, data };
-}
-
-function fail(message: string): ToolResult {
-  return { success: false, message };
-}
+import { defineTool } from "../types";
+import { fail, ok } from "./helpers";
 
 const placementSchema = z.object({
   chapterId: z.string().uuid(),
@@ -27,6 +20,7 @@ const placementSchema = z.object({
 
 export const createWorkUnitTool = defineTool({
   id: "create_work_unit",
+  category: "work-unit",
   name: "Create Work Unit",
   description:
     "Define a single editorial unit of work (a coherent scene addition / rewrite / cut / foreshadowing seed). " +
@@ -124,6 +118,7 @@ export const createWorkUnitTool = defineTool({
 
 export const updateWorkUnitTool = defineTool({
   id: "update_work_unit",
+  category: "work-unit",
   name: "Update Work Unit",
   description:
     "Patch fields on an existing work unit. Only include fields to change.",
@@ -196,6 +191,7 @@ export const updateWorkUnitTool = defineTool({
 
 export const finalizeTierTool = defineTool({
   id: "finalize_tier",
+  category: "work-unit",
   name: "Finalize Tier",
   description:
     "Commit a tier definition to the edit plan. Lists every work-unit id in the tier (in execution order), " +

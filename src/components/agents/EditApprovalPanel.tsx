@@ -11,8 +11,10 @@ import {
   useProposedEditsByRun,
   useWorkUnitsByTier,
 } from "@/hooks/data/usePlan";
-import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
-import { startApplyTier } from "@/lib/ai/agents/pipeline/runEngine";
+import {
+  createActivityEmitter,
+  startApplyTier,
+} from "@/lib/ai/agents/pipeline";
 import { EditDiffCard } from "./EditDiffCard";
 
 interface EditApprovalPanelProps {

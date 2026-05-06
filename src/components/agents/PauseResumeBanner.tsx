@@ -13,7 +13,7 @@ import {
   startExecuteTier,
   startPlanTier,
   startReaderPhase,
-} from "@/lib/ai/agents/pipeline/runEngine";
+} from "@/lib/ai/agents/pipeline";
 
 interface PauseResumeBannerProps {
   run: AgentRun;

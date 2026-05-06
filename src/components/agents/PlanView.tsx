@@ -9,12 +9,12 @@ import {
   useWorkUnitsByRun,
   useWorkUnitsByTier,
 } from "@/hooks/data/usePlan";
-import { createActivityEmitter } from "@/lib/ai/agents/pipeline/activityEmitter";
 import {
+  createActivityEmitter,
   startExecuteTier,
   startIncrementalReread,
   startPlanTier,
-} from "@/lib/ai/agents/pipeline/runEngine";
+} from "@/lib/ai/agents/pipeline";
 import { WorkUnitCard } from "./WorkUnitCard";
 
 interface PlanViewProps {

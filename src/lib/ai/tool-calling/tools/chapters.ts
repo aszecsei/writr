@@ -1,0 +1,365 @@
+import { z } from "zod";
+import {
+  createChapter,
+  getChapter,
+  getChaptersByProject,
+  updateChapter,
+} from "@/db/operations/chapters";
+import { ChapterStatusEnum } from "@/db/schemas";
+import { extractSnippet, textContainsQuery } from "@/lib/search/highlight";
+import { defineTool } from "../types";
+import { fail, ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
+
+// CRUD: chapter create/update plus the chapter-content read tools
+// (read_chapter / read_chapter_range / search_chapter / search_chapters /
+// get_chapter_structure). Simple list/get-by-id use the consolidated
+// `list` / `get` tools — see ./registry.ts.
+
+export const createChapterTool = defineTool({
+  id: "create_chapter",
+  category: "chapter",
+  name: "Create Chapter",
+  description:
+    "Create a new chapter. Use when the user asks to add a chapter to the project.",
+  parameters: {
+    type: "object",
+    properties: {
+      title: { type: "string", description: "Chapter title" },
+      synopsis: { type: "string", description: "Brief chapter synopsis" },
+    },
+    required: ["title"],
+  },
+  inputSchema: z
+    .object({
+      title: z.string().min(1),
+      synopsis: z.string().optional(),
+    })
+    .strip(),
+  requiresApproval: true,
+  async execute(params, context) {
+    const chapter = await createChapter({
+      projectId: context.projectId,
+      title: params.title,
+      synopsis: params.synopsis ?? undefined,
+    });
+    return ok(`Created chapter "${chapter.title}"`, {
+      id: chapter.id,
+      title: chapter.title,
+    });
+  },
+});
+
+export const updateChapterTool = defineTool({
+  id: "update_chapter",
+  category: "chapter",
+  name: "Update Chapter",
+  description:
+    "Update a chapter's title, synopsis, or status. Only include fields to change.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Chapter ID" },
+      title: { type: "string", description: "New title" },
+      synopsis: { type: "string", description: "New synopsis" },
+      status: {
+        type: "string",
+        description: "New status",
+        enum: ["draft", "revised", "final"],
+      },
+    },
+    required: ["id"],
+  },
+  inputSchema: z
+    .object({
+      id: z.string().min(1),
+      title: z.string().optional(),
+      synopsis: z.string().optional(),
+      status: ChapterStatusEnum.optional(),
+    })
+    .strip(),
+  requiresApproval: true,
+  async execute(params) {
+    const { id, ...fields } = params;
+    const existing = await getChapter(id);
+    if (!existing) return fail(`Chapter not found: ${id}`);
+    await updateChapter(id, fields);
+    return ok(`Updated chapter "${existing.title}"`);
+  },
+});
+
+export const searchChaptersTool = defineTool({
+  id: "search_chapters",
+  category: "chapter",
+  name: "Search Chapters",
+  description:
+    "Search chapter content by a phrase or keyword. Returns matching chapter titles, IDs, and snippets.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Search phrase" },
+    },
+    required: ["query"],
+  },
+  inputSchema: z.object({ query: z.string().min(1) }).strip(),
+  requiresApproval: false,
+  async execute(params, context) {
+    const query = params.query;
+    const allChapters = await getChaptersByProject(context.projectId);
+    const chapters =
+      context.maxReadableChapterOrder !== undefined
+        ? allChapters.filter(
+            (ch) => ch.order <= (context.maxReadableChapterOrder as number),
+          )
+        : allChapters;
+    const matches = chapters
+      .filter(
+        (ch) =>
+          textContainsQuery(ch.title, query) ||
+          textContainsQuery(ch.content, query),
+      )
+      .map((ch) => ({
+        id: ch.id,
+        title: ch.title,
+        snippet: extractSnippet(ch.content, query),
+      }));
+    return ok(`Found ${matches.length} matching chapters`, { matches });
+  },
+});
+
+export const readChapterTool = defineTool({
+  id: "read_chapter",
+  category: "chapter",
+  name: "Read Chapter",
+  description:
+    "Read the full markdown content of a chapter by ID. " +
+    "For large chapters, prefer read_chapter_range or search_chapter to reduce token usage.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Chapter ID" },
+    },
+    required: ["id"],
+  },
+  inputSchema: z.object({ id: z.string().min(1) }).strip(),
+  requiresApproval: false,
+  async execute(params, context) {
+    const chapter = await getChapter(params.id);
+    if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
+
+    // Editor agents in the same tier should see staged proposed edits from
+    // earlier editors so chapter N+1's editor can acknowledge chapter N's
+    // new scene. Other agent kinds always see the persisted chapter content.
+    if (context.agentKind === "editor" && context.runId) {
+      const { getChapterWithStagedEdits } = await import(
+        "@/lib/ai/agents/pipeline/stagedChapterContent"
+      );
+      const staged = await getChapterWithStagedEdits(context.runId, params.id);
+      if (staged) {
+        return ok(
+          `Chapter "${chapter.title}" (${staged.wordCount} words, with staged edits)`,
+          {
+            id: chapter.id,
+            title: chapter.title,
+            content: staged.content,
+            staged: true,
+          },
+        );
+      }
+    }
+
+    return ok(`Chapter "${chapter.title}" (${chapter.wordCount} words)`, {
+      id: chapter.id,
+      title: chapter.title,
+      content: chapter.content,
+    });
+  },
+});
+
+export const readChapterRangeTool = defineTool({
+  id: "read_chapter_range",
+  category: "chapter",
+  name: "Read Chapter Range",
+  description:
+    "Read a range of paragraphs from a chapter (1-indexed, inclusive). " +
+    "Default window is 20 paragraphs, max 50. Use after `get` (category=chapter) to discover totalParagraphs.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Chapter ID" },
+      start: {
+        type: "number",
+        description: "Start paragraph number (1-indexed)",
+      },
+      end: {
+        type: "number",
+        description:
+          "End paragraph number (1-indexed, inclusive). Defaults to start + 19.",
+      },
+    },
+    required: ["id", "start"],
+  },
+  inputSchema: z
+    .object({
+      id: z.string().min(1),
+      start: z.number().int().min(1),
+      end: z.number().int().min(1).optional(),
+    })
+    .strip(),
+  requiresApproval: false,
+  async execute(params, context) {
+    const chapter = await getChapter(params.id);
+    if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
+    const paragraphs = splitParagraphs(chapter.content);
+    const total = paragraphs.length;
+    const start = Math.max(1, Math.min(params.start, total));
+    const rawEnd = params.end ?? start + 19;
+    const end = Math.max(start, Math.min(rawEnd, total, start + 49));
+    const content = paragraphs.slice(start - 1, end).join("\n\n");
+    return ok(
+      `Chapter "${chapter.title}" paragraphs ${start}-${end} of ${total}`,
+      {
+        id: chapter.id,
+        title: chapter.title,
+        content,
+        start,
+        end,
+        totalParagraphs: total,
+      },
+    );
+  },
+});
+
+export const searchChapterTool = defineTool({
+  id: "search_chapter",
+  category: "chapter",
+  name: "Search Chapter",
+  description:
+    "Search within a single chapter by keyword. Returns matching paragraph numbers with surrounding context. " +
+    "Use this instead of read_chapter when looking for a specific passage.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Chapter ID" },
+      query: { type: "string", description: "Search keyword or phrase" },
+      context_paragraphs: {
+        type: "number",
+        description:
+          "Number of surrounding paragraphs to include (default 1, max 3)",
+      },
+    },
+    required: ["id", "query"],
+  },
+  inputSchema: z
+    .object({
+      id: z.string().min(1),
+      query: z.string().min(1),
+      context_paragraphs: z.number().int().min(0).max(3).optional(),
+    })
+    .strip(),
+  requiresApproval: false,
+  async execute(params, context) {
+    const chapter = await getChapter(params.id);
+    if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.maxReadableChapterOrder !== undefined &&
+      chapter.order > context.maxReadableChapterOrder
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
+    const paragraphs = splitParagraphs(chapter.content);
+    const ctxSize = params.context_paragraphs ?? 1;
+    const queryLower = params.query.toLowerCase();
+    const matches: { paragraph: number; snippet: string }[] = [];
+    for (let i = 0; i < paragraphs.length && matches.length < 10; i++) {
+      if (paragraphs[i].toLowerCase().includes(queryLower)) {
+        const from = Math.max(0, i - ctxSize);
+        const to = Math.min(paragraphs.length - 1, i + ctxSize);
+        const snippet = paragraphs.slice(from, to + 1).join("\n\n");
+        matches.push({ paragraph: i + 1, snippet });
+      }
+    }
+    return ok(
+      `Found ${matches.length} matches for "${params.query}" in "${chapter.title}"`,
+      {
+        id: chapter.id,
+        title: chapter.title,
+        matches,
+        totalMatches: matches.length,
+      },
+    );
+  },
+});
+
+export const getChapterStructureTool = defineTool({
+  id: "get_chapter_structure",
+  category: "chapter",
+  name: "Get Chapter Structure",
+  description:
+    "Get the structural map of a chapter: scene boundaries with paragraph numbers and previews. " +
+    "Use this to understand chapter layout before reading specific sections.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Chapter ID" },
+    },
+    required: ["id"],
+  },
+  inputSchema: z.object({ id: z.string().min(1) }).strip(),
+  requiresApproval: false,
+  async execute(params) {
+    const chapter = await getChapter(params.id);
+    if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    const paragraphs = splitParagraphs(chapter.content);
+    const scenes: { start: number; end: number; preview: string }[] = [];
+    let sceneStart = 1;
+    for (let i = 0; i < paragraphs.length; i++) {
+      if (SCENE_BREAK_RE.test(paragraphs[i])) {
+        if (i > sceneStart - 1) {
+          const firstPara = paragraphs[sceneStart - 1];
+          scenes.push({
+            start: sceneStart,
+            end: i, // paragraph before the break
+            preview: firstPara.slice(0, 80),
+          });
+        }
+        sceneStart = i + 2; // skip the break paragraph
+      }
+    }
+    // Final scene (or the only scene if no breaks)
+    if (sceneStart <= paragraphs.length) {
+      const firstPara = paragraphs[sceneStart - 1];
+      scenes.push({
+        start: sceneStart,
+        end: paragraphs.length,
+        preview: firstPara.slice(0, 80),
+      });
+    }
+    return ok(
+      `Chapter "${chapter.title}": ${scenes.length} scene(s), ${paragraphs.length} paragraphs`,
+      {
+        id: chapter.id,
+        title: chapter.title,
+        totalParagraphs: paragraphs.length,
+        scenes,
+      },
+    );
+  },
+});

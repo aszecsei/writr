@@ -265,7 +265,7 @@ describe("createAnthropicAdapter", () => {
       // branch checked `typeof content === "string"` and silently dropped the
       // array, sending an empty tool_result back to the model on every
       // follow-up turn — exactly what reproduced as "I received an empty
-      // result" after a successful list_chapters call.
+      // result" after a successful list call.
       mockCreate.mockResolvedValueOnce({
         content: [{ type: "text", text: "ok" }],
         model: "claude-sonnet-4-5-20250929",
@@ -277,7 +277,7 @@ describe("createAnthropicAdapter", () => {
         {
           role: "assistant",
           content: "",
-          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
         },
         {
           role: "tool",

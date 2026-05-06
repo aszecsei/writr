@@ -2,15 +2,8 @@ import { z } from "zod";
 import { getChapter } from "@/db/operations/chapters";
 import { createProposedEdit } from "@/db/operations/proposedEdits";
 import { getWorkUnit } from "@/db/operations/workUnits";
-import { defineTool, type ToolResult } from "../types";
-
-function ok(message: string, data?: Record<string, unknown>): ToolResult {
-  return { success: true, message, data };
-}
-
-function fail(message: string): ToolResult {
-  return { success: false, message };
-}
+import { defineTool } from "../types";
+import { fail, ok } from "./helpers";
 
 // ─── propose_edit ───────────────────────────────────────────────────
 //
@@ -24,6 +17,7 @@ function fail(message: string): ToolResult {
 
 export const proposeEditTool = defineTool({
   id: "propose_edit",
+  category: "edit",
   name: "Propose Edit",
   description:
     "Propose a developmental edit to a chapter. " +

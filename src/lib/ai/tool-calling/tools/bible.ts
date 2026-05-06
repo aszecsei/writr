@@ -6,15 +6,8 @@ import {
   readBibleAtPath,
 } from "@/db/operations/readerBible";
 import { READER_BIBLE_TOP_LEVEL_PATHS } from "@/db/schemas";
-import { defineTool, type ToolResult } from "../types";
-
-function ok(message: string, data?: Record<string, unknown>): ToolResult {
-  return { success: true, message, data };
-}
-
-function fail(message: string): ToolResult {
-  return { success: false, message };
-}
+import { defineTool } from "../types";
+import { fail, ok } from "./helpers";
 
 const BIBLE_PATH_HINT = `The first segment must be one of: ${READER_BIBLE_TOP_LEVEL_PATHS.join(
   ", ",
@@ -24,6 +17,7 @@ const BIBLE_PATH_HINT = `The first segment must be one of: ${READER_BIBLE_TOP_LE
 
 export const bibleReadTool = defineTool({
   id: "bible_read",
+  category: "bible",
   name: "Read Reader Bible",
   description:
     "Read a value from the reader's bible (separate from the user's authored bible). Returns the JSON value at `path`, or null if no entry exists. " +
@@ -64,6 +58,7 @@ export const bibleReadTool = defineTool({
 
 export const bibleWriteTool = defineTool({
   id: "bible_write",
+  category: "bible",
   name: "Write Reader Bible",
   description:
     "Append an entry to the reader's bible. `op=set` replaces the value, `merge` deep-merges into the existing object, `delete` removes the entry. " +
@@ -142,6 +137,7 @@ export const bibleWriteTool = defineTool({
 
 export const bibleListTool = defineTool({
   id: "bible_list",
+  category: "bible",
   name: "List Reader Bible Paths",
   description:
     "List all reader-bible paths under an optional prefix (e.g. 'characters/' returns every character entry). Omit pathPrefix to list everything.",

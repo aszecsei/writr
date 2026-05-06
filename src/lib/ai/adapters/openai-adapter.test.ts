@@ -180,7 +180,7 @@ describe("createOpenAiAdapter", () => {
         {
           role: "assistant",
           content: "",
-          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
         },
         {
           role: "tool",
@@ -223,7 +223,7 @@ describe("createOpenAiAdapter", () => {
         {
           role: "assistant",
           content: "",
-          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
         },
         {
           role: "tool",
@@ -274,7 +274,7 @@ describe("createOpenAiAdapter", () => {
         {
           role: "assistant",
           content: "",
-          toolCalls: [{ id: "call_1", name: "list_chapters", arguments: {} }],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
         },
         {
           role: "tool",

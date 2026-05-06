@@ -16,15 +16,8 @@ import {
   AgentNoteSeverityEnum,
   AgentReferenceKindEnum,
 } from "@/db/schemas";
-import { defineTool, type ToolResult } from "../types";
-
-function ok(message: string, data?: Record<string, unknown>): ToolResult {
-  return { success: true, message, data };
-}
-
-function fail(message: string): ToolResult {
-  return { success: false, message };
-}
+import { defineTool } from "../types";
+import { fail, ok } from "./helpers";
 
 const referenceSchema = z.object({
   kind: AgentReferenceKindEnum,
@@ -56,6 +49,7 @@ function parseReferences(
 
 export const noteTool = defineTool({
   id: "note",
+  category: "note",
   name: "Log Reader Note",
   description:
     "Record an observation about the manuscript that may need editorial attention. " +
@@ -131,6 +125,7 @@ export const noteTool = defineTool({
 
 export const questionTool = defineTool({
   id: "question",
+  category: "note",
   name: "Surface Question to Human",
   description:
     "Surface a question that requires human judgment (e.g. is this contradiction intentional revelation or an error?). " +
@@ -170,6 +165,7 @@ export const questionTool = defineTool({
 
 export const listNotesTool = defineTool({
   id: "list_notes",
+  category: "note",
   name: "List Reader Notes",
   description:
     "List notes for the current run. Filter by status (open/addressed/dismissed) and/or chapter.",
@@ -213,6 +209,7 @@ export const listNotesTool = defineTool({
 
 export const listQuestionsTool = defineTool({
   id: "list_questions",
+  category: "note",
   name: "List Reader Questions",
   description:
     "List questions for the current run. Filter by status (open/answered/dismissed).",
@@ -250,6 +247,7 @@ export const listQuestionsTool = defineTool({
 
 export const proposeAnswerTool = defineTool({
   id: "propose_answer",
+  category: "note",
   name: "Propose Answer to Question",
   description:
     "Record a proposed resolution for an open question, based on what the manuscript shows. " +

@@ -5,7 +5,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BUTTON_DANGER } from "@/components/ui/form-styles";
 import type { SnapshotManifest } from "@/db/schemas";
 import { useSnapshotManifests } from "@/hooks/data/useVerifications";
-import { startRevertTier } from "@/lib/ai/agents/pipeline/runEngine";
+import { startRevertTier } from "@/lib/ai/agents/pipeline";
 
 interface SnapshotsPanelProps {
   runId: string;
