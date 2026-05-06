@@ -2,7 +2,7 @@
 
 exports[`GuestSessionShell (snapshots) > renders a non-retryable error without Try again 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -72,7 +72,7 @@ exports[`GuestSessionShell (snapshots) > renders a non-retryable error without T
 
 exports[`GuestSessionShell (snapshots) > renders a retryable error with Try again + Close 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -148,10 +148,10 @@ exports[`GuestSessionShell (snapshots) > renders a retryable error with Try agai
 
 exports[`GuestSessionShell (snapshots) > renders the connected state for a solo guest with host away 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
-    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    class="w-full max-w-3xl rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
   >
     <div
       class="space-y-4"
@@ -174,7 +174,7 @@ exports[`GuestSessionShell (snapshots) > renders the connected state for a solo 
       <div
         class="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
       >
-        The collaborative editor will mount here in the next change. For now your session is live and the relay is forwarding awareness updates between peers.
+        Waiting for the collaborative editor to mount…
       </div>
       <div
         class="flex justify-end"
@@ -216,10 +216,10 @@ exports[`GuestSessionShell (snapshots) > renders the connected state for a solo 
 
 exports[`GuestSessionShell (snapshots) > renders the connected state for an edit guest with host present 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
-    class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    class="w-full max-w-3xl rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
   >
     <div
       class="space-y-4"
@@ -242,7 +242,7 @@ exports[`GuestSessionShell (snapshots) > renders the connected state for an edit
       <div
         class="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
       >
-        The collaborative editor will mount here in the next change. For now your session is live and the relay is forwarding awareness updates between peers.
+        Waiting for the collaborative editor to mount…
       </div>
       <div
         class="flex justify-end"
@@ -284,7 +284,7 @@ exports[`GuestSessionShell (snapshots) > renders the connected state for an edit
 
 exports[`GuestSessionShell (snapshots) > renders the connecting state with a spinner 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -321,7 +321,7 @@ exports[`GuestSessionShell (snapshots) > renders the connecting state with a spi
 
 exports[`GuestSessionShell (snapshots) > renders the disabled state when collab is not configured 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -381,7 +381,7 @@ exports[`GuestSessionShell (snapshots) > renders the disabled state when collab 
 
 exports[`GuestSessionShell (snapshots) > renders the ended state with a Close button 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -451,7 +451,7 @@ exports[`GuestSessionShell (snapshots) > renders the ended state with a Close bu
 
 exports[`GuestSessionShell (snapshots) > renders the missing-key error 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
@@ -511,7 +511,7 @@ exports[`GuestSessionShell (snapshots) > renders the missing-key error 1`] = `
 
 exports[`GuestSessionShell (snapshots) > renders the missing-token error 1`] = `
 <div
-  class="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+  class="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
 >
   <div
     class="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"

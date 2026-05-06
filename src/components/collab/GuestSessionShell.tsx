@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, Loader2, LogOut } from "lucide-react";
+import type { ReactNode } from "react";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import type { Role } from "@/lib/collab/protocol";
 
@@ -22,6 +23,12 @@ export interface GuestSessionShellProps {
   state: GuestState;
   onRetry?: () => void;
   onLeave?: () => void;
+  /**
+   * Slot for the live editor when state is `connected`. When omitted a
+   * placeholder is shown (used for snapshots and as a fallback during
+   * the brief moment between welcome and the editor mounting).
+   */
+  connectedContent?: ReactNode;
 }
 
 /**
@@ -32,11 +39,21 @@ export function GuestSessionShell({
   state,
   onRetry,
   onLeave,
+  connectedContent,
 }: GuestSessionShellProps) {
+  // Give the connected variant breathing room for the embedded editor.
+  const cardWidth = state.kind === "connected" ? "max-w-3xl" : "max-w-md";
   return (
-    <div className="flex h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <Body state={state} onRetry={onRetry} onLeave={onLeave} />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      <div
+        className={`w-full ${cardWidth} rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900`}
+      >
+        <Body
+          state={state}
+          onRetry={onRetry}
+          onLeave={onLeave}
+          connectedContent={connectedContent}
+        />
       </div>
     </div>
   );
@@ -46,10 +63,12 @@ function Body({
   state,
   onRetry,
   onLeave,
+  connectedContent,
 }: {
   state: GuestState;
   onRetry?: () => void;
   onLeave?: () => void;
+  connectedContent?: ReactNode;
 }) {
   switch (state.kind) {
     case "disabled":
@@ -154,11 +173,11 @@ function Body({
               {state.hostPresent ? "Host is present." : "Host is away."}
             </p>
           </div>
-          <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
-            The collaborative editor will mount here in the next change. For now
-            your session is live and the relay is forwarding awareness updates
-            between peers.
-          </div>
+          {connectedContent ?? (
+            <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+              Waiting for the collaborative editor to mount…
+            </div>
+          )}
           {onLeave && (
             <div className="flex justify-end">
               <button
