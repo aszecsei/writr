@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+import { ApproveJoinDialog } from "@/components/collab/ApproveJoinDialog";
 import { CollabBanner } from "@/components/collab/CollabBanner";
+import { ManageParticipantsDialog } from "@/components/collab/ManageParticipantsDialog";
 import { ShareDialog } from "@/components/collab/ShareDialog";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
@@ -140,6 +142,8 @@ export function AppShell({ children }: AppShellProps) {
       <SprintHistoryDialog />
       <SprintWidget />
       {isCollabEnabled() && <ShareDialog />}
+      {isCollabEnabled() && <ApproveJoinDialog />}
+      {isCollabEnabled() && <ManageParticipantsDialog />}
     </div>
   );
 }

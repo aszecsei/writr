@@ -89,8 +89,9 @@ export function ShareDialogContent({
         </h2>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
           Generate three share links — one per role. Anyone with a link can join
-          while your tab is open. The relay never sees your content; encryption
-          keys live only in the link's <code>#k=</code> fragment.
+          while your tab is open. The relay never sees your content; the host
+          identity that gates the handshake lives only in the link's{" "}
+          <code>#h=</code> fragment.
         </p>
       </div>
 

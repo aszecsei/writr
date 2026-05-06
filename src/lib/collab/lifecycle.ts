@@ -2,10 +2,10 @@ import { CollabClient } from "./client";
 import { wsToHttpOrigin } from "./config";
 import {
   buildShareUrl,
-  exportRoomKey,
   generateRoomKey,
-  importRoomKey,
+  generateX25519Keypair,
 } from "./crypto";
+import { runGuestHandshake } from "./handshake";
 import type { Role } from "./protocol";
 import { CollabSession } from "./session";
 import {
@@ -92,7 +92,9 @@ export interface HostConnection {
   session: CollabSession;
   roomUuid: string;
   hostToken: string;
-  keyEncoded: string;
+  hostPriv: CryptoKey;
+  hostPubEncoded: string;
+  roomKey: CryptoKey;
   shareUrls: ShareUrls;
   peerId: string;
   peerCount: number;
@@ -106,13 +108,13 @@ export async function connectAsHost(
   if (opts.signal) mintArgs.signal = opts.signal;
   const room = await mintRoom(mintArgs);
 
-  const key = await generateRoomKey();
-  const keyEncoded = await exportRoomKey(key);
+  const roomKey = await generateRoomKey();
+  const hostKeypair = await generateX25519Keypair();
 
   const wsUrl = `${opts.baseUrl}/room/${room.roomUuid}?t=${encodeURIComponent(room.hostToken)}`;
   const ws = (opts.wsFactory ?? defaultWsFactory)(wsUrl);
   const transport = createWebSocketTransport(ws);
-  const client = new CollabClient({ transport, key, role: "host" });
+  const client = new CollabClient({ transport, key: roomKey, role: "host" });
   wireWebSocketToClient(ws, client);
 
   let hostWelcome: Awaited<ReturnType<typeof waitForWelcome>>;
@@ -131,19 +133,19 @@ export async function connectAsHost(
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.edit,
-      keyEncoded,
+      hostPubEncoded: hostKeypair.pubEncoded,
     }),
     review: buildShareUrl({
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.review,
-      keyEncoded,
+      hostPubEncoded: hostKeypair.pubEncoded,
     }),
     view: buildShareUrl({
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.view,
-      keyEncoded,
+      hostPubEncoded: hostKeypair.pubEncoded,
     }),
   };
 
@@ -152,7 +154,9 @@ export async function connectAsHost(
     session,
     roomUuid: room.roomUuid,
     hostToken: room.hostToken,
-    keyEncoded,
+    hostPriv: hostKeypair.priv,
+    hostPubEncoded: hostKeypair.pubEncoded,
+    roomKey,
     shareUrls,
     peerId: hostWelcome.peerId,
     peerCount: hostWelcome.peerCount,
@@ -163,7 +167,9 @@ export interface ConnectAsGuestOptions {
   baseUrl: string;
   roomUuid: string;
   token: string;
-  keyEncoded: string;
+  hostPubEncoded: string;
+  displayName: string;
+  color: string;
   wsFactory?: WebSocketFactory;
   signal?: AbortSignal;
 }
@@ -180,29 +186,51 @@ export interface GuestConnection {
 export async function connectAsGuest(
   opts: ConnectAsGuestOptions,
 ): Promise<GuestConnection> {
-  const key = await importRoomKey(opts.keyEncoded);
   const wsUrl = `${opts.baseUrl}/room/${opts.roomUuid}?t=${encodeURIComponent(opts.token)}`;
   const ws = (opts.wsFactory ?? defaultWsFactory)(wsUrl);
+
+  const handshakeOpts: Parameters<typeof runGuestHandshake>[0] = {
+    ws,
+    roomUuid: opts.roomUuid,
+    hostPubEncoded: opts.hostPubEncoded,
+    displayName: opts.displayName,
+    color: opts.color,
+  };
+  if (opts.signal) handshakeOpts.signal = opts.signal;
+
+  let result: Awaited<ReturnType<typeof runGuestHandshake>>;
+  try {
+    result = await runGuestHandshake(handshakeOpts);
+  } catch (err) {
+    try {
+      ws.close(1000, "handshake-failed");
+    } catch {
+      // ignore
+    }
+    throw err;
+  }
+
   const transport = createWebSocketTransport(ws);
-  const client = new CollabClient({ transport, key });
+  const client = new CollabClient({
+    transport,
+    key: result.roomKey,
+    role: result.welcome.role,
+  });
   wireWebSocketToClient(ws, client);
 
-  let welcome: Awaited<ReturnType<typeof waitForWelcome>>;
-  try {
-    welcome = await waitForWelcome(client, opts.signal);
-  } catch (err) {
-    client.close();
-    throw err;
+  // Replay any messages that arrived between welcome and join-approved.
+  for (const raw of result.bufferedMessages) {
+    void client.handleMessage(raw);
   }
 
   const session = new CollabSession({ client });
   return {
     client,
     session,
-    role: welcome.role,
-    peerId: welcome.peerId,
-    hostPresent: welcome.hostPresent,
-    peerCount: welcome.peerCount,
+    role: result.welcome.role,
+    peerId: result.welcome.peerId,
+    hostPresent: result.welcome.hostPresent,
+    peerCount: result.welcome.peerCount,
   };
 }
 

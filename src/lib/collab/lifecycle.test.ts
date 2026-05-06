@@ -1,5 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  base64urlToBytes,
+  bytesToBase64url,
+  decryptPayload,
+  deriveWrapKey,
+  encryptPayload,
+  generateX25519Keypair,
+  importX25519PubFromEncoded,
+  unwrapRoomKey,
+  wrapRoomKey,
+} from "./crypto";
+import {
   connectAsGuest,
   connectAsHost,
   mintRoom,
@@ -93,7 +104,7 @@ const SAMPLE_ROOM = {
   inviteTokens: { edit: "edit-tok", review: "review-tok", view: "view-tok" },
 };
 
-async function flush(turns = 4): Promise<void> {
+async function flush(turns = 6): Promise<void> {
   for (let i = 0; i < turns; i++) {
     await new Promise((r) => setTimeout(r, 0));
   }
@@ -159,7 +170,7 @@ describe("mintRoom", () => {
 });
 
 describe("connectAsHost", () => {
-  it("mints a room, opens a WS, awaits welcome, and returns share URLs", async () => {
+  it("mints a room, opens a WS, awaits welcome, and returns share URLs with #h=", async () => {
     const { factory, sockets } = captureFactory();
     const fetchFn = mockFetch(SAMPLE_ROOM);
 
@@ -192,11 +203,13 @@ describe("connectAsHost", () => {
     const result = await promise;
     expect(result.roomUuid).toBe(SAMPLE_ROOM.roomUuid);
     expect(result.hostToken).toBe("host-token");
+    expect(result.hostPubEncoded).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(result.shareUrls.edit).toContain(
-      `/shared/${SAMPLE_ROOM.roomUuid}?t=edit-tok#k=`,
+      `/shared/${SAMPLE_ROOM.roomUuid}?t=edit-tok#h=`,
     );
-    expect(result.shareUrls.review).toContain("?t=review-tok#k=");
-    expect(result.shareUrls.view).toContain("?t=view-tok#k=");
+    expect(result.shareUrls.review).toContain("?t=review-tok#h=");
+    expect(result.shareUrls.view).toContain("?t=view-tok#h=");
+    expect(result.shareUrls.edit).not.toContain("#k=");
     expect(result.client.role).toBe("host");
   });
 
@@ -257,29 +270,24 @@ describe("connectAsHost", () => {
 });
 
 describe("connectAsGuest", () => {
-  it("opens a WS with the given token and resolves with the server-confirmed role", async () => {
+  it("runs the handshake and resolves with the server-confirmed role", async () => {
     const { factory, sockets } = captureFactory();
-    // Generate a key and export it so we can pass a valid base64url
-    const key = await crypto.subtle.generateKey(
+
+    // The "host" side: a fresh keypair we'll use to wrap the room key.
+    const hostKeypair = await generateX25519Keypair();
+    const roomKey = await crypto.subtle.generateKey(
       { name: "AES-GCM", length: 256 },
       true,
       ["encrypt", "decrypt"],
     );
-    const raw = await crypto.subtle.exportKey("raw", key);
-    const bytes = new Uint8Array(raw);
-    let str = "";
-    for (let i = 0; i < bytes.length; i++)
-      str += String.fromCharCode(bytes[i] as number);
-    const keyEncoded = btoa(str)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
 
     const promise = connectAsGuest({
       baseUrl: "ws://localhost:4444",
       roomUuid: SAMPLE_ROOM.roomUuid,
       token: "edit-tok",
-      keyEncoded,
+      hostPubEncoded: hostKeypair.pubEncoded,
+      displayName: "Alice",
+      color: "#abcdef",
       wsFactory: factory,
     });
 
@@ -290,13 +298,43 @@ describe("connectAsGuest", () => {
       `ws://localhost:4444/room/${SAMPLE_ROOM.roomUuid}?t=edit-tok`,
     );
 
-    ws.fireOpen();
+    // Server sends welcome
     ws.fireServer({
       type: "welcome",
       peerId: "p-guest",
       role: "edit",
       peerCount: 2,
       hostPresent: true,
+    });
+
+    // Guest should send a join-request in response
+    await flush();
+    expect(ws.sent.length).toBeGreaterThanOrEqual(1);
+    const sent = JSON.parse(ws.sent[0] as string) as {
+      type: string;
+      guestPub: string;
+      displayName: string;
+      color: string;
+      requestId: string;
+    };
+    expect(sent.type).toBe("join-request");
+    expect(sent.displayName).toBe("Alice");
+    expect(sent.color).toBe("#abcdef");
+    expect(sent.guestPub).toMatch(/^[A-Za-z0-9_-]+$/);
+
+    // "Host" wraps the room key against the guest's pubkey
+    const guestPub = await importX25519PubFromEncoded(sent.guestPub);
+    const wrapKey = await deriveWrapKey(
+      hostKeypair.priv,
+      guestPub,
+      SAMPLE_ROOM.roomUuid,
+    );
+    const encryptedRoomKey = await wrapRoomKey(wrapKey, roomKey);
+
+    ws.fireServer({
+      type: "join-approved",
+      requestId: sent.requestId,
+      encryptedRoomKey,
     });
 
     const result = await promise;
@@ -306,16 +344,64 @@ describe("connectAsGuest", () => {
     expect(result.client.role).toBe("edit");
   });
 
-  it("rejects on a malformed key fragment", async () => {
+  it("rejects with JoinDeniedError on join-denied", async () => {
+    const { factory, sockets } = captureFactory();
+    const hostKeypair = await generateX25519Keypair();
+
+    const promise = connectAsGuest({
+      baseUrl: "ws://localhost:4444",
+      roomUuid: SAMPLE_ROOM.roomUuid,
+      token: "edit-tok",
+      hostPubEncoded: hostKeypair.pubEncoded,
+      displayName: "Bob",
+      color: "#112233",
+      wsFactory: factory,
+    });
+
+    // Swallow the rejection so it's not unhandled while we drive the WS.
+    promise.catch(() => {});
+
+    await flush();
+    const ws = sockets[0];
+    if (!ws) throw new Error("no socket");
+    ws.fireServer({
+      type: "welcome",
+      peerId: "p-guest",
+      role: "edit",
+      peerCount: 1,
+      hostPresent: true,
+    });
+    // Poll for join-request to be sent rather than relying on a fixed flush.
+    for (let i = 0; i < 20 && ws.sent.length === 0; i++) await flush(2);
+    const sent = JSON.parse(ws.sent[0] as string) as { requestId: string };
+    ws.fireServer({
+      type: "join-denied",
+      requestId: sent.requestId,
+      reason: "not authorized",
+    });
+
+    await expect(promise).rejects.toThrow(/declined/i);
+  });
+
+  it("rejects on a malformed host pubkey", async () => {
     const { factory } = captureFactory();
     await expect(
       connectAsGuest({
         baseUrl: "ws://localhost:4444",
         roomUuid: SAMPLE_ROOM.roomUuid,
         token: "edit-tok",
-        keyEncoded: "not-a-valid-key",
+        hostPubEncoded: "not-a-valid-key",
+        displayName: "x",
+        color: "#000000",
         wsFactory: factory,
       }),
-    ).rejects.toBeDefined();
+    ).rejects.toThrow();
   });
 });
+
+// quiet TS unused-import warnings in the helpers above
+void base64urlToBytes;
+void bytesToBase64url;
+void decryptPayload;
+void encryptPayload;
+void unwrapRoomKey;
