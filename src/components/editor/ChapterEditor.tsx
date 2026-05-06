@@ -19,6 +19,7 @@ import {
   parseFountain,
   serializeFountain,
 } from "@/lib/fountain";
+import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useFindReplaceStore } from "@/store/findReplaceStore";
@@ -78,6 +79,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const closeContextMenu = useSpellcheckStore((s) => s.closeContextMenu);
   const initializedRef = useRef(false);
 
+  // Host-side collab binding. The /shared/[uuid] guest path uses
+  // CollabProseEditor; ChapterEditor is the host's local view of the
+  // chapter, so we only flip into collab mode when role is "host".
+  const collabSession = useCollabStore((s) => s.session);
+  const collabRole = useCollabStore((s) => s.role);
+  const isCollabHost = collabSession !== null && collabRole === "host";
+  const collabDoc = isCollabHost ? collabSession.getDoc("prose") : null;
+  const collabAwareness = isCollabHost ? collabSession.awareness : null;
+
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
   const typewriterScrollingRef = useRef(false);
   typewriterScrollingRef.current = focusModeEnabled;
@@ -114,7 +124,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Memoize extensions to prevent recreation on every render
   // biome-ignore lint/correctness/useExhaustiveDependencies: refs and stable callbacks intentionally omitted to prevent editor recreation
   const extensions = useMemo(() => {
-    const opts = {
+    const opts: Parameters<typeof createExtensions>[0] = {
       typewriterScrollingRef,
       commentsRef,
       spellcheckerRef,
@@ -125,26 +135,39 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       onSelectionChange,
       onSelectionClear,
     };
+    if (collabDoc && collabAwareness) {
+      opts.collab = {
+        doc: collabDoc,
+        awareness: collabAwareness,
+        userName: "Host",
+        userColor: "#10b981",
+      };
+    }
     return isScreenplay
       ? createScreenplayExtensions(opts)
       : createExtensions(opts);
-  }, [isScreenplay]);
+  }, [isScreenplay, collabDoc, collabAwareness]);
 
-  const editor = useEditor({
-    extensions,
-    content: "",
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        spellcheck: "false",
+  // Recreate the editor whenever the extension set changes (e.g., toggling
+  // collab mode or switching between prose / screenplay).
+  const editor = useEditor(
+    {
+      extensions,
+      content: "",
+      immediatelyRender: false,
+      editorProps: {
+        attributes: {
+          spellcheck: "false",
+        },
+      },
+      onUpdate: ({ editor: e }) => {
+        markDirty();
+        const wc = getWordCount(e.storage);
+        setWordCount(wc);
       },
     },
-    onUpdate: ({ editor: e }) => {
-      markDirty();
-      const wc = getWordCount(e.storage);
-      setWordCount(wc);
-    },
-  });
+    [extensions],
+  );
 
   // Comment synchronization (ref sync + reconciliation)
   const { activeComments, resetReconcile } = useEditorCommentSync(
@@ -177,29 +200,45 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     closeFindReplace();
   }, [chapterId, closeFindReplace]);
 
-  // Load content from Dexie into the editor once
+  // Load content from Dexie into the editor once. In collab mode we only
+  // seed the shared Y.Doc when it's empty; otherwise the relay's buffered
+  // state has already been applied via the Collaboration extension.
   useEffect(() => {
-    if (editor && chapter && !editor.isDestroyed && !initializedRef.current) {
-      if (isScreenplay) {
-        const elements = parseFountain(chapter.content || "");
-        const json = fountainToProseMirror(elements);
-        editor.commands.setContent(json);
-      } else {
-        editor.commands.setContent(chapter.content || "");
-      }
-      const wc = getWordCount(editor.storage);
-      setWordCount(wc);
-      initializedRef.current = true;
+    if (!editor || !chapter || editor.isDestroyed || initializedRef.current) {
+      return;
     }
-  }, [editor, chapter, setWordCount, isScreenplay]);
+    if (collabDoc) {
+      const isYDocEmpty = collabDoc.getXmlFragment("default").length === 0;
+      if (isYDocEmpty && (chapter.content || "").length > 0) {
+        if (isScreenplay) {
+          const elements = parseFountain(chapter.content || "");
+          const json = fountainToProseMirror(elements);
+          editor.commands.setContent(json);
+        } else {
+          editor.commands.setContent(chapter.content || "");
+        }
+      }
+      // If the Y.Doc has content we leave it alone — peers' state wins.
+    } else if (isScreenplay) {
+      const elements = parseFountain(chapter.content || "");
+      const json = fountainToProseMirror(elements);
+      editor.commands.setContent(json);
+    } else {
+      editor.commands.setContent(chapter.content || "");
+    }
+    const wc = getWordCount(editor.storage);
+    setWordCount(wc);
+    initializedRef.current = true;
+  }, [editor, chapter, setWordCount, isScreenplay, collabDoc]);
 
-  // Reset initialized flag when chapterId changes or content is restored
+  // Reset initialized flag when chapterId, contentVersion, or collab mode
+  // changes — entering or leaving a session needs a fresh seed pass.
   const contentVersion = useEditorStore((s) => s.contentVersion);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion/collab change
   useEffect(() => {
     initializedRef.current = false;
     resetReconcile();
-  }, [chapterId, contentVersion, resetReconcile]);
+  }, [chapterId, contentVersion, resetReconcile, isCollabHost]);
 
   // Auto-save
   const isScreenplayRef = useRef(isScreenplay);
