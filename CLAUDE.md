@@ -1,123 +1,43 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) working in this repo. The detailed docs are split into topic files under `docs/` — read the area you're touching before making changes.
 
 ## Commands
 
-- **Dev server:** `npm run dev` (starts on localhost:3000)
-- **Build:** `npm run build`
-- **Start production:** `npm run start`
-- **Lint:** `npm run lint` (runs `biome check`)
-- **Format:** `npm run format` (runs `biome format --write`)
-- **Test:** `npm run test` (runs `vitest run`)
-- **Test (watch):** `npm run test:watch` (runs `vitest`)
+- `npm run dev` — Dev server on `localhost:3000`.
+- `npm run build` — Production build.
+- `npm run start` — Start the production server.
+- `npm run lint` — `biome check`.
+- `npm run format` — `biome format --write`.
+- `npm run test` — `vitest run`.
+- `npm run test:watch` — `vitest`.
 
-**Testing:** Vitest with `fake-indexeddb` for IndexedDB mocking. Default test environment is `node`; component tests opt into `jsdom` by adding `// @vitest-environment jsdom` at the top of the file. Config in `vitest.config.ts`; setup in `src/test/setup.ts` (fake-indexeddb) and `src/test/setup-dom.ts` (`@testing-library/jest-dom` matchers). Tests are colocated next to source files (e.g., `operations.test.ts` alongside `operations.ts`).
+## Topic docs
 
-**Component / snapshot tests:** Use `@testing-library/react`'s `render` and the `toMatchSnapshot()` matcher. Snapshots live next to the test file under `__snapshots__/`. When a feature is gated on an env var (e.g., collab is gated on `NEXT_PUBLIC_COLLAB_URL`), add snapshots of touched UI surfaces with the var unset to lock in the disabled-feature baseline so a future change can't accidentally leak the gated UI.
+Read the docs that match the area you're touching:
 
-## Architecture
+- [`docs/architecture.md`](docs/architecture.md) — Stack, top-level layout, data flow at a glance.
+- [`docs/database.md`](docs/database.md) — Dexie database, Zod schemas, per-entity operations, migrations.
+- [`docs/state.md`](docs/state.md) — Zustand stores and the modal discriminated union.
+- [`docs/hooks.md`](docs/hooks.md) — Hook directories and the `createEntityHook` / `createProjectListHook` factories.
+- [`docs/editor.md`](docs/editor.md) — TipTap editor, custom extensions (prose + screenplay), comments.
+- [`docs/components.md`](docs/components.md) — Component directories and the reusable primitives in `src/components/ui/`.
+- [`docs/routing.md`](docs/routing.md) — App Router pages and the single `/api/ai` route.
+- [`docs/ai.md`](docs/ai.md) — AI client, providers, adapters, prompts, tool-calling registry.
+- [`docs/agents.md`](docs/agents.md) — Agent definitions, runs, builtins, pipeline (reader / editor / verifier).
+- [`docs/collab.md`](docs/collab.md) — End-to-end-encrypted collab feature and the standalone relay.
+- [`docs/lib.md`](docs/lib.md) — Other libraries (export, spellcheck, search, backup, theme, fountain, terminology, …).
+- [`docs/testing.md`](docs/testing.md) — Vitest setup, fake-indexeddb, snapshots, test helpers.
+- [`docs/conventions.md`](docs/conventions.md) — Project-wide conventions (IDs, CSS vars, hooks, comments).
 
-Long-form writing app with multi-project support, chapter-based rich-text editing, a story bible, and AI integration via OpenRouter.
+## Critical always-on rules
 
-**Framework:** Next.js 16 App Router (`src/app/`), React 19 with React Compiler enabled. TypeScript strict mode. All route pages are `"use client"` since data lives in IndexedDB.
-
-**Styling:** Tailwind CSS v4 via PostCSS. Theme variables in `src/app/globals.css`.
-
-**Linting/Formatting:** Biome (not ESLint/Prettier). 2-space indentation. Import organization is enforced. Tailwind directives enabled in CSS parser.
-
-**Path alias:** `@/*` maps to `./src/*`.
-
-**Notable libraries:** @dnd-kit (drag-drop), @xyflow/react (family tree), react-resizable-panels, nspell (spellcheck), ts-pattern, marked, diff, react-player, html2canvas.
-
-## Key Layers
-
-- **`src/db/schemas.ts`** — Zod schemas are the single source of truth for all data types. Entities: Project, Chapter, Character, CharacterRelationship, Location, TimelineEvent, StyleGuideEntry, WorldbuildingDoc, OutlineGridColumn, OutlineGridRow, OutlineGridCell, WritingSprint, WritingSession, PlaylistTrack, ChapterSnapshot, Comment, AppSettings, AppDictionary, ProjectDictionary.
-- **`src/db/database.ts`** — Dexie (IndexedDB) database class with table definitions, compound indexes, and 15 migration versions. Singleton `db` export.
-- **`src/db/operations/`** — Directory of 18 files organized by entity (chapters, characters, comments, dictionary, locations, outline, playlist, projects, settings, snapshots, sprints, style-guide, timeline, worldbuilding). `helpers.ts` exports `generateId()` and `now()`. Validates with Zod before writing. Cascading deletes for projects. Components never import Dexie directly. See also `src/db/chapter-outline-sync.ts` for chapter-to-outline-row synchronization.
-- **`src/store/`** — Eight Zustand stores using Immer middleware (ephemeral UI state only):
-  - `uiStore` — sidebar, modals (discriminated union), AI panel, focus mode
-  - `editorStore` — active document, dirty/save state, word count, selection, content version
-  - `projectStore` — active project/chapter context, chapter order
-  - `commentStore` — selected comment, margin visibility
-  - `sprintStore` — active sprint timer, word tracking, config/history modals
-  - `spellcheckStore` — enabled state, ignored words, context menu, scanner
-  - `findReplaceStore` — search/replace terms, modes (regex/case/whole-word), match tracking
-  - `radioStore` — playlist playback, queue, volume, shuffle/loop (persisted)
-- **`src/hooks/`** — React hooks bridging Dexie and components via `useLiveQuery`. Factory pattern: `createEntityHook()`, `createProjectListHook()`, `createProjectListUnsortedHook()` in `factories.ts`. Organized into subdirectories:
-  - `data/` — Dexie data hooks: `useChapter`, `useProject`, `useBibleEntries`, `useAppSettings`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`
-  - `editor/` — Editor lifecycle hooks: `useAutoSave`, `useComments`, `useEditorCommentSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`
-  - `forms/` — Form hooks: `useCharacterForm`, `useLocationForm`, `useInlineEdit`
-  - `outline/` — Outline grid hooks: `useOutlineGrid`, `useOutlineGridDragDrop`, `useOutlineGridOperations`
-  - `writing/` — Sprint hooks: `useWritingSprint`, `useSprintHistory`
-  - `ui/` — UI hooks: `useFocusModeShortcuts`, `useAutoLayout`, `useSearch`, `useSearchPage`
-  - Root: `factories.ts`, `useClickOutside.ts`
-- **`src/components/editor/`** — TipTap editor with `tiptap-markdown` for Markdown round-tripping. Content stored as Markdown strings in Dexie. Custom extensions in `extensions/`: Comments, SearchAndReplace, TypewriterScrolling, Spellcheck, Indent, Ruby, SelectionPreserver. Toolbar in `EditorToolbar.tsx`, comments UI in `comments/`, find-replace in `FindReplacePanel.tsx`.
-- **`src/components/ui/`** — Reusable UI primitives (see Reusable Components section below).
-- **`src/lib/ai/`** — OpenRouter integration. `client.ts` calls `/api/ai` (Next.js route handler that proxies to OpenRouter). Streaming via `streamAi()` generator. `prompts.ts` builds system prompts from story bible + outline grid context. Seven AI tools: generate-prose, review-text, suggest-edits, character-dialogue, brainstorm, summarize, consistency-check.
-- **`src/lib/export/`** — Export pipeline for manuscripts. Supports Markdown, DOCX (via `docx`), PDF (via `pdfmake`), and HTML. `clipboard.ts` provides Markdown + AO3-compatible HTML clipboard export. `gather.ts` collects chapter data, `markdown-to-nodes.ts` converts markdown to document nodes.
-- **`src/lib/`** — Additional sub-libraries:
-  - `spellcheck/` — nspell service with CDN dictionary caching, Unicode tokenizer
-  - `search/` — project-wide full-text search across 7 entity types, paginated
-  - `backup/` — full/project backup & import with Zod validation, conflict resolution
-  - `theme/` — 10 primary + 5 neutral color palettes, `applyPrimaryColor()`, `applyNeutralColor()`, `applyEditorWidth()`, `applyUiDensity()`
-  - `preview-card/` — html2canvas-based image generation
-  - `comments/` — comment offset reconciliation
-  - `radio/` — playlist metadata and URL parsing utilities
-  - Standalone: `smart-quotes.ts`, `reading-time.ts`, `worldbuilding-tree.ts`, `fonts.ts`, `id.ts`, `constants.ts` (default intervals, font sizes, model, singleton IDs)
-
-## Routing
-
-```
-/                                        — Dashboard (project picker)
-/projects/[projectId]                    — Project overview (layout: sidebar + topbar)
-/projects/[projectId]/chapters/[id]      — Chapter editor (TipTap)
-/projects/[projectId]/outline            — Outline grid view
-/projects/[projectId]/search             — Project-wide search
-/projects/[projectId]/bible              — Story bible overview
-/projects/[projectId]/bible/characters   — Character list & [characterId] detail
-/projects/[projectId]/bible/locations    — Location list & [locationId] detail
-/projects/[projectId]/bible/timeline     — Timeline editor
-/projects/[projectId]/bible/style-guide  — Style guide entries
-/projects/[projectId]/bible/worldbuilding — Worldbuilding docs & [docId] editor
-/projects/[projectId]/bible/family-tree  — Character relationship diagram (XYFlow)
-/projects/[projectId]/bible/playlist     — Music/mood playlist (YouTube)
-/api/ai                                  — POST proxy to OpenRouter
-```
-
-## Data Flow
-
-**Editor:** Dexie → markdown string → TipTap (ProseMirror doc) → user edits → `editor.storage.markdown.getMarkdown()` → debounced auto-save → Dexie. Word count is denormalized on each save.
-
-**AI:** Client gathers story bible context (characters, locations, style guide) → builds system prompt → POST `/api/ai` → proxied to OpenRouter → streamed response displayed in AI panel.
-
-**Comments:** Stored in Dexie with `fromOffset`/`toOffset` (ProseMirror positions, 1-indexed). The Comments extension maps positions through doc changes via ProseMirror `Mapping`. Point comments (`from === to`) render as markers; selection comments (`from < to`) render as highlights.
-
-## Reusable Components & Styles
-
-Before creating new UI, check these existing primitives in `src/components/ui/`:
-
-- **`Modal`** — Backdrop + panel + escape-to-close. Props: `children`, `onClose`, `maxWidth?`
-- **`ConfirmDialog`** — Yes/no with optional third action. Props: `title`, `message`, `onConfirm`, `onCancel`, `variant`, `extraAction?`
-- **`ContextMenu`** — Positioned right-click menu with viewport flipping. Compound: `ContextMenu`, `ContextMenuItem`, `ContextMenuSeparator`, `ContextMenuLabel`
-- **`Badge`** — Simple styled span. Props: `label`, `className?`
-- **`AutoResizeTextarea`** — Auto-growing textarea. Also exports `useHeightSync()` for syncing heights across fields
-- **`DialogFooter`** — Standard Cancel + Submit footer with optional left slot
-
-Button/form class exports:
-- `button-styles.ts` → `BUTTON_PRIMARY`, `BUTTON_CANCEL`, `BUTTON_DANGER`, `RADIO_BASE/ACTIVE/INACTIVE`
-- `form-styles.ts` → `INPUT_CLASS`, `LABEL_CLASS` (also re-exports all button styles)
-
-Modal system: `uiStore.modal` is a discriminated union (13 variants). Open via `openModal()`, close via `closeModal()`. Single modal rendered in `AppShell`.
-
-## Conventions
-
-- Entity IDs are UUIDv4 strings (`crypto.randomUUID()`). Timestamps are ISO 8601 strings.
-- Cross-references between bible entries use UUID arrays (e.g., `linkedCharacterIds`), not join tables.
-- **Singleton rows:** `AppSettings` (id = `"app-settings"`), `AppDictionary` (id = `"app-dictionary"`).
-- **TipTap extension options:** Default ref-type options to `undefined` in `addOptions()` to prevent deep-merge. Pass refs (e.g., `commentsRef`, `enabledRef`) for runtime toggling without recreating the editor.
-- **`"use no memo"`** on `ChapterEditor` — opts out of React Compiler for TipTap's imperative DOM.
-- TipTap storage access requires casting through `unknown` since the Storage type doesn't expose extension-specific properties.
-- **CSS custom properties:** `--primary-*`, `--neutral-*` (color scales), `--editor-content-width`, `--density-*`. Custom Tailwind utilities: `py-density-item`, `py-density-button`, `gap-density`. Density controlled by `[data-density]` attribute.
-- **Hook factories:** Use `createEntityHook(table)` / `createProjectListHook(table, sortField)` from `src/hooks/factories.ts` to add new entity hooks — don't write custom `useLiveQuery` calls.
-- **Test helpers:** Factory functions in `src/test/helpers.ts` (e.g., `makeChapter()`, `makeCharacter()`, `makeRelationship()`). Use these in tests instead of manually constructing entities.
+- **All entity data lives in IndexedDB.** Pages are `"use client"`. The only server route is `/api/ai`.
+- **Schemas first.** Add or change a Zod schema in `src/db/schemas.ts` before touching tables, operations, or UI.
+- **Components don't import Dexie.** Go through `src/hooks/data/` or `src/db/operations/`.
+- **Use the hook factories.** `createEntityHook` / `createProjectListHook` in `src/hooks/factories.ts` — don't write bespoke `useLiveQuery` calls.
+- **Reuse UI primitives.** Check `src/components/ui/` (`Modal`, `ConfirmDialog`, `ContextMenu`, `DialogFooter`, `AutoResizeTextarea`, `TriStateCheckbox`, plus `button-styles.ts` / `form-styles.ts`) before building new components.
+- **One modal at a time.** `uiStore.modal` is a discriminated union; extend it and use `openModal()` / `closeModal()`.
+- **Stores hold ephemeral UI state only.** If state survives a refresh, it belongs in Dexie.
+- **Use `terminology.ts`** for user-facing labels that change between prose and screenplay modes — don't hard-code "Chapter".
+- **Test gated UI both ways.** Features gated on env vars (e.g., `NEXT_PUBLIC_COLLAB_URL`) need snapshots with the var unset to lock in the disabled-feature baseline.
