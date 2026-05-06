@@ -3,22 +3,17 @@
 import type { Editor } from "@tiptap/react";
 import { ChevronDown, MessageSquarePlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { createComment } from "@/db/operations";
 import type { CommentColor } from "@/db/schemas";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import { useCommentsAdapter } from "./CommentsAdapterContext";
 import { COLOR_BUTTON_CLASSES, COMMENT_COLORS } from "./colors";
 
 interface CreateCommentButtonProps {
   editor: Editor | null;
-  projectId: string;
-  chapterId: string;
 }
 
-export function CreateCommentButton({
-  editor,
-  projectId,
-  chapterId,
-}: CreateCommentButtonProps) {
+export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
+  const adapter = useCommentsAdapter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<CommentColor>("yellow");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -72,9 +67,7 @@ export function CreateCommentButton({
       anchorText = editor.state.doc.textBetween(contextStart, contextEnd, "\n");
     }
 
-    await createComment({
-      projectId,
-      chapterId,
+    await adapter.create({
       fromOffset: from,
       toOffset: to,
       anchorText,
@@ -85,6 +78,10 @@ export function CreateCommentButton({
     setMenuOpen(false);
     editor.commands.focus();
   };
+
+  if (!adapter.canCreate) {
+    return null;
+  }
 
   return (
     <div className="relative" ref={menuRef}>

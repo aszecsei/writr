@@ -8,7 +8,7 @@ import type { Comment } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { useAutoSave } from "@/hooks/editor/useAutoSave";
-import { useCommentsByChapter } from "@/hooks/editor/useComments";
+import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
 import { useEditorKeyboardShortcuts } from "@/hooks/editor/useEditorKeyboardShortcuts";
 import { useEditorSpellcheck } from "@/hooks/editor/useEditorSpellcheck";
@@ -26,7 +26,11 @@ import { useFindReplaceStore } from "@/store/findReplaceStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
-import { CommentMargin, CommentPopover } from "./comments";
+import {
+  CommentMargin,
+  CommentPopover,
+  CommentsAdapterProvider,
+} from "./comments";
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
@@ -59,7 +63,6 @@ interface ChapterEditorProps {
 
 export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const chapter = useChapter(chapterId);
-  const comments = useCommentsByChapter(chapterId);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
   const setActiveDocument = useEditorStore((s) => s.setActiveDocument);
@@ -84,6 +87,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // chapter, so we only flip into collab mode when role is "host".
   const collabSession = useCollabStore((s) => s.session);
   const collabRole = useCollabStore((s) => s.role);
+  const collabIdentity = useCollabStore((s) => s.identity);
   const isCollabHost = collabSession !== null && collabRole === "host";
   const collabDoc = isCollabHost ? collabSession.getDoc("prose") : null;
   const collabAwareness = isCollabHost ? collabSession.awareness : null;
@@ -139,14 +143,14 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       opts.collab = {
         doc: collabDoc,
         awareness: collabAwareness,
-        userName: "Host",
-        userColor: "#10b981",
+        userName: collabIdentity?.name ?? "Host",
+        userColor: collabIdentity?.color ?? "#10b981",
       };
     }
     return isScreenplay
       ? createScreenplayExtensions(opts)
       : createExtensions(opts);
-  }, [isScreenplay, collabDoc, collabAwareness]);
+  }, [isScreenplay, collabDoc, collabAwareness, collabIdentity]);
 
   // Recreate the editor whenever the extension set changes (e.g., toggling
   // collab mode or switching between prose / screenplay).
@@ -169,10 +173,17 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     [extensions],
   );
 
+  // Comments adapter (Dexie when solo; Yjs-backed during a host session)
+  const commentsAdapter = useCommentsAdapter({
+    projectId: activeProjectId ?? "",
+    chapterId,
+    editor,
+  });
+
   // Comment synchronization (ref sync + reconciliation)
   const { activeComments, resetReconcile } = useEditorCommentSync(
     editor,
-    comments,
+    commentsAdapter.comments,
     commentsRef,
     initializedRef,
   );
@@ -244,6 +255,13 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const isScreenplayRef = useRef(isScreenplay);
   isScreenplayRef.current = isScreenplay;
 
+  // In collab mode the YjsCommentsAdapter is the source of truth for
+  // comment positions (anchors are CRDT-anchored relative positions). We
+  // skip the legacy PM-mapping writeback to Dexie so the two systems
+  // don't fight over fromOffset/toOffset.
+  const isCollabHostRef = useRef(isCollabHost);
+  isCollabHostRef.current = isCollabHost;
+
   const save = useCallback(async () => {
     if (!editor || editor.isDestroyed) return;
     const content = isScreenplayRef.current
@@ -251,9 +269,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       : getMarkdown(editor.storage);
     const wordCount = getWordCount(editor.storage);
     await updateChapterContent(chapterId, content, wordCount);
-    const positions = getCommentPositions(editor.state);
-    if (positions.size > 0) {
-      await updateCommentPositions(positions);
+    if (!isCollabHostRef.current) {
+      const positions = getCommentPositions(editor.state);
+      if (positions.size > 0) {
+        await updateCommentPositions(positions);
+      }
     }
   }, [editor, chapterId]);
 
@@ -274,9 +294,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
           : getMarkdown(ed.storage);
         const wc = getWordCount(ed.storage);
         updateChapterContent(chapterIdRef.current, content, wc);
-        const positions = getCommentPositions(ed.state);
-        if (positions.size > 0) {
-          updateCommentPositions(positions);
+        if (!isCollabHostRef.current) {
+          const positions = getCommentPositions(ed.state);
+          if (positions.size > 0) {
+            updateCommentPositions(positions);
+          }
         }
       }
     };
@@ -332,66 +354,68 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {!focusModeEnabled &&
-        (isScreenplay ? (
-          <ScreenplayToolbar editor={editor} />
-        ) : (
-          <EditorToolbar editor={editor} />
-        ))}
-      <div className="relative flex-1 overflow-hidden">
-        {!focusModeEnabled && <FindReplacePanel editor={editor} />}
-        <div
-          ref={scrollContainerRef}
-          className="relative h-full overflow-y-auto"
-        >
+    <CommentsAdapterProvider adapter={commentsAdapter}>
+      <div className="flex h-full flex-col">
+        {!focusModeEnabled &&
+          (isScreenplay ? (
+            <ScreenplayToolbar editor={editor} />
+          ) : (
+            <EditorToolbar editor={editor} />
+          ))}
+        <div className="relative flex-1 overflow-hidden">
+          {!focusModeEnabled && <FindReplacePanel editor={editor} />}
           <div
-            className={`mx-auto px-8 ${isScreenplay ? "" : "max-w-editor"}`}
-            style={{
-              paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
-              paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
-            }}
+            ref={scrollContainerRef}
+            className="relative h-full overflow-y-auto"
           >
-            <EditorContent
-              editor={editor}
-              className={
-                isScreenplay
-                  ? "screenplay-editor"
-                  : "prose prose-neutral dark:prose-invert max-w-none"
-              }
-              style={
-                isScreenplay
-                  ? undefined
-                  : {
-                      fontFamily: editorFont.cssFamily,
-                      fontSize: `${settings?.editorFontSize ?? 16}px`,
-                    }
-              }
-            />
+            <div
+              className={`mx-auto px-8 ${isScreenplay ? "" : "max-w-editor"}`}
+              style={{
+                paddingTop: focusModeEnabled ? "50vh" : "1.5rem",
+                paddingBottom: focusModeEnabled ? "50vh" : "1.5rem",
+              }}
+            >
+              <EditorContent
+                editor={editor}
+                className={
+                  isScreenplay
+                    ? "screenplay-editor"
+                    : "prose prose-neutral dark:prose-invert max-w-none"
+                }
+                style={
+                  isScreenplay
+                    ? undefined
+                    : {
+                        fontFamily: editorFont.cssFamily,
+                        fontSize: `${settings?.editorFontSize ?? 16}px`,
+                      }
+                }
+              />
+            </div>
+            {!focusModeEnabled && (
+              <CommentMargin
+                editor={editor}
+                comments={activeComments}
+                expanded={marginVisible}
+              />
+            )}
+            {!focusModeEnabled && !marginVisible && (
+              <CommentPopover editor={editor} comments={activeComments} />
+            )}
           </div>
-          {!focusModeEnabled && (
-            <CommentMargin
-              editor={editor}
-              comments={activeComments}
-              expanded={marginVisible}
-            />
-          )}
-          {!focusModeEnabled && !marginVisible && (
-            <CommentPopover editor={editor} comments={activeComments} />
-          )}
         </div>
+        {contextMenu && activeProjectId && (
+          <SpellcheckContextMenu
+            editor={editor}
+            projectId={activeProjectId}
+            contextMenu={contextMenu}
+            onClose={closeContextMenu}
+          />
+        )}
+        {activeProjectId && (
+          <SpellcheckScannerModal editor={editor} projectId={activeProjectId} />
+        )}
       </div>
-      {contextMenu && activeProjectId && (
-        <SpellcheckContextMenu
-          editor={editor}
-          projectId={activeProjectId}
-          contextMenu={contextMenu}
-          onClose={closeContextMenu}
-        />
-      )}
-      {activeProjectId && (
-        <SpellcheckScannerModal editor={editor} projectId={activeProjectId} />
-      )}
-    </div>
+    </CommentsAdapterProvider>
   );
 }

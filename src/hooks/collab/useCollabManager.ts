@@ -11,6 +11,11 @@ import {
 import type { CollabSession } from "@/lib/collab/session";
 import { useCollabStore } from "@/store/collabStore";
 
+export interface CollabIdentityInput {
+  name: string;
+  color: string;
+}
+
 export interface StartAsHostOptions {
   /** Origin used when generating shareable URLs. Defaults to window.location.origin. */
   appOrigin?: string;
@@ -19,6 +24,8 @@ export interface StartAsHostOptions {
   fetchFn?: typeof fetch;
   /** Test seam — overrides the default WebSocket factory when present. */
   wsFactory?: WebSocketFactory;
+  /** Display name + caret color used for this peer. */
+  identity?: CollabIdentityInput;
 }
 
 export interface JoinAsGuestOptions {
@@ -27,6 +34,8 @@ export interface JoinAsGuestOptions {
   keyEncoded: string;
   signal?: AbortSignal;
   wsFactory?: WebSocketFactory;
+  /** Display name + caret color used for this peer. */
+  identity?: CollabIdentityInput;
 }
 
 export interface UseCollabManager {
@@ -82,8 +91,14 @@ export function useCollabManager(): UseCollabManager {
       if (sessionRef.current) throw new CollabAlreadyActiveError();
 
       useCollabStore.getState().setStatus("connecting");
+      // Set identity BEFORE the session connects so editors that read from
+      // the store on first render see the right name + color.
+      if (opts?.identity) {
+        useCollabStore.getState().setIdentity(opts.identity);
+      }
+      const { identity: _hostIdentity, ...connectOpts } = opts ?? {};
       try {
-        const conn = await connectAsHost({ baseUrl, ...opts });
+        const conn = await connectAsHost({ baseUrl, ...connectOpts });
         const detach = attachClientToStore(conn.client, useCollabStore);
         detachRef.current = detach;
         sessionRef.current = conn.session;
@@ -118,8 +133,12 @@ export function useCollabManager(): UseCollabManager {
       if (sessionRef.current) throw new CollabAlreadyActiveError();
 
       useCollabStore.getState().setStatus("connecting");
+      if (opts.identity) {
+        useCollabStore.getState().setIdentity(opts.identity);
+      }
+      const { identity: _guestIdentity, ...connectOpts } = opts;
       try {
-        const conn = await connectAsGuest({ baseUrl, ...opts });
+        const conn = await connectAsGuest({ baseUrl, ...connectOpts });
         const detach = attachClientToStore(conn.client, useCollabStore);
         detachRef.current = detach;
         sessionRef.current = conn.session;

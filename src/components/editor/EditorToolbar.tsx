@@ -257,11 +257,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             <ImagePlus size={16} />
           </button>
           <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <CreateCommentButton
-            editor={editor}
-            projectId={activeProjectId}
-            chapterId={activeDocumentId}
-          />
+          <CreateCommentButton editor={editor} />
           <button
             type="button"
             title="Toggle comment margin"

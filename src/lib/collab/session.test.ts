@@ -8,7 +8,11 @@ import {
   generateRoomKey,
   type RoomKey,
 } from "./crypto";
-import type { ClientMessage, ServerMessage } from "./protocol";
+import {
+  CLOSE_CODES,
+  type ClientMessage,
+  type ServerMessage,
+} from "./protocol";
 import { CollabSession } from "./session";
 
 class MockTransport implements CollabTransport {
@@ -287,5 +291,17 @@ describe("CollabSession: destroy", () => {
 
     session.destroy();
     expect(() => session.destroy()).not.toThrow();
+  });
+
+  it("closes the underlying transport so the server can clean up the room", () => {
+    const transport = new MockTransport();
+    const client = new CollabClient({ transport, key, role: "edit" });
+    const session = new CollabSession({ client });
+
+    session.destroy();
+
+    expect(transport.closed).not.toBeNull();
+    expect(transport.closed?.code).toBe(CLOSE_CODES.NORMAL);
+    expect(client.isClosed).toBe(true);
   });
 });

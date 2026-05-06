@@ -574,6 +574,10 @@ export const CommentSchema = z.object({
   anchorText: z.string().default(""), // Empty for positioned (point) comments
   status: CommentStatusEnum.default("active"),
   resolvedAt: timestamp.nullable().default(null),
+  // Optional: present on comments authored during a collab session.
+  // Display name + caret color of the author at creation time.
+  author: z.string().optional(),
+  authorColor: z.string().optional(),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

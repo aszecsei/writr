@@ -41,8 +41,9 @@ export function GuestSessionShell({
   onLeave,
   connectedContent,
 }: GuestSessionShellProps) {
-  // Give the connected variant breathing room for the embedded editor.
-  const cardWidth = state.kind === "connected" ? "max-w-3xl" : "max-w-md";
+  // Give the connected variant breathing room for the embedded editor
+  // plus the comment margin (~16rem to the right of the prose column).
+  const cardWidth = state.kind === "connected" ? "max-w-5xl" : "max-w-md";
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
       <div

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
+import { buildIdentity, readStoredDisplayName } from "@/lib/collab/identity";
 import type { ShareUrls } from "@/lib/collab/lifecycle";
 import { useCollabStore } from "@/store/collabStore";
 import { useUiStore } from "@/store/uiStore";
@@ -27,6 +28,18 @@ export function ShareDialog() {
   // refuse to display the gated UI even though the modal id matched.
   if (!enabled) return null;
 
+  // Wrap startAsHost so the host's display name flows from the same
+  // localStorage key guests use. No prompt — the host already has UI
+  // around the share dialog itself; we just stamp comments with their
+  // display name (defaulting to "Host").
+  const start = async () => {
+    const identity = buildIdentity({
+      role: "host",
+      name: readStoredDisplayName(),
+    });
+    await startAsHost({ identity });
+  };
+
   return (
     <Modal onClose={closeModal} maxWidth="max-w-lg">
       <ShareDialogContent
@@ -34,7 +47,7 @@ export function ShareDialog() {
         peerCount={peerCount}
         shareUrls={shareUrls}
         errorMessage={error?.message ?? null}
-        onStart={startAsHost}
+        onStart={start}
         onEnd={end}
         onClose={closeModal}
       />

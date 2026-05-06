@@ -16,7 +16,12 @@ export async function getComment(id: string): Promise<Comment | undefined> {
 
 export async function createComment(
   data: Pick<Comment, "projectId" | "chapterId" | "fromOffset" | "toOffset"> &
-    Partial<Pick<Comment, "content" | "color" | "anchorText" | "status">>,
+    Partial<
+      Pick<
+        Comment,
+        "content" | "color" | "anchorText" | "status" | "author" | "authorColor"
+      >
+    >,
 ): Promise<Comment> {
   const comment = CommentSchema.parse({
     id: generateId(),
@@ -29,6 +34,8 @@ export async function createComment(
     anchorText: data.anchorText ?? "",
     status: data.status ?? "active",
     resolvedAt: null,
+    author: data.author,
+    authorColor: data.authorColor,
     createdAt: now(),
     updatedAt: now(),
   });
@@ -48,6 +55,8 @@ export async function updateComment(
       | "anchorText"
       | "status"
       | "resolvedAt"
+      | "author"
+      | "authorColor"
     >
   >,
 ): Promise<void> {

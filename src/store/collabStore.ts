@@ -21,6 +21,16 @@ export interface CollabError {
   message: string;
 }
 
+/**
+ * Display identity for the local peer. Drives the CollaborationCaret name
+ * + color and the `author` / `authorColor` fields on comments this peer
+ * authors.
+ */
+export interface CollabIdentity {
+  name: string;
+  color: string;
+}
+
 export interface CollabState {
   session: CollabSession | null;
   status: CollabStatus;
@@ -34,6 +44,8 @@ export interface CollabState {
   shareUrls: ShareUrls | null;
   /** Last terminal error, if any. Cleared on `reset`. */
   error: CollabError | null;
+  /** Display name + color used for caret + comment authorship. */
+  identity: CollabIdentity | null;
 
   setSession: (
     session: CollabSession,
@@ -45,6 +57,7 @@ export interface CollabState {
   setHostGraceDeadline: (deadline: number | null) => void;
   setShareUrls: (urls: ShareUrls | null) => void;
   setError: (error: CollabError | null) => void;
+  setIdentity: (identity: CollabIdentity | null) => void;
   reset: () => void;
 }
 
@@ -57,6 +70,7 @@ const INITIAL: Omit<
   | "setHostGraceDeadline"
   | "setShareUrls"
   | "setError"
+  | "setIdentity"
   | "reset"
 > = {
   session: null,
@@ -68,6 +82,7 @@ const INITIAL: Omit<
   hostGraceDeadline: null,
   shareUrls: null,
   error: null,
+  identity: null,
 };
 
 export const useCollabStore = create<CollabState>()((set) => ({
@@ -87,6 +102,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
   setHostGraceDeadline: (hostGraceDeadline) => set({ hostGraceDeadline }),
   setShareUrls: (shareUrls) => set({ shareUrls }),
   setError: (error) => set({ error }),
+  setIdentity: (identity) => set({ identity }),
   reset: () => set({ ...INITIAL }),
 }));
 

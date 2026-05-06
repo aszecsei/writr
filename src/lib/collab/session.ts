@@ -5,7 +5,7 @@ import {
 } from "y-protocols/awareness";
 import * as Y from "yjs";
 import type { CollabClient } from "./client";
-import type { DocKind } from "./protocol";
+import { CLOSE_CODES, type DocKind } from "./protocol";
 
 export const REMOTE_ORIGIN = Symbol("writr-collab-remote");
 
@@ -66,6 +66,10 @@ export class CollabSession {
     this.docs.clear();
     this.awareness.destroy();
     this.sessionDoc.destroy();
+    // Close the client so the server sees the disconnect and can run room
+    // cleanup (Room.detach → destroy("host_left") when no other peers remain).
+    // Idempotent: client.close() is a no-op if already closed.
+    this.client.close(CLOSE_CODES.NORMAL, "session-destroyed");
     this.docReplacedListeners.clear();
   }
 

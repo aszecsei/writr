@@ -3,10 +3,11 @@
 import type { Editor } from "@tiptap/react";
 import { Check, MessageSquare, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteComment, resolveComment, updateComment } from "@/db/operations";
 import type { Comment, CommentColor } from "@/db/schemas";
+import type { CommentsAdapter } from "@/lib/comments/adapter";
 import { useCommentStore } from "@/store/commentStore";
 import { getCommentPositions } from "../extensions/Comments";
+import { useCommentsAdapter } from "./CommentsAdapterContext";
 import {
   CARD_BORDER_COLOR,
   COLOR_BUTTON_CLASSES,
@@ -31,6 +32,7 @@ export function CommentMargin({
   comments,
   expanded,
 }: CommentMarginProps) {
+  const adapter = useCommentsAdapter();
   const [positions, setPositions] = useState<CommentPosition[]>([]);
   const selectComment = useCommentStore((s) => s.selectComment);
   const clearSelection = useCommentStore((s) => s.clearSelection);
@@ -115,6 +117,7 @@ export function CommentMargin({
             isSelected={selectedId === pos.id}
             onSelect={() => selectComment(pos.id)}
             onDeselect={clearSelection}
+            adapter={adapter}
           />
         ))}
       </div>
@@ -158,11 +161,13 @@ function ExpandedCard({
   isSelected,
   onSelect,
   onDeselect,
+  adapter,
 }: {
   commentPosition: CommentPosition;
   isSelected: boolean;
   onSelect: () => void;
   onDeselect: () => void;
+  adapter: CommentsAdapter;
 }) {
   const { comment, top } = commentPosition;
   const [editContent, setEditContent] = useState(comment.content);
@@ -180,27 +185,31 @@ function ExpandedCard({
   }, [isSelected]);
 
   const handleSaveContent = useCallback(async () => {
+    if (!adapter.canEdit) return;
     if (editContent !== comment.content) {
-      await updateComment(comment.id, { content: editContent });
+      await adapter.update(comment.id, { content: editContent });
     }
-  }, [comment.id, comment.content, editContent]);
+  }, [adapter, comment.id, comment.content, editContent]);
 
   const handleColorChange = useCallback(
     async (color: CommentColor) => {
-      await updateComment(comment.id, { color });
+      if (!adapter.canEdit) return;
+      await adapter.update(comment.id, { color });
     },
-    [comment.id],
+    [adapter, comment.id],
   );
 
   const handleResolve = useCallback(async () => {
-    await resolveComment(comment.id);
+    if (!adapter.canResolve) return;
+    await adapter.resolve(comment.id);
     onDeselect();
-  }, [comment.id, onDeselect]);
+  }, [adapter, comment.id, onDeselect]);
 
   const handleDelete = useCallback(async () => {
-    await deleteComment(comment.id);
+    if (!adapter.canDelete) return;
+    await adapter.remove(comment.id);
     onDeselect();
-  }, [comment.id, onDeselect]);
+  }, [adapter, comment.id, onDeselect]);
 
   const sharedClassName = `pointer-events-auto absolute w-full rounded border-l-2 bg-white text-left shadow-sm transition-shadow dark:bg-neutral-800 ${
     CARD_BORDER_COLOR[comment.color]
@@ -229,53 +238,76 @@ function ExpandedCard({
             </button>
           </div>
 
+          {comment.author && (
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-neutral-500 dark:text-neutral-400">
+              {comment.authorColor && (
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: comment.authorColor }}
+                />
+              )}
+              <span>{comment.author}</span>
+            </div>
+          )}
+
           <textarea
             ref={textareaRef}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             onBlur={handleSaveContent}
-            placeholder="Add a comment..."
+            readOnly={!adapter.canEdit}
+            placeholder={adapter.canEdit ? "Add a comment..." : ""}
             className="mb-2 h-16 w-full resize-none rounded border border-neutral-200 bg-neutral-50 p-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 focus:outline-none dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-neutral-500"
           />
 
           {/* Color picker */}
-          <div className="mb-2 flex items-center gap-1">
-            {COMMENT_COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => handleColorChange(color)}
-                className={`h-4 w-4 rounded-full transition-transform hover:scale-110 ${
-                  COLOR_BUTTON_CLASSES[color]
-                } ${
-                  comment.color === color
-                    ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
-                    : ""
-                }`}
-                title={color.charAt(0).toUpperCase() + color.slice(1)}
-              />
-            ))}
-          </div>
+          {adapter.canEdit && (
+            <div className="mb-2 flex items-center gap-1">
+              {COMMENT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => handleColorChange(color)}
+                  className={`h-4 w-4 rounded-full transition-transform hover:scale-110 ${
+                    COLOR_BUTTON_CLASSES[color]
+                  } ${
+                    comment.color === color
+                      ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
+                      : ""
+                  }`}
+                  title={color.charAt(0).toUpperCase() + color.slice(1)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between border-t border-neutral-200 pt-1.5 dark:border-neutral-700">
-            <button
-              type="button"
-              onClick={handleResolve}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700"
-            >
-              <Check size={12} />
-              Resolve
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-            >
-              <Trash2 size={12} />
-              Delete
-            </button>
-          </div>
+          {(adapter.canResolve || adapter.canDelete) && (
+            <div className="flex items-center justify-between border-t border-neutral-200 pt-1.5 dark:border-neutral-700">
+              {adapter.canResolve ? (
+                <button
+                  type="button"
+                  onClick={handleResolve}
+                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                >
+                  <Check size={12} />
+                  Resolve
+                </button>
+              ) : (
+                <span />
+              )}
+              {adapter.canDelete && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
