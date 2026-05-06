@@ -20,6 +20,14 @@ export interface ToolExecutionContext {
   /** ID of the agent run this tool call belongs to. Set by the agent runner. */
   runId?: string;
   /**
+   * Pipeline-only: the work unit this agent is executing against. Set by
+   * `makeEditorAgent` so dual-mode tools (e.g. `propose_edit`) can attribute
+   * persisted rows to the correct work unit without making the LLM echo the
+   * id back on every call. Absent in chat-mode invocations — that's the
+   * signal a tool uses to switch to its non-persisting branch.
+   */
+  workUnitId?: string;
+  /**
    * Kind of agent invoking the tool. Tools may branch on this — for example,
    * `read_chapter` overlays staged proposed edits when called from an editor
    * agent so a later editor in the same tier sees in-flight changes.

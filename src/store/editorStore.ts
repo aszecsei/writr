@@ -21,6 +21,22 @@ export interface PendingInsertion {
   replaceRange?: { from: number; to: number };
 }
 
+/**
+ * A staged edit dispatched from a chat-mode propose_edit tool call. Distinct
+ * from PendingInsertion because the apply site is anchorText-located rather
+ * than range-located — the resolution from anchor to PM positions happens in
+ * the editor consumer, which has access to the live TipTap doc.
+ */
+export interface PendingStagedEdit {
+  /** Safety check: edit applies only when this matches activeDocumentId. */
+  chapterId: string;
+  kind: "replace_range" | "insert_at" | "append" | "full_chapter";
+  /** Required for replace_range / insert_at. Matched verbatim against the doc text. */
+  anchorText?: string;
+  /** Markdown to insert / replace with. */
+  newContent: string;
+}
+
 interface EditorState {
   activeDocumentId: string | null;
   activeDocumentType: DocumentType | null;
@@ -32,6 +48,7 @@ interface EditorState {
   selectedRange: { from: number; to: number } | null;
   contentVersion: number;
   pendingInsertion: PendingInsertion | null;
+  pendingStagedEdit: PendingStagedEdit | null;
 
   setActiveDocument: (id: string, type: DocumentType) => void;
   clearActiveDocument: () => void;
@@ -45,6 +62,8 @@ interface EditorState {
   bumpContentVersion: () => void;
   requestInsertAtCursor: (insertion: PendingInsertion) => void;
   clearPendingInsertion: () => void;
+  requestStagedEdit: (edit: PendingStagedEdit) => void;
+  clearPendingStagedEdit: () => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -59,6 +78,7 @@ export const useEditorStore = create<EditorState>()(
     selectedRange: null,
     contentVersion: 0,
     pendingInsertion: null,
+    pendingStagedEdit: null,
 
     setActiveDocument: (id, type) =>
       set((s) => {
@@ -132,6 +152,16 @@ export const useEditorStore = create<EditorState>()(
     clearPendingInsertion: () =>
       set((s) => {
         s.pendingInsertion = null;
+      }),
+
+    requestStagedEdit: (edit) =>
+      set((s) => {
+        s.pendingStagedEdit = edit;
+      }),
+
+    clearPendingStagedEdit: () =>
+      set((s) => {
+        s.pendingStagedEdit = null;
       }),
   })),
 );

@@ -1,7 +1,7 @@
 "use no memo";
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
+import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { Comment } from "@/db/schemas";
@@ -55,6 +55,44 @@ function getWordCount(storage: unknown): number {
   return (
     storage as { characterCount: CharacterCountStorage }
   ).characterCount.words();
+}
+
+// Split a markdown string into PM paragraph nodes. Used by both the
+// requestInsertAtCursor path (Spark inserts) and the requestStagedEdit path
+// (propose_edit applies). Inline marks like **bold** / *italic* will not be
+// preserved — for full-fidelity round-tripping we'd need to invoke the
+// markdown parser, but the LLM-generated inserts in practice are plain prose.
+function markdownToParagraphNodes(markdown: string) {
+  return markdown
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+    .map((text) => ({
+      type: "paragraph",
+      content: [{ type: "text", text }],
+    }));
+}
+
+// Find the first contiguous text-node match for `needle` in the editor's doc
+// and return its PM range. Returns null when the anchor spans a formatting
+// boundary or has been edited away. Used by the staged-edit consumer to map
+// LLM-supplied anchorText to ProseMirror positions.
+function findTextRange(
+  editor: Editor,
+  needle: string,
+): { from: number; to: number } | null {
+  if (!needle) return null;
+  let result: { from: number; to: number } | null = null;
+  editor.state.doc.descendants((node, pos) => {
+    if (result) return false;
+    if (!node.isText || !node.text) return;
+    const idx = node.text.indexOf(needle);
+    if (idx >= 0) {
+      result = { from: pos + idx, to: pos + idx + needle.length };
+      return false;
+    }
+  });
+  return result;
 }
 
 interface ChapterEditorProps {
@@ -346,14 +384,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   useEffect(() => {
     if (!pendingInsertion || !editor || editor.isDestroyed) return;
     const { markdown, replaceRange } = pendingInsertion;
-    const paragraphs = markdown
-      .split(/\n{2,}/)
-      .map((p) => p.trim())
-      .filter((p) => p.length > 0);
-    const nodes = paragraphs.map((text) => ({
-      type: "paragraph",
-      content: [{ type: "text", text }],
-    }));
+    const nodes = markdownToParagraphNodes(markdown);
 
     const chain = editor.chain().focus();
     if (replaceRange) {
@@ -368,6 +399,61 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     chain.run();
     clearPendingInsertion();
   }, [pendingInsertion, editor, clearPendingInsertion]);
+
+  // AI-driven staged edits: the AiPanel posts an anchorText-located edit when
+  // the user clicks Apply on a propose_edit diff card. We resolve the anchor
+  // against the live PM doc here (the panel doesn't have editor access) and
+  // apply per kind. Bail silently if the chapter has changed under us.
+  const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
+  const clearPendingStagedEdit = useEditorStore(
+    (s) => s.clearPendingStagedEdit,
+  );
+  useEffect(() => {
+    if (!pendingStagedEdit || !editor || editor.isDestroyed) return;
+    if (pendingStagedEdit.chapterId !== chapterId) return;
+
+    const { kind, anchorText, newContent } = pendingStagedEdit;
+    const nodes = markdownToParagraphNodes(newContent);
+    const docEnd = editor.state.doc.content.size;
+
+    let range: { from: number; to: number } | null = null;
+    switch (kind) {
+      case "full_chapter":
+        range = { from: 0, to: docEnd };
+        break;
+      case "append":
+        range = { from: docEnd, to: docEnd };
+        break;
+      case "replace_range": {
+        if (!anchorText) break;
+        const found = findTextRange(editor, anchorText);
+        if (found) range = found;
+        break;
+      }
+      case "insert_at": {
+        if (!anchorText) {
+          range = { from: docEnd, to: docEnd };
+          break;
+        }
+        const found = findTextRange(editor, anchorText);
+        // Insert after the anchor (matches the tool's "sits before" contract:
+        // newContent appears immediately after anchorText).
+        if (found) range = { from: found.to, to: found.to };
+        break;
+      }
+    }
+
+    if (!range) {
+      console.warn(
+        `[propose_edit] anchorText not located in chapter — staged ${kind} edit dropped`,
+      );
+      clearPendingStagedEdit();
+      return;
+    }
+
+    editor.chain().focus().insertContentAt(range, nodes).run();
+    clearPendingStagedEdit();
+  }, [pendingStagedEdit, editor, chapterId, clearPendingStagedEdit]);
 
   // Keyboard shortcuts (Ctrl+Shift+P for preview card)
   useEditorKeyboardShortcuts(

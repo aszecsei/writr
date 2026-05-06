@@ -13,25 +13,28 @@ function fail(message: string): ToolResult {
 }
 
 // ─── propose_edit ───────────────────────────────────────────────────
+//
+// Dual-mode tool. The shape the LLM sees is identical in both modes; the
+// runtime branches on `context.workUnitId`:
+//   • Pipeline mode (workUnitId set): writes to the proposedEdits staging
+//     table for the orchestrator's tier-apply step to commit.
+//   • Chat mode (workUnitId absent): does not persist. Returns a diff
+//     payload in `result.data` for the AiPanel to render with Apply /
+//     Discard controls. The user is the apply gate.
 
 export const proposeEditTool = defineTool({
   id: "propose_edit",
   name: "Propose Edit",
   description:
-    "Propose a developmental edit to a chapter. Edits go to a STAGING table — they are not applied to the manuscript. " +
-    "The human reviews and approves edits before they're committed to the chapter at tier-apply time. " +
+    "Propose a developmental edit to a chapter. " +
     "kind=replace_range needs fromOffset+toOffset+anchorText. " +
-    "kind=insert_at needs fromOffset+anchorText (or appended if anchorText not given). " +
+    "kind=insert_at needs fromOffset+anchorText (or anchorText alone if you can't compute the offset). " +
     "kind=append appends to the chapter end. " +
     "kind=full_chapter replaces the whole chapter. " +
-    "Always include anchorText (the exact text being replaced/inserted-near) so the edit survives concurrent rewrites.",
+    "Always include anchorText (the exact text being replaced or inserted next to) — it's the primary locator and must match the chapter verbatim.",
   parameters: {
     type: "object",
     properties: {
-      workUnitId: {
-        type: "string",
-        description: "Work unit this edit fulfills",
-      },
       chapterId: { type: "string", description: "Target chapter id" },
       kind: {
         type: "string",
@@ -49,7 +52,7 @@ export const proposeEditTool = defineTool({
       anchorText: {
         type: "string",
         description:
-          "Exact text at the edit site — used as a fallback locator if offsets drift.",
+          "Exact text at the edit site — used as the primary locator. Required for replace_range and insert_at.",
       },
       newContent: {
         type: "string",
@@ -57,13 +60,12 @@ export const proposeEditTool = defineTool({
       },
       rationale: {
         type: "string",
-        description: "Why this edit fulfills the work unit's goal.",
+        description: "One short sentence on why this edit improves the prose.",
       },
     },
-    required: ["workUnitId", "chapterId", "kind", "newContent"],
+    required: ["chapterId", "kind", "newContent"],
   },
   inputSchema: z.object({
-    workUnitId: z.string().uuid(),
     chapterId: z.string().uuid(),
     kind: z.enum(["replace_range", "insert_at", "append", "full_chapter"]),
     fromOffset: z.number().int().nonnegative().optional(),
@@ -74,13 +76,6 @@ export const proposeEditTool = defineTool({
   }),
   requiresApproval: false,
   async execute(params, context) {
-    if (!context.runId) return fail("propose_edit requires a run context");
-
-    const wu = await getWorkUnit(params.workUnitId);
-    if (!wu) return fail(`Work unit not found: ${params.workUnitId}`);
-    if (wu.runId !== context.runId)
-      return fail("Work unit belongs to a different run");
-
     const chapter = await getChapter(params.chapterId);
     if (!chapter) return fail(`Chapter not found: ${params.chapterId}`);
     if (chapter.projectId !== context.projectId)
@@ -104,20 +99,72 @@ export const proposeEditTool = defineTool({
       }
     }
 
-    const edit = await createProposedEdit({
-      projectId: context.projectId,
-      runId: context.runId,
-      workUnitId: params.workUnitId,
-      chapterId: params.chapterId,
+    // Pipeline mode: stage the edit for tier-apply.
+    if (context.workUnitId) {
+      if (!context.runId) return fail("propose_edit requires a run context");
+
+      const wu = await getWorkUnit(context.workUnitId);
+      if (!wu) return fail(`Work unit not found: ${context.workUnitId}`);
+      if (wu.runId !== context.runId)
+        return fail("Work unit belongs to a different run");
+
+      const edit = await createProposedEdit({
+        projectId: context.projectId,
+        runId: context.runId,
+        workUnitId: context.workUnitId,
+        chapterId: params.chapterId,
+        kind: params.kind,
+        fromOffset: params.fromOffset,
+        toOffset: params.toOffset,
+        anchorText: params.anchorText,
+        newContent: params.newContent,
+        rationale: params.rationale,
+      });
+      return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
+        mode: "pipeline",
+        proposedEditId: edit.id,
+      });
+    }
+
+    // Chat mode: render-only. Resolve originalText so the diff card can
+    // show a before/after without re-fetching the chapter.
+    const originalText = resolveOriginalText({
       kind: params.kind,
-      fromOffset: params.fromOffset,
-      toOffset: params.toOffset,
+      anchorText: params.anchorText,
+      chapterContent: chapter.content,
+    });
+    const anchorFound =
+      params.kind === "append" ||
+      params.kind === "full_chapter" ||
+      (params.anchorText !== undefined &&
+        chapter.content.includes(params.anchorText));
+
+    return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
+      mode: "chat",
+      chapterId: params.chapterId,
+      chapterTitle: chapter.title,
+      kind: params.kind,
       anchorText: params.anchorText,
       newContent: params.newContent,
       rationale: params.rationale,
-    });
-    return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
-      proposedEditId: edit.id,
+      originalText,
+      anchorFound,
     });
   },
 });
+
+function resolveOriginalText(args: {
+  kind: "replace_range" | "insert_at" | "append" | "full_chapter";
+  anchorText?: string;
+  chapterContent: string;
+}): string {
+  switch (args.kind) {
+    case "full_chapter":
+      return args.chapterContent;
+    case "replace_range":
+      return args.anchorText ?? "";
+    case "insert_at":
+    case "append":
+      return "";
+  }
+}

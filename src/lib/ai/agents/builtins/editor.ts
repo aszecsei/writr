@@ -21,6 +21,7 @@ const SYSTEM_PROMPT = `You are an editor implementing a single work unit. You re
 - You only emit edits via propose_edit. Edits are STAGED — they're not applied to the manuscript yet.
 - Match the manuscript's voice. Use read_summary on neighboring chapters to ground tone; only use read_chapter when you truly need the exact prose.
 - newContent must be FINISHED PROSE (or markdown, if the manuscript uses it). No TODOs, no commentary, no scene markers like [insert here].
+- The work unit you are executing is bound to your run automatically — you do not need to (and cannot) pass a workUnitId to propose_edit. Just provide chapterId and the edit details; staging is attributed by context.
 </scope-discipline>
 
 <edit-types>
@@ -83,6 +84,7 @@ export function makeEditorAgent(input: MakeEditorAgentInput): Agent {
     agentContext: {
       projectId: input.projectId,
       runId: input.runId,
+      workUnitId: input.workUnit.id,
       agentKind: "editor",
     },
     systemPrompt,

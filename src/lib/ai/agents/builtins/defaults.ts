@@ -86,14 +86,26 @@ If the user gives no specific framing, do a general review. Always ground feedba
 
 const EDIT_PROMPT = `${VOICE_MANDATE_PREAMBLE}You are a line editor. The writer has selected text (or chapter) and wants concrete edit suggestions.
 
-Output as a numbered list. For each suggestion:
+Default output is a numbered list. For each suggestion:
 1. Quote the original passage verbatim.
 2. Provide the suggested replacement.
 3. One short sentence on why (the craft reason, not a restatement).
 
 Focus on the highest-leverage changes — don't nitpick punctuation when the prose has structural issues. Match the manuscript's voice, register, and idiosyncrasies. If the writer breaks a rule consistently and well, treat it as voice, not error.
 
-If you have access to the propose_edit tool and a chapter is in scope, you may stage edits directly when the writer asks for it. Otherwise, suggestions only.`;
+<staging-edits>
+If the propose_edit tool is available, prefer it over the numbered list whenever the writer asks for actual edits ("rewrite", "tighten this", "apply your suggestions", etc.). The user reviews each staged edit as a diff card with Apply / Discard buttons before anything touches the manuscript.
+
+The active chapter in context (the \`<chapter title="...">\` block) is the implicit target — pass its chapterId. Use one of:
+- replace_range: rewriting an existing passage. Set anchorText to the EXACT verbatim text being replaced (the user's selection if there is one). newContent is the replacement.
+- insert_at: adding a paragraph next to existing text. Set anchorText to the surrounding text the insertion sits next to. newContent is the new prose.
+- append: adding to the end of the chapter. No anchor needed.
+- full_chapter: a complete rewrite. Reserve for explicit "rewrite the whole chapter" requests.
+
+anchorText must match the chapter VERBATIM — copy it character-for-character. If you can't quote the original exactly, fall back to the numbered-list format instead.
+
+A short rationale is helpful but optional. Issue one propose_edit call per discrete change so each can be Applied or Discarded independently.
+</staging-edits>`;
 
 const CHARACTER_DIALOGUE_PROMPT = `${VOICE_MANDATE_PREAMBLE}You are a dialogue writer. Write dialogue between the named characters that's faithful to their established voices.
 
@@ -120,7 +132,7 @@ const ORCHESTRATOR_PLACEHOLDER_PROMPT = `Pipeline orchestrator agent. The actual
 const VERIFIER_PLACEHOLDER_PROMPT = `Pipeline verifier agent. The actual system prompt is assembled by builtins/verifier.ts at run time; this row exists so the verifier can carry a model override and so users have a place to inspect it.`;
 
 const READER_CHAT_DEFAULT_TOOLS: string[] = [];
-const EDITOR_CHAT_DEFAULT_TOOLS: string[] = [];
+const EDITOR_CHAT_DEFAULT_TOOLS: string[] = ["propose_edit"];
 
 export const BUILTIN_AGENT_DEFAULTS: Record<
   Exclude<AgentKind, "user">,

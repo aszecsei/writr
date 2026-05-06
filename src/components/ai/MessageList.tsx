@@ -17,8 +17,22 @@ import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { ImageLightbox } from "../bible/ImageLightbox";
 import { MarkdownMessage } from "./MarkdownMessage";
+import {
+  ProposedEditCard,
+  type ProposedEditChatPayload,
+} from "./ProposedEditCard";
 import { SparkOptions } from "./SparkOptions";
 import { ToolCallMessage } from "./ToolCallMessage";
+
+function getProposedEditChatPayload(
+  entry: ToolCallEntry,
+): ProposedEditChatPayload | null {
+  if (entry.toolName !== "propose_edit") return null;
+  const data = entry.result?.data;
+  if (!data || data.mode !== "chat") return null;
+  // Trust the tool's payload shape — built by tools/proposedEdits.ts.
+  return data as unknown as ProposedEditChatPayload;
+}
 
 interface MessageImage {
   url: string;
@@ -303,22 +317,30 @@ export function MessageList({
                 ) : (
                   <MarkdownMessage content={msg.content} />
                 )}
-                {msg.toolCalls?.map((tc) => (
-                  <ToolCallMessage
-                    key={tc.id}
-                    entry={tc}
-                    onApprove={
-                      tc.status === "pending" && onApproveToolCall
-                        ? () => onApproveToolCall(msg.id, tc.id)
-                        : undefined
-                    }
-                    onDeny={
-                      tc.status === "pending" && onDenyToolCall
-                        ? () => onDenyToolCall(msg.id, tc.id)
-                        : undefined
-                    }
-                  />
-                ))}
+                {msg.toolCalls?.map((tc) => {
+                  const proposedEdit = getProposedEditChatPayload(tc);
+                  if (proposedEdit) {
+                    return (
+                      <ProposedEditCard key={tc.id} payload={proposedEdit} />
+                    );
+                  }
+                  return (
+                    <ToolCallMessage
+                      key={tc.id}
+                      entry={tc}
+                      onApprove={
+                        tc.status === "pending" && onApproveToolCall
+                          ? () => onApproveToolCall(msg.id, tc.id)
+                          : undefined
+                      }
+                      onDeny={
+                        tc.status === "pending" && onDenyToolCall
+                          ? () => onDenyToolCall(msg.id, tc.id)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
                 {msg.finishReason && (
                   <StopReasonBanner reason={msg.finishReason} />
                 )}
