@@ -225,4 +225,54 @@ describe("share URL helpers", () => {
     expect(readHostPubFromFragment("#h=has+invalid+chars")).toBeNull();
     expect(readHostPubFromFragment("#k=abc_def-123")).toBeNull();
   });
+
+  it("encodes project mode in the URL fragment", () => {
+    const url = buildShareUrl({
+      origin: "https://writr.app",
+      roomUuid: "11111111-2222-3333-4444-555555555555",
+      token: "tok",
+      hostPubEncoded: "abc-123_xyz",
+      mode: "project",
+    });
+    expect(url).toBe(
+      "https://writr.app/shared/11111111-2222-3333-4444-555555555555?t=tok#h=abc-123_xyz&p=1",
+    );
+  });
+
+  it("omits the project flag when mode is chapter or unset", () => {
+    const chapterUrl = buildShareUrl({
+      origin: "https://x.app",
+      roomUuid: "r",
+      token: "t",
+      hostPubEncoded: "h",
+      mode: "chapter",
+    });
+    const defaultUrl = buildShareUrl({
+      origin: "https://x.app",
+      roomUuid: "r",
+      token: "t",
+      hostPubEncoded: "h",
+    });
+    expect(chapterUrl).toBe(defaultUrl);
+    expect(chapterUrl.includes("p=1")).toBe(false);
+  });
+
+  it("readModeFromFragment defaults to chapter when no flag is present", async () => {
+    const { readModeFromFragment } = await import("./crypto");
+    expect(readModeFromFragment("")).toBe("chapter");
+    expect(readModeFromFragment("#h=abc")).toBe("chapter");
+    expect(readModeFromFragment("h=abc")).toBe("chapter");
+  });
+
+  it("readModeFromFragment returns project when p=1 is present", async () => {
+    const { readModeFromFragment } = await import("./crypto");
+    expect(readModeFromFragment("#h=abc&p=1")).toBe("project");
+    expect(readModeFromFragment("h=abc&p=1")).toBe("project");
+  });
+
+  it("readModeFromFragment ignores other p= values", async () => {
+    const { readModeFromFragment } = await import("./crypto");
+    expect(readModeFromFragment("#p=2")).toBe("chapter");
+    expect(readModeFromFragment("#p=true")).toBe("chapter");
+  });
 });

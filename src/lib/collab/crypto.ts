@@ -158,11 +158,18 @@ export async function unwrapRoomKey(
   );
 }
 
+export type ShareMode = "chapter" | "project";
+
 export interface ShareLinkParams {
   origin: string;
   roomUuid: string;
   token: string;
   hostPubEncoded: string;
+  /** Defaults to "chapter" for backward compatibility. When "project",
+   *  the URL fragment carries `&p=1` so the guest router can mount the
+   *  project shell instead of the active-chapter editor. The flag rides
+   *  in the fragment so the relay never sees it. */
+  mode?: ShareMode;
 }
 
 export function buildShareUrl({
@@ -170,8 +177,10 @@ export function buildShareUrl({
   roomUuid,
   token,
   hostPubEncoded,
+  mode,
 }: ShareLinkParams): string {
-  return `${origin}/shared/${encodeURIComponent(roomUuid)}?t=${encodeURIComponent(token)}#h=${encodeURIComponent(hostPubEncoded)}`;
+  const projectFlag = mode === "project" ? "&p=1" : "";
+  return `${origin}/shared/${encodeURIComponent(roomUuid)}?t=${encodeURIComponent(token)}#h=${encodeURIComponent(hostPubEncoded)}${projectFlag}`;
 }
 
 export function readHostPubFromFragment(fragment: string): string | null {
@@ -180,6 +189,13 @@ export function readHostPubFromFragment(fragment: string): string | null {
   const params = new URLSearchParams(trimmed);
   const h = params.get("h");
   return h && /^[A-Za-z0-9_-]+$/.test(h) ? h : null;
+}
+
+export function readModeFromFragment(fragment: string): ShareMode {
+  const trimmed = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+  if (!trimmed) return "chapter";
+  const params = new URLSearchParams(trimmed);
+  return params.get("p") === "1" ? "project" : "chapter";
 }
 
 export function bytesToBase64url(bytes: Uint8Array): string {
