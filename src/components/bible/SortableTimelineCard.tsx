@@ -15,16 +15,21 @@ interface SortableTimelineCardProps {
   };
   index: number;
   isHighlighted?: boolean;
+  /** When true, hides edit/delete buttons and the drag handle, and
+   *  prevents the inline editor from being opened. */
+  readOnly?: boolean;
 }
 
 export function SortableTimelineCard({
   event,
   index,
   isHighlighted,
+  readOnly,
 }: SortableTimelineCardProps) {
   const { ref, handleRef, isDragSource } = useSortable({
     id: event.id,
     index,
+    disabled: readOnly,
   });
   const { elementRef, showHighlight } = useHighlightFade(isHighlighted);
 
@@ -44,7 +49,7 @@ export function SortableTimelineCard({
     setEditing(false);
   }
 
-  if (editing) {
+  if (editing && !readOnly) {
     return (
       <div
         ref={mergeRefs}
@@ -105,7 +110,7 @@ export function SortableTimelineCard({
             : "border-neutral-200 dark:border-neutral-800"
       }`}
     >
-      <DragHandle ref={handleRef} />
+      {!readOnly && <DragHandle ref={handleRef} />}
       <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 border-neutral-400 dark:border-neutral-500" />
       <div className="min-w-0 flex-1">
         <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -122,22 +127,24 @@ export function SortableTimelineCard({
           </p>
         )}
       </div>
-      <div className="flex shrink-0 gap-2">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="text-xs text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
-        >
-          Edit
-        </button>
-        <button
-          type="button"
-          onClick={() => deleteTimelineEvent(event.id)}
-          className="text-xs text-neutral-400 hover:text-red-500 dark:text-neutral-500"
-        >
-          Delete
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-xs text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteTimelineEvent(event.id)}
+            className="text-xs text-neutral-400 hover:text-red-500 dark:text-neutral-500"
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }
