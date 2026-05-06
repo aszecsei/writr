@@ -5,7 +5,7 @@ import { z } from "zod";
 export const ROLES = ["view", "review", "edit", "host"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const DOC_KINDS = ["prose", "comments"] as const;
+export const DOC_KINDS = ["prose", "comments", "project"] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 
 export const ERROR_CODES = [
@@ -170,6 +170,7 @@ export function canSendClient(role: Role, message: ClientMessage): boolean {
   return match(message)
     .with({ type: P.union("awareness", "request-buffer") }, () => true)
     .with({ type: "y-update" }, (m) => {
+      if (m.docKind === "project") return role === "host";
       if (role === "view") return false;
       if (role === "review" && m.docKind !== "comments") return false;
       return true;

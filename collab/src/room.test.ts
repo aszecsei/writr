@@ -300,6 +300,42 @@ describe("Room.receive: role gating", () => {
     });
     expect(host.socket.byType("error")).toHaveLength(0);
   });
+
+  it("allows host to send y-update on the project docKind", () => {
+    const room = makeRoom();
+    const host = attach(room, "host-tok");
+    room.receive(host.peerId, { ...sampleY(), docKind: "project" });
+    expect(host.socket.byType("error")).toHaveLength(0);
+    expect(host.socket.closed).toBeNull();
+  });
+
+  it("blocks non-host roles from sending project y-update", () => {
+    for (const token of ["edit-tok", "review-tok", "view-tok"] as const) {
+      const room = makeRoom();
+      attach(room, "host-tok");
+      const guest = attach(room, token);
+      room.receive(guest.peerId, { ...sampleY(), docKind: "project" });
+      expect(guest.socket.byType("error")[0]?.code).toBe("unauthorized");
+      expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
+    }
+  });
+
+  it("buffers project updates and replays them to a newly-attached view guest", () => {
+    const room = makeRoom();
+    const host = attach(room, "host-tok");
+    room.receive(host.peerId, { ...sampleY(), docKind: "project" });
+    room.receive(host.peerId, {
+      ...sampleY(),
+      docKind: "project",
+      payload: "BBBB",
+    });
+    const guest = attach(room, "view-tok");
+    const projectBuffer = guest.socket
+      .byType("buffer")
+      .find((b) => b.docKind === "project");
+    expect(projectBuffer).toBeDefined();
+    expect(projectBuffer?.updates).toEqual(["AQID", "BBBB"]);
+  });
 });
 
 describe("Room.receive: relay", () => {
