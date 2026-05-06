@@ -86,6 +86,15 @@ export interface CollabState {
    * rejects the join-request.
    */
   deniedReason: string | null;
+  /**
+   * True when the session shares the entire project read-only, false (or
+   * null before connection) when only the active chapter is shared.
+   * Host sets this from the share-dialog checkbox; guest mirrors it from
+   * the URL fragment after parsing `&p=1`. Existing roles (edit/review/
+   * view) still apply to the active chapter; non-active content is
+   * read-only for every role when this is true.
+   */
+  projectMode: boolean;
 
   setSession: (
     session: CollabSession,
@@ -110,6 +119,7 @@ export interface CollabState {
    *  it. Called when peer_left fires. */
   clearGuestPeerId: (peerId: string) => void;
   setDeniedReason: (reason: string | null) => void;
+  setProjectMode: (projectMode: boolean) => void;
   reset: () => void;
 }
 
@@ -130,6 +140,7 @@ const INITIAL: Omit<
   | "revokeGuestPub"
   | "clearGuestPeerId"
   | "setDeniedReason"
+  | "setProjectMode"
   | "reset"
 > = {
   session: null,
@@ -145,6 +156,7 @@ const INITIAL: Omit<
   pendingJoinRequests: [],
   approvedGuests: {},
   deniedReason: null,
+  projectMode: false,
 };
 
 export const useCollabStore = create<CollabState>()((set) => ({
@@ -213,6 +225,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
       return touched ? { approvedGuests: next } : {};
     }),
   setDeniedReason: (reason) => set({ deniedReason: reason }),
+  setProjectMode: (projectMode) => set({ projectMode }),
   reset: () => set({ ...INITIAL }),
 }));
 
@@ -223,6 +236,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
 export const collabSelectors = {
   isActive: (s: CollabState): boolean => s.session !== null,
   isHost: (s: CollabState): boolean => s.role === "host",
+  isProjectMode: (s: CollabState): boolean => s.projectMode === true,
   canEditProse: (s: CollabState): boolean =>
     s.role === "host" || s.role === "edit",
   canEditComments: (s: CollabState): boolean =>
