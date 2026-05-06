@@ -2,8 +2,10 @@
 
 import { useParams } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
+import { HostProjectMirror } from "@/components/collab/HostProjectMirror";
 import { AppShell } from "@/components/layout/AppShell";
 import { useProject } from "@/hooks/data/useProject";
+import { collabSelectors, useCollabStore } from "@/store/collabStore";
 import { useProjectStore } from "@/store/projectStore";
 
 export default function ProjectLayout({ children }: { children: ReactNode }) {
@@ -11,6 +13,8 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
   const project = useProject(params.projectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const clearActiveProject = useProjectStore((s) => s.clearActiveProject);
+  const isHost = useCollabStore(collabSelectors.isHost);
+  const isProjectMode = useCollabStore(collabSelectors.isProjectMode);
 
   useEffect(() => {
     if (project) {
@@ -37,5 +41,12 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      {isHost && isProjectMode && (
+        <HostProjectMirror projectId={params.projectId} />
+      )}
+      {children}
+    </AppShell>
+  );
 }
