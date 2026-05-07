@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import type { DocNode } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "./types";
@@ -32,38 +33,18 @@ export interface Exporter extends DocNodeVisitor {
   toBlob(): Blob | Promise<Blob>;
 }
 
-/** Exhaustive dispatch via switch + never default. */
+/** Exhaustive dispatch — `.exhaustive()` is a compile-time check. */
 export function visitNode(node: DocNode, visitor: DocNodeVisitor): void {
-  switch (node.type) {
-    case "heading":
-      visitor.visitHeading(node);
-      break;
-    case "paragraph":
-      visitor.visitParagraph(node);
-      break;
-    case "blockquote":
-      visitor.visitBlockquote(node);
-      break;
-    case "list":
-      visitor.visitList(node);
-      break;
-    case "code":
-      visitor.visitCode(node);
-      break;
-    case "hr":
-      visitor.visitHr(node);
-      break;
-    case "image":
-      visitor.visitImage(node);
-      break;
-    case "pageBreak":
-      visitor.visitPageBreak(node);
-      break;
-    default: {
-      const _exhaustive: never = node;
-      throw new Error(`Unknown node type: ${(_exhaustive as DocNode).type}`);
-    }
-  }
+  match(node)
+    .with({ type: "heading" }, (n) => visitor.visitHeading(n))
+    .with({ type: "paragraph" }, (n) => visitor.visitParagraph(n))
+    .with({ type: "blockquote" }, (n) => visitor.visitBlockquote(n))
+    .with({ type: "list" }, (n) => visitor.visitList(n))
+    .with({ type: "code" }, (n) => visitor.visitCode(n))
+    .with({ type: "hr" }, (n) => visitor.visitHr(n))
+    .with({ type: "image" }, (n) => visitor.visitImage(n))
+    .with({ type: "pageBreak" }, (n) => visitor.visitPageBreak(n))
+    .exhaustive();
 }
 
 export function visitNodes(nodes: DocNode[], visitor: DocNodeVisitor): void {
