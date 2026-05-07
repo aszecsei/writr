@@ -26,6 +26,7 @@ Read the docs that match the area you're touching:
 - [`docs/ai.md`](docs/ai.md) — AI client, providers, adapters, prompts, tool-calling registry.
 - [`docs/agents.md`](docs/agents.md) — Agent definitions, runs, builtins, pipeline (reader / editor / verifier).
 - [`docs/collab.md`](docs/collab.md) — End-to-end-encrypted collab feature and the standalone relay.
+- [`docs/security.md`](docs/security.md) — Security posture, threat model, and the collab cryptography (AES-GCM, X25519, HKDF, fragment-only room key).
 - [`docs/lib.md`](docs/lib.md) — Other libraries (export, spellcheck, search, backup, theme, fountain, terminology, …).
 - [`docs/testing.md`](docs/testing.md) — Vitest setup, fake-indexeddb, snapshots, test helpers.
 - [`docs/conventions.md`](docs/conventions.md) — Project-wide conventions (IDs, CSS vars, hooks, comments).
