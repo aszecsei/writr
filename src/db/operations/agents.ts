@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { db } from "../database";
 import {
   type AgentDefinition,
@@ -84,18 +85,17 @@ export async function listAgents(
 ): Promise<AgentDefinition[]> {
   const all = await db.agents.toArray();
   const { includePipelineInternal = false } = options;
-  return all.filter((a) => {
-    if (a.kind === "user") {
-      return (
-        a.projectId === null ||
-        (projectId !== null && a.projectId === projectId)
-      );
-    }
-    if (a.kind === "orchestrator" || a.kind === "verifier") {
-      return includePipelineInternal;
-    }
-    return true;
-  });
+  return all.filter((a) =>
+    match(a.kind)
+      .with(
+        "user",
+        () =>
+          a.projectId === null ||
+          (projectId !== null && a.projectId === projectId),
+      )
+      .with(P.union("orchestrator", "verifier"), () => includePipelineInternal)
+      .otherwise(() => true),
+  );
 }
 
 export async function updateAgent(
