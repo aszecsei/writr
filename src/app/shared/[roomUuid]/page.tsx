@@ -10,9 +10,13 @@ import {
 } from "@/components/collab/GuestSessionShell";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import { useCommentsMeta } from "@/hooks/collab/useCommentsMeta";
-import { readHostPubFromFragment } from "@/lib/collab/crypto";
+import {
+  readHostPubFromFragment,
+  readModeFromFragment,
+} from "@/lib/collab/crypto";
 import { buildIdentity, readStoredDisplayName } from "@/lib/collab/identity";
 import { useCollabStore } from "@/store/collabStore";
+import { useSharedProjectStore } from "@/store/sharedProjectStore";
 
 export default function SharedSessionPage() {
   const router = useRouter();
@@ -22,6 +26,7 @@ export default function SharedSessionPage() {
 
   const [hostPubEncoded, setHostPubEncoded] = useState<string | null>(null);
   const [hostPubResolved, setHostPubResolved] = useState(false);
+  const [shareMode, setShareMode] = useState<"chapter" | "project">("chapter");
   const [identity, setIdentityState] = useState<{
     name: string;
     color: string;
@@ -35,11 +40,14 @@ export default function SharedSessionPage() {
   const collabError = useCollabStore((s) => s.error);
   const session = useCollabStore((s) => s.session);
   const deniedReason = useCollabStore((s) => s.deniedReason);
+  const sharedMeta = useSharedProjectStore((s) => s.meta);
 
-  // Read the host's public key from the URL fragment. Fragments are not
-  // sent to the server, so this happens entirely client-side after mount.
+  // Read the host's public key + share mode from the URL fragment.
+  // Fragments are not sent to the server, so this happens entirely
+  // client-side after mount.
   useEffect(() => {
     setHostPubEncoded(readHostPubFromFragment(window.location.hash));
+    setShareMode(readModeFromFragment(window.location.hash));
     setHostPubResolved(true);
   }, []);
 
@@ -75,6 +83,7 @@ export default function SharedSessionPage() {
       token,
       hostPubEncoded,
       identity,
+      projectMode: shareMode === "project",
     }).catch(() => {
       // Failure is recorded on collabStore.error or status=denied; UI reflects it.
     });
@@ -89,7 +98,43 @@ export default function SharedSessionPage() {
     status,
     collabError,
     joinAsGuest,
+    shareMode,
   ]);
+
+  // In project-mode, attach the project reader as soon as we have a
+  // session so meta lands in the in-memory store. The reader is detached
+  // when this page unmounts (on redirect into the project shell, which
+  // will mount its own reader). resetForRoom keeps state coherent.
+  useEffect(() => {
+    if (shareMode !== "project") return;
+    if (!session) return;
+    if (role === "host") return;
+    let detach: (() => void) | null = null;
+    void import("@/lib/collab/projectReader").then(
+      ({ attachProjectReader }) => {
+        detach = attachProjectReader({
+          doc: session.getDoc("project"),
+          store: useSharedProjectStore,
+        });
+      },
+    );
+    return () => {
+      if (detach) detach();
+    };
+  }, [shareMode, session, role]);
+
+  // Once the host's project meta arrives, redirect into the read-only
+  // project shell. The URL lands on the active chapter if one exists;
+  // otherwise the project landing.
+  useEffect(() => {
+    if (shareMode !== "project") return;
+    if (status !== "connected") return;
+    if (!sharedMeta) return;
+    const target = sharedMeta.activeChapterId
+      ? `/shared/${params.roomUuid}/projects/${sharedMeta.projectId}/chapters/${sharedMeta.activeChapterId}`
+      : `/shared/${params.roomUuid}/projects/${sharedMeta.projectId}`;
+    router.replace(target);
+  }, [shareMode, status, sharedMeta, params.roomUuid, router]);
 
   const handleClose = useCallback(() => {
     end();

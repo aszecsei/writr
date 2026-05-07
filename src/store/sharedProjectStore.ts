@@ -58,7 +58,9 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
   upsertEntity: (table, row) =>
     set((s) => {
       const existing = s.byTable[table];
-      const next = new Map(existing) as SharedProjectByTable[typeof table];
+      const next = new Map(
+        existing as Map<string, unknown>,
+      ) as SharedProjectByTable[typeof table];
       const id = (row as { id: string }).id;
       (next as Map<string, typeof row>).set(id, row);
       return {
@@ -70,7 +72,9 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
     set((s) => {
       const existing = s.byTable[table];
       if (!existing.has(id)) return {};
-      const next = new Map(existing) as SharedProjectByTable[typeof table];
+      const next = new Map(
+        existing as Map<string, unknown>,
+      ) as SharedProjectByTable[typeof table];
       next.delete(id);
       return {
         byTable: { ...s.byTable, [table]: next } as SharedProjectByTable,

@@ -44,7 +44,7 @@ function useSharedList<T extends { id: string }>(
   const map = useSharedProjectStore((s) => s.byTable[table]);
   return useMemo(() => {
     if (!projectId) return [];
-    const rows = [...map.values()] as T[];
+    const rows = [...map.values()] as unknown as T[];
     const filtered = rows.filter(
       (r) => (r as unknown as { projectId?: string }).projectId === projectId,
     );
