@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { match, P } from "ts-pattern";
 import type { AiMessage, AiToolCall, FinishReason } from "../types";
 import { extractTextContent, generateToolUseId } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
@@ -89,8 +90,21 @@ function buildReasoningParam(params: CompletionParams): object {
   return { reasoning: params.reasoning };
 }
 
+function toolCallsToOpenAI(
+  toolCalls: AiToolCall[],
+): OpenAI.ChatCompletionMessageToolCall[] {
+  return toolCalls.map((tc) => ({
+    id: tc.id,
+    type: "function" as const,
+    function: {
+      name: tc.name,
+      arguments: JSON.stringify(tc.arguments),
+    },
+  }));
+}
+
 /**
- * Convert AiMessages to OpenAI chat-completion message params.
+ * Convert a single AiMessage to an OpenAI chat-completion message param.
  *
  * For non-Anthropic models, strips `cache_control` from content parts —
  * OpenAI-compatible APIs don't support it and the SDK types may reject it.
@@ -101,107 +115,87 @@ function buildReasoningParam(params: CompletionParams): object {
  * and assistant-with-tool-calls messages). Without this, the trailing
  * cache_control set by `withTrailingCacheControl()` is silently dropped on
  * every tool-calling iteration, defeating prompt caching.
+ *
+ * The `as unknown as` casts are unavoidable on the cache_control branches:
+ * the OpenAI SDK types model `tool` content as `string` and reject extra
+ * fields on text parts, while OpenRouter's Anthropic route accepts both —
+ * the cast lives here so callers don't have to think about it.
  */
+function toOpenAIMessage(
+  msg: AiMessage,
+  isAnthropic: boolean,
+): OpenAI.ChatCompletionMessageParam {
+  return match(msg)
+    .with({ role: "tool" }, (m): OpenAI.ChatCompletionMessageParam => {
+      const { text, cacheControl } = extractTextContent(m.content);
+      if (isAnthropic && cacheControl) {
+        return {
+          role: "tool",
+          tool_call_id: m.toolCallId ?? "",
+          content: [{ type: "text", text, cache_control: cacheControl }],
+        } as unknown as OpenAI.ChatCompletionMessageParam;
+      }
+      return {
+        role: "tool",
+        tool_call_id: m.toolCallId ?? "",
+        content: text,
+      };
+    })
+    .with(
+      { role: "assistant", toolCalls: P.nonNullable },
+      // Empty toolCalls array falls through to the default branch.
+      (m) => m.toolCalls.length > 0,
+      (m): OpenAI.ChatCompletionMessageParam => {
+        const { text, cacheControl } = extractTextContent(m.content);
+        if (isAnthropic && cacheControl) {
+          return {
+            role: "assistant",
+            content: [{ type: "text", text, cache_control: cacheControl }],
+            tool_calls: toolCallsToOpenAI(m.toolCalls),
+          } as unknown as OpenAI.ChatCompletionMessageParam;
+        }
+        return {
+          role: "assistant",
+          content: text || null,
+          tool_calls: toolCallsToOpenAI(m.toolCalls),
+        };
+      },
+    )
+    .otherwise((m): OpenAI.ChatCompletionMessageParam => {
+      if (typeof m.content === "string") {
+        return {
+          role: m.role as "system" | "user" | "assistant",
+          content: m.content,
+        };
+      }
+      if (isAnthropic) {
+        // Pass parts through verbatim — cache_control on text parts is
+        // preserved for OpenRouter to forward to Anthropic's backend.
+        return {
+          role: m.role,
+          content: m.content,
+        } as unknown as OpenAI.ChatCompletionMessageParam;
+      }
+      const parts: OpenAI.ChatCompletionContentPart[] = m.content.map((part) =>
+        part.type === "text"
+          ? { type: "text" as const, text: part.text }
+          : {
+              type: "image_url" as const,
+              image_url: { url: part.image_url.url },
+            },
+      );
+      return {
+        role: m.role,
+        content: parts,
+      } as OpenAI.ChatCompletionMessageParam;
+    });
+}
+
 function convertMessages(
   messages: AiMessage[],
   isAnthropic: boolean,
 ): OpenAI.ChatCompletionMessageParam[] {
-  if (isAnthropic) {
-    return messages.map((msg) => {
-      if (msg.role === "tool") {
-        // Send tool result as a single text content part so cache_control
-        // (attached by withTrailingCacheControl on the most recent message)
-        // survives the conversion. OpenAI's tool message type expects string
-        // content; OpenRouter's Anthropic route accepts an array of text
-        // parts here, so cast through unknown.
-        const { text, cacheControl } = extractTextContent(msg.content);
-        return {
-          role: "tool" as const,
-          tool_call_id: msg.toolCallId ?? "",
-          content: cacheControl
-            ? [{ type: "text", text, cache_control: cacheControl }]
-            : text,
-        } as unknown as OpenAI.ChatCompletionMessageParam;
-      }
-      if (msg.role === "assistant" && msg.toolCalls?.length) {
-        const { text, cacheControl } = extractTextContent(msg.content);
-        const content = cacheControl
-          ? [{ type: "text" as const, text, cache_control: cacheControl }]
-          : text || null;
-        return {
-          role: "assistant" as const,
-          content,
-          tool_calls: msg.toolCalls.map((tc) => ({
-            id: tc.id,
-            type: "function" as const,
-            function: {
-              name: tc.name,
-              arguments: JSON.stringify(tc.arguments),
-            },
-          })),
-        } as unknown as OpenAI.ChatCompletionMessageParam;
-      }
-      if (typeof msg.content === "string") {
-        return {
-          role: msg.role as "system" | "user" | "assistant",
-          content: msg.content,
-        };
-      }
-      // Content is already a parts array. Pass through verbatim — any
-      // cache_control on text parts is preserved for OpenRouter to forward
-      // to Anthropic's backend.
-      return {
-        role: msg.role,
-        content: msg.content,
-      } as unknown as OpenAI.ChatCompletionMessageParam;
-    });
-  }
-
-  return messages.map((msg) => {
-    if (msg.role === "tool") {
-      return {
-        role: "tool" as const,
-        tool_call_id: msg.toolCallId ?? "",
-        content: extractTextContent(msg.content).text,
-      };
-    }
-    if (msg.role === "assistant" && msg.toolCalls?.length) {
-      const text = extractTextContent(msg.content).text;
-      return {
-        role: "assistant" as const,
-        content: text || null,
-        tool_calls: msg.toolCalls.map((tc) => ({
-          id: tc.id,
-          type: "function" as const,
-          function: {
-            name: tc.name,
-            arguments: JSON.stringify(tc.arguments),
-          },
-        })),
-      } as OpenAI.ChatCompletionMessageParam;
-    }
-    if (typeof msg.content === "string") {
-      return {
-        role: msg.role as "system" | "user" | "assistant",
-        content: msg.content,
-      };
-    }
-    const parts: OpenAI.ChatCompletionContentPart[] = msg.content.map(
-      (part) => {
-        if (part.type === "text") {
-          return { type: "text" as const, text: part.text };
-        }
-        return {
-          type: "image_url" as const,
-          image_url: { url: part.image_url.url },
-        };
-      },
-    );
-    return {
-      role: msg.role,
-      content: parts,
-    } as OpenAI.ChatCompletionMessageParam;
-  });
+  return messages.map((msg) => toOpenAIMessage(msg, isAnthropic));
 }
 
 function buildToolsParam(params: CompletionParams): object {
