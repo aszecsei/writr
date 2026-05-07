@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ProjectId } from "@/db/schemas";
 import { exportMarkdown } from "./exportMarkdown";
 import type { ExportContent, ExportOptions } from "./types";
 
@@ -17,7 +18,7 @@ function makeOptions(overrides?: Partial<ExportOptions>): ExportOptions {
   return {
     format: "markdown",
     scope: "book",
-    projectId: "00000000-0000-4000-8000-000000000001",
+    projectId: "00000000-0000-4000-8000-000000000001" as ProjectId,
     includeTitlePage: true,
     includeChapterHeadings: true,
     pageBreaksBetweenChapters: false,

@@ -329,7 +329,7 @@ export function CharacterDetailBody({
               <p className={labelClass}>Linked Characters</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {form.linkedCharacterIds.map((cid) => {
-                  const c = characterMap.get(cid as CharacterId);
+                  const c = characterMap.get(cid);
                   return (
                     <span
                       key={cid}
@@ -353,7 +353,7 @@ export function CharacterDetailBody({
                 <select
                   value=""
                   onChange={(e) => {
-                    if (e.target.value) addLinkedCharacterId(e.target.value);
+                    if (e.target.value) addLinkedCharacterId(e.target.value as CharacterId);
                   }}
                   className={`${inputClass} mt-2`}
                 >
@@ -372,7 +372,7 @@ export function CharacterDetailBody({
               <p className={labelClass}>Linked Locations</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {form.linkedLocationIds.map((lid) => {
-                  const l = locationMap.get(lid as LocationId);
+                  const l = locationMap.get(lid);
                   return (
                     <span
                       key={lid}
@@ -396,7 +396,7 @@ export function CharacterDetailBody({
                 <select
                   value=""
                   onChange={(e) => {
-                    if (e.target.value) addLinkedLocationId(e.target.value);
+                    if (e.target.value) addLinkedLocationId(e.target.value as LocationId);
                   }}
                   className={`${inputClass} mt-2`}
                 >

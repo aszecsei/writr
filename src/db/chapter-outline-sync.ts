@@ -75,7 +75,7 @@ export async function unlinkChapterFromRow(
 export async function createChapterFromRow(
   rowId: OutlineGridRowId,
   projectId: ProjectId,
-): Promise<string> {
+): Promise<ChapterId> {
   return db.transaction("rw", [db.chapters, db.outlineGridRows], async () => {
     const row = await db.outlineGridRows.get(rowId);
     if (!row) throw new Error("Row not found");

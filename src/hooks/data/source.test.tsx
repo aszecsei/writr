@@ -111,7 +111,7 @@ describe("source-aware hooks (shared mode)", () => {
     useSharedProjectStore
       .getState()
       .upsertEntity("characters", character(CHARACTER_ID_1, "Bob"));
-    const id2 = "00000000-0000-4000-8000-000000000012";
+    const id2 = "00000000-0000-4000-8000-000000000012" as CharacterId;
     useSharedProjectStore
       .getState()
       .upsertEntity("characters", character(id2, "Alice"));

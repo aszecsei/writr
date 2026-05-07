@@ -147,15 +147,18 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("maps reasoning effort to thinking budget", async () => {
-      const effortMap: Record<string, number> = {
+      const effortMap = {
         minimal: 1024,
         low: 4096,
         medium: 10240,
         high: 20480,
         xhigh: 32768,
-      };
+      } as const;
 
-      for (const [effort, expectedBudget] of Object.entries(effortMap)) {
+      for (const [effort, expectedBudget] of Object.entries(effortMap) as [
+        keyof typeof effortMap,
+        number,
+      ][]) {
         mockCreate.mockResolvedValueOnce({
           content: [{ type: "text", text: "ok" }],
           model: "claude-sonnet-4-5-20250929",

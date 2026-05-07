@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WritingSession } from "@/db/schemas";
+import type {
+  ChapterId,
+  ProjectId,
+  WritingSession,
+  WritingSessionId,
+} from "@/db/schemas";
 import {
   aggregateDailyStats,
   aggregateTimeOfDayStats,
@@ -21,9 +26,9 @@ function makeSession(
   },
 ): WritingSession {
   return {
-    id: "00000000-0000-4000-8000-000000000001",
-    projectId: "00000000-0000-4000-8000-000000000010",
-    chapterId: "00000000-0000-4000-8000-000000000020",
+    id: "00000000-0000-4000-8000-000000000001" as WritingSessionId,
+    projectId: "00000000-0000-4000-8000-000000000010" as ProjectId,
+    chapterId: "00000000-0000-4000-8000-000000000020" as ChapterId,
     hourOfDay: 10,
     durationMs: 60000,
     createdAt: ts,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Character, CharacterRole, EntityImage } from "@/db/schemas";
+import type { Character, CharacterId, CharacterRole, EntityImage, LocationId } from "@/db/schemas";
 
 interface CharacterFormState {
   name: string;
@@ -18,8 +18,8 @@ interface CharacterFormState {
   dialogueStyle: string;
   backstory: string;
   notes: string;
-  linkedCharacterIds: string[];
-  linkedLocationIds: string[];
+  linkedCharacterIds: CharacterId[];
+  linkedLocationIds: LocationId[];
   images: EntityImage[];
 }
 
@@ -104,7 +104,7 @@ export function useCharacterForm(character: Character | undefined) {
     setFormState((prev) => ({ ...prev, [field]: value }));
   }
 
-  const addLinkedCharacterId = useCallback((id: string) => {
+  const addLinkedCharacterId = useCallback((id: CharacterId) => {
     setFormState((prev) =>
       prev.linkedCharacterIds.includes(id)
         ? prev
@@ -112,14 +112,14 @@ export function useCharacterForm(character: Character | undefined) {
     );
   }, []);
 
-  const removeLinkedCharacterId = useCallback((id: string) => {
+  const removeLinkedCharacterId = useCallback((id: CharacterId) => {
     setFormState((prev) => ({
       ...prev,
       linkedCharacterIds: prev.linkedCharacterIds.filter((cid) => cid !== id),
     }));
   }, []);
 
-  const addLinkedLocationId = useCallback((id: string) => {
+  const addLinkedLocationId = useCallback((id: LocationId) => {
     setFormState((prev) =>
       prev.linkedLocationIds.includes(id)
         ? prev
@@ -127,7 +127,7 @@ export function useCharacterForm(character: Character | undefined) {
     );
   }, []);
 
-  const removeLinkedLocationId = useCallback((id: string) => {
+  const removeLinkedLocationId = useCallback((id: LocationId) => {
     setFormState((prev) => ({
       ...prev,
       linkedLocationIds: prev.linkedLocationIds.filter((lid) => lid !== id),

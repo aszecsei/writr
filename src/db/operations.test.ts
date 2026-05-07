@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./database";
+import type { WorldbuildingDocId } from "./schemas";
 import {
   clearSessionCache,
   createChapter,
@@ -251,7 +252,9 @@ describe("deleteWorldbuildingDoc (re-parenting)", () => {
 
   it("non-existent doc returns silently", async () => {
     await expect(
-      deleteWorldbuildingDoc("00000000-0000-4000-8000-ffffffffffff"),
+      deleteWorldbuildingDoc(
+        "00000000-0000-4000-8000-ffffffffffff" as WorldbuildingDocId,
+      ),
     ).resolves.toBeUndefined();
   });
 

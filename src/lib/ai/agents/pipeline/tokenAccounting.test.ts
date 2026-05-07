@@ -182,7 +182,7 @@ describe("withTokenAccounting", () => {
     const onChunk = vi.fn();
     const onToolCallsCollected = vi.fn();
     const onToolCallUpdate = vi.fn();
-    const wrapped = withTokenAccounting("fake-run-id", {
+    const wrapped = withTokenAccounting("fake-run-id" as AgentRunId, {
       onIterationStart,
       onChunk,
       onToolCallsCollected,

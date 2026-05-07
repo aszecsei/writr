@@ -140,8 +140,8 @@ export function CollabProseEditor(props: CollabProseEditorProps) {
       editorForResolution={editorForResolution}
       commentsRef={commentsRef}
       initializedRef={initializedRef}
-      projectId={projectId as ProjectId}
-      chapterId={chapterId as ChapterId}
+      projectId={projectId}
+      chapterId={chapterId}
       userName={userName}
       userColor={userColor}
     />

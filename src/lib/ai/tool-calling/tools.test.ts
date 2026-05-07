@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
-import type { ProjectId } from "@/db/schemas";
+import type {
+  ChapterId,
+  LocationId,
+  ProjectId,
+  TimelineEventId,
+} from "@/db/schemas";
 import {
   makeChapter,
   makeCharacter,
@@ -120,7 +125,7 @@ describe("location tools", () => {
     );
     expect(result.success).toBe(true);
 
-    const updated = await db.locations.get(created.data?.id as string);
+    const updated = await db.locations.get(created.data?.id as LocationId);
     expect(updated?.description).toBe("A small village");
   });
 });
@@ -153,7 +158,9 @@ describe("timeline event tools", () => {
       ctx,
     );
 
-    const updated = await db.timelineEvents.get(created.data?.id as string);
+    const updated = await db.timelineEvents.get(
+      created.data?.id as TimelineEventId,
+    );
     expect(updated?.description).toBe("A grand feast");
   });
 });
@@ -190,7 +197,7 @@ describe("chapter tools", () => {
       ctx,
     );
 
-    const updated = await db.chapters.get(created.data?.id as string);
+    const updated = await db.chapters.get(created.data?.id as ChapterId);
     expect(updated?.title).toBe("Revised Chapter");
     expect(updated?.status).toBe("revised");
   });

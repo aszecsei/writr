@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
-import type { Comment } from "@/db/schemas";
+import type {
+  ChapterId,
+  Comment,
+  CommentId,
+  ProjectId,
+} from "@/db/schemas";
 import { reconcileComment } from "./reconcile";
 
 const ts = "2024-01-01T00:00:00.000Z";
 
 function makeComment(overrides: Partial<Comment>): Comment {
   return {
-    id: "00000000-0000-4000-8000-000000000001",
-    projectId: "00000000-0000-4000-8000-000000000010",
-    chapterId: "00000000-0000-4000-8000-000000000020",
+    id: "00000000-0000-4000-8000-000000000001" as CommentId,
+    projectId: "00000000-0000-4000-8000-000000000010" as ProjectId,
+    chapterId: "00000000-0000-4000-8000-000000000020" as ChapterId,
     content: "test comment",
     color: "yellow",
     fromOffset: 5,

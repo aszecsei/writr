@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
-import type { ChapterId, ProjectId } from "@/db/schemas";
+import type { ChapterId, CommentId, ProjectId } from "@/db/schemas";
 import { YjsCommentsAdapter } from "./comments";
 
 /**
@@ -225,7 +225,7 @@ describe("YjsCommentsAdapter", () => {
 
   it("supports seedFromDexie when the map is empty (host startup)", () => {
     const dummy = {
-      id: "11111111-1111-4111-8111-111111111111",
+      id: "11111111-1111-4111-8111-111111111111" as CommentId,
       projectId: PROJECT_ID,
       chapterId: CHAPTER_ID,
       content: "old",
@@ -286,7 +286,7 @@ describe("YjsCommentsAdapter", () => {
     // bug; null anchors fall back to initialFrom/initialTo (Dexie's correct
     // offsets) until the editor binds and a future write replaces them.
     const dummy = {
-      id: "44444444-4444-4444-8444-444444444444",
+      id: "44444444-4444-4444-8444-444444444444" as CommentId,
       projectId: PROJECT_ID,
       chapterId: CHAPTER_ID,
       content: "seed",
@@ -312,7 +312,7 @@ describe("YjsCommentsAdapter", () => {
     docs.sync();
     adapterB.seedFromDexie([
       {
-        id: "22222222-2222-4222-8222-222222222222",
+        id: "22222222-2222-4222-8222-222222222222" as CommentId,
         projectId: PROJECT_ID,
         chapterId: CHAPTER_ID,
         content: "should-not-add",

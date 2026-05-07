@@ -23,7 +23,14 @@ function createMockVisitor(): DocNodeVisitor &
 function createMockExporter(): Exporter &
   Record<string, ReturnType<typeof vi.fn>> {
   return {
-    ...createMockVisitor(),
+    visitHeading: vi.fn(),
+    visitParagraph: vi.fn(),
+    visitBlockquote: vi.fn(),
+    visitList: vi.fn(),
+    visitCode: vi.fn(),
+    visitHr: vi.fn(),
+    visitImage: vi.fn(),
+    visitPageBreak: vi.fn(),
     addTitlePage: vi.fn(),
     addChapterHeading: vi.fn(),
     addPageBreak: vi.fn(),
