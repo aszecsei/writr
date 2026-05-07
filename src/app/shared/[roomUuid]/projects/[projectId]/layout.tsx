@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
+import { HostMovedBanner } from "@/components/collab/HostMovedBanner";
 import { DataSourceProvider } from "@/context/DataSourceContext";
 import { attachProjectReader } from "@/lib/collab/projectReader";
 import { useCollabStore } from "@/store/collabStore";
@@ -75,6 +76,7 @@ export default function SharedProjectLayout({
             {role ?? "guest"}
           </span>
         </header>
+        <HostMovedBanner />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </DataSourceProvider>
