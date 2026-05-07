@@ -17,7 +17,13 @@ import {
   ContextMenuLabel,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
-import type { Chapter, OutlineCardColor } from "@/db/schemas";
+import type {
+  Chapter,
+  ChapterId,
+  OutlineCardColor,
+  OutlineGridColumnId,
+  OutlineGridRowId,
+} from "@/db/schemas";
 
 const COLORS: { value: OutlineCardColor; label: string; className: string }[] =
   [
@@ -35,9 +41,17 @@ const COLORS: { value: OutlineCardColor; label: string; className: string }[] =
   ];
 
 export type ContextMenuTarget =
-  | { type: "cell"; rowId: string; columnId: string }
-  | { type: "row"; rowId: string; linkedChapterId: string | null }
-  | { type: "column"; columnId: string };
+  | {
+      type: "cell";
+      rowId: OutlineGridRowId;
+      columnId: OutlineGridColumnId;
+    }
+  | {
+      type: "row";
+      rowId: OutlineGridRowId;
+      linkedChapterId: ChapterId | null;
+    }
+  | { type: "column"; columnId: OutlineGridColumnId };
 
 interface OutlineGridContextMenuProps {
   position: { x: number; y: number };
@@ -53,7 +67,7 @@ interface OutlineGridContextMenuProps {
   onDeleteColumn: () => void;
   onRenameColumn: () => void;
   onSetColor: (color: OutlineCardColor) => void;
-  onLinkChapter: (chapterId: string) => void;
+  onLinkChapter: (chapterId: ChapterId) => void;
   onUnlinkChapter: () => void;
   onCreateChapter: () => void;
 }

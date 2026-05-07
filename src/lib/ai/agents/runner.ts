@@ -1,6 +1,6 @@
 import { match } from "ts-pattern";
 import { getAppSettings } from "@/db/operations/settings";
-import type { AppSettings } from "@/db/schemas";
+import type { AgentRunId, AppSettings } from "@/db/schemas";
 import type {
   ToolCallEntry,
   ToolCallPayload,
@@ -422,7 +422,7 @@ export async function runAgent(
 }
 
 export interface InvokeAgentForRunOptions {
-  runId: string;
+  runId: AgentRunId;
   /**
    * Bare agent built by a builtin factory. The helper applies user-configured
    * definition overrides — callers must NOT call `applyDefinitionOverride`

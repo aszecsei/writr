@@ -5,7 +5,14 @@ import { getChapter } from "@/db/operations/chapters";
 import { getEditPlanByRun, upsertEditPlan } from "@/db/operations/editPlans";
 import { listBiblePaths, readBibleAtPath } from "@/db/operations/readerBible";
 import { listWorkUnitsByTier, updateWorkUnit } from "@/db/operations/workUnits";
-import type { ReaderBibleViewEntry, WorkUnit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ChapterId,
+  ProjectId,
+  ReaderBibleViewEntry,
+  WorkUnit,
+  WorkUnitId,
+} from "@/db/schemas";
 import type { AiContext } from "../../types";
 import { makeEditorAgent } from "../builtins/editor";
 import { makeOrchestratorAgent } from "../builtins/orchestrator";
@@ -13,8 +20,8 @@ import { invokeAgentForRun } from "../runner";
 import type { PipelineEventEmitter } from "./events";
 
 export interface PlanTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   humanBriefing?: string;
   signal?: AbortSignal;
@@ -74,8 +81,8 @@ export async function planTier(options: PlanTierOptions): Promise<void> {
 }
 
 export interface ExecuteTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   signal?: AbortSignal;
   onEvent?: PipelineEventEmitter;
@@ -194,8 +201,8 @@ export async function executeTier(options: ExecuteTierOptions): Promise<void> {
 
 async function runOneEditor(
   unit: WorkUnit,
-  runId: string,
-  projectId: string,
+  runId: AgentRunId,
+  projectId: ProjectId,
   context: AiContext,
   signal: AbortSignal | undefined,
   onEvent: PipelineEventEmitter | undefined,
@@ -220,7 +227,7 @@ async function runOneEditor(
 }
 
 async function loadBibleRefs(
-  runId: string,
+  runId: AgentRunId,
   refs: string[],
 ): Promise<ReaderBibleViewEntry[]> {
   const out: ReaderBibleViewEntry[] = [];
@@ -248,8 +255,8 @@ async function loadBibleRefs(
  */
 function computeLevels(units: WorkUnit[]): WorkUnit[][] {
   const idToUnit = new Map(units.map((u) => [u.id, u]));
-  const inDegree = new Map<string, number>();
-  const dependents = new Map<string, string[]>();
+  const inDegree = new Map<WorkUnitId, number>();
+  const dependents = new Map<WorkUnitId, WorkUnitId[]>();
 
   for (const u of units) {
     inDegree.set(u.id, 0);
@@ -267,7 +274,7 @@ function computeLevels(units: WorkUnit[]): WorkUnit[][] {
 
   // Implicit chapter-overlap edges: if A and B share a chapter and A's
   // anchor offset (or paragraph index) is earlier, B depends on A.
-  const byChapter = new Map<string, WorkUnit[]>();
+  const byChapter = new Map<ChapterId, WorkUnit[]>();
   for (const u of units) {
     const list = byChapter.get(u.placement.chapterId) ?? [];
     list.push(u);

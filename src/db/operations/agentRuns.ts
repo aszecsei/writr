@@ -1,9 +1,11 @@
 import { db } from "../database";
 import {
   type AgentRun,
+  type AgentRunId,
   AgentRunSchema,
   type AgentRunStatus,
   type AgentRunUsage,
+  type ProjectId,
   type ReaderPass,
 } from "../schemas";
 import { generateId, now } from "./helpers";
@@ -15,7 +17,7 @@ export function isTerminalStatus(status: AgentRunStatus): boolean {
 }
 
 export interface CreateAgentRunInput {
-  projectId: string;
+  projectId: ProjectId;
   name: string;
   budgetTokens?: number;
 }
@@ -61,26 +63,28 @@ export async function createAgentRun(
   return run;
 }
 
-export async function getAgentRun(id: string): Promise<AgentRun | undefined> {
+export async function getAgentRun(
+  id: AgentRunId,
+): Promise<AgentRun | undefined> {
   return db.agentRuns.get(id);
 }
 
 export async function listAgentRunsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<AgentRun[]> {
   return db.agentRuns.where({ projectId }).reverse().sortBy("createdAt");
 }
 
 /** Returns the project's currently in-flight (non-terminal) run, if any. */
 export async function getActiveAgentRun(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<AgentRun | undefined> {
   const runs = await db.agentRuns.where({ projectId }).toArray();
   return runs.find((r) => !isTerminalStatus(r.status));
 }
 
 export async function updateAgentRunStatus(
-  id: string,
+  id: AgentRunId,
   status: AgentRunStatus,
   reason?: string | null,
 ): Promise<void> {
@@ -103,7 +107,7 @@ export async function updateAgentRunStatus(
  * is pointless — those leave `failedFromStatus` null and the UI hides Retry.
  */
 export async function markAgentRunFailed(
-  id: string,
+  id: AgentRunId,
   reason: string,
   fromStatus: AgentRunStatus | null,
 ): Promise<void> {
@@ -116,7 +120,7 @@ export async function markAgentRunFailed(
 }
 
 export async function updateAgentRun(
-  id: string,
+  id: AgentRunId,
   data: Partial<
     Pick<
       AgentRun,
@@ -134,7 +138,7 @@ export async function updateAgentRun(
 
 /** Append a reader pass record. Mutates `readerPasses` array atomically. */
 export async function appendReaderPass(
-  runId: string,
+  runId: AgentRunId,
   pass: ReaderPass,
 ): Promise<void> {
   await db.transaction("rw", db.agentRuns, async () => {
@@ -149,7 +153,7 @@ export async function appendReaderPass(
 
 /** Mark the most recent reader pass as completed and update its delta counts. */
 export async function finishReaderPass(
-  runId: string,
+  runId: AgentRunId,
   patch: Partial<
     Pick<
       ReaderPass,
@@ -185,7 +189,7 @@ export async function finishReaderPass(
  * sees the pass advancing in real time.
  */
 export async function patchActiveReaderPass(
-  runId: string,
+  runId: AgentRunId,
   patch: Partial<
     Pick<
       ReaderPass,
@@ -216,7 +220,7 @@ export async function patchActiveReaderPass(
  * accidentally clobber the budget.
  */
 export async function updateBudgetTokens(
-  runId: string,
+  runId: AgentRunId,
   budgetTokens: number,
 ): Promise<void> {
   if (!Number.isInteger(budgetTokens) || budgetTokens <= 0) {
@@ -232,7 +236,7 @@ export async function updateBudgetTokens(
  * can detect budget overruns without re-fetching the row.
  */
 export async function addTokenUsage(
-  runId: string,
+  runId: AgentRunId,
   delta: Partial<AgentRunUsage>,
 ): Promise<AgentRunUsage> {
   let next: AgentRunUsage = {
@@ -274,7 +278,7 @@ export async function addTokenUsage(
  * reference them by id, but deleting the manifest is enough to detach the run
  * from them; the underlying snapshots remain as user-visible undo points.
  */
-export async function deleteAgentRun(id: string): Promise<void> {
+export async function deleteAgentRun(id: AgentRunId): Promise<void> {
   const run = await db.agentRuns.get(id);
   if (!run) throw new Error(`Agent run not found: ${id}`);
   if (!isTerminalStatus(run.status)) {

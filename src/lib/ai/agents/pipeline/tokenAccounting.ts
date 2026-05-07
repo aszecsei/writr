@@ -1,4 +1,5 @@
 import { addTokenUsage, updateAgentRun } from "@/db/operations/agentRuns";
+import type { AgentRunId } from "@/db/schemas";
 import type { RunAgentCallbacks } from "../types";
 
 /**
@@ -18,7 +19,7 @@ import type { RunAgentCallbacks } from "../types";
  * numbers in the same total.
  */
 export function withTokenAccounting(
-  runId: string,
+  runId: AgentRunId,
   callbacks: RunAgentCallbacks,
 ): RunAgentCallbacks {
   const innerOnIterationEnd = callbacks.onIterationEnd;

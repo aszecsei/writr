@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../database";
+import type { ProjectId } from "../schemas";
 import {
   addWordToAppDictionary,
   addWordToProjectDictionary,
@@ -93,7 +94,7 @@ describe("dictionary operations", () => {
 
   describe("project dictionary", () => {
     // Valid UUIDv4 format: 8-4-4-4-12 with version 4 at position 15 and variant at position 20
-    const projectId = "a1111111-1111-4111-a111-111111111111";
+    const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
     it("should return undefined for non-existent project dictionary", async () => {
       const dict = await getProjectDictionary(projectId);
@@ -156,7 +157,7 @@ describe("dictionary operations", () => {
     });
 
     it("should maintain separate dictionaries per project", async () => {
-      const projectId2 = "b2222222-2222-4222-a222-222222222222";
+      const projectId2 = "b2222222-2222-4222-a222-222222222222" as ProjectId;
 
       await addWordToProjectDictionary(projectId, "project1word");
       await addWordToProjectDictionary(projectId2, "project2word");

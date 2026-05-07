@@ -3,12 +3,20 @@ import { db } from "@/db/database";
 import type {
   AppDictionary,
   AppSettings,
+  ChapterId,
   ChapterSnapshot,
+  ChapterSnapshotId,
   Comment,
+  CommentId,
   PlaylistTrack,
+  PlaylistTrackId,
   ProjectDictionary,
+  ProjectDictionaryId,
+  ProjectId,
   WritingSession,
+  WritingSessionId,
   WritingSprint,
+  WritingSprintId,
 } from "@/db/schemas";
 import { normalizeAppSettings } from "@/db/schemas";
 import {
@@ -48,7 +56,7 @@ import { isBackupVersionSupported, validateBackup } from "./validation";
 
 const ts = "2024-01-01T00:00:00.000Z";
 
-function makeProject(overrides: { id: string; title: string }) {
+function makeProject(overrides: { id: ProjectId; title: string }) {
   return {
     id: overrides.id,
     title: overrides.title,
@@ -63,12 +71,12 @@ function makeProject(overrides: { id: string; title: string }) {
 
 function makeComment(
   overrides: Partial<Comment> & {
-    projectId: string;
-    chapterId: string;
+    projectId: ProjectId;
+    chapterId: ChapterId;
   },
 ): Comment {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as CommentId,
     content: "test comment",
     color: "yellow",
     fromOffset: 0,
@@ -83,10 +91,10 @@ function makeComment(
 }
 
 function makeWritingSprint(
-  overrides: Partial<WritingSprint> & { projectId: string },
+  overrides: Partial<WritingSprint> & { projectId: ProjectId },
 ): WritingSprint {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as WritingSprintId,
     chapterId: null,
     durationMs: 600000,
     wordCountGoal: null,
@@ -105,12 +113,12 @@ function makeWritingSprint(
 
 function makeWritingSession(
   overrides: Partial<WritingSession> & {
-    projectId: string;
-    chapterId: string;
+    projectId: ProjectId;
+    chapterId: ChapterId;
   },
 ): WritingSession {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as WritingSessionId,
     date: "2024-01-01",
     hourOfDay: 10,
     wordCountStart: 0,
@@ -123,10 +131,10 @@ function makeWritingSession(
 }
 
 function makePlaylistTrack(
-  overrides: Partial<PlaylistTrack> & { projectId: string },
+  overrides: Partial<PlaylistTrack> & { projectId: ProjectId },
 ): PlaylistTrack {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as PlaylistTrackId,
     title: "Test Track",
     url: "https://youtube.com/watch?v=test",
     source: "youtube",
@@ -141,12 +149,12 @@ function makePlaylistTrack(
 
 function makeChapterSnapshot(
   overrides: Partial<ChapterSnapshot> & {
-    chapterId: string;
-    projectId: string;
+    chapterId: ChapterId;
+    projectId: ProjectId;
   },
 ): ChapterSnapshot {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as ChapterSnapshotId,
     name: "Snapshot 1",
     content: "snapshot content",
     wordCount: 2,
@@ -214,10 +222,10 @@ function makeAppDictionary(overrides?: Partial<AppDictionary>): AppDictionary {
 }
 
 function makeProjectDictionary(
-  overrides: Partial<ProjectDictionary> & { projectId: string },
+  overrides: Partial<ProjectDictionary> & { projectId: ProjectId },
 ): ProjectDictionary {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as ProjectDictionaryId,
     words: [],
     createdAt: ts,
     updatedAt: ts,
@@ -226,27 +234,27 @@ function makeProjectDictionary(
 }
 
 /** Build a full ProjectBackupData for testing. */
-function buildTestProjectData(projectId: string): ProjectBackupData {
+function buildTestProjectData(projectId: ProjectId): ProjectBackupData {
   const chapter = makeChapter({
     projectId,
     title: "Chapter 1",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as ChapterId,
   });
   const char1 = makeCharacter({
     projectId,
     name: "Hero",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
   });
   const char2 = makeCharacter({
     projectId,
     name: "Villain",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     linkedCharacterIds: [],
   });
   const location = makeLocation({
     projectId,
     name: "Castle",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     linkedCharacterIds: [char1.id],
   });
   const relationship = makeRelationship({
@@ -254,42 +262,42 @@ function buildTestProjectData(projectId: string): ProjectBackupData {
     sourceCharacterId: char1.id,
     targetCharacterId: char2.id,
     type: "custom",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
   });
   const timeline = makeTimelineEvent({
     projectId,
     title: "Battle",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     linkedChapterIds: [chapter.id],
     linkedCharacterIds: [char1.id],
   });
   const styleGuide = makeStyleGuideEntry({
     projectId,
     title: "Rule 1",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
   });
   const worldDoc = makeWorldbuildingDoc({
     projectId,
     title: "Lore",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     linkedCharacterIds: [char1.id],
     linkedLocationIds: [location.id],
   });
   const col = makeOutlineGridColumn({
     projectId,
     title: "Plot",
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
   });
   const row = makeOutlineGridRow({
     projectId,
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     linkedChapterId: chapter.id,
   });
   const cell = makeOutlineGridCell({
     projectId,
     rowId: row.id,
     columnId: col.id,
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as never,
     content: "cell content",
   });
   const sprint = makeWritingSprint({ projectId });
@@ -360,12 +368,12 @@ beforeEach(async () => {
 
 describe("gatherProjectData", () => {
   it("returns null for nonexistent project", async () => {
-    const result = await gatherProjectData(crypto.randomUUID());
+    const result = await gatherProjectData(crypto.randomUUID() as ProjectId);
     expect(result).toBeNull();
   });
 
   it("collects all entity types including projectDictionary", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
 
     // Insert all data into the database
@@ -414,12 +422,12 @@ describe("gatherProjectData", () => {
 
 describe("exportProject", () => {
   it("returns null for nonexistent project", async () => {
-    const result = await exportProject(crypto.randomUUID());
+    const result = await exportProject(crypto.randomUUID() as ProjectId);
     expect(result).toBeNull();
   });
 
   it("creates valid ProjectBackup metadata", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     await db.projects.add(data.project);
 
@@ -434,8 +442,8 @@ describe("exportProject", () => {
 
 describe("exportFullBackup", () => {
   it("includes all projects + appSettings + appDictionary", async () => {
-    const p1Id = crypto.randomUUID();
-    const p2Id = crypto.randomUUID();
+    const p1Id = crypto.randomUUID() as ProjectId;
+    const p2Id = crypto.randomUUID() as ProjectId;
     await db.projects.add(makeProject({ id: p1Id, title: "Project 1" }));
     await db.projects.add(makeProject({ id: p2Id, title: "Project 2" }));
     const settings = makeAppSettings({ theme: "dark" });
@@ -464,7 +472,7 @@ describe("generateBackupFilename", () => {
         exportedAt: "2024-06-15T10:00:00.000Z",
         projectTitle: "My Novel",
       },
-      data: buildTestProjectData(crypto.randomUUID()),
+      data: buildTestProjectData(crypto.randomUUID() as ProjectId),
     };
     const filename = generateBackupFilename(backup);
     expect(filename).toMatch(/^writr-test-novel-\d{4}-\d{2}-\d{2}\.json$/);
@@ -503,7 +511,7 @@ describe("validateBackup", () => {
   });
 
   it("accepts a valid project backup", () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const backup: ProjectBackup = {
       metadata: {
         version: BACKUP_VERSION,
@@ -641,7 +649,7 @@ describe("isFullBackup / isProjectBackup", () => {
         exportedAt: ts,
         projectTitle: "Test",
       },
-      data: buildTestProjectData(crypto.randomUUID()),
+      data: buildTestProjectData(crypto.randomUUID() as ProjectId),
     } as ProjectBackup;
     expect(isProjectBackup(backup)).toBe(true);
     expect(isFullBackup(backup)).toBe(false);
@@ -650,7 +658,7 @@ describe("isFullBackup / isProjectBackup", () => {
 
 describe("importBackup", () => {
   it("imports project data with no conflicts", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     const backup: ProjectBackup = {
       metadata: {
@@ -683,7 +691,7 @@ describe("importBackup", () => {
   });
 
   it("skips existing projects with 'skip' conflict resolution", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     // Pre-insert the project
     await db.projects.add(
       makeProject({ id: projectId, title: "Original Title" }),
@@ -715,13 +723,13 @@ describe("importBackup", () => {
   });
 
   it("replaces existing project with 'replace' conflict resolution", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     // Pre-insert the project with a chapter
     await db.projects.add(makeProject({ id: projectId, title: "Original" }));
     const oldChapter = makeChapter({
       projectId,
       title: "Old Chapter",
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID() as ChapterId,
     });
     await db.chapters.add(oldChapter);
 
@@ -755,7 +763,7 @@ describe("importBackup", () => {
   });
 
   it("creates new IDs with 'duplicate' conflict resolution", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     // Pre-insert the project
     await db.projects.add(makeProject({ id: projectId, title: "Original" }));
 
@@ -847,8 +855,8 @@ describe("importBackup", () => {
   });
 
   it("imports a full backup with multiple projects", async () => {
-    const p1Id = crypto.randomUUID();
-    const p2Id = crypto.randomUUID();
+    const p1Id = crypto.randomUUID() as ProjectId;
+    const p2Id = crypto.randomUUID() as ProjectId;
     const backup: FullBackup = {
       metadata: {
         version: BACKUP_VERSION,
@@ -878,7 +886,7 @@ describe("importBackup", () => {
 
 describe("remapProjectIds", () => {
   it("generates new UUIDs for all entities", () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     const remapped = remapProjectIds(data);
 
@@ -918,7 +926,7 @@ describe("remapProjectIds", () => {
   });
 
   it("remaps all projectId fields to the new project ID", () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     const remapped = remapProjectIds(data);
 
@@ -942,7 +950,7 @@ describe("remapProjectIds", () => {
   });
 
   it("correctly remaps cross-references", () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     const remapped = remapProjectIds(data);
 
@@ -998,7 +1006,7 @@ describe("remapProjectIds", () => {
   });
 
   it("adds (Copy) suffix to project title", () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
     const remapped = remapProjectIds(data);
     expect(remapped.project.title).toBe("Test Novel (Copy)");
@@ -1009,7 +1017,7 @@ describe("remapProjectIds", () => {
 
 describe("round-trip export → import", () => {
   it("produces identical data after export then import", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     const data = buildTestProjectData(projectId);
 
     // Insert into DB
@@ -1106,7 +1114,7 @@ describe("round-trip export → import", () => {
   });
 
   it("full backup round-trip preserves settings", async () => {
-    const projectId = crypto.randomUUID();
+    const projectId = crypto.randomUUID() as ProjectId;
     await db.projects.add(makeProject({ id: projectId, title: "My Novel" }));
     const settings = makeAppSettings({
       theme: "dark",

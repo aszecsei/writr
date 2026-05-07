@@ -10,7 +10,11 @@ import {
   reorderWorldbuildingDocs,
   updateWorldbuildingDoc,
 } from "@/db/operations";
-import type { WorldbuildingDoc } from "@/db/schemas";
+import type {
+  ProjectId,
+  WorldbuildingDoc,
+  WorldbuildingDocId,
+} from "@/db/schemas";
 import { useWorldbuildingDocsByProject } from "@/hooks/data/useBibleEntries";
 import {
   buildWorldbuildingTree,
@@ -21,13 +25,19 @@ import {
 type Tab = "tree" | "compiled";
 
 export default function WorldbuildingListPage() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const docs = useWorldbuildingDocsByProject(params.projectId);
   const [tab, setTab] = useState<Tab>("tree");
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<WorldbuildingDocId>>(
+    () => new Set(),
+  );
+  const [editingDocId, setEditingDocId] = useState<WorldbuildingDocId | null>(
+    null,
+  );
   const [editingTitle, setEditingTitle] = useState("");
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<WorldbuildingDocId | null>(
+    null,
+  );
 
   const tree = useMemo(() => buildWorldbuildingTree(docs ?? []), [docs]);
 
@@ -53,7 +63,7 @@ export default function WorldbuildingListPage() {
     setInitialized(true);
   }
 
-  function toggleExpand(id: string) {
+  function toggleExpand(id: WorldbuildingDocId) {
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -62,7 +72,7 @@ export default function WorldbuildingListPage() {
     });
   }
 
-  async function handleAddDoc(parentDocId: string | null = null) {
+  async function handleAddDoc(parentDocId: WorldbuildingDocId | null = null) {
     const doc = await createWorldbuildingDoc({
       projectId: params.projectId,
       title: "New Document",
@@ -74,7 +84,7 @@ export default function WorldbuildingListPage() {
     setEditingTitle("New Document");
   }
 
-  async function handleRenameDoc(id: string) {
+  async function handleRenameDoc(id: WorldbuildingDocId) {
     if (editingTitle.trim()) {
       await updateWorldbuildingDoc(id, { title: editingTitle.trim() });
     }
@@ -97,7 +107,10 @@ export default function WorldbuildingListPage() {
     await reorderWorldbuildingDocs(ids);
   }
 
-  async function handleMoveToParent(docId: string, newParentId: string | null) {
+  async function handleMoveToParent(
+    docId: WorldbuildingDocId,
+    newParentId: WorldbuildingDocId | null,
+  ) {
     // Append at end of target's children
     const targetChildren = (docs ?? []).filter(
       (d) => d.parentDocId === newParentId,
@@ -108,7 +121,10 @@ export default function WorldbuildingListPage() {
     });
   }
 
-  function isDescendant(ancestorId: string, nodeId: string): boolean {
+  function isDescendant(
+    ancestorId: WorldbuildingDocId,
+    nodeId: WorldbuildingDocId,
+  ): boolean {
     let cursor = nodeId;
     const docMap = new Map((docs ?? []).map((d) => [d.id, d]));
     while (cursor) {
@@ -211,7 +227,10 @@ export default function WorldbuildingListPage() {
           <select
             value={node.doc.parentDocId ?? ""}
             onChange={(e) =>
-              handleMoveToParent(node.doc.id, e.target.value || null)
+              handleMoveToParent(
+                node.doc.id,
+                (e.target.value || null) as WorldbuildingDocId | null,
+              )
             }
             className="rounded border border-neutral-200 bg-transparent px-2 py-1 text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400"
             title="Move to parent"

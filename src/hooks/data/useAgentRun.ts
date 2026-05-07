@@ -2,9 +2,9 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import type { AgentRun } from "@/db/schemas";
+import type { AgentRun, AgentRunId, ProjectId } from "@/db/schemas";
 
-export function useAgentRun(runId: string | null): AgentRun | undefined {
+export function useAgentRun(runId: AgentRunId | null): AgentRun | undefined {
   return useLiveQuery(
     () => (runId ? db.agentRuns.get(runId) : undefined),
     [runId],
@@ -12,7 +12,7 @@ export function useAgentRun(runId: string | null): AgentRun | undefined {
 }
 
 export function useAgentRunsByProject(
-  projectId: string | null,
+  projectId: ProjectId | null,
 ): AgentRun[] | undefined {
   return useLiveQuery(
     () =>

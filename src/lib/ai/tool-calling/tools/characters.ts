@@ -4,7 +4,7 @@ import {
   getCharacter,
   updateCharacter,
 } from "@/db/operations/characters";
-import { CharacterRoleEnum } from "@/db/schemas";
+import { type CharacterId, CharacterRoleEnum } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -99,9 +99,9 @@ export const updateCharacterTool = defineTool({
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
-    const existing = await getCharacter(id);
+    const existing = await getCharacter(id as CharacterId);
     if (!existing) return fail(`Character not found: ${id}`);
-    await updateCharacter(id, fields);
+    await updateCharacter(id as CharacterId, fields);
     return ok(`Updated character "${existing.name}"`);
   },
 });

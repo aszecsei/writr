@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { makeChapter, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";
+import type { ChapterId, ProjectId } from "../schemas";
 import { reorderChapters, updateChapterContent } from "./chapters";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
 describe("reorderChapters", () => {
   beforeEach(async () => {
@@ -78,7 +79,7 @@ describe("updateChapterContent", () => {
   it("does not throw for a nonexistent chapter ID", async () => {
     await expect(
       updateChapterContent(
-        "00000000-0000-4000-8000-999999999999",
+        "00000000-0000-4000-8000-999999999999" as ChapterId,
         "content",
         10,
       ),

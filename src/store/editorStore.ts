@@ -1,8 +1,23 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import type {
+  ChapterId,
+  StyleGuideEntryId,
+  WorldbuildingDocId,
+} from "@/db/schemas";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export type DocumentType = "chapter" | "worldbuilding" | "style-guide";
+
+/**
+ * The id of the active document, branded by its document type. Consumers
+ * narrow via `activeDocumentType` to read the id with the correct brand —
+ * the union members are pairwise distinct.
+ */
+export type ActiveDocumentId =
+  | ChapterId
+  | WorldbuildingDocId
+  | StyleGuideEntryId;
 
 /**
  * Cross-component editor command. The AI panel posts these via
@@ -29,7 +44,7 @@ export interface PendingInsertion {
  */
 export interface PendingStagedEdit {
   /** Safety check: edit applies only when this matches activeDocumentId. */
-  chapterId: string;
+  chapterId: ChapterId;
   kind: "replace" | "insert_at" | "append" | "full_chapter";
   /** Required for replace / insert_at. Matched verbatim against the doc text. */
   anchorText?: string;
@@ -45,7 +60,7 @@ export interface PendingStagedEdit {
 }
 
 interface EditorState {
-  activeDocumentId: string | null;
+  activeDocumentId: ActiveDocumentId | null;
   activeDocumentType: DocumentType | null;
   isDirty: boolean;
   saveStatus: SaveStatus;
@@ -57,7 +72,7 @@ interface EditorState {
   pendingInsertion: PendingInsertion | null;
   pendingStagedEdit: PendingStagedEdit | null;
 
-  setActiveDocument: (id: string, type: DocumentType) => void;
+  setActiveDocument: (id: ActiveDocumentId, type: DocumentType) => void;
   clearActiveDocument: () => void;
   markDirty: () => void;
   markSaving: () => void;
@@ -172,3 +187,26 @@ export const useEditorStore = create<EditorState>()(
       }),
   })),
 );
+
+// ─── Typed selectors ────────────────────────────────────────────────
+//
+// `activeDocumentId` and `activeDocumentType` are coupled — the id's brand
+// matches the type. These selectors do the discriminator check once so
+// consumers can read a typed id without a cast.
+
+export const selectActiveChapterId = (s: EditorState): ChapterId | null =>
+  s.activeDocumentType === "chapter" ? (s.activeDocumentId as ChapterId) : null;
+
+export const selectActiveWorldbuildingDocId = (
+  s: EditorState,
+): WorldbuildingDocId | null =>
+  s.activeDocumentType === "worldbuilding"
+    ? (s.activeDocumentId as WorldbuildingDocId)
+    : null;
+
+export const selectActiveStyleGuideEntryId = (
+  s: EditorState,
+): StyleGuideEntryId | null =>
+  s.activeDocumentType === "style-guide"
+    ? (s.activeDocumentId as StyleGuideEntryId)
+    : null;

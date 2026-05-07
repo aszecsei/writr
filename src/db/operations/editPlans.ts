@@ -1,25 +1,30 @@
 import { db } from "../database";
 import {
+  type AgentRunId,
   type EditPlan,
+  type EditPlanId,
   EditPlanSchema,
   type EditPlanStatus,
   type EditPlanTier,
+  type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
 export async function getEditPlanByRun(
-  runId: string,
+  runId: AgentRunId,
 ): Promise<EditPlan | undefined> {
   return db.editPlans.where({ runId }).first();
 }
 
-export async function getEditPlan(id: string): Promise<EditPlan | undefined> {
+export async function getEditPlan(
+  id: EditPlanId,
+): Promise<EditPlan | undefined> {
   return db.editPlans.get(id);
 }
 
 export interface UpsertEditPlanInput {
-  projectId: string;
-  runId: string;
+  projectId: ProjectId;
+  runId: AgentRunId;
   status?: EditPlanStatus;
   currentTier?: number;
   tiers?: EditPlanTier[];
@@ -64,9 +69,9 @@ export async function upsertEditPlan(
  * `finalize_tier` to commit one tier without rewriting the others.
  */
 export async function setEditPlanTier(
-  runId: string,
+  runId: AgentRunId,
   tier: EditPlanTier,
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<EditPlan> {
   const existing = await getEditPlanByRun(runId);
   const tiers = existing ? [...existing.tiers] : [];
@@ -84,12 +89,12 @@ export async function setEditPlanTier(
 }
 
 export async function updateEditPlanStatus(
-  id: string,
+  id: EditPlanId,
   status: EditPlanStatus,
 ): Promise<void> {
   await db.editPlans.update(id, { status, updatedAt: now() });
 }
 
-export async function deleteEditPlan(id: string): Promise<void> {
+export async function deleteEditPlan(id: EditPlanId): Promise<void> {
   await db.editPlans.delete(id);
 }

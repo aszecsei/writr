@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Calendar, Clock, FileText, Pencil, Target, Type } from "lucide-react";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { WritingStatsDashboard } from "@/components/stats";
+import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data/source";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useWritingStats } from "@/hooks/editor/useWritingStats";
@@ -12,7 +13,7 @@ import { getTerm } from "@/lib/terminology";
 import { useUiStore } from "@/store/uiStore";
 
 export interface ProjectOverviewBodyProps {
-  projectId: string;
+  projectId: ProjectId;
   readOnly: boolean;
 }
 

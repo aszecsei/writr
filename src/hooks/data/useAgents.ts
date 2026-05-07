@@ -2,7 +2,11 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import type { AgentDefinition } from "@/db/schemas";
+import type {
+  AgentDefinition,
+  AgentDefinitionId,
+  ProjectId,
+} from "@/db/schemas";
 
 /**
  * List agents available for a project. Includes:
@@ -14,7 +18,7 @@ import type { AgentDefinition } from "@/db/schemas";
  * `useAllAgents` (which includes them) for the Manage Agents view.
  */
 export function useChatAgents(
-  projectId: string | null,
+  projectId: ProjectId | null,
 ): AgentDefinition[] | undefined {
   return useLiveQuery(async () => {
     const all = await db.agents.toArray();
@@ -38,7 +42,7 @@ export function useChatAgents(
  * Built-in agents come first in canonical order, then user agents A-Z.
  */
 export function useAllAgents(
-  projectId: string | null,
+  projectId: ProjectId | null,
 ): AgentDefinition[] | undefined {
   return useLiveQuery(async () => {
     const all = await db.agents.toArray();
@@ -56,7 +60,9 @@ export function useAllAgents(
   }, [projectId]);
 }
 
-export function useAgent(id: string | null): AgentDefinition | undefined {
+export function useAgent(
+  id: AgentDefinitionId | null,
+): AgentDefinition | undefined {
   return useLiveQuery(() => (id ? db.agents.get(id) : undefined), [id]);
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { CharacterId, ProjectId, WorldbuildingDocId } from "@/db/schemas";
 import {
   makeCharacter,
   makeLocation,
@@ -14,7 +15,7 @@ import {
   serializeWorldbuildingTree,
 } from "./serialize";
 
-const pid = "00000000-0000-4000-8000-000000000001";
+const pid = "00000000-0000-4000-8000-000000000001" as ProjectId;
 
 describe("serializeCharacter", () => {
   it("serializes minimal character (no optional sub-elements)", () => {
@@ -99,13 +100,13 @@ describe("serializeCharacter", () => {
       name: "Illustrated",
       images: [
         {
-          id: "img-1",
+          id: "img-1" as never,
           url: "https://example.com/a.jpg",
           caption: "A portrait",
           isPrimary: true,
         },
         {
-          id: "img-2",
+          id: "img-2" as never,
           url: "https://example.com/b.jpg",
           caption: "In battle",
           isPrimary: false,
@@ -125,13 +126,13 @@ describe("serializeCharacter", () => {
       name: "Partial",
       images: [
         {
-          id: "img-1",
+          id: "img-1" as never,
           url: "https://example.com/a.jpg",
           caption: "Visible",
           isPrimary: true,
         },
         {
-          id: "img-2",
+          id: "img-2" as never,
           url: "https://example.com/b.jpg",
           caption: "",
           isPrimary: false,
@@ -149,7 +150,7 @@ describe("serializeCharacter", () => {
       name: "NoCaptions",
       images: [
         {
-          id: "img-1",
+          id: "img-1" as never,
           url: "https://example.com/a.jpg",
           caption: "",
           isPrimary: true,
@@ -181,8 +182,8 @@ describe("serializeLocation", () => {
       projectId: pid,
       name: "Tavern",
       linkedCharacterIds: [
-        "00000000-0000-4000-8000-000000000010",
-        "00000000-0000-4000-8000-000000000020",
+        "00000000-0000-4000-8000-000000000010" as CharacterId,
+        "00000000-0000-4000-8000-000000000020" as CharacterId,
       ],
     });
     const xml = serializeLocation(loc, charMap);
@@ -197,8 +198,8 @@ describe("serializeLocation", () => {
       projectId: pid,
       name: "Castle",
       linkedCharacterIds: [
-        "00000000-0000-4000-8000-000000000010",
-        "00000000-0000-4000-8000-ffffffffffff",
+        "00000000-0000-4000-8000-000000000010" as CharacterId,
+        "00000000-0000-4000-8000-ffffffffffff" as CharacterId,
       ],
     });
     const xml = serializeLocation(loc, charMap);
@@ -226,7 +227,7 @@ describe("serializeLocation", () => {
       name: "Castle",
       images: [
         {
-          id: "img-1",
+          id: "img-1" as never,
           url: "https://example.com/castle.jpg",
           caption: "The main gate",
           isPrimary: true,
@@ -245,7 +246,7 @@ describe("serializeLocation", () => {
       name: "Village",
       images: [
         {
-          id: "img-1",
+          id: "img-1" as never,
           url: "https://example.com/a.jpg",
           caption: "",
           isPrimary: false,
@@ -294,7 +295,9 @@ describe("serializeTimelineEvent", () => {
     const e = makeTimelineEvent({
       projectId: pid,
       title: "Quest",
-      linkedCharacterIds: ["00000000-0000-4000-8000-000000000010"],
+      linkedCharacterIds: [
+        "00000000-0000-4000-8000-000000000010" as CharacterId,
+      ],
     });
     const xml = serializeTimelineEvent(e, charMap);
     expect(xml).toContain("<characters-involved>Hero</characters-involved>");
@@ -308,7 +311,7 @@ describe("serializeWorldbuildingTree", () => {
 
   it("renders nested parent-child XML", () => {
     const parent = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      id: "00000000-0000-4000-8000-aaaaaaaaaaaa" as WorldbuildingDocId,
       projectId: pid,
       title: "World",
       content: "Big world",
@@ -317,7 +320,7 @@ describe("serializeWorldbuildingTree", () => {
       projectId: pid,
       title: "Region",
       content: "Small region",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa" as WorldbuildingDocId,
     });
     const xml = serializeWorldbuildingTree([parent, child]);
     expect(xml).toContain('<doc title="World">');
@@ -363,8 +366,8 @@ describe("serializeRelationship", () => {
     ]);
     const r = makeRelationship({
       projectId: pid,
-      sourceCharacterId: "00000000-0000-4000-8000-000000000010",
-      targetCharacterId: "00000000-0000-4000-8000-000000000020",
+      sourceCharacterId: "00000000-0000-4000-8000-000000000010" as CharacterId,
+      targetCharacterId: "00000000-0000-4000-8000-000000000020" as CharacterId,
       type: "sibling",
     });
     const xml = serializeRelationship(r, charMap);
@@ -380,8 +383,8 @@ describe("serializeRelationship", () => {
     ]);
     const r = makeRelationship({
       projectId: pid,
-      sourceCharacterId: "00000000-0000-4000-8000-000000000010",
-      targetCharacterId: "00000000-0000-4000-8000-000000000020",
+      sourceCharacterId: "00000000-0000-4000-8000-000000000010" as CharacterId,
+      targetCharacterId: "00000000-0000-4000-8000-000000000020" as CharacterId,
       type: "custom",
       customLabel: "nemesis",
     });
@@ -393,8 +396,8 @@ describe("serializeRelationship", () => {
     const charMap = new Map([["00000000-0000-4000-8000-000000000020", "Bob"]]);
     const r = makeRelationship({
       projectId: pid,
-      sourceCharacterId: "00000000-0000-4000-8000-ffffffffffff",
-      targetCharacterId: "00000000-0000-4000-8000-000000000020",
+      sourceCharacterId: "00000000-0000-4000-8000-ffffffffffff" as CharacterId,
+      targetCharacterId: "00000000-0000-4000-8000-000000000020" as CharacterId,
       type: "sibling",
     });
     expect(serializeRelationship(r, charMap)).toBe("");
@@ -406,8 +409,8 @@ describe("serializeRelationship", () => {
     ]);
     const r = makeRelationship({
       projectId: pid,
-      sourceCharacterId: "00000000-0000-4000-8000-000000000010",
-      targetCharacterId: "00000000-0000-4000-8000-ffffffffffff",
+      sourceCharacterId: "00000000-0000-4000-8000-000000000010" as CharacterId,
+      targetCharacterId: "00000000-0000-4000-8000-ffffffffffff" as CharacterId,
       type: "sibling",
     });
     expect(serializeRelationship(r, charMap)).toBe("");

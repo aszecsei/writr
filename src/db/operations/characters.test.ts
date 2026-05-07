@@ -5,10 +5,11 @@ import {
   resetIdCounter,
 } from "@/test/helpers";
 import { db } from "../database";
+import type { CharacterId, ProjectId } from "../schemas";
 import { deleteCharacter } from "./characters";
 
-const projectA = "a1111111-1111-4111-a111-111111111111";
-const projectB = "b1111111-1111-4111-a111-111111111111";
+const projectA = "a1111111-1111-4111-a111-111111111111" as ProjectId;
+const projectB = "b1111111-1111-4111-a111-111111111111" as ProjectId;
 
 describe("deleteCharacter", () => {
   beforeEach(async () => {
@@ -126,7 +127,7 @@ describe("deleteCharacter", () => {
     const otherRel = makeRelationship({
       projectId: projectB,
       sourceCharacterId: otherChar.id,
-      targetCharacterId: otherChar.id.replace(/1$/, "9"),
+      targetCharacterId: otherChar.id.replace(/1$/, "9") as CharacterId,
       type: "sibling",
     });
     await db.characterRelationships.add(otherRel);

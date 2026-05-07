@@ -15,25 +15,33 @@ import { listBiblePaths } from "@/db/operations/readerBible";
 import { createSnapshotManifest } from "@/db/operations/snapshotManifests";
 import { createSnapshot } from "@/db/operations/snapshots";
 import { listWorkUnitsByTier, updateWorkUnit } from "@/db/operations/workUnits";
-import type { ProposedEdit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ChapterId,
+  ChapterSnapshotId,
+  ProjectId,
+  ProposedEdit,
+  ProposedEditId,
+  SnapshotManifestId,
+} from "@/db/schemas";
 import { applyEditsToContent } from "./stagedChapterContent";
 
 export interface ApplyTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   /** Only edits with these ids will be applied. */
-  approvedEditIds: string[];
+  approvedEditIds: ProposedEditId[];
   /** Optional human-supplied label for the resulting snapshot manifest. */
   manifestName?: string;
 }
 
 export interface ApplyTierResult {
-  manifestId: string;
-  appliedEditIds: string[];
-  rejectedEditIds: string[];
-  discardedEditIds: string[];
-  affectedChapterIds: string[];
+  manifestId: SnapshotManifestId;
+  appliedEditIds: ProposedEditId[];
+  rejectedEditIds: ProposedEditId[];
+  discardedEditIds: ProposedEditId[];
+  affectedChapterIds: ChapterId[];
 }
 
 /**
@@ -72,7 +80,7 @@ export async function applyTier(
   );
 
   // Group approved edits by chapter so we patch each chapter in one pass.
-  const byChapter = new Map<string, ProposedEdit[]>();
+  const byChapter = new Map<ChapterId, ProposedEdit[]>();
   for (const edit of approvedEdits) {
     const list = byChapter.get(edit.chapterId) ?? [];
     list.push(edit);
@@ -80,7 +88,7 @@ export async function applyTier(
   }
 
   // 1) Snapshot affected chapters BEFORE applying edits.
-  const chapterSnapshotIds: string[] = [];
+  const chapterSnapshotIds: ChapterSnapshotId[] = [];
   for (const chapterId of byChapter.keys()) {
     const chapter = await getChapter(chapterId);
     if (!chapter) continue;
@@ -103,8 +111,8 @@ export async function applyTier(
   ]);
 
   // 3) Apply edits per chapter (reverse offset order handled in the helper).
-  const appliedEditIds: string[] = [];
-  const discardedEditIds: string[] = [];
+  const appliedEditIds: ProposedEditId[] = [];
+  const discardedEditIds: ProposedEditId[] = [];
 
   for (const [chapterId, edits] of byChapter.entries()) {
     const chapter = await getChapter(chapterId);

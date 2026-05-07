@@ -1,4 +1,10 @@
-import type { Chapter, ReaderMode } from "@/db/schemas";
+import type {
+  AgentRunId,
+  Chapter,
+  ChapterId,
+  ProjectId,
+  ReaderMode,
+} from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
@@ -206,7 +212,7 @@ export function buildComprehensionBriefing(
 
 interface ThematicBriefingInput {
   passNumber: number;
-  chapterIdsInScope?: string[];
+  chapterIdsInScope?: ChapterId[];
 }
 
 function buildThematicBriefing(input: ThematicBriefingInput): string {
@@ -228,7 +234,7 @@ function buildThematicBriefing(input: ThematicBriefingInput): string {
 
 interface SelfAnswerBriefingInput {
   passNumber: number;
-  chapterIdsInScope?: string[];
+  chapterIdsInScope?: ChapterId[];
 }
 
 function buildSelfAnswerBriefing(input: SelfAnswerBriefingInput): string {
@@ -253,8 +259,8 @@ function buildSelfAnswerBriefing(input: SelfAnswerBriefingInput): string {
 export type { ReaderMode } from "@/db/schemas";
 
 export interface MakeReaderAgentInput {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   /** 1-based pass index within the run. */
   passNumber: number;
   mode: ReaderMode;
@@ -266,7 +272,7 @@ export interface MakeReaderAgentInput {
   /** Required for `comprehension`: total chapters in the pass-1 scope. */
   totalChapters?: number;
   /** Optional for `thematic` / `self-answer`: chapter id subset. */
-  chapterIdsInScope?: string[];
+  chapterIdsInScope?: ChapterId[];
 }
 
 /**

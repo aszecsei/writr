@@ -1,21 +1,26 @@
 import { db } from "../database";
 import {
   type Character,
+  type CharacterId,
   type CharacterRelationship,
+  type CharacterRelationshipId,
   CharacterRelationshipSchema,
   CharacterSchema,
+  type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
 // ─── Characters ──────────────────────────────────────────────────────
 
 export async function getCharactersByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<Character[]> {
   return db.characters.where({ projectId }).sortBy("name");
 }
 
-export async function getCharacter(id: string): Promise<Character | undefined> {
+export async function getCharacter(
+  id: CharacterId,
+): Promise<Character | undefined> {
   return db.characters.get(id);
 }
 
@@ -71,13 +76,13 @@ export async function createCharacter(
 }
 
 export async function updateCharacter(
-  id: string,
+  id: CharacterId,
   data: Partial<Omit<Character, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
   await db.characters.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteCharacter(id: string): Promise<void> {
+export async function deleteCharacter(id: CharacterId): Promise<void> {
   await db.transaction(
     "rw",
     [db.characters, db.characterRelationships],
@@ -98,7 +103,7 @@ export async function deleteCharacter(id: string): Promise<void> {
 // ─── Character Relationships ────────────────────────────────────────
 
 export async function getRelationshipsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<CharacterRelationship[]> {
   return db.characterRelationships.where({ projectId }).toArray();
 }
@@ -149,12 +154,14 @@ export async function createRelationship(
 }
 
 export async function updateRelationship(
-  id: string,
+  id: CharacterRelationshipId,
   data: Partial<Pick<CharacterRelationship, "type" | "customLabel">>,
 ): Promise<void> {
   await db.characterRelationships.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteRelationship(id: string): Promise<void> {
+export async function deleteRelationship(
+  id: CharacterRelationshipId,
+): Promise<void> {
   await db.characterRelationships.delete(id);
 }

@@ -4,7 +4,7 @@
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
-import type { Comment } from "@/db/schemas";
+import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { useAutoSave } from "@/hooks/editor/useAutoSave";
@@ -160,7 +160,7 @@ function findReplaceRangeInDoc(
 }
 
 interface ChapterEditorProps {
-  chapterId: string;
+  chapterId: ChapterId;
 }
 
 export function ChapterEditor({ chapterId }: ChapterEditorProps) {
@@ -308,7 +308,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
 
   // Comments adapter (Dexie when solo; Yjs-backed during a host session)
   const commentsAdapter = useCommentsAdapter({
-    projectId: activeProjectId ?? "",
+    projectId: (activeProjectId ?? "") as ProjectId,
     chapterId,
     editor: editorForComments,
   });

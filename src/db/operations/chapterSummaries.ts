@@ -1,5 +1,10 @@
 import { db } from "../database";
-import { type ChapterSummary, ChapterSummarySchema } from "../schemas";
+import {
+  type ChapterId,
+  type ChapterSummary,
+  ChapterSummarySchema,
+  type ProjectId,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 /**
@@ -20,7 +25,7 @@ export async function hashChapterContent(content: string): Promise<string> {
  * summary was generated.
  */
 export async function getChapterSummary(
-  chapterId: string,
+  chapterId: ChapterId,
   sourceContentHash: string,
 ): Promise<ChapterSummary | undefined> {
   return db.chapterSummaries
@@ -30,8 +35,8 @@ export async function getChapterSummary(
 }
 
 export interface UpsertChapterSummaryInput {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   sourceContentHash: string;
   summary: string;
 }

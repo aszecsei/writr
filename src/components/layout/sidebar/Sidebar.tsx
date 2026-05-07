@@ -5,6 +5,7 @@ import { BookOpen, Bot, FileText, Settings } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { MusicControlBar } from "@/components/radio/MusicControlBar";
+import type { ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
 import { AgentsNav } from "./AgentsNav";
@@ -25,7 +26,7 @@ const ALL_PANELS: PanelDef[] = [
 ];
 
 export function Sidebar() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const projectId = params.projectId;
   const pathname = usePathname();
   const sidebarPanel = useUiStore((s) => s.sidebarPanel);

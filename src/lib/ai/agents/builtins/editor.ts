@@ -1,4 +1,9 @@
-import type { ReaderBibleViewEntry, WorkUnit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ProjectId,
+  ReaderBibleViewEntry,
+  WorkUnit,
+} from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
@@ -71,8 +76,8 @@ prefix/anchorText/suffix are concatenated VERBATIM — do not insert spaces betw
 Do NOT plan further work. Do NOT propose edits outside your work unit's placement. Stay in scope.`;
 
 export interface MakeEditorAgentInput {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   workUnit: WorkUnit;
   /** Pre-loaded bible refs (path -> value). Inlined into the briefing so the
    * editor doesn't have to round-trip through bible_read for every constraint. */

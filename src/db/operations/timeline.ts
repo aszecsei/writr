@@ -1,17 +1,22 @@
 import { db } from "../database";
-import { type TimelineEvent, TimelineEventSchema } from "../schemas";
+import {
+  type ProjectId,
+  type TimelineEvent,
+  type TimelineEventId,
+  TimelineEventSchema,
+} from "../schemas";
 import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Timeline Events ────────────────────────────────────────────────
 
 export async function getTimelineByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<TimelineEvent[]> {
   return db.timelineEvents.where({ projectId }).sortBy("order");
 }
 
 export async function getTimelineEvent(
-  id: string,
+  id: TimelineEventId,
 ): Promise<TimelineEvent | undefined> {
   return db.timelineEvents.get(id);
 }
@@ -51,18 +56,18 @@ export async function createTimelineEvent(
 }
 
 export async function updateTimelineEvent(
-  id: string,
+  id: TimelineEventId,
   data: Partial<Omit<TimelineEvent, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
   await db.timelineEvents.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteTimelineEvent(id: string): Promise<void> {
+export async function deleteTimelineEvent(id: TimelineEventId): Promise<void> {
   await db.timelineEvents.delete(id);
 }
 
 export async function reorderTimelineEvents(
-  orderedIds: string[],
+  orderedIds: TimelineEventId[],
 ): Promise<void> {
   return reorderEntities(db.timelineEvents, orderedIds);
 }

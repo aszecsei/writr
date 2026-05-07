@@ -1,19 +1,24 @@
 import { db } from "../database";
 import {
+  type ChapterId,
   type OutlineGridCell,
+  type OutlineGridCellId,
   OutlineGridCellSchema,
   type OutlineGridColumn,
+  type OutlineGridColumnId,
   OutlineGridColumnSchema,
   type OutlineGridRow,
+  type OutlineGridRowId,
   OutlineGridRowSchema,
+  type ProjectId,
 } from "../schemas";
 import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Shared helper ──────────────────────────────────────────────────
 
-async function shiftOrdersUp(
-  entities: { id: string; order: number }[],
-  updateFn: (id: string, order: number) => Promise<unknown>,
+async function shiftOrdersUp<I extends string>(
+  entities: { id: I; order: number }[],
+  updateFn: (id: I, order: number) => Promise<unknown>,
 ): Promise<void> {
   for (const entity of entities) {
     await updateFn(entity.id, entity.order + 1);
@@ -23,7 +28,7 @@ async function shiftOrdersUp(
 // ─── Outline Grid Columns ────────────────────────────────────────────
 
 export async function getOutlineGridColumnsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<OutlineGridColumn[]> {
   return db.outlineGridColumns.where({ projectId }).sortBy("order");
 }
@@ -51,13 +56,15 @@ export async function createOutlineGridColumn(
 }
 
 export async function updateOutlineGridColumn(
-  id: string,
+  id: OutlineGridColumnId,
   data: Partial<Pick<OutlineGridColumn, "title" | "width">>,
 ): Promise<void> {
   await db.outlineGridColumns.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteOutlineGridColumn(id: string): Promise<void> {
+export async function deleteOutlineGridColumn(
+  id: OutlineGridColumnId,
+): Promise<void> {
   await db.transaction(
     "rw",
     [db.outlineGridColumns, db.outlineGridCells],
@@ -69,7 +76,7 @@ export async function deleteOutlineGridColumn(id: string): Promise<void> {
 }
 
 export async function insertOutlineGridColumnAt(
-  projectId: string,
+  projectId: ProjectId,
   title: string,
   atOrder: number,
 ): Promise<OutlineGridColumn> {
@@ -96,7 +103,7 @@ export async function insertOutlineGridColumnAt(
 }
 
 export async function reorderOutlineGridColumns(
-  orderedIds: string[],
+  orderedIds: OutlineGridColumnId[],
 ): Promise<void> {
   return reorderEntities(db.outlineGridColumns, orderedIds);
 }
@@ -104,7 +111,7 @@ export async function reorderOutlineGridColumns(
 // ─── Outline Grid Rows ───────────────────────────────────────────────
 
 export async function getOutlineGridRowsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<OutlineGridRow[]> {
   return db.outlineGridRows.where({ projectId }).sortBy("order");
 }
@@ -132,13 +139,15 @@ export async function createOutlineGridRow(
 }
 
 export async function updateOutlineGridRow(
-  id: string,
+  id: OutlineGridRowId,
   data: Partial<Pick<OutlineGridRow, "linkedChapterId" | "label">>,
 ): Promise<void> {
   await db.outlineGridRows.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteOutlineGridRow(id: string): Promise<void> {
+export async function deleteOutlineGridRow(
+  id: OutlineGridRowId,
+): Promise<void> {
   await db.transaction(
     "rw",
     [db.outlineGridRows, db.outlineGridCells],
@@ -150,16 +159,16 @@ export async function deleteOutlineGridRow(id: string): Promise<void> {
 }
 
 export async function getOutlineGridRowByChapterId(
-  chapterId: string,
+  chapterId: ChapterId,
 ): Promise<OutlineGridRow | undefined> {
   return db.outlineGridRows.where({ linkedChapterId: chapterId }).first();
 }
 
 export async function insertOutlineGridRowAt(
-  projectId: string,
+  projectId: ProjectId,
   atOrder: number,
   label = "",
-  linkedChapterId: string | null = null,
+  linkedChapterId: ChapterId | null = null,
 ): Promise<OutlineGridRow> {
   return db.transaction("rw", db.outlineGridRows, async () => {
     const toShift = await db.outlineGridRows
@@ -184,7 +193,7 @@ export async function insertOutlineGridRowAt(
 }
 
 export async function reorderOutlineGridRows(
-  orderedIds: string[],
+  orderedIds: OutlineGridRowId[],
 ): Promise<void> {
   return reorderEntities(db.outlineGridRows, orderedIds);
 }
@@ -192,14 +201,14 @@ export async function reorderOutlineGridRows(
 // ─── Outline Grid Cells ──────────────────────────────────────────────
 
 export async function getOutlineGridCellsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<OutlineGridCell[]> {
   return db.outlineGridCells.where({ projectId }).toArray();
 }
 
 export async function getOutlineGridCell(
-  rowId: string,
-  columnId: string,
+  rowId: OutlineGridRowId,
+  columnId: OutlineGridColumnId,
 ): Promise<OutlineGridCell | undefined> {
   return db.outlineGridCells
     .where("[rowId+columnId]")
@@ -235,8 +244,8 @@ export async function upsertOutlineGridCell(
 }
 
 export async function updateOutlineGridCellColor(
-  rowId: string,
-  columnId: string,
+  rowId: OutlineGridRowId,
+  columnId: OutlineGridColumnId,
   color: OutlineGridCell["color"],
 ): Promise<void> {
   const existing = await getOutlineGridCell(rowId, columnId);
@@ -245,6 +254,8 @@ export async function updateOutlineGridCellColor(
   }
 }
 
-export async function deleteOutlineGridCell(id: string): Promise<void> {
+export async function deleteOutlineGridCell(
+  id: OutlineGridCellId,
+): Promise<void> {
   await db.outlineGridCells.delete(id);
 }

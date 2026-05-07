@@ -1,7 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@/db/database";
-import type { Comment } from "@/db/schemas";
+import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import {
   type DexieMirror,
   YjsCommentsAdapter,
@@ -13,8 +13,8 @@ import { useCollabStore } from "@/store/collabStore";
 import { useCommentsByChapter } from "./useComments";
 
 export interface UseCommentsAdapterOptions {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   /**
    * The bound TipTap editor. Used by the Yjs adapter to map Y.RelativePosition
    * back to absolute PM offsets. Null is acceptable while the editor is
@@ -52,7 +52,7 @@ const dexieMirror: DexieMirror = {
   async upsert(comment: Comment) {
     await db.comments.put(comment);
   },
-  async remove(id: string) {
+  async remove(id) {
     await db.comments.delete(id);
   },
 };

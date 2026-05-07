@@ -1,12 +1,12 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
-import type { Project } from "@/db/schemas";
+import type { Project, ProjectId } from "@/db/schemas";
 import { ProjectCard } from "./ProjectCard";
 
 interface ProjectGridProps {
   projects: Project[];
-  onContextMenu?: (e: React.MouseEvent, projectId: string) => void;
+  onContextMenu?: (e: React.MouseEvent, projectId: ProjectId) => void;
 }
 
 export function ProjectGrid({ projects, onContextMenu }: ProjectGridProps) {

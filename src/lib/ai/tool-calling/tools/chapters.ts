@@ -5,7 +5,7 @@ import {
   getChaptersByProject,
   updateChapter,
 } from "@/db/operations/chapters";
-import { ChapterStatusEnum } from "@/db/schemas";
+import { type ChapterId, ChapterStatusEnum } from "@/db/schemas";
 import { extractSnippet, textContainsQuery } from "@/lib/search/highlight";
 import { defineTool } from "../types";
 import { fail, ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
@@ -80,9 +80,9 @@ export const updateChapterTool = defineTool({
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
-    const existing = await getChapter(id);
+    const existing = await getChapter(id as ChapterId);
     if (!existing) return fail(`Chapter not found: ${id}`);
-    await updateChapter(id, fields);
+    await updateChapter(id as ChapterId, fields);
     return ok(`Updated chapter "${existing.title}"`);
   },
 });
@@ -143,7 +143,7 @@ export const readChapterTool = defineTool({
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
   async execute(params, context) {
-    const chapter = await getChapter(params.id);
+    const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
       context.maxReadableChapterOrder !== undefined &&
@@ -161,7 +161,10 @@ export const readChapterTool = defineTool({
       const { getChapterWithStagedEdits } = await import(
         "@/lib/ai/agents/pipeline/stagedChapterContent"
       );
-      const staged = await getChapterWithStagedEdits(context.runId, params.id);
+      const staged = await getChapterWithStagedEdits(
+        context.runId,
+        params.id as ChapterId,
+      );
       if (staged) {
         return ok(
           `Chapter "${chapter.title}" (${staged.wordCount} words, with staged edits)`,
@@ -215,7 +218,7 @@ export const readChapterRangeTool = defineTool({
     .strip(),
   requiresApproval: false,
   async execute(params, context) {
-    const chapter = await getChapter(params.id);
+    const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
       context.maxReadableChapterOrder !== undefined &&
@@ -274,7 +277,7 @@ export const searchChapterTool = defineTool({
     .strip(),
   requiresApproval: false,
   async execute(params, context) {
-    const chapter = await getChapter(params.id);
+    const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
       context.maxReadableChapterOrder !== undefined &&
@@ -325,7 +328,7 @@ export const getChapterStructureTool = defineTool({
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
   async execute(params) {
-    const chapter = await getChapter(params.id);
+    const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     const paragraphs = splitParagraphs(chapter.content);
     const scenes: { start: number; end: number; preview: string }[] = [];

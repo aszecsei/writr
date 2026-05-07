@@ -11,7 +11,7 @@ import {
   pauseSprint,
   resumeSprint,
 } from "@/db/operations";
-import { useEditorStore } from "@/store/editorStore";
+import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
 import { useUiStore } from "@/store/uiStore";
@@ -20,8 +20,7 @@ export function useWritingSprint() {
   const activeSprint = useLiveQuery(() => getActiveSprint(), []);
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
-  const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
+  const activeChapterId = useEditorStore(selectActiveChapterId);
 
   const {
     setActiveSprint,
@@ -92,13 +91,11 @@ export function useWritingSprint() {
 
   const start = useCallback(
     async (durationMs: number, wordCountGoal: number | null = null) => {
-      const chapterId =
-        activeDocumentType === "chapter" ? activeDocumentId : null;
       await createSprint({
         durationMs,
         startWordCount: wordCount,
         projectId: activeProjectId,
-        chapterId,
+        chapterId: activeChapterId,
         wordCountGoal,
       });
       closeConfigModal();
@@ -109,13 +106,7 @@ export function useWritingSprint() {
         useUiStore.getState().setFocusMode(true);
       }
     },
-    [
-      activeProjectId,
-      activeDocumentId,
-      activeDocumentType,
-      wordCount,
-      closeConfigModal,
-    ],
+    [activeProjectId, activeChapterId, wordCount, closeConfigModal],
   );
 
   const pause = useCallback(async () => {

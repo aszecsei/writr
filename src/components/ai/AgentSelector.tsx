@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import type { AgentDefinitionId } from "@/db/schemas";
 import { useChatAgents } from "@/hooks/data/useAgents";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 
 interface AgentSelectorProps {
-  value: string | null;
-  onChange: (agentId: string) => void;
+  value: AgentDefinitionId | null;
+  onChange: (agentId: AgentDefinitionId) => void;
 }
 
 /**
@@ -39,7 +40,7 @@ export function AgentSelector({ value, onChange }: AgentSelectorProps) {
     <>
       <select
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value as AgentDefinitionId)}
         className="mt-2 block w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-xs dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
       >
         {agents?.map((a) => (

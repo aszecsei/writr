@@ -9,17 +9,23 @@ import {
   listSnapshotManifestsByRun,
 } from "@/db/operations/snapshotManifests";
 import { getSnapshot } from "@/db/operations/snapshots";
+import type {
+  AgentRunId,
+  ChapterId,
+  ProjectId,
+  SnapshotManifestId,
+} from "@/db/schemas";
 
 export interface RevertTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   /** The manifest to restore the project to. Downstream manifests are discarded. */
-  manifestId: string;
+  manifestId: SnapshotManifestId;
 }
 
 export interface RevertTierResult {
-  restoredChapterIds: string[];
-  discardedManifestIds: string[];
+  restoredChapterIds: ChapterId[];
+  discardedManifestIds: SnapshotManifestId[];
   discardedTiers: number[];
 }
 
@@ -47,7 +53,7 @@ export async function revertTier(
   const downstream = allManifests.filter((m) => m.createdAt > target.createdAt);
 
   // 1) Restore chapter content from the target manifest's snapshots.
-  const restoredChapterIds: string[] = [];
+  const restoredChapterIds: ChapterId[] = [];
   for (const snapshotId of target.chapterSnapshotIds) {
     const snap = await getSnapshot(snapshotId);
     if (!snap) continue;
@@ -82,7 +88,7 @@ export async function revertTier(
 
   // 3) Discard downstream proposed edits, work units, verifications, manifests.
   const discardedTiers: number[] = [];
-  const discardedManifestIds: string[] = [];
+  const discardedManifestIds: SnapshotManifestId[] = [];
 
   await db.transaction(
     "rw",

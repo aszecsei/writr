@@ -1,4 +1,4 @@
-import type { AgentDefinition } from "@/db/schemas";
+import type { AgentDefinition, ProjectId } from "@/db/schemas";
 import type { AiContext } from "../../types";
 import { makeChatAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
@@ -7,7 +7,7 @@ import { withVoiceMandate } from "./voice";
 
 export interface MakeChatAgentInput {
   definition: AgentDefinition;
-  projectId: string;
+  projectId: ProjectId;
   context: AiContext;
   /** App-level user customization, applied as a preamble. */
   customSystemPrompt?: string | null;

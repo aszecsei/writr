@@ -1,6 +1,7 @@
 import type * as Y from "yjs";
 import { z } from "zod/v4";
 import {
+  ChapterIdSchema,
   ChapterSchema,
   CharacterRelationshipSchema,
   CharacterSchema,
@@ -9,6 +10,7 @@ import {
   OutlineGridColumnSchema,
   OutlineGridRowSchema,
   type Project,
+  ProjectIdSchema,
   ProjectSchema,
   StyleGuideEntrySchema,
   TimelineEventSchema,
@@ -19,8 +21,8 @@ export const PROJECT_DOC_VERSION = 1;
 
 export const ProjectDocMetaSchema = z.object({
   mode: z.literal("project"),
-  projectId: z.uuid(),
-  activeChapterId: z.uuid().nullable(),
+  projectId: ProjectIdSchema,
+  activeChapterId: ChapterIdSchema.nullable(),
   revision: z.number().int().nonnegative(),
   version: z.literal(PROJECT_DOC_VERSION),
 });

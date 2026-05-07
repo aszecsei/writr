@@ -1,4 +1,9 @@
-import type { ProposedEdit, WorkUnit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ProjectId,
+  ProposedEdit,
+  WorkUnit,
+} from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
@@ -50,8 +55,8 @@ export interface VerifierWorkUnitContext {
 }
 
 export interface MakeVerifierAgentInput {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   workUnits: VerifierWorkUnitContext[];
   /** Chapter ids touched by the tier (for the drift sweep). */

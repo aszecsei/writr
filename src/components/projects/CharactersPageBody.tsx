@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { RoleBadge } from "@/components/bible/RoleBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { createCharacter, deleteCharacter } from "@/db/operations";
-import type { CharacterRole } from "@/db/schemas";
+import type { CharacterId, CharacterRole, ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useRelationshipsByProject,
@@ -31,7 +31,7 @@ const filterTabs: { value: RoleFilter; label: string }[] = [
 
 export interface CharactersPageBodyProps {
   /** Real project id (or the host's project id when rendering from a shared session). */
-  projectId: string;
+  projectId: ProjectId;
   /** URL prefix without trailing slash. E.g. `/projects/abc` or
    *  `/shared/room/projects/abc`. Detail-page links append the rest. */
   basePath: string;
@@ -48,7 +48,7 @@ export function CharactersPageBody({
   const characters = useCharactersByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
   const [filter, setFilter] = useState<RoleFilter>("all");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<CharacterId | null>(null);
 
   const filtered = useMemo(() => {
     if (!characters) return [];

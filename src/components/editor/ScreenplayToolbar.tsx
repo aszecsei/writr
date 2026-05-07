@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useCallback } from "react";
 import { useCommentStore } from "@/store/commentStore";
-import { useEditorStore } from "@/store/editorStore";
+import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
@@ -50,7 +50,7 @@ interface ScreenplayToolbarProps {
 export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
   const openModal = useUiStore((s) => s.openModal);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
-  const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
+  const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const toggleMargin = useCommentStore((s) => s.toggleMargin);

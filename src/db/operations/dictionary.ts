@@ -6,6 +6,7 @@ import {
   AppDictionarySchema,
   type ProjectDictionary,
   ProjectDictionarySchema,
+  type ProjectId,
 } from "../schemas";
 import { now } from "./helpers";
 
@@ -72,13 +73,13 @@ export async function removeWordFromAppDictionary(word: string): Promise<void> {
 // ─── Project Dictionary ─────────────────────────────────────────────
 
 export async function getProjectDictionary(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<ProjectDictionary | undefined> {
   return db.projectDictionaries.where({ projectId }).first();
 }
 
 export async function getOrCreateProjectDictionary(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<ProjectDictionary> {
   const existing = await getProjectDictionary(projectId);
   if (existing) return ProjectDictionarySchema.parse(existing);
@@ -96,7 +97,7 @@ export async function getOrCreateProjectDictionary(
 }
 
 export async function addWordToProjectDictionary(
-  projectId: string,
+  projectId: ProjectId,
   word: string,
 ): Promise<void> {
   const dict = await getOrCreateProjectDictionary(projectId);
@@ -109,7 +110,7 @@ export async function addWordToProjectDictionary(
 }
 
 export async function removeWordFromProjectDictionary(
-  projectId: string,
+  projectId: ProjectId,
   word: string,
 ): Promise<void> {
   const dict = await getProjectDictionary(projectId);

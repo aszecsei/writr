@@ -2,6 +2,7 @@
 
 import { Check, Copy, FileCode2, FileText } from "lucide-react";
 import { useRef, useState } from "react";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   copyChapterAo3HtmlToClipboard,
@@ -11,8 +12,8 @@ import {
 type CopiedType = "markdown" | "ao3" | null;
 
 interface CopyMenuProps {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
 }
 
 export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {

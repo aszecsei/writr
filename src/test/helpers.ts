@@ -1,24 +1,39 @@
 import type {
   Chapter,
+  ChapterId,
   Character,
+  CharacterId,
   CharacterRelationship,
+  CharacterRelationshipId,
   Location,
+  LocationId,
   OutlineGridCell,
+  OutlineGridCellId,
   OutlineGridColumn,
+  OutlineGridColumnId,
   OutlineGridRow,
+  OutlineGridRowId,
   Project,
+  ProjectId,
   StyleGuideEntry,
+  StyleGuideEntryId,
   TimelineEvent,
+  TimelineEventId,
   WorldbuildingDoc,
+  WorldbuildingDocId,
 } from "@/db/schemas";
 
 const ts = "2024-01-01T00:00:00.000Z";
 let counter = 0;
 
-function nextId(): string {
+function nextRawId(): string {
   counter++;
   const hex = counter.toString(16).padStart(12, "0");
   return `00000000-0000-4000-8000-${hex}`;
+}
+
+function nextId<T extends string>(): T {
+  return nextRawId() as T;
 }
 
 export function resetIdCounter(): void {
@@ -29,7 +44,7 @@ export function makeProject(
   overrides: Partial<Project> & { title: string },
 ): Project {
   return {
-    id: nextId(),
+    id: nextId<ProjectId>(),
     description: "",
     genre: "",
     targetWordCount: 0,
@@ -41,10 +56,10 @@ export function makeProject(
 }
 
 export function makeCharacter(
-  overrides: Partial<Character> & { projectId: string; name: string },
+  overrides: Partial<Character> & { projectId: ProjectId; name: string },
 ): Character {
   return {
-    id: nextId(),
+    id: nextId<CharacterId>(),
     role: "supporting",
     pronouns: "",
     aliases: [],
@@ -68,10 +83,10 @@ export function makeCharacter(
 }
 
 export function makeLocation(
-  overrides: Partial<Location> & { projectId: string; name: string },
+  overrides: Partial<Location> & { projectId: ProjectId; name: string },
 ): Location {
   return {
-    id: nextId(),
+    id: nextId<LocationId>(),
     description: "",
     parentLocationId: null,
     notes: "",
@@ -84,10 +99,10 @@ export function makeLocation(
 }
 
 export function makeTimelineEvent(
-  overrides: Partial<TimelineEvent> & { projectId: string; title: string },
+  overrides: Partial<TimelineEvent> & { projectId: ProjectId; title: string },
 ): TimelineEvent {
   return {
-    id: nextId(),
+    id: nextId<TimelineEventId>(),
     description: "",
     date: "",
     order: 0,
@@ -100,10 +115,10 @@ export function makeTimelineEvent(
 }
 
 export function makeStyleGuideEntry(
-  overrides: Partial<StyleGuideEntry> & { projectId: string; title: string },
+  overrides: Partial<StyleGuideEntry> & { projectId: ProjectId; title: string },
 ): StyleGuideEntry {
   return {
-    id: nextId(),
+    id: nextId<StyleGuideEntryId>(),
     category: "custom",
     content: "",
     order: 0,
@@ -114,10 +129,13 @@ export function makeStyleGuideEntry(
 }
 
 export function makeWorldbuildingDoc(
-  overrides: Partial<WorldbuildingDoc> & { projectId: string; title: string },
+  overrides: Partial<WorldbuildingDoc> & {
+    projectId: ProjectId;
+    title: string;
+  },
 ): WorldbuildingDoc {
   return {
-    id: nextId(),
+    id: nextId<WorldbuildingDocId>(),
     content: "",
     tags: [],
     parentDocId: null,
@@ -131,10 +149,10 @@ export function makeWorldbuildingDoc(
 }
 
 export function makeChapter(
-  overrides: Partial<Chapter> & { projectId: string; title: string },
+  overrides: Partial<Chapter> & { projectId: ProjectId; title: string },
 ): Chapter {
   return {
-    id: nextId(),
+    id: nextId<ChapterId>(),
     order: 0,
     content: "",
     synopsis: "",
@@ -147,10 +165,13 @@ export function makeChapter(
 }
 
 export function makeOutlineGridColumn(
-  overrides: Partial<OutlineGridColumn> & { projectId: string; title: string },
+  overrides: Partial<OutlineGridColumn> & {
+    projectId: ProjectId;
+    title: string;
+  },
 ): OutlineGridColumn {
   return {
-    id: nextId(),
+    id: nextId<OutlineGridColumnId>(),
     order: 0,
     width: 200,
     createdAt: ts,
@@ -160,10 +181,10 @@ export function makeOutlineGridColumn(
 }
 
 export function makeOutlineGridRow(
-  overrides: Partial<OutlineGridRow> & { projectId: string },
+  overrides: Partial<OutlineGridRow> & { projectId: ProjectId },
 ): OutlineGridRow {
   return {
-    id: nextId(),
+    id: nextId<OutlineGridRowId>(),
     linkedChapterId: null,
     label: "",
     order: 0,
@@ -175,13 +196,13 @@ export function makeOutlineGridRow(
 
 export function makeOutlineGridCell(
   overrides: Partial<OutlineGridCell> & {
-    projectId: string;
-    rowId: string;
-    columnId: string;
+    projectId: ProjectId;
+    rowId: OutlineGridRowId;
+    columnId: OutlineGridColumnId;
   },
 ): OutlineGridCell {
   return {
-    id: nextId(),
+    id: nextId<OutlineGridCellId>(),
     content: "",
     color: "white",
     createdAt: ts,
@@ -192,14 +213,14 @@ export function makeOutlineGridCell(
 
 export function makeRelationship(
   overrides: Partial<CharacterRelationship> & {
-    projectId: string;
-    sourceCharacterId: string;
-    targetCharacterId: string;
+    projectId: ProjectId;
+    sourceCharacterId: CharacterId;
+    targetCharacterId: CharacterId;
     type: CharacterRelationship["type"];
   },
 ): CharacterRelationship {
   return {
-    id: nextId(),
+    id: nextId<CharacterRelationshipId>(),
     customLabel: "",
     createdAt: ts,
     updatedAt: ts,

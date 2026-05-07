@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
+import type { ProjectId } from "@/db/schemas";
 import {
   makeChapter,
   makeCharacter,
@@ -15,7 +16,7 @@ import {
 import { executeTool } from "../tools";
 import { permittedCategories } from "./registry";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
 
 interface ListEntry {

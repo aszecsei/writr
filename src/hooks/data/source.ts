@@ -4,16 +4,23 @@ import { useMemo } from "react";
 import { useDataSource } from "@/context/DataSourceContext";
 import type {
   Chapter,
+  ChapterId,
   Character,
+  CharacterId,
   CharacterRelationship,
   Location,
+  LocationId,
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
   Project,
+  ProjectId,
   StyleGuideEntry,
+  StyleGuideEntryId,
   TimelineEvent,
+  TimelineEventId,
   WorldbuildingDoc,
+  WorldbuildingDocId,
 } from "@/db/schemas";
 import type { ProjectDocTable } from "@/lib/collab/projectDoc";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
@@ -38,7 +45,7 @@ type SortFieldName = string;
 
 function useSharedList<T extends { id: string }>(
   table: ProjectDocTable,
-  projectId: string | null,
+  projectId: ProjectId | null,
   sortField?: SortFieldName,
 ): T[] {
   const map = useSharedProjectStore((s) => s.byTable[table]);
@@ -62,7 +69,7 @@ function useSharedList<T extends { id: string }>(
 
 function useSharedEntity<T extends { id: string }>(
   table: ProjectDocTable,
-  id: string | null,
+  id: T["id"] | null,
 ): T | undefined {
   const map = useSharedProjectStore((s) => s.byTable[table]);
   return useMemo(() => {
@@ -71,14 +78,14 @@ function useSharedEntity<T extends { id: string }>(
   }, [map, id]);
 }
 
-export function useChapter(id: string | null): Chapter | undefined {
+export function useChapter(id: ChapterId | null): Chapter | undefined {
   const source = useDataSource();
   const dexie = dexieUseChapter(source.kind === "dexie" ? id : null);
   const shared = useSharedEntity<Chapter>("chapters", id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useChaptersByProject(projectId: string | null) {
+export function useChaptersByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseChaptersByProject(
     source.kind === "dexie" ? projectId : null,
@@ -87,7 +94,7 @@ export function useChaptersByProject(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useProject(projectId: string | null): Project | undefined {
+export function useProject(projectId: ProjectId | null): Project | undefined {
   const source = useDataSource();
   const dexie = dexieUseProject(source.kind === "dexie" ? projectId : null);
   const shared = useSharedProjectStore((s) =>
@@ -96,14 +103,14 @@ export function useProject(projectId: string | null): Project | undefined {
   return source.kind === "dexie" ? dexie : (shared ?? undefined);
 }
 
-export function useCharacter(id: string | null): Character | undefined {
+export function useCharacter(id: CharacterId | null): Character | undefined {
   const source = useDataSource();
   const dexie = dexieUseCharacter(source.kind === "dexie" ? id : null);
   const shared = useSharedEntity<Character>("characters", id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useCharactersByProject(projectId: string | null) {
+export function useCharactersByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseCharactersByProject(
     source.kind === "dexie" ? projectId : null,
@@ -112,14 +119,14 @@ export function useCharactersByProject(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useLocation(id: string | null): Location | undefined {
+export function useLocation(id: LocationId | null): Location | undefined {
   const source = useDataSource();
   const dexie = dexieUseLocation(source.kind === "dexie" ? id : null);
   const shared = useSharedEntity<Location>("locations", id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useLocationsByProject(projectId: string | null) {
+export function useLocationsByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseLocationsByProject(
     source.kind === "dexie" ? projectId : null,
@@ -128,14 +135,16 @@ export function useLocationsByProject(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useTimelineEvent(id: string | null): TimelineEvent | undefined {
+export function useTimelineEvent(
+  id: TimelineEventId | null,
+): TimelineEvent | undefined {
   const source = useDataSource();
   const dexie = dexieUseTimelineEvent(source.kind === "dexie" ? id : null);
   const shared = useSharedEntity<TimelineEvent>("timeline", id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useTimelineByProject(projectId: string | null) {
+export function useTimelineByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseTimelineByProject(
     source.kind === "dexie" ? projectId : null,
@@ -145,7 +154,7 @@ export function useTimelineByProject(projectId: string | null) {
 }
 
 export function useStyleGuideEntry(
-  id: string | null,
+  id: StyleGuideEntryId | null,
 ): StyleGuideEntry | undefined {
   const source = useDataSource();
   const dexie = dexieUseStyleGuideEntry(source.kind === "dexie" ? id : null);
@@ -153,7 +162,7 @@ export function useStyleGuideEntry(
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useStyleGuideByProject(projectId: string | null) {
+export function useStyleGuideByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseStyleGuideByProject(
     source.kind === "dexie" ? projectId : null,
@@ -167,7 +176,7 @@ export function useStyleGuideByProject(projectId: string | null) {
 }
 
 export function useWorldbuildingDoc(
-  id: string | null,
+  id: WorldbuildingDocId | null,
 ): WorldbuildingDoc | undefined {
   const source = useDataSource();
   const dexie = dexieUseWorldbuildingDoc(source.kind === "dexie" ? id : null);
@@ -175,7 +184,7 @@ export function useWorldbuildingDoc(
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useWorldbuildingDocsByProject(projectId: string | null) {
+export function useWorldbuildingDocsByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseWorldbuildingDocsByProject(
     source.kind === "dexie" ? projectId : null,
@@ -188,7 +197,7 @@ export function useWorldbuildingDocsByProject(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useRelationshipsByProject(projectId: string | null) {
+export function useRelationshipsByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseRelationshipsByProject(
     source.kind === "dexie" ? projectId : null,
@@ -210,7 +219,7 @@ import {
   useOutlineGridRows as dexieUseOutlineGridRows,
 } from "@/hooks/outline/useOutlineGrid";
 
-export function useOutlineGridColumns(projectId: string | null) {
+export function useOutlineGridColumns(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridColumns(
     source.kind === "dexie" ? projectId : null,
@@ -223,7 +232,7 @@ export function useOutlineGridColumns(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useOutlineGridRows(projectId: string | null) {
+export function useOutlineGridRows(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridRows(
     source.kind === "dexie" ? projectId : null,
@@ -236,7 +245,7 @@ export function useOutlineGridRows(projectId: string | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useOutlineGridCells(projectId: string | null) {
+export function useOutlineGridCells(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridCells(
     source.kind === "dexie" ? projectId : null,

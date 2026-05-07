@@ -58,6 +58,7 @@ describe("ApproveJoinDialog (snapshots)", () => {
       displayName: "Alice",
       color: "#cc6699",
       receivedAt: 0,
+      from: "",
     });
     useUiStore.getState().openModal({
       id: "collab-approve-join",
@@ -76,6 +77,7 @@ describe("ApproveJoinDialog (snapshots)", () => {
       displayName: "Alice",
       color: "#cc6699",
       receivedAt: 0,
+      from: "",
     });
     useCollabStore.getState().addPendingJoinRequest({
       requestId: "req-2",
@@ -83,6 +85,7 @@ describe("ApproveJoinDialog (snapshots)", () => {
       displayName: "Bob",
       color: "#3366cc",
       receivedAt: 1,
+      from: "",
     });
     useCollabStore.getState().addPendingJoinRequest({
       requestId: "req-3",
@@ -90,6 +93,7 @@ describe("ApproveJoinDialog (snapshots)", () => {
       displayName: "Carol",
       color: "#33cc66",
       receivedAt: 2,
+      from: "",
     });
     useUiStore.getState().openModal({
       id: "collab-approve-join",
@@ -117,6 +121,7 @@ describe("ApproveJoinDialog (interactions)", () => {
       displayName: "Alice",
       color: "#cc6699",
       receivedAt: 0,
+      from: "",
     });
     useUiStore.getState().openModal({
       id: "collab-approve-join",
@@ -146,6 +151,7 @@ describe("ApproveJoinDialog (interactions)", () => {
       displayName: "Alice",
       color: "#cc6699",
       receivedAt: 0,
+      from: "",
     });
     useUiStore.getState().openModal({
       id: "collab-approve-join",

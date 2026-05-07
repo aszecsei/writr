@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { ChapterId } from "@/db/schemas";
 import { useEditorStore } from "./editorStore";
 
 function getState() {
   return useEditorStore.getState();
 }
+
+const DOC_1 = "doc-1" as ChapterId;
 
 describe("editorStore", () => {
   beforeEach(() => {
@@ -33,7 +36,7 @@ describe("editorStore", () => {
   // ─── setActiveDocument ──────────────────────────────────────────────
 
   it("sets document id and type", () => {
-    getState().setActiveDocument("doc-1", "chapter");
+    getState().setActiveDocument(DOC_1, "chapter");
     const s = getState();
     expect(s.activeDocumentId).toBe("doc-1");
     expect(s.activeDocumentType).toBe("chapter");
@@ -41,7 +44,7 @@ describe("editorStore", () => {
 
   it("resets isDirty and saveStatus when setting active document", () => {
     getState().markDirty();
-    getState().setActiveDocument("doc-1", "chapter");
+    getState().setActiveDocument(DOC_1, "chapter");
     const s = getState();
     expect(s.isDirty).toBe(false);
     expect(s.saveStatus).toBe("idle");
@@ -50,7 +53,7 @@ describe("editorStore", () => {
   // ─── clearActiveDocument ────────────────────────────────────────────
 
   it("clears document and resets all ephemeral state", () => {
-    getState().setActiveDocument("doc-1", "chapter");
+    getState().setActiveDocument(DOC_1, "chapter");
     getState().setWordCount(500);
     getState().setSelection("hello", 1, 6);
     getState().markDirty();
@@ -103,7 +106,7 @@ describe("editorStore", () => {
 
   it("documents the false-dirty-on-load race: setActiveDocument → clean, markDirty → dirty", () => {
     // When a document loads, setActiveDocument is called first (clean state)
-    getState().setActiveDocument("doc-1", "chapter");
+    getState().setActiveDocument(DOC_1, "chapter");
     expect(getState().isDirty).toBe(false);
 
     // Then TipTap's onUpdate fires from setContent, which calls markDirty

@@ -4,7 +4,12 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import { updateProposedEditStatus } from "@/db/operations/proposedEdits";
-import type { ProposedEdit, ProposedEditStatus } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ProjectId,
+  ProposedEdit,
+  ProposedEditStatus,
+} from "@/db/schemas";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
@@ -18,8 +23,8 @@ import {
 import { EditDiffCard } from "./EditDiffCard";
 
 interface EditApprovalPanelProps {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
 }
 
 const REVIEWABLE: ProposedEditStatus[] = ["pending", "approved"];

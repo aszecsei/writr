@@ -1,5 +1,7 @@
 import { db } from "../database";
 import {
+  type AgentRunId,
+  type ProjectId,
   READER_BIBLE_TOP_LEVEL_PATHS,
   type ReaderBibleLogEntry,
   ReaderBibleLogEntrySchema,
@@ -66,8 +68,8 @@ function deepMerge(prev: unknown, next: unknown): unknown {
 }
 
 interface AppendBibleOpInput {
-  projectId: string;
-  runId: string;
+  projectId: ProjectId;
+  runId: AgentRunId;
   path: string;
   op: ReaderBibleOp;
   value?: unknown;
@@ -144,7 +146,7 @@ export async function appendBibleOp(
 
 /** Read the current view value at `path` for a given run. */
 export async function readBibleAtPath(
-  runId: string,
+  runId: AgentRunId,
   path: string,
 ): Promise<ReaderBibleViewEntry | undefined> {
   const normalized = normalizeBiblePath(path);
@@ -153,7 +155,7 @@ export async function readBibleAtPath(
 
 /** List view entries for a run under a path prefix (or all when omitted). */
 export async function listBiblePaths(
-  runId: string,
+  runId: AgentRunId,
   pathPrefix?: string,
 ): Promise<ReaderBibleViewEntry[]> {
   const all = await db.readerBibleView.where({ runId }).toArray();
@@ -173,7 +175,7 @@ export async function listBiblePaths(
  * scope (they're typically post-pass corrections that should always apply).
  */
 export async function computeReaderBibleAsOf(
-  runId: string,
+  runId: AgentRunId,
   asOfChapter: number,
 ): Promise<Map<string, unknown>> {
   const entries = await db.readerBibleLog
@@ -202,7 +204,7 @@ export async function computeReaderBibleAsOf(
 
 /** Bulk-load all log entries for a run, ordered chronologically. */
 export async function getBibleLogByRun(
-  runId: string,
+  runId: AgentRunId,
 ): Promise<ReaderBibleLogEntry[]> {
   return db.readerBibleLog.where({ runId }).sortBy("createdAt");
 }
@@ -212,7 +214,7 @@ export async function getBibleLogByRun(
  * Used by the reader loop to compute per-pass deltas.
  */
 export async function countBibleLogEntriesSince(
-  runId: string,
+  runId: AgentRunId,
   sinceIso: string,
 ): Promise<number> {
   return db.readerBibleLog

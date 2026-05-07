@@ -6,10 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { SortableTimelineCard } from "@/components/bible/SortableTimelineCard";
 import { createTimelineEvent, reorderTimelineEvents } from "@/db/operations";
+import type { ProjectId } from "@/db/schemas";
 import { useTimelineByProject } from "@/hooks/data/source";
 
 export interface TimelinePageBodyProps {
-  projectId: string;
+  projectId: ProjectId;
   readOnly: boolean;
 }
 

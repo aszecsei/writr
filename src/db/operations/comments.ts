@@ -1,16 +1,21 @@
 import { db } from "../database";
-import { type Comment, CommentSchema } from "../schemas";
+import {
+  type ChapterId,
+  type Comment,
+  type CommentId,
+  CommentSchema,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 // ─── Comments ────────────────────────────────────────────────────────
 
 export async function getCommentsByChapter(
-  chapterId: string,
+  chapterId: ChapterId,
 ): Promise<Comment[]> {
   return db.comments.where({ chapterId }).sortBy("fromOffset");
 }
 
-export async function getComment(id: string): Promise<Comment | undefined> {
+export async function getComment(id: CommentId): Promise<Comment | undefined> {
   return db.comments.get(id);
 }
 
@@ -44,7 +49,7 @@ export async function createComment(
 }
 
 export async function updateComment(
-  id: string,
+  id: CommentId,
   data: Partial<
     Pick<
       Comment,
@@ -63,7 +68,7 @@ export async function updateComment(
   await db.comments.update(id, { ...data, updatedAt: now() });
 }
 
-export async function resolveComment(id: string): Promise<void> {
+export async function resolveComment(id: CommentId): Promise<void> {
   await db.comments.update(id, {
     status: "resolved",
     resolvedAt: now(),
@@ -71,15 +76,15 @@ export async function resolveComment(id: string): Promise<void> {
   });
 }
 
-export async function deleteComment(id: string): Promise<void> {
+export async function deleteComment(id: CommentId): Promise<void> {
   await db.comments.delete(id);
 }
 
 function buildCommentUpdates(
   comments: (Comment | undefined)[],
-  positionMap: Map<string, { from: number; to: number }>,
-): { key: string; changes: Record<string, unknown> }[] {
-  const updates: { key: string; changes: Record<string, unknown> }[] = [];
+  positionMap: Map<CommentId, { from: number; to: number }>,
+): { key: CommentId; changes: Record<string, unknown> }[] {
+  const updates: { key: CommentId; changes: Record<string, unknown> }[] = [];
 
   for (const comment of comments) {
     if (!comment) continue;
@@ -121,7 +126,7 @@ function buildCommentUpdates(
  * Marks previously-ranged comments as "orphaned" if their range collapsed.
  */
 export async function updateCommentPositions(
-  positionMap: Map<string, { from: number; to: number }>,
+  positionMap: Map<CommentId, { from: number; to: number }>,
 ): Promise<void> {
   if (positionMap.size === 0) return;
 

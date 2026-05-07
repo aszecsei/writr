@@ -2,15 +2,15 @@
 
 import { ImagePlus, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
-import type { EntityImage } from "@/db/schemas";
+import type { EntityImage, EntityImageId } from "@/db/schemas";
 import { AddImageDialog } from "./AddImageDialog";
 import { ImageLightbox } from "./ImageLightbox";
 
 interface ImageGalleryProps {
   images: EntityImage[];
   onAddImage: (image: EntityImage) => void;
-  onRemoveImage: (imageId: string) => void;
-  onSetPrimary: (imageId: string) => void;
+  onRemoveImage: (imageId: EntityImageId) => void;
+  onSetPrimary: (imageId: EntityImageId) => void;
   /** When true, hide the Add / Remove / Set-primary affordances. The
    *  lightbox preview remains available so guests can still inspect
    *  images at full size. */
@@ -29,7 +29,7 @@ export function ImageGallery({
 
   function handleAdd(url: string, caption: string) {
     onAddImage({
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID() as EntityImageId,
       url,
       caption,
       isPrimary: images.length === 0,

@@ -1,17 +1,22 @@
 import { db } from "../database";
 import {
+  type AgentRunId,
+  type ChapterId,
+  type ProjectId,
   type ProposedEdit,
+  type ProposedEditId,
   type ProposedEditKind,
   ProposedEditSchema,
   type ProposedEditStatus,
+  type WorkUnitId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
 export interface CreateProposedEditInput {
-  projectId: string;
-  runId: string;
-  workUnitId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  runId: AgentRunId;
+  workUnitId: WorkUnitId;
+  chapterId: ChapterId;
   kind: ProposedEditKind;
   /** `insert_at` only. */
   fromOffset?: number;
@@ -51,26 +56,26 @@ export async function createProposedEdit(
 }
 
 export async function getProposedEdit(
-  id: string,
+  id: ProposedEditId,
 ): Promise<ProposedEdit | undefined> {
   return db.proposedEdits.get(id);
 }
 
 export async function listProposedEditsByRun(
-  runId: string,
+  runId: AgentRunId,
 ): Promise<ProposedEdit[]> {
   return db.proposedEdits.where({ runId }).sortBy("createdAt");
 }
 
 export async function listProposedEditsByWorkUnit(
-  workUnitId: string,
+  workUnitId: WorkUnitId,
 ): Promise<ProposedEdit[]> {
   return db.proposedEdits.where({ workUnitId }).sortBy("createdAt");
 }
 
 export async function listProposedEditsByChapter(
-  runId: string,
-  chapterId: string,
+  runId: AgentRunId,
+  chapterId: ChapterId,
 ): Promise<ProposedEdit[]> {
   const all = await db.proposedEdits.where({ runId }).toArray();
   return all
@@ -85,8 +90,8 @@ export async function listProposedEditsByChapter(
  * edits don't carry an offset to sort by.
  */
 export async function listApprovedEditsForChapter(
-  runId: string,
-  chapterId: string,
+  runId: AgentRunId,
+  chapterId: ChapterId,
 ): Promise<ProposedEdit[]> {
   const all = await db.proposedEdits.where({ runId }).toArray();
   return all
@@ -95,12 +100,12 @@ export async function listApprovedEditsForChapter(
 }
 
 export async function updateProposedEditStatus(
-  id: string,
+  id: ProposedEditId,
   status: ProposedEditStatus,
 ): Promise<void> {
   await db.proposedEdits.update(id, { status, updatedAt: now() });
 }
 
-export async function deleteProposedEdit(id: string): Promise<void> {
+export async function deleteProposedEdit(id: ProposedEditId): Promise<void> {
   await db.proposedEdits.delete(id);
 }

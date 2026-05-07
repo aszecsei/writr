@@ -1,17 +1,22 @@
 import { db } from "../database";
-import { type Chapter, ChapterSchema } from "../schemas";
+import {
+  type Chapter,
+  type ChapterId,
+  ChapterSchema,
+  type ProjectId,
+} from "../schemas";
 import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 import { recordWritingSession } from "./sprints";
 
 // ─── Chapters ────────────────────────────────────────────────────────
 
 export async function getChaptersByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<Chapter[]> {
   return db.chapters.where({ projectId }).sortBy("order");
 }
 
-export async function getChapter(id: string): Promise<Chapter | undefined> {
+export async function getChapter(id: ChapterId): Promise<Chapter | undefined> {
   return db.chapters.get(id);
 }
 
@@ -41,14 +46,14 @@ export async function createChapter(
 }
 
 export async function updateChapter(
-  id: string,
+  id: ChapterId,
   data: Partial<Pick<Chapter, "title" | "synopsis" | "status">>,
 ): Promise<void> {
   await db.chapters.update(id, { ...data, updatedAt: now() });
 }
 
 export async function updateChapterContent(
-  id: string,
+  id: ChapterId,
   content: string,
   wordCount: number,
 ): Promise<void> {
@@ -63,6 +68,6 @@ export async function updateChapterContent(
   }
 }
 
-export async function reorderChapters(orderedIds: string[]): Promise<void> {
+export async function reorderChapters(orderedIds: ChapterId[]): Promise<void> {
   return reorderEntities(db.chapters, orderedIds);
 }

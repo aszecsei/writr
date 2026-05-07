@@ -25,6 +25,7 @@ import {
 } from "@/components/family-tree/CharacterNode";
 import { RelationshipEdge } from "@/components/family-tree/RelationshipEdge";
 import { RelationshipList } from "@/components/family-tree/RelationshipList";
+import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useRelationshipsByProject,
@@ -35,7 +36,7 @@ const nodeTypes: NodeTypes = { character: CharacterNode };
 const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };
 
 function FamilyTreeCanvas() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const characters = useCharactersByProject(params.projectId);
   const relationships = useRelationshipsByProject(params.projectId);
   const [showDialog, setShowDialog] = useState(false);

@@ -1,31 +1,39 @@
 import { describe, expect, it } from "vitest";
-import type { ProposedEdit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ChapterId,
+  ProjectId,
+  ProposedEdit,
+  ProposedEditId,
+  WorkUnitId,
+} from "@/db/schemas";
 import { applyEditsToContent } from "./stagedChapterContent";
 
 const ts = "2024-01-01T00:00:00.000Z";
 
 function makeEdit(overrides: Partial<ProposedEdit>): ProposedEdit {
   return {
-    id: overrides.id ?? "edit-x",
-    projectId: "00000000-0000-4000-8000-000000000001",
-    runId: "00000000-0000-4000-8000-000000000002",
-    workUnitId: "00000000-0000-4000-8000-000000000003",
-    chapterId: "00000000-0000-4000-8000-000000000004",
+    id: overrides.id ?? ("edit-x" as ProposedEditId),
+    projectId: "00000000-0000-4000-8000-000000000001" as ProjectId,
+    runId: "00000000-0000-4000-8000-000000000002" as AgentRunId,
+    workUnitId: "00000000-0000-4000-8000-000000000003" as WorkUnitId,
+    chapterId: "00000000-0000-4000-8000-000000000004" as ChapterId,
     kind: "replace",
+    anchorText: "",
     newContent: "",
     rationale: "",
     status: "approved",
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
-  };
+  } as ProposedEdit;
 }
 
 describe("applyEditsToContent", () => {
   it("applies a single replace edit using the combined locator", () => {
     const content = "the dog ran swiftly down the road";
     const edit = makeEdit({
-      id: "e1",
+      id: "e1" as ProposedEditId,
       kind: "replace",
       anchorText: "ran swiftly down",
       newContent: "tore down",
@@ -43,7 +51,7 @@ describe("applyEditsToContent", () => {
   it("uses prefix/suffix to disambiguate a repeated anchor", () => {
     const content = "the good dog and the bad dog ran home";
     const edit = makeEdit({
-      id: "e1",
+      id: "e1" as ProposedEditId,
       kind: "replace",
       prefix: "the bad ",
       anchorText: "dog",
@@ -57,7 +65,7 @@ describe("applyEditsToContent", () => {
   it("skips a replace edit when the combined locator is no longer present", () => {
     const content = "completely different prose now";
     const edit = makeEdit({
-      id: "e1",
+      id: "e1" as ProposedEditId,
       kind: "replace",
       anchorText: "ran swiftly down",
       newContent: "tore down",
@@ -76,13 +84,13 @@ describe("applyEditsToContent", () => {
     const content = "alpha beta gamma delta epsilon";
     // Edits supplied in input order — locator decides apply order.
     const editEarly = makeEdit({
-      id: "early",
+      id: "early" as ProposedEditId,
       kind: "replace",
       anchorText: "beta",
       newContent: "BETA",
     });
     const editLate = makeEdit({
-      id: "late",
+      id: "late" as ProposedEditId,
       kind: "replace",
       anchorText: "delta",
       newContent: "DELTA",
@@ -101,13 +109,13 @@ describe("applyEditsToContent", () => {
   it("applies append + replace together correctly", () => {
     const content = "first sentence.";
     const replaceEdit = makeEdit({
-      id: "r",
+      id: "r" as ProposedEditId,
       kind: "replace",
       anchorText: "first",
       newContent: "First",
     });
     const appendEdit = makeEdit({
-      id: "a",
+      id: "a" as ProposedEditId,
       kind: "append",
       newContent: " Second sentence.",
     });

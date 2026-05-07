@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import type { ProjectId } from "@/db/schemas";
 
 const bibleLinks: { label: string; path: string; icon: LucideIcon }[] = [
   { label: "Characters", path: "bible/characters", icon: Users },
@@ -27,7 +28,7 @@ export function BibleNav({
   projectId,
   pathname,
 }: {
-  projectId: string;
+  projectId: ProjectId;
   pathname: string;
 }) {
   return (

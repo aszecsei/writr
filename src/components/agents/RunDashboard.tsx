@@ -6,6 +6,7 @@ import {
   isTerminalStatus,
   updateAgentRunStatus,
 } from "@/db/operations/agentRuns";
+import type { AgentRunId, ProjectId } from "@/db/schemas";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
@@ -30,8 +31,8 @@ import { SnapshotsPanel } from "./SnapshotsPanel";
 import { VerificationPanel } from "./VerificationPanel";
 
 interface RunDashboardProps {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
 }
 
 type Tab =

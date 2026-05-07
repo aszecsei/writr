@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import type { CommentId } from "@/db/schemas";
 
 interface CommentState {
-  selectedId: string | null;
+  selectedId: CommentId | null;
   marginVisible: boolean;
 
-  selectComment: (id: string | null) => void;
+  selectComment: (id: CommentId | null) => void;
   clearSelection: () => void;
   toggleMargin: () => void;
   setMarginVisible: (visible: boolean) => void;

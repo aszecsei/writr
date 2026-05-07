@@ -1,4 +1,9 @@
-import type { Comment, CommentColor, CommentStatus } from "@/db/schemas";
+import type {
+  Comment,
+  CommentColor,
+  CommentId,
+  CommentStatus,
+} from "@/db/schemas";
 
 /**
  * Input for creating a new comment. Both solo and collab modes share this
@@ -40,8 +45,8 @@ export interface CommentsAdapter {
   readonly canEdit: boolean;
   readonly canResolve: boolean;
   readonly canDelete: boolean;
-  create(input: CommentInput): Promise<string>;
-  update(id: string, patch: CommentPatch): Promise<void>;
-  resolve(id: string): Promise<void>;
-  remove(id: string): Promise<void>;
+  create(input: CommentInput): Promise<CommentId>;
+  update(id: CommentId, patch: CommentPatch): Promise<void>;
+  resolve(id: CommentId): Promise<void>;
+  remove(id: CommentId): Promise<void>;
 }

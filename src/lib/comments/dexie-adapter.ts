@@ -4,12 +4,12 @@ import {
   resolveComment,
   updateComment,
 } from "@/db/operations";
-import type { Comment } from "@/db/schemas";
+import type { ChapterId, Comment, CommentId, ProjectId } from "@/db/schemas";
 import type { CommentInput, CommentPatch, CommentsAdapter } from "./adapter";
 
 interface DexieAdapterOptions {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   /** Live snapshot of comments for this chapter (from useLiveQuery). */
   comments: Comment[];
 }
@@ -30,7 +30,7 @@ export class DexieCommentsAdapter implements CommentsAdapter {
     return this.opts.comments;
   }
 
-  async create(input: CommentInput): Promise<string> {
+  async create(input: CommentInput): Promise<CommentId> {
     const created = await createComment({
       projectId: this.opts.projectId,
       chapterId: this.opts.chapterId,
@@ -45,15 +45,15 @@ export class DexieCommentsAdapter implements CommentsAdapter {
     return created.id;
   }
 
-  async update(id: string, patch: CommentPatch): Promise<void> {
+  async update(id: CommentId, patch: CommentPatch): Promise<void> {
     await updateComment(id, patch);
   }
 
-  async resolve(id: string): Promise<void> {
+  async resolve(id: CommentId): Promise<void> {
     await resolveComment(id);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: CommentId): Promise<void> {
     await deleteComment(id);
   }
 }

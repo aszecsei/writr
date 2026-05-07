@@ -1,6 +1,7 @@
 // ─── Tool Calling Types ─────────────────────────────────────────────
 
 import type { z } from "zod";
+import type { AgentRunId, ProjectId, WorkUnitId } from "@/db/schemas";
 
 export type ToolCallStatus =
   | "pending"
@@ -16,9 +17,9 @@ export interface ToolResult {
 }
 
 export interface ToolExecutionContext {
-  projectId: string;
+  projectId: ProjectId;
   /** ID of the agent run this tool call belongs to. Set by the agent runner. */
-  runId?: string;
+  runId?: AgentRunId;
   /**
    * Pipeline-only: the work unit this agent is executing against. Set by
    * `makeEditorAgent` so dual-mode tools (e.g. `propose_edit`) can attribute
@@ -26,7 +27,7 @@ export interface ToolExecutionContext {
    * id back on every call. Absent in chat-mode invocations — that's the
    * signal a tool uses to switch to its non-persisting branch.
    */
-  workUnitId?: string;
+  workUnitId?: WorkUnitId;
   /**
    * Kind of agent invoking the tool. Tools may branch on this — for example,
    * `read_chapter` overlays staged proposed edits when called from an editor

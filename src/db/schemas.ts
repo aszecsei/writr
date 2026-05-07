@@ -2,9 +2,119 @@ import { z } from "zod/v4";
 
 // ─── Shared Primitives ───────────────────────────────────────────────
 
-const id = z.uuid();
 const timestamp = z.iso.datetime();
-const projectFk = z.uuid();
+
+// ─── Branded Entity ID Schemas ──────────────────────────────────────
+//
+// Each entity's primary key gets a distinct brand so the type system
+// catches accidental cross-entity ID assignment (e.g. passing a chapter
+// id where a project id is expected). FK fields below reuse the
+// destination entity's brand so a `Chapter.projectId` is structurally
+// identical to a `Project.id`.
+
+export const ProjectIdSchema = z.uuid().brand<"ProjectId">();
+export type ProjectId = z.infer<typeof ProjectIdSchema>;
+
+export const ChapterIdSchema = z.uuid().brand<"ChapterId">();
+export type ChapterId = z.infer<typeof ChapterIdSchema>;
+
+export const CharacterIdSchema = z.uuid().brand<"CharacterId">();
+export type CharacterId = z.infer<typeof CharacterIdSchema>;
+
+export const LocationIdSchema = z.uuid().brand<"LocationId">();
+export type LocationId = z.infer<typeof LocationIdSchema>;
+
+export const TimelineEventIdSchema = z.uuid().brand<"TimelineEventId">();
+export type TimelineEventId = z.infer<typeof TimelineEventIdSchema>;
+
+export const StyleGuideEntryIdSchema = z.uuid().brand<"StyleGuideEntryId">();
+export type StyleGuideEntryId = z.infer<typeof StyleGuideEntryIdSchema>;
+
+export const WorldbuildingDocIdSchema = z.uuid().brand<"WorldbuildingDocId">();
+export type WorldbuildingDocId = z.infer<typeof WorldbuildingDocIdSchema>;
+
+export const CharacterRelationshipIdSchema = z
+  .uuid()
+  .brand<"CharacterRelationshipId">();
+export type CharacterRelationshipId = z.infer<
+  typeof CharacterRelationshipIdSchema
+>;
+
+export const OutlineGridColumnIdSchema = z
+  .uuid()
+  .brand<"OutlineGridColumnId">();
+export type OutlineGridColumnId = z.infer<typeof OutlineGridColumnIdSchema>;
+
+export const OutlineGridRowIdSchema = z.uuid().brand<"OutlineGridRowId">();
+export type OutlineGridRowId = z.infer<typeof OutlineGridRowIdSchema>;
+
+export const OutlineGridCellIdSchema = z.uuid().brand<"OutlineGridCellId">();
+export type OutlineGridCellId = z.infer<typeof OutlineGridCellIdSchema>;
+
+export const WritingSprintIdSchema = z.uuid().brand<"WritingSprintId">();
+export type WritingSprintId = z.infer<typeof WritingSprintIdSchema>;
+
+export const WritingSessionIdSchema = z.uuid().brand<"WritingSessionId">();
+export type WritingSessionId = z.infer<typeof WritingSessionIdSchema>;
+
+export const PlaylistTrackIdSchema = z.uuid().brand<"PlaylistTrackId">();
+export type PlaylistTrackId = z.infer<typeof PlaylistTrackIdSchema>;
+
+export const CommentIdSchema = z.uuid().brand<"CommentId">();
+export type CommentId = z.infer<typeof CommentIdSchema>;
+
+export const ChapterSnapshotIdSchema = z.uuid().brand<"ChapterSnapshotId">();
+export type ChapterSnapshotId = z.infer<typeof ChapterSnapshotIdSchema>;
+
+export const ProjectDictionaryIdSchema = z
+  .uuid()
+  .brand<"ProjectDictionaryId">();
+export type ProjectDictionaryId = z.infer<typeof ProjectDictionaryIdSchema>;
+
+export const AgentRunIdSchema = z.uuid().brand<"AgentRunId">();
+export type AgentRunId = z.infer<typeof AgentRunIdSchema>;
+
+export const ReaderBibleLogEntryIdSchema = z
+  .uuid()
+  .brand<"ReaderBibleLogEntryId">();
+export type ReaderBibleLogEntryId = z.infer<typeof ReaderBibleLogEntryIdSchema>;
+
+export const ReaderBibleViewEntryIdSchema = z
+  .uuid()
+  .brand<"ReaderBibleViewEntryId">();
+export type ReaderBibleViewEntryId = z.infer<
+  typeof ReaderBibleViewEntryIdSchema
+>;
+
+export const AgentNoteIdSchema = z.uuid().brand<"AgentNoteId">();
+export type AgentNoteId = z.infer<typeof AgentNoteIdSchema>;
+
+export const AgentQuestionIdSchema = z.uuid().brand<"AgentQuestionId">();
+export type AgentQuestionId = z.infer<typeof AgentQuestionIdSchema>;
+
+export const WorkUnitIdSchema = z.uuid().brand<"WorkUnitId">();
+export type WorkUnitId = z.infer<typeof WorkUnitIdSchema>;
+
+export const EditPlanIdSchema = z.uuid().brand<"EditPlanId">();
+export type EditPlanId = z.infer<typeof EditPlanIdSchema>;
+
+export const ProposedEditIdSchema = z.uuid().brand<"ProposedEditId">();
+export type ProposedEditId = z.infer<typeof ProposedEditIdSchema>;
+
+export const VerificationIdSchema = z.uuid().brand<"VerificationId">();
+export type VerificationId = z.infer<typeof VerificationIdSchema>;
+
+export const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
+export type ChapterSummaryId = z.infer<typeof ChapterSummaryIdSchema>;
+
+export const SnapshotManifestIdSchema = z.uuid().brand<"SnapshotManifestId">();
+export type SnapshotManifestId = z.infer<typeof SnapshotManifestIdSchema>;
+
+export const AgentDefinitionIdSchema = z.uuid().brand<"AgentDefinitionId">();
+export type AgentDefinitionId = z.infer<typeof AgentDefinitionIdSchema>;
+
+export const EntityImageIdSchema = z.uuid().brand<"EntityImageId">();
+export type EntityImageId = z.infer<typeof EntityImageIdSchema>;
 
 // ─── Project Mode ───────────────────────────────────────────────────
 
@@ -14,7 +124,7 @@ export type ProjectMode = z.infer<typeof ProjectModeEnum>;
 // ─── Project ─────────────────────────────────────────────────────────
 
 export const ProjectSchema = z.object({
-  id,
+  id: ProjectIdSchema,
   title: z.string().min(1),
   description: z.string().default(""),
   genre: z.string().default(""),
@@ -31,8 +141,8 @@ export const ChapterStatusEnum = z.enum(["draft", "revised", "final"]);
 export type ChapterStatus = z.infer<typeof ChapterStatusEnum>;
 
 export const ChapterSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: ChapterIdSchema,
+  projectId: ProjectIdSchema,
   title: z.string().min(1),
   order: z.number().int().nonnegative(),
   content: z.string().default(""),
@@ -47,7 +157,7 @@ export type Chapter = z.infer<typeof ChapterSchema>;
 // ─── Entity Image ───────────────────────────────────────────────────
 
 export const EntityImageSchema = z.object({
-  id: z.uuid(),
+  id: EntityImageIdSchema,
   url: z.string().url(),
   caption: z.string().default(""),
   isPrimary: z.boolean().default(false),
@@ -65,8 +175,8 @@ export const CharacterRoleEnum = z.enum([
 export type CharacterRole = z.infer<typeof CharacterRoleEnum>;
 
 export const CharacterSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: CharacterIdSchema,
+  projectId: ProjectIdSchema,
   name: z.string().min(1),
   role: CharacterRoleEnum.default("supporting"),
   pronouns: z.string().default(""),
@@ -81,8 +191,8 @@ export const CharacterSchema = z.object({
   dialogueStyle: z.string().default(""),
   backstory: z.string().default(""),
   notes: z.string().default(""),
-  linkedCharacterIds: z.array(z.uuid()).default([]),
-  linkedLocationIds: z.array(z.uuid()).default([]),
+  linkedCharacterIds: z.array(CharacterIdSchema).default([]),
+  linkedLocationIds: z.array(LocationIdSchema).default([]),
   images: z.array(EntityImageSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -102,10 +212,10 @@ export const RelationshipTypeEnum = z.enum([
 export type RelationshipType = z.infer<typeof RelationshipTypeEnum>;
 
 export const CharacterRelationshipSchema = z.object({
-  id,
-  projectId: projectFk,
-  sourceCharacterId: z.uuid(),
-  targetCharacterId: z.uuid(),
+  id: CharacterRelationshipIdSchema,
+  projectId: ProjectIdSchema,
+  sourceCharacterId: CharacterIdSchema,
+  targetCharacterId: CharacterIdSchema,
   type: RelationshipTypeEnum,
   customLabel: z.string().default(""),
   createdAt: timestamp,
@@ -116,13 +226,13 @@ export type CharacterRelationship = z.infer<typeof CharacterRelationshipSchema>;
 // ─── Location ────────────────────────────────────────────────────────
 
 export const LocationSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: LocationIdSchema,
+  projectId: ProjectIdSchema,
   name: z.string().min(1),
   description: z.string().default(""),
-  parentLocationId: z.uuid().nullable().default(null),
+  parentLocationId: LocationIdSchema.nullable().default(null),
   notes: z.string().default(""),
-  linkedCharacterIds: z.array(z.uuid()).default([]),
+  linkedCharacterIds: z.array(CharacterIdSchema).default([]),
   images: z.array(EntityImageSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -132,14 +242,14 @@ export type Location = z.infer<typeof LocationSchema>;
 // ─── Timeline Event ──────────────────────────────────────────────────
 
 export const TimelineEventSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: TimelineEventIdSchema,
+  projectId: ProjectIdSchema,
   title: z.string().min(1),
   description: z.string().default(""),
   date: z.string().default(""),
   order: z.number().int().nonnegative(),
-  linkedChapterIds: z.array(z.uuid()).default([]),
-  linkedCharacterIds: z.array(z.uuid()).default([]),
+  linkedChapterIds: z.array(ChapterIdSchema).default([]),
+  linkedCharacterIds: z.array(CharacterIdSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -158,8 +268,8 @@ export const StyleGuideCategoryEnum = z.enum([
 export type StyleGuideCategory = z.infer<typeof StyleGuideCategoryEnum>;
 
 export const StyleGuideEntrySchema = z.object({
-  id,
-  projectId: projectFk,
+  id: StyleGuideEntryIdSchema,
+  projectId: ProjectIdSchema,
   category: StyleGuideCategoryEnum.default("custom"),
   title: z.string().min(1),
   content: z.string().default(""),
@@ -172,15 +282,15 @@ export type StyleGuideEntry = z.infer<typeof StyleGuideEntrySchema>;
 // ─── Worldbuilding Doc ───────────────────────────────────────────────
 
 export const WorldbuildingDocSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: WorldbuildingDocIdSchema,
+  projectId: ProjectIdSchema,
   title: z.string().min(1),
   content: z.string().default(""),
   tags: z.array(z.string()).default([]),
-  parentDocId: z.uuid().nullable().default(null),
+  parentDocId: WorldbuildingDocIdSchema.nullable().default(null),
   order: z.number().int().nonnegative().default(0),
-  linkedCharacterIds: z.array(z.uuid()).default([]),
-  linkedLocationIds: z.array(z.uuid()).default([]),
+  linkedCharacterIds: z.array(CharacterIdSchema).default([]),
+  linkedLocationIds: z.array(LocationIdSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -198,8 +308,8 @@ export type AppDictionary = z.infer<typeof AppDictionarySchema>;
 // ─── Project Dictionary ─────────────────────────────────────────────
 
 export const ProjectDictionarySchema = z.object({
-  id,
-  projectId: projectFk,
+  id: ProjectDictionaryIdSchema,
+  projectId: ProjectIdSchema,
   words: z.array(z.string()).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -222,8 +332,8 @@ export type OutlineCardColor = z.infer<typeof OutlineCardColorEnum>;
 // ─── Outline Grid Column ────────────────────────────────────────────
 
 export const OutlineGridColumnSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: OutlineGridColumnIdSchema,
+  projectId: ProjectIdSchema,
   title: z.string().min(1),
   order: z.number().int().nonnegative(),
   width: z.number().int().positive().default(200),
@@ -235,9 +345,9 @@ export type OutlineGridColumn = z.infer<typeof OutlineGridColumnSchema>;
 // ─── Outline Grid Row ───────────────────────────────────────────────
 
 export const OutlineGridRowSchema = z.object({
-  id,
-  projectId: projectFk,
-  linkedChapterId: z.uuid().nullable().default(null),
+  id: OutlineGridRowIdSchema,
+  projectId: ProjectIdSchema,
+  linkedChapterId: ChapterIdSchema.nullable().default(null),
   label: z.string().default(""),
   order: z.number().int().nonnegative(),
   createdAt: timestamp,
@@ -248,10 +358,10 @@ export type OutlineGridRow = z.infer<typeof OutlineGridRowSchema>;
 // ─── Outline Grid Cell ──────────────────────────────────────────────
 
 export const OutlineGridCellSchema = z.object({
-  id,
-  projectId: projectFk,
-  rowId: z.uuid(),
-  columnId: z.uuid(),
+  id: OutlineGridCellIdSchema,
+  projectId: ProjectIdSchema,
+  rowId: OutlineGridRowIdSchema,
+  columnId: OutlineGridColumnIdSchema,
   content: z.string().default(""),
   color: OutlineCardColorEnum.default("white"),
   createdAt: timestamp,
@@ -366,10 +476,10 @@ export type AgentModelOverride = z.infer<typeof AgentModelOverrideSchema>;
  * definition the runner constructs from.
  */
 export const AgentDefinitionSchema = z.object({
-  id,
+  id: AgentDefinitionIdSchema,
   kind: AgentKindEnum,
   /** null = global (built-ins always null; users can opt project-scoped). */
-  projectId: projectFk.nullable().default(null),
+  projectId: ProjectIdSchema.nullable().default(null),
   name: z.string().min(1),
   description: z.string().default(""),
   systemPrompt: z.string().min(1),
@@ -484,9 +594,9 @@ export const SprintStatusEnum = z.enum([
 export type SprintStatus = z.infer<typeof SprintStatusEnum>;
 
 export const WritingSprintSchema = z.object({
-  id,
-  projectId: projectFk.nullable().default(null),
-  chapterId: z.uuid().nullable().default(null),
+  id: WritingSprintIdSchema,
+  projectId: ProjectIdSchema.nullable().default(null),
+  chapterId: ChapterIdSchema.nullable().default(null),
   durationMs: z.number().int().positive(),
   wordCountGoal: z.number().int().nonnegative().nullable().default(null),
   status: SprintStatusEnum,
@@ -504,9 +614,9 @@ export type WritingSprint = z.infer<typeof WritingSprintSchema>;
 // ─── Writing Session ────────────────────────────────────────────────
 
 export const WritingSessionSchema = z.object({
-  id,
-  projectId: projectFk,
-  chapterId: z.uuid(),
+  id: WritingSessionIdSchema,
+  projectId: ProjectIdSchema,
+  chapterId: ChapterIdSchema,
   date: z.string(), // YYYY-MM-DD for easy grouping
   hourOfDay: z.number().int().min(0).max(23), // 0-23 for time-of-day analysis
   wordCountStart: z.number().int().nonnegative(),
@@ -523,8 +633,8 @@ export const TrackSourceSchema = z.enum(["youtube"]);
 export type TrackSource = z.infer<typeof TrackSourceSchema>;
 
 export const PlaylistTrackSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: PlaylistTrackIdSchema,
+  projectId: ProjectIdSchema,
   title: z.string().min(1),
   url: z.string().url(),
   source: TrackSourceSchema,
@@ -539,9 +649,9 @@ export type PlaylistTrack = z.infer<typeof PlaylistTrackSchema>;
 // ─── Chapter Snapshot ────────────────────────────────────────────────
 
 export const ChapterSnapshotSchema = z.object({
-  id,
-  chapterId: z.string().uuid(),
-  projectId: projectFk,
+  id: ChapterSnapshotIdSchema,
+  chapterId: ChapterIdSchema,
+  projectId: ProjectIdSchema,
   name: z.string().min(1),
   content: z.string(),
   wordCount: z.number().int().nonnegative(),
@@ -564,9 +674,9 @@ export const CommentStatusEnum = z.enum(["active", "orphaned", "resolved"]);
 export type CommentStatus = z.infer<typeof CommentStatusEnum>;
 
 export const CommentSchema = z.object({
-  id,
-  projectId: projectFk,
-  chapterId: z.uuid(),
+  id: CommentIdSchema,
+  projectId: ProjectIdSchema,
+  chapterId: ChapterIdSchema,
   content: z.string().default(""),
   color: CommentColorEnum.default("yellow"),
   fromOffset: z.number().int().nonnegative(),
@@ -619,9 +729,9 @@ export type ReaderBibleOp = z.infer<typeof ReaderBibleOpEnum>;
 
 /** Append-only entry recording every reader-bible mutation. */
 export const ReaderBibleLogEntrySchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: ReaderBibleLogEntryIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   /** Slash-segmented path under one of READER_BIBLE_TOP_LEVEL_PATHS. */
   path: z.string().min(1),
   op: ReaderBibleOpEnum,
@@ -638,9 +748,9 @@ export type ReaderBibleLogEntry = z.infer<typeof ReaderBibleLogEntrySchema>;
 /** Materialized current view per (runId, path). Bibles are scoped per agent
  * run so reading-passes from one run never leak into another run's context. */
 export const ReaderBibleViewEntrySchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: ReaderBibleViewEntryIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   path: z.string().min(1),
   value: z.unknown(),
   lastUpdatedAt: timestamp,
@@ -682,20 +792,20 @@ export const AgentReferenceSchema = z.object({
 export type AgentReference = z.infer<typeof AgentReferenceSchema>;
 
 export const AgentNoteSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: AgentNoteIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   /** Optional anchor chapter; null = global / cross-cutting. */
-  chapterId: z.uuid().nullable().default(null),
+  chapterId: ChapterIdSchema.nullable().default(null),
   category: AgentNoteCategoryEnum,
   severity: AgentNoteSeverityEnum,
   description: z.string().min(1),
   references: z.array(AgentReferenceSchema).default([]),
   status: AgentNoteStatusEnum.default("open"),
   /** Set by orchestrator when a work unit takes responsibility for this note. */
-  addressedByWorkUnitId: z.uuid().nullable().default(null),
+  addressedByWorkUnitId: WorkUnitIdSchema.nullable().default(null),
   /** Set when the note was generated by a verifier finding. */
-  sourceVerificationId: z.uuid().nullable().default(null),
+  sourceVerificationId: VerificationIdSchema.nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
@@ -709,9 +819,9 @@ export const AgentQuestionStatusEnum = z.enum([
 export type AgentQuestionStatus = z.infer<typeof AgentQuestionStatusEnum>;
 
 export const AgentQuestionSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: AgentQuestionIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   description: z.string().min(1),
   references: z.array(AgentReferenceSchema).default([]),
   status: AgentQuestionStatusEnum.default("open"),
@@ -740,7 +850,7 @@ export const WorkUnitStatusEnum = z.enum([
 export type WorkUnitStatus = z.infer<typeof WorkUnitStatusEnum>;
 
 export const WorkUnitPlacementSchema = z.object({
-  chapterId: z.uuid(),
+  chapterId: ChapterIdSchema,
   position: z.enum(["before", "after", "replace", "insert-at"]),
   anchorText: z.string().optional(),
   paragraphIndex: z.number().int().nonnegative().optional(),
@@ -749,9 +859,9 @@ export const WorkUnitPlacementSchema = z.object({
 export type WorkUnitPlacement = z.infer<typeof WorkUnitPlacementSchema>;
 
 export const WorkUnitSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: WorkUnitIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   tier: z.number().int().nonnegative(),
   goal: z.string().min(1),
   requiredBeats: z.array(z.string()).default([]),
@@ -759,9 +869,9 @@ export const WorkUnitSchema = z.object({
   placement: WorkUnitPlacementSchema,
   targetLengthWords: z.number().int().nonnegative().nullable().default(null),
   bibleRefs: z.array(z.string()).default([]),
-  sourceNoteIds: z.array(z.uuid()).default([]),
+  sourceNoteIds: z.array(AgentNoteIdSchema).default([]),
   /** Other work-unit ids that must apply before this one. */
-  dependencies: z.array(z.uuid()).default([]),
+  dependencies: z.array(WorkUnitIdSchema).default([]),
   status: WorkUnitStatusEnum.default("planned"),
   ownerEditorMessageId: z.string().nullable().default(null),
   createdAt: timestamp,
@@ -775,14 +885,14 @@ export type EditPlanStatus = z.infer<typeof EditPlanStatusEnum>;
 export const EditPlanTierSchema = z.object({
   tierNumber: z.number().int().nonnegative(),
   summary: z.string().default(""),
-  workUnitIds: z.array(z.uuid()).default([]),
+  workUnitIds: z.array(WorkUnitIdSchema).default([]),
 });
 export type EditPlanTier = z.infer<typeof EditPlanTierSchema>;
 
 export const EditPlanSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: EditPlanIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   status: EditPlanStatusEnum.default("draft"),
   currentTier: z.number().int().nonnegative().default(0),
   tiers: z.array(EditPlanTierSchema).default([]),
@@ -811,11 +921,11 @@ export type ProposedEditStatus = z.infer<typeof ProposedEditStatusEnum>;
 // Fields shared by every proposed-edit variant. The variant-specific fields
 // (locator and disambiguators) live on each branch of the discriminated union.
 const proposedEditBase = {
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
-  workUnitId: z.uuid(),
-  chapterId: z.uuid(),
+  id: ProposedEditIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
+  workUnitId: WorkUnitIdSchema,
+  chapterId: ChapterIdSchema,
   newContent: z.string(),
   rationale: z.string().default(""),
   status: ProposedEditStatusEnum.default("pending"),
@@ -859,12 +969,12 @@ export const VerificationFindingSchema = z.object({
 export type VerificationFinding = z.infer<typeof VerificationFindingSchema>;
 
 export const VerificationSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: VerificationIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   tier: z.number().int().nonnegative(),
   /** Null = tier-wide drift verification. */
-  workUnitId: z.uuid().nullable().default(null),
+  workUnitId: WorkUnitIdSchema.nullable().default(null),
   goalAchieved: z.boolean(),
   contradictions: z.array(VerificationFindingSchema).default([]),
   continuityBreaks: z.array(VerificationFindingSchema).default([]),
@@ -939,12 +1049,12 @@ export const AgentRunUsageSchema = z.object({
 export type AgentRunUsage = z.infer<typeof AgentRunUsageSchema>;
 
 export const AgentRunSchema = z.object({
-  id,
-  projectId: projectFk,
+  id: AgentRunIdSchema,
+  projectId: ProjectIdSchema,
   name: z.string().min(1),
   status: AgentRunStatusEnum.default("idle"),
   currentTier: z.number().int().nonnegative().default(0),
-  currentSnapshotManifestId: z.uuid().nullable().default(null),
+  currentSnapshotManifestId: SnapshotManifestIdSchema.nullable().default(null),
   readerPasses: z.array(ReaderPassSchema).default([]),
   /**
    * Snapshot of agent model overrides at run-creation time. Historic field —
@@ -989,9 +1099,9 @@ export const AgentRunSchema = z.object({
 export type AgentRun = z.infer<typeof AgentRunSchema>;
 
 export const ChapterSummarySchema = z.object({
-  id,
-  projectId: projectFk,
-  chapterId: z.uuid(),
+  id: ChapterSummaryIdSchema,
+  projectId: ProjectIdSchema,
+  chapterId: ChapterIdSchema,
   /** sha-256 of the source chapter content; mismatch invalidates the row. */
   sourceContentHash: z.string().min(1),
   summary: z.string(),
@@ -1000,13 +1110,13 @@ export const ChapterSummarySchema = z.object({
 export type ChapterSummary = z.infer<typeof ChapterSummarySchema>;
 
 export const SnapshotManifestSchema = z.object({
-  id,
-  projectId: projectFk,
-  runId: z.uuid(),
+  id: SnapshotManifestIdSchema,
+  projectId: ProjectIdSchema,
+  runId: AgentRunIdSchema,
   tierNumber: z.number().int().nonnegative(),
   name: z.string().min(1),
   /** FKs into existing chapterSnapshots — manifests don't duplicate storage. */
-  chapterSnapshotIds: z.array(z.uuid()).default([]),
+  chapterSnapshotIds: z.array(ChapterSnapshotIdSchema).default([]),
   /** Inline snapshot of the reader bible at the moment of manifest creation. */
   readerBibleSnapshot: z.object({
     view: z.array(ReaderBibleViewEntrySchema).default([]),

@@ -1,5 +1,6 @@
 import { listSnapshotManifestsByRun } from "@/db/operations/snapshotManifests";
 import { listVerificationsByRun } from "@/db/operations/verifications";
+import type { AgentRunId, ChapterId } from "@/db/schemas";
 
 /**
  * Compute the chapter ids that have been touched by recent tiers but not yet
@@ -11,13 +12,13 @@ import { listVerificationsByRun } from "@/db/operations/verifications";
  * this to track multiple unprocessed manifests if drift accumulates.
  */
 export async function getChaptersAwaitingReread(
-  runId: string,
-): Promise<string[]> {
+  runId: AgentRunId,
+): Promise<ChapterId[]> {
   const manifests = await listSnapshotManifestsByRun(runId);
   if (manifests.length === 0) return [];
   // Manifests are already sorted by createdAt asc — newest is last.
   const latest = manifests[manifests.length - 1];
-  return [...new Set(latest.chapterSnapshotIds)];
+  return [...new Set(latest.chapterSnapshotIds)] as unknown as ChapterId[];
 }
 
 /**
@@ -25,7 +26,7 @@ export async function getChaptersAwaitingReread(
  * the run was last read. (Caller usually relies on the run's
  * `requiresIncrementalReread` flag — this is the recompute path.)
  */
-export async function hasDrift(runId: string): Promise<boolean> {
+export async function hasDrift(runId: AgentRunId): Promise<boolean> {
   const verifications = await listVerificationsByRun(runId);
   return verifications.some(
     (v) => v.contradictions.length > 0 || v.continuityBreaks.length > 0,

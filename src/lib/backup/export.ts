@@ -1,5 +1,6 @@
 import { db } from "@/db/database";
 import { updateAppSettings } from "@/db/operations";
+import type { ProjectId } from "@/db/schemas";
 import { triggerDownload } from "@/lib/export/download";
 import {
   BACKUP_VERSION,
@@ -10,7 +11,7 @@ import {
 } from "./types";
 
 export async function gatherProjectData(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<ProjectBackupData | null> {
   const project = await db.projects.get(projectId);
   if (!project) return null;
@@ -73,7 +74,7 @@ export async function gatherProjectData(
 }
 
 export async function exportProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<ProjectBackup | null> {
   const data = await gatherProjectData(projectId);
   if (!data) return null;
@@ -151,7 +152,9 @@ export async function downloadFullBackup(): Promise<void> {
   await updateAppSettings({ lastExportedAt: new Date().toISOString() });
 }
 
-export async function downloadProjectBackup(projectId: string): Promise<void> {
+export async function downloadProjectBackup(
+  projectId: ProjectId,
+): Promise<void> {
   const backup = await exportProject(projectId);
   if (!backup) {
     throw new Error("Project not found");

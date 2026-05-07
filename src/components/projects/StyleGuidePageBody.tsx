@@ -7,12 +7,16 @@ import {
   deleteStyleGuideEntry,
   updateStyleGuideEntry,
 } from "@/db/operations";
-import type { StyleGuideCategory } from "@/db/schemas";
+import type {
+  ProjectId,
+  StyleGuideCategory,
+  StyleGuideEntryId,
+} from "@/db/schemas";
 import { useStyleGuideByProject } from "@/hooks/data/source";
 import { useHighlightFade } from "@/hooks/editor/useHighlightFade";
 
 export interface StyleGuidePageBodyProps {
-  projectId: string;
+  projectId: ProjectId;
   readOnly: boolean;
 }
 
@@ -106,7 +110,7 @@ function StyleGuideCard({
   readOnly,
 }: {
   entry: {
-    id: string;
+    id: StyleGuideEntryId;
     title: string;
     category: string;
     content: string;

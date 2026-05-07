@@ -1,17 +1,22 @@
 import { db } from "../database";
-import { type ChapterSnapshot, ChapterSnapshotSchema } from "../schemas";
+import {
+  type ChapterId,
+  type ChapterSnapshot,
+  type ChapterSnapshotId,
+  ChapterSnapshotSchema,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 // ─── Chapter Snapshots ──────────────────────────────────────────────
 
 export async function getSnapshotsByChapter(
-  chapterId: string,
+  chapterId: ChapterId,
 ): Promise<ChapterSnapshot[]> {
   return db.chapterSnapshots.where({ chapterId }).reverse().sortBy("createdAt");
 }
 
 export async function getSnapshot(
-  id: string,
+  id: ChapterSnapshotId,
 ): Promise<ChapterSnapshot | undefined> {
   return db.chapterSnapshots.get(id);
 }
@@ -35,6 +40,6 @@ export async function createSnapshot(
   return snapshot;
 }
 
-export async function deleteSnapshot(id: string): Promise<void> {
+export async function deleteSnapshot(id: ChapterSnapshotId): Promise<void> {
   await db.chapterSnapshots.delete(id);
 }

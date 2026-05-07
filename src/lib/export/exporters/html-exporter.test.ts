@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import type { ProjectId } from "@/db/schemas";
 import type { DocNode } from "../markdown-to-nodes";
 import { exportHtml, nodesToHtml } from "./html-exporter";
+
+const PROJECT_ID = "test" as ProjectId;
 
 describe("nodesToHtml", () => {
   describe("block-level elements", () => {
@@ -188,7 +191,7 @@ describe("exportHtml", () => {
     const html = exportHtml(content, {
       format: "markdown",
       scope: "chapter",
-      projectId: "test",
+      projectId: PROJECT_ID,
       includeTitlePage: false,
       includeChapterHeadings: false,
       pageBreaksBetweenChapters: false,
@@ -204,7 +207,7 @@ describe("exportHtml", () => {
     const html = exportHtml(content, {
       format: "markdown",
       scope: "chapter",
-      projectId: "test",
+      projectId: PROJECT_ID,
       includeTitlePage: false,
       includeChapterHeadings: true,
       pageBreaksBetweenChapters: false,
@@ -223,7 +226,7 @@ describe("exportHtml", () => {
     const html = exportHtml(content, {
       format: "markdown",
       scope: "book",
-      projectId: "test",
+      projectId: PROJECT_ID,
       includeTitlePage: true,
       includeChapterHeadings: true,
       pageBreaksBetweenChapters: false,
@@ -241,7 +244,7 @@ describe("exportHtml", () => {
     const html = exportHtml(content, {
       format: "markdown",
       scope: "book",
-      projectId: "test",
+      projectId: PROJECT_ID,
       includeTitlePage: true,
       includeChapterHeadings: false,
       pageBreaksBetweenChapters: false,

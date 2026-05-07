@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { YjsCommentsAdapter } from "./comments";
 
 /**
@@ -28,8 +29,8 @@ const VIEW_PERMS = {
   canDelete: false,
 };
 
-const CHAPTER_ID = "00000000-0000-4000-8000-000000000001";
-const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa";
+const CHAPTER_ID = "00000000-0000-4000-8000-000000000001" as ChapterId;
+const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
 
 function makeTwoConnectedDocs(): { a: Y.Doc; b: Y.Doc; sync: () => void } {
   // Manual relay: forward updates from each doc to the other on demand.

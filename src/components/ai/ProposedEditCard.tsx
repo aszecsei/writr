@@ -3,6 +3,7 @@
 import { diffWordsWithSpace } from "diff";
 import { AlertTriangle, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { ChapterId } from "@/db/schemas";
 import { useEditorStore } from "@/store/editorStore";
 
 /**
@@ -11,7 +12,7 @@ import { useEditorStore } from "@/store/editorStore";
  */
 export interface ProposedEditChatPayload {
   mode: "chat";
-  chapterId: string;
+  chapterId: ChapterId;
   chapterTitle: string;
   kind: "replace" | "insert_at" | "append" | "full_chapter";
   anchorText?: string;

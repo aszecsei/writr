@@ -2,13 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 import type {
   Chapter,
+  ChapterId,
   Character,
+  CharacterId,
   CharacterRelationship,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
   Project,
+  ProjectId,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -26,10 +29,10 @@ import {
   type ProjectSnapshot,
 } from "./projectMirror";
 
-const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa";
-const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001";
-const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002";
-const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011";
+const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
+const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001" as ChapterId;
+const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
+const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
 const NOW = "2026-05-06T12:00:00.000Z";
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -46,7 +49,7 @@ function project(overrides: Partial<Project> = {}): Project {
   };
 }
 
-function chapter(id: string, overrides: Partial<Chapter> = {}): Chapter {
+function chapter(id: ChapterId, overrides: Partial<Chapter> = {}): Chapter {
   return {
     id,
     projectId: PROJECT_ID,
@@ -62,7 +65,10 @@ function chapter(id: string, overrides: Partial<Chapter> = {}): Chapter {
   };
 }
 
-function character(id: string, overrides: Partial<Character> = {}): Character {
+function character(
+  id: CharacterId,
+  overrides: Partial<Character> = {},
+): Character {
   return {
     id,
     projectId: PROJECT_ID,

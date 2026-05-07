@@ -4,6 +4,7 @@ import {
   getLocation,
   updateLocation,
 } from "@/db/operations/locations";
+import type { LocationId } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -72,9 +73,9 @@ export const updateLocationTool = defineTool({
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
-    const existing = await getLocation(id);
+    const existing = await getLocation(id as LocationId);
     if (!existing) return fail(`Location not found: ${id}`);
-    await updateLocation(id, fields);
+    await updateLocation(id as LocationId, fields);
     return ok(`Updated location "${existing.name}"`);
   },
 });

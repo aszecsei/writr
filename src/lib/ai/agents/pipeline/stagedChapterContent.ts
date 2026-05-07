@@ -1,7 +1,12 @@
 import { match } from "ts-pattern";
 import { getChapter } from "@/db/operations/chapters";
 import { listApprovedEditsForChapter } from "@/db/operations/proposedEdits";
-import type { ProposedEdit } from "@/db/schemas";
+import type {
+  AgentRunId,
+  ChapterId,
+  ProposedEdit,
+  ProposedEditId,
+} from "@/db/schemas";
 
 /**
  * Apply a list of proposed edits to a chapter content string. Locates each
@@ -23,8 +28,8 @@ import type { ProposedEdit } from "@/db/schemas";
 export function applyEditsToContent(
   content: string,
   edits: ProposedEdit[],
-): { content: string; applied: string[]; skipped: string[] } {
-  const skipped: string[] = [];
+): { content: string; applied: ProposedEditId[]; skipped: ProposedEditId[] } {
+  const skipped: ProposedEditId[] = [];
   const located: { edit: ProposedEdit; range: ResolvedRange }[] = [];
 
   // First pass: resolve every edit against the original content. `replace`
@@ -42,7 +47,7 @@ export function applyEditsToContent(
   located.sort((a, b) => b.range.from - a.range.from);
 
   let working = content;
-  const applied: string[] = [];
+  const applied: ProposedEditId[] = [];
   for (const { edit, range } of located) {
     working =
       working.slice(0, range.from) + edit.newContent + working.slice(range.to);
@@ -119,8 +124,8 @@ export function locateProposedEdit(
  * editor in the same tier sees the earlier editor's staged work.
  */
 export async function getChapterWithStagedEdits(
-  runId: string,
-  chapterId: string,
+  runId: AgentRunId,
+  chapterId: ChapterId,
 ): Promise<{ content: string; wordCount: number } | null> {
   const chapter = await getChapter(chapterId);
   if (!chapter) return null;

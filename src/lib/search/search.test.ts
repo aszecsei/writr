@@ -9,13 +9,14 @@ import {
   createTimelineEvent,
   createWorldbuildingDoc,
 } from "@/db/operations";
+import type { ProjectId } from "@/db/schemas";
 import {
   getTotalResultCount,
   searchProject,
   searchProjectPaginated,
 } from "./search";
 
-let projectId: string;
+let projectId: ProjectId;
 
 beforeEach(async () => {
   await db.projects.clear();

@@ -1,6 +1,7 @@
 import type {
   AgentKind,
   AgentModelOverride,
+  AgentRunId,
   AiProvider,
   ReasoningEffort,
 } from "@/db/schemas";
@@ -37,7 +38,7 @@ export interface Agent {
   id: string;
   kind: AnyAgentKind;
   /** When set, scopes tool execution to a specific pipeline run. */
-  runId?: string;
+  runId?: AgentRunId;
   /**
    * Per-agent model override. When omitted, the runner falls back to the
    * global `AppSettings.aiProvider` / `providerModels` / `reasoningEffort`.

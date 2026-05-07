@@ -1,5 +1,11 @@
 import { db } from "../database";
-import { type WorkUnit, WorkUnitSchema, type WorkUnitStatus } from "../schemas";
+import {
+  type AgentRunId,
+  type WorkUnit,
+  type WorkUnitId,
+  WorkUnitSchema,
+  type WorkUnitStatus,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 export type CreateWorkUnitInput = Omit<
@@ -36,16 +42,20 @@ export async function createWorkUnit(
   return wu;
 }
 
-export async function getWorkUnit(id: string): Promise<WorkUnit | undefined> {
+export async function getWorkUnit(
+  id: WorkUnitId,
+): Promise<WorkUnit | undefined> {
   return db.workUnits.get(id);
 }
 
-export async function listWorkUnitsByRun(runId: string): Promise<WorkUnit[]> {
+export async function listWorkUnitsByRun(
+  runId: AgentRunId,
+): Promise<WorkUnit[]> {
   return db.workUnits.where({ runId }).sortBy("createdAt");
 }
 
 export async function listWorkUnitsByTier(
-  runId: string,
+  runId: AgentRunId,
   tier: number,
 ): Promise<WorkUnit[]> {
   return db.workUnits
@@ -55,7 +65,7 @@ export async function listWorkUnitsByTier(
 }
 
 export async function updateWorkUnit(
-  id: string,
+  id: WorkUnitId,
   data: Partial<
     Pick<
       WorkUnit,
@@ -76,6 +86,6 @@ export async function updateWorkUnit(
   await db.workUnits.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteWorkUnit(id: string): Promise<void> {
+export async function deleteWorkUnit(id: WorkUnitId): Promise<void> {
   await db.workUnits.delete(id);
 }

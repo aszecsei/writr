@@ -2,7 +2,12 @@ import { useState } from "react";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import { Modal } from "@/components/ui/Modal";
 import { createRelationship } from "@/db/operations";
-import type { Character, RelationshipType } from "@/db/schemas";
+import type {
+  Character,
+  CharacterId,
+  ProjectId,
+  RelationshipType,
+} from "@/db/schemas";
 import { relationshipTypeList } from "./relationship-config";
 
 export function AddRelationshipDialog({
@@ -10,12 +15,12 @@ export function AddRelationshipDialog({
   characters,
   onClose,
 }: {
-  projectId: string;
+  projectId: ProjectId;
   characters: Character[];
   onClose: () => void;
 }) {
-  const [sourceId, setSourceId] = useState("");
-  const [targetId, setTargetId] = useState("");
+  const [sourceId, setSourceId] = useState<CharacterId | "">("");
+  const [targetId, setTargetId] = useState<CharacterId | "">("");
   const [type, setType] = useState<RelationshipType>("spouse");
   const [customLabel, setCustomLabel] = useState("");
   const [error, setError] = useState("");
@@ -61,7 +66,7 @@ export function AddRelationshipDialog({
           <select
             id="rel-source"
             value={sourceId}
-            onChange={(e) => setSourceId(e.target.value)}
+            onChange={(e) => setSourceId(e.target.value as CharacterId | "")}
             className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="">Select character...</option>
@@ -83,7 +88,7 @@ export function AddRelationshipDialog({
           <select
             id="rel-target"
             value={targetId}
-            onChange={(e) => setTargetId(e.target.value)}
+            onChange={(e) => setTargetId(e.target.value as CharacterId | "")}
             className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="">Select character...</option>

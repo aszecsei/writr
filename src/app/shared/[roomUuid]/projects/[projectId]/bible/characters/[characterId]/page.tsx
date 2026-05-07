@@ -2,12 +2,13 @@
 
 import { useParams } from "next/navigation";
 import { CharacterDetailBody } from "@/components/projects/CharacterDetailBody";
+import type { CharacterId, ProjectId } from "@/db/schemas";
 
 export default function SharedCharacterDetailPage() {
   const params = useParams<{
     roomUuid: string;
-    projectId: string;
-    characterId: string;
+    projectId: ProjectId;
+    characterId: CharacterId;
   }>();
   return (
     <CharacterDetailBody

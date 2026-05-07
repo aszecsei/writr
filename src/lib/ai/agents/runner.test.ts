@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
 import { createAgentRun, getAgentRun } from "@/db/operations/agentRuns";
 import { updateAppSettings } from "@/db/operations/settings";
+import type { ProjectId } from "@/db/schemas";
 import { invokeAgentForRun } from "./runner";
 import type { Agent } from "./types";
 
-const projectId = "11111111-1111-4111-a111-111111111111";
+const projectId = "11111111-1111-4111-a111-111111111111" as ProjectId;
 
 beforeEach(async () => {
   await Promise.all([db.projects.clear(), db.agentRuns.clear()]);

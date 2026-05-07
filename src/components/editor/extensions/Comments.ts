@@ -3,7 +3,7 @@ import type { EditorState } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import type { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import type { Comment } from "@/db/schemas";
+import type { Comment, CommentId } from "@/db/schemas";
 import { HIGHLIGHT_CLASSES, MARKER_CLASSES } from "../comments/colors";
 
 export interface CommentsOptions {
@@ -95,7 +95,7 @@ function buildDecorationsFromMap(
 /** Get the current position map from the editor state. */
 export function getCommentPositions(
   state: EditorState,
-): Map<string, { from: number; to: number }> {
+): Map<CommentId, { from: number; to: number }> {
   const pluginState = commentsPluginKey.getState(state);
   return pluginState?.positionMap ?? new Map();
 }

@@ -1,8 +1,12 @@
 import { db } from "../database";
 import {
+  type ChapterId,
+  type ProjectId,
   type WritingSession,
+  type WritingSessionId,
   WritingSessionSchema,
   type WritingSprint,
+  type WritingSprintId,
   WritingSprintSchema,
 } from "../schemas";
 import { generateId, now, toLocalDateString } from "./helpers";
@@ -44,7 +48,7 @@ export async function createSprint(
   return sprint;
 }
 
-export async function pauseSprint(id: string): Promise<void> {
+export async function pauseSprint(id: WritingSprintId): Promise<void> {
   const sprint = await db.writingSprints.get(id);
   if (!sprint) throw new Error("Sprint not found.");
   if (sprint.status !== "active") throw new Error("Sprint is not active.");
@@ -56,7 +60,7 @@ export async function pauseSprint(id: string): Promise<void> {
   });
 }
 
-export async function resumeSprint(id: string): Promise<void> {
+export async function resumeSprint(id: WritingSprintId): Promise<void> {
   const sprint = await db.writingSprints.get(id);
   if (!sprint) throw new Error("Sprint not found.");
   if (sprint.status !== "paused") throw new Error("Sprint is not paused.");
@@ -72,7 +76,7 @@ export async function resumeSprint(id: string): Promise<void> {
 }
 
 export async function endSprint(
-  id: string,
+  id: WritingSprintId,
   endWordCount: number,
   abandoned = false,
 ): Promise<void> {
@@ -98,7 +102,7 @@ export async function endSprint(
 }
 
 export async function getSprintsByProject(
-  projectId: string | null,
+  projectId: ProjectId | null,
   limit?: number,
 ): Promise<WritingSprint[]> {
   let query = projectId
@@ -129,7 +133,7 @@ export async function getAllCompletedSprints(
   return query.toArray();
 }
 
-export async function deleteSprint(id: string): Promise<void> {
+export async function deleteSprint(id: WritingSprintId): Promise<void> {
   await db.writingSprints.delete(id);
 }
 
@@ -138,7 +142,7 @@ export async function deleteSprint(id: string): Promise<void> {
 // Session tracking state - tracks ongoing sessions within the same hour
 const sessionCache = new Map<
   string,
-  { sessionId: string; wordCountStart: number; lastUpdate: number }
+  { sessionId: WritingSessionId; wordCountStart: number; lastUpdate: number }
 >();
 
 // How long before a session is considered stale (5 minutes)
@@ -155,8 +159,8 @@ export function clearSessionCache(): void {
  * it will be extended. Otherwise, a new session is created.
  */
 export async function recordWritingSession(
-  projectId: string,
-  chapterId: string,
+  projectId: ProjectId,
+  chapterId: ChapterId,
   previousWordCount: number,
   newWordCount: number,
 ): Promise<void> {
@@ -205,7 +209,7 @@ export async function recordWritingSession(
 }
 
 export async function getSessionsByProject(
-  projectId: string,
+  projectId: ProjectId,
   days = 30,
 ): Promise<WritingSession[]> {
   const cutoffDate = new Date();

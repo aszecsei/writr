@@ -8,6 +8,7 @@ import {
   addWordToAppDictionary,
   addWordToProjectDictionary,
 } from "@/db/operations";
+import type { ProjectId } from "@/db/schemas";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   type ContextMenuState,
@@ -16,7 +17,7 @@ import {
 
 interface SpellcheckContextMenuProps {
   editor: Editor | null;
-  projectId: string;
+  projectId: ProjectId;
   contextMenu: ContextMenuState;
   onClose: () => void;
 }

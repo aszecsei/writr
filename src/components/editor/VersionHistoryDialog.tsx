@@ -10,7 +10,12 @@ import {
   deleteSnapshot,
   updateChapterContent,
 } from "@/db/operations";
-import type { ChapterSnapshot } from "@/db/schemas";
+import type {
+  ChapterId,
+  ChapterSnapshot,
+  ChapterSnapshotId,
+  ProjectId,
+} from "@/db/schemas";
 import { useChapter } from "@/hooks/data/useChapter";
 import { useSnapshotsByChapter } from "@/hooks/data/useSnapshots";
 import { useEditorStore } from "@/store/editorStore";
@@ -90,8 +95,11 @@ export function VersionHistoryDialog() {
   const [diffSnapshot, setDiffSnapshot] = useState<ChapterSnapshot | null>(
     null,
   );
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ChapterSnapshotId | null>(
+    null,
+  );
+  const [confirmRestore, setConfirmRestore] =
+    useState<ChapterSnapshotId | null>(null);
 
   if (!isVersionHistoryModal(modal)) return null;
 
@@ -135,8 +143,8 @@ function VersionHistoryContent({
   confirmRestore,
   setConfirmRestore,
 }: {
-  chapterId: string;
-  projectId: string;
+  chapterId: ChapterId;
+  projectId: ProjectId;
   closeModal: () => void;
   markSaved: () => void;
   bumpContentVersion: () => void;
@@ -146,10 +154,10 @@ function VersionHistoryContent({
   setSnapshotName: (v: string) => void;
   diffSnapshot: ChapterSnapshot | null;
   setDiffSnapshot: (v: ChapterSnapshot | null) => void;
-  confirmDelete: string | null;
-  setConfirmDelete: (v: string | null) => void;
-  confirmRestore: string | null;
-  setConfirmRestore: (v: string | null) => void;
+  confirmDelete: ChapterSnapshotId | null;
+  setConfirmDelete: (v: ChapterSnapshotId | null) => void;
+  confirmRestore: ChapterSnapshotId | null;
+  setConfirmRestore: (v: ChapterSnapshotId | null) => void;
 }) {
   const snapshots = useSnapshotsByChapter(chapterId);
   const chapter = useChapter(chapterId);
@@ -167,7 +175,7 @@ function VersionHistoryContent({
   }, [snapshotName, chapter, chapterId, projectId, setSnapshotName]);
 
   const handleDelete = useCallback(
-    async (id: string) => {
+    async (id: ChapterSnapshotId) => {
       await deleteSnapshot(id);
       setConfirmDelete(null);
     },
@@ -253,12 +261,12 @@ function SnapshotListView({
   snapshots: ChapterSnapshot[] | undefined;
   snapshotName: string;
   setSnapshotName: (v: string) => void;
-  confirmDelete: string | null;
-  setConfirmDelete: (v: string | null) => void;
-  confirmRestore: string | null;
-  setConfirmRestore: (v: string | null) => void;
+  confirmDelete: ChapterSnapshotId | null;
+  setConfirmDelete: (v: ChapterSnapshotId | null) => void;
+  confirmRestore: ChapterSnapshotId | null;
+  setConfirmRestore: (v: ChapterSnapshotId | null) => void;
   onCreate: () => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: ChapterSnapshotId) => void;
   onRestore: (snapshot: ChapterSnapshot) => void;
   onCompare: (snapshot: ChapterSnapshot) => void;
 }) {

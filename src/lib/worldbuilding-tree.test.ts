@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
+import type { ProjectId, WorldbuildingDocId } from "@/db/schemas";
 import { makeWorldbuildingDoc } from "@/test/helpers";
 import {
   buildWorldbuildingTree,
   compileWorldbuildingToMarkdown,
 } from "./worldbuilding-tree";
 
-const pid = "00000000-0000-4000-8000-000000000001";
+const pid = "00000000-0000-4000-8000-000000000001" as ProjectId;
+const idA = "00000000-0000-4000-8000-aaaaaaaaaaaa" as WorldbuildingDocId;
+const idB = "00000000-0000-4000-8000-bbbbbbbbbbbb" as WorldbuildingDocId;
 
 describe("buildWorldbuildingTree", () => {
   it("returns empty roots for empty array", () => {
@@ -40,14 +43,14 @@ describe("buildWorldbuildingTree", () => {
 
   it("nests parent-child relationships", () => {
     const parent = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      id: idA,
       projectId: pid,
       title: "Parent",
     });
     const child = makeWorldbuildingDoc({
       projectId: pid,
       title: "Child",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: idA,
     });
     const tree = buildWorldbuildingTree([parent, child]);
     expect(tree.roots).toHaveLength(1);
@@ -58,20 +61,20 @@ describe("buildWorldbuildingTree", () => {
 
   it("handles 3-level depth", () => {
     const root = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      id: idA,
       projectId: pid,
       title: "Root",
     });
     const mid = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-bbbbbbbbbbbb",
+      id: idB,
       projectId: pid,
       title: "Mid",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: idA,
     });
     const leaf = makeWorldbuildingDoc({
       projectId: pid,
       title: "Leaf",
-      parentDocId: "00000000-0000-4000-8000-bbbbbbbbbbbb",
+      parentDocId: idB,
     });
     const tree = buildWorldbuildingTree([root, mid, leaf]);
     expect(tree.roots[0].depth).toBe(0);
@@ -81,20 +84,20 @@ describe("buildWorldbuildingTree", () => {
 
   it("sorts multiple children within parent by order", () => {
     const parent = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      id: idA,
       projectId: pid,
       title: "Parent",
     });
     const c2 = makeWorldbuildingDoc({
       projectId: pid,
       title: "Second",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: idA,
       order: 1,
     });
     const c1 = makeWorldbuildingDoc({
       projectId: pid,
       title: "First",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: idA,
       order: 0,
     });
     const tree = buildWorldbuildingTree([parent, c2, c1]);
@@ -106,7 +109,7 @@ describe("buildWorldbuildingTree", () => {
     const orphan = makeWorldbuildingDoc({
       projectId: pid,
       title: "Orphan",
-      parentDocId: "00000000-0000-4000-8000-ffffffffffff",
+      parentDocId: "00000000-0000-4000-8000-ffffffffffff" as WorldbuildingDocId,
     });
     const tree = buildWorldbuildingTree([orphan]);
     expect(tree.roots).toHaveLength(0);
@@ -115,16 +118,16 @@ describe("buildWorldbuildingTree", () => {
   describe("cycle detection", () => {
     it("handles mutual parent references (A->B, B->A)", () => {
       const a = makeWorldbuildingDoc({
-        id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+        id: idA,
         projectId: pid,
         title: "A",
-        parentDocId: "00000000-0000-4000-8000-bbbbbbbbbbbb",
+        parentDocId: idB,
       });
       const b = makeWorldbuildingDoc({
-        id: "00000000-0000-4000-8000-bbbbbbbbbbbb",
+        id: idB,
         projectId: pid,
         title: "B",
-        parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+        parentDocId: idA,
       });
       // Neither has parentDocId=null so neither is a root
       const tree = buildWorldbuildingTree([a, b]);
@@ -133,10 +136,10 @@ describe("buildWorldbuildingTree", () => {
 
     it("handles self-referential doc", () => {
       const doc = makeWorldbuildingDoc({
-        id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+        id: idA,
         projectId: pid,
         title: "Self",
-        parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+        parentDocId: idA,
       });
       const tree = buildWorldbuildingTree([doc]);
       expect(tree.roots).toHaveLength(0);
@@ -147,7 +150,7 @@ describe("buildWorldbuildingTree", () => {
 describe("compileWorldbuildingToMarkdown", () => {
   it("increments heading depth with nesting", () => {
     const root = makeWorldbuildingDoc({
-      id: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      id: idA,
       projectId: pid,
       title: "Root",
       content: "Root content",
@@ -156,7 +159,7 @@ describe("compileWorldbuildingToMarkdown", () => {
       projectId: pid,
       title: "Child",
       content: "Child content",
-      parentDocId: "00000000-0000-4000-8000-aaaaaaaaaaaa",
+      parentDocId: idA,
     });
     const tree = buildWorldbuildingTree([root, child]);
     const md = compileWorldbuildingToMarkdown(tree);
@@ -167,9 +170,10 @@ describe("compileWorldbuildingToMarkdown", () => {
   it("caps heading depth at h6 for deep trees", () => {
     // Build a 7-level deep tree
     const docs = [];
-    let parentId: string | null = null;
+    let parentId: WorldbuildingDocId | null = null;
     for (let i = 0; i < 7; i++) {
-      const id = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      const id =
+        `00000000-0000-4000-8000-${String(i).padStart(12, "0")}` as WorldbuildingDocId;
       docs.push(
         makeWorldbuildingDoc({
           id,

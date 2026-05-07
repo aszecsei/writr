@@ -14,7 +14,9 @@ import {
 import {
   AgentNoteCategoryEnum,
   AgentNoteSeverityEnum,
+  type AgentQuestionId,
   AgentReferenceKindEnum,
+  type ChapterId,
 } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
@@ -109,7 +111,7 @@ export const noteTool = defineTool({
     const note = await createAgentNote({
       projectId: context.projectId,
       runId: context.runId,
-      chapterId: params.chapterId ?? null,
+      chapterId: (params.chapterId ?? null) as ChapterId | null,
       category: params.category,
       severity: params.severity,
       description: params.description,
@@ -189,7 +191,7 @@ export const listNotesTool = defineTool({
     const notes = await listAgentNotes({
       runId: context.runId,
       status: params.status,
-      chapterId: params.chapterId,
+      chapterId: params.chapterId as ChapterId | undefined,
     });
     return ok(`Found ${notes.length} notes`, {
       notes: notes.map((n) => ({
@@ -279,7 +281,9 @@ export const proposeAnswerTool = defineTool({
     if (context.passNumber === undefined) {
       return fail("propose_answer requires a pass number on the agent context");
     }
-    const question = await getAgentQuestion(params.questionId);
+    const question = await getAgentQuestion(
+      params.questionId as AgentQuestionId,
+    );
     if (!question) return fail(`Question not found: ${params.questionId}`);
     if (question.runId !== context.runId) {
       return fail("Question belongs to a different run");
@@ -288,7 +292,7 @@ export const proposeAnswerTool = defineTool({
       return fail(`Cannot propose an answer for a ${question.status} question`);
     }
     await proposeAgentQuestionAnswer({
-      id: params.questionId,
+      id: params.questionId as AgentQuestionId,
       proposedAnswer: params.proposedAnswer,
       passNumber: context.passNumber,
     });

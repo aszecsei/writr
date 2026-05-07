@@ -16,7 +16,7 @@ import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { useCommentStore } from "@/store/commentStore";
-import { useEditorStore } from "@/store/editorStore";
+import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
@@ -41,7 +41,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const currentFont = settings?.editorFont ?? "literata";
   const openModal = useUiStore((s) => s.openModal);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
-  const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
+  const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const marginVisible = useCommentStore((s) => s.marginVisible);

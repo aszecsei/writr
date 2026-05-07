@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import type { ProjectId } from "@/db/schemas";
 import { useAgentRunsByProject } from "@/hooks/data/useAgentRun";
 
 interface AgentsNavProps {
-  projectId: string;
+  projectId: ProjectId;
   pathname: string;
 }
 

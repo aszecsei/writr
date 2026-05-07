@@ -61,8 +61,14 @@ describe("ManageParticipantsDialog (snapshots)", () => {
           displayName: "Alice",
           color: "#cc6699",
           approvedAt: 100,
+          peerId: null,
         },
-        "pub-2": { displayName: "Bob", color: "#3366cc", approvedAt: 200 },
+        "pub-2": {
+          displayName: "Bob",
+          color: "#3366cc",
+          approvedAt: 200,
+          peerId: null,
+        },
       },
     });
     useUiStore.getState().openModal({ id: "collab-manage-participants" });
@@ -77,6 +83,7 @@ describe("ManageParticipantsDialog (snapshots)", () => {
       displayName: "Eve",
       color: "#ff0000",
       receivedAt: 0,
+      from: "",
     });
     useUiStore.getState().openModal({ id: "collab-manage-participants" });
     const { baseElement } = render(<ManageParticipantsDialog />);
@@ -96,6 +103,7 @@ describe("ManageParticipantsDialog (interactions)", () => {
     useCollabStore.getState().approveGuestPub("pub-1", {
       displayName: "Alice",
       color: "#cc6699",
+      peerId: "peer-1",
     });
     useUiStore.getState().openModal({ id: "collab-manage-participants" });
     const { baseElement } = render(<ManageParticipantsDialog />);

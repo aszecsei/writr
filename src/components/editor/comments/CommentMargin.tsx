@@ -3,7 +3,7 @@
 import type { Editor } from "@tiptap/react";
 import { Check, MessageSquare, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Comment, CommentColor } from "@/db/schemas";
+import type { Comment, CommentColor, CommentId } from "@/db/schemas";
 import type { CommentsAdapter } from "@/lib/comments/adapter";
 import { useCommentStore } from "@/store/commentStore";
 import { getCommentPositions } from "../extensions/Comments";
@@ -22,7 +22,7 @@ interface CommentMarginProps {
 }
 
 interface CommentPosition {
-  id: string;
+  id: CommentId;
   top: number;
   comment: Comment;
 }

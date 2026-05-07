@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
 import { createWorkUnit } from "@/db/operations/workUnits";
+import type { AgentRunId, ChapterId, ProjectId } from "@/db/schemas";
 import { makeChapter, resetIdCounter } from "@/test/helpers";
 import { executeTool } from "../tools";
 import type { ToolExecutionContext } from "../types";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
-const runId = "b2222222-2222-4222-9222-222222222222";
-const otherRunId = "c3333333-3333-4333-a333-333333333333";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
+const runId = "b2222222-2222-4222-9222-222222222222" as AgentRunId;
+const otherRunId = "c3333333-3333-4333-a333-333333333333" as AgentRunId;
 
 async function seedChapter(content: string) {
   const chapter = makeChapter({
@@ -19,7 +20,7 @@ async function seedChapter(content: string) {
   return chapter;
 }
 
-async function seedWorkUnit(chapterId: string, runIdOverride = runId) {
+async function seedWorkUnit(chapterId: ChapterId, runIdOverride = runId) {
   return createWorkUnit({
     projectId,
     runId: runIdOverride,
@@ -72,14 +73,15 @@ describe("propose_edit (pipeline mode — workUnitId in context)", () => {
 
     const persisted = await db.proposedEdits.toArray();
     expect(persisted).toHaveLength(1);
-    expect(persisted[0].kind).toBe("replace");
-    expect(persisted[0].workUnitId).toBe(wu.id);
-    expect(persisted[0].runId).toBe(runId);
-    expect(persisted[0].newContent).toBe("tore down");
-    expect(persisted[0].anchorText).toBe("ran swiftly down");
-    expect(persisted[0].prefix).toBeUndefined();
-    expect(persisted[0].suffix).toBeUndefined();
-    expect(persisted[0].fromOffset).toBeUndefined();
+    const first = persisted[0];
+    expect(first.kind).toBe("replace");
+    expect(first.workUnitId).toBe(wu.id);
+    expect(first.runId).toBe(runId);
+    expect(first.newContent).toBe("tore down");
+    if (first.kind !== "replace") throw new Error("expected replace");
+    expect(first.anchorText).toBe("ran swiftly down");
+    expect(first.prefix).toBeUndefined();
+    expect(first.suffix).toBeUndefined();
   });
 
   it("stages a replace edit using prefix/suffix to disambiguate a repeated anchor", async () => {
@@ -102,8 +104,10 @@ describe("propose_edit (pipeline mode — workUnitId in context)", () => {
     expect(result.success).toBe(true);
     const persisted = await db.proposedEdits.toArray();
     expect(persisted).toHaveLength(1);
-    expect(persisted[0].prefix).toBe("the bad ");
-    expect(persisted[0].suffix).toBe(" ran");
+    const replaceEdit = persisted[0];
+    if (replaceEdit.kind !== "replace") throw new Error("expected replace");
+    expect(replaceEdit.prefix).toBe("the bad ");
+    expect(replaceEdit.suffix).toBe(" ran");
   });
 
   it("rejects when the replace anchor is not in the chapter", async () => {
@@ -215,7 +219,7 @@ describe("propose_edit (pipeline mode — workUnitId in context)", () => {
         kind: "append",
         newContent: "added",
       },
-      { projectId: "other-project", runId, workUnitId: wu.id },
+      { projectId: "other-project" as ProjectId, runId, workUnitId: wu.id },
     );
 
     expect(result.success).toBe(false);

@@ -1,5 +1,12 @@
 import { getAgentRun, markAgentRunFailed } from "@/db/operations/agentRuns";
-import type { AgentRunStatus } from "@/db/schemas";
+import type {
+  AgentRunId,
+  AgentRunStatus,
+  ChapterId,
+  ProjectId,
+  ProposedEditId,
+  SnapshotManifestId,
+} from "@/db/schemas";
 import type { AiContext } from "../../types";
 import { type ApplyTierResult, applyTier } from "./applyTier";
 import { getChaptersAwaitingReread } from "./driftDetect";
@@ -14,13 +21,15 @@ import { type VerifyTierResult, verifyTier } from "./verifyTier";
  * button looks up the controller by runId and calls .abort(). Resume after a
  * page reload starts a new controller (no stale state to recover).
  */
-const runControllers = new Map<string, AbortController>();
+const runControllers = new Map<AgentRunId, AbortController>();
 
-export function getRunController(runId: string): AbortController | undefined {
+export function getRunController(
+  runId: AgentRunId,
+): AbortController | undefined {
   return runControllers.get(runId);
 }
 
-export function cancelRun(runId: string): void {
+export function cancelRun(runId: AgentRunId): void {
   const controller = runControllers.get(runId);
   if (controller) controller.abort();
 }
@@ -35,7 +44,7 @@ export function cancelRun(runId: string): void {
  * cancel-path (which sets status="cancelled") wins.
  */
 async function withRunErrorCapture<T>(
-  runId: string,
+  runId: AgentRunId,
   phase: AgentRunStatus,
   signal: AbortSignal,
   fn: () => Promise<T>,
@@ -51,9 +60,9 @@ async function withRunErrorCapture<T>(
 }
 
 export interface StartReaderPhaseOptions {
-  runId: string;
-  projectId: string;
-  chapterIdsInScope?: string[];
+  runId: AgentRunId;
+  projectId: ProjectId;
+  chapterIdsInScope?: ChapterId[];
   maxPasses?: number;
   deltaThreshold?: number;
   onEvent?: PipelineEventEmitter;
@@ -102,8 +111,8 @@ export async function startReaderPhase(
 }
 
 export interface StartPlanTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   humanBriefing?: string;
   onEvent?: PipelineEventEmitter;
@@ -146,8 +155,8 @@ export async function startPlanTier(
 }
 
 export interface StartExecuteTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   onEvent?: PipelineEventEmitter;
   buildContext: () => Promise<AiContext>;
@@ -185,10 +194,10 @@ export async function startExecuteTier(
 }
 
 export interface StartApplyTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
-  approvedEditIds: string[];
+  approvedEditIds: ProposedEditId[];
   manifestName?: string;
   /** Skip the verifier pass (used for tests / no-op tiers). */
   skipVerification?: boolean;
@@ -258,9 +267,9 @@ export async function startApplyTier(
 }
 
 export interface StartRevertTierOptions {
-  runId: string;
-  projectId: string;
-  manifestId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
+  manifestId: SnapshotManifestId;
 }
 
 export async function startRevertTier(
@@ -270,10 +279,10 @@ export async function startRevertTier(
 }
 
 export interface StartIncrementalRereadOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   /** Optional override; defaults to the chapters touched by the latest tier. */
-  chapterIdsInScope?: string[];
+  chapterIdsInScope?: ChapterId[];
   onEvent?: PipelineEventEmitter;
   buildContext: () => Promise<AiContext>;
 }

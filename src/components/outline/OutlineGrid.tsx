@@ -4,6 +4,12 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useCallback, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { syncDeleteOutlineRow } from "@/db/operations";
+import type {
+  ChapterId,
+  OutlineGridCellId,
+  OutlineGridRowId,
+  ProjectId,
+} from "@/db/schemas";
 import { useChaptersByProject } from "@/hooks/data/useChapter";
 import {
   useOutlineGridCellsMap,
@@ -21,8 +27,8 @@ import { OutlineGridRow } from "./OutlineGridRow";
 import { OutlineGridToolbar } from "./OutlineGridToolbar";
 
 interface OutlineGridProps {
-  projectId: string;
-  highlightCellId?: string | null;
+  projectId: ProjectId;
+  highlightCellId?: OutlineGridCellId | null;
 }
 
 export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
@@ -43,14 +49,15 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
 
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    rowId: string;
-    linkedChapterId: string;
+    rowId: OutlineGridRowId;
+    linkedChapterId: ChapterId;
     chapterTitle: string;
   } | null>(null);
 
   // Build chapter lookup map (id -> { title, status })
   const chapterMap = useMemo(() => {
-    if (!chapters) return new Map<string, { title: string; status: string }>();
+    if (!chapters)
+      return new Map<ChapterId, { title: string; status: string }>();
     return new Map(
       chapters.map((c) => [c.id, { title: c.title, status: c.status }]),
     );

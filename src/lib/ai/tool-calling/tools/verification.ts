@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createVerification } from "@/db/operations/verifications";
 import { getWorkUnit } from "@/db/operations/workUnits";
-import { AgentReferenceKindEnum } from "@/db/schemas";
+import { AgentReferenceKindEnum, type WorkUnitId } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -94,7 +94,7 @@ export const reportVerificationTool = defineTool({
       return fail("report_verification requires a run context");
 
     if (params.workUnitId) {
-      const wu = await getWorkUnit(params.workUnitId);
+      const wu = await getWorkUnit(params.workUnitId as WorkUnitId);
       if (!wu) return fail(`Work unit not found: ${params.workUnitId}`);
       if (wu.runId !== context.runId)
         return fail("Work unit belongs to a different run");
@@ -128,7 +128,7 @@ export const reportVerificationTool = defineTool({
       projectId: context.projectId,
       runId: context.runId,
       tier: params.tier,
-      workUnitId: params.workUnitId ?? null,
+      workUnitId: (params.workUnitId ?? null) as WorkUnitId | null,
       goalAchieved: params.goalAchieved,
       contradictions: contradictions.map((f) => ({
         description: f.description,

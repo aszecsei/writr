@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import type {
   Chapter,
+  ChapterId,
   Character,
+  CharacterId,
   OutlineGridCell,
+  OutlineGridCellId,
+  OutlineGridColumnId,
+  OutlineGridRowId,
   Project,
+  ProjectId,
 } from "@/db/schemas";
 import {
   deleteEntity,
@@ -22,13 +28,13 @@ import {
   writeProjectRow,
 } from "./projectDoc";
 
-const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa";
-const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001";
-const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002";
-const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011";
-const ROW_ID = "00000000-0000-4000-8000-0000000000bb";
-const COL_ID = "00000000-0000-4000-8000-0000000000cc";
-const CELL_ID = "00000000-0000-4000-8000-0000000000dd";
+const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
+const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001" as ChapterId;
+const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
+const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
+const ROW_ID = "00000000-0000-4000-8000-0000000000bb" as OutlineGridRowId;
+const COL_ID = "00000000-0000-4000-8000-0000000000cc" as OutlineGridColumnId;
+const CELL_ID = "00000000-0000-4000-8000-0000000000dd" as OutlineGridCellId;
 
 const NOW = "2026-05-06T12:00:00.000Z";
 
@@ -48,7 +54,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
-function makeChapter(id: string, overrides: Partial<Chapter> = {}): Chapter {
+function makeChapter(id: ChapterId, overrides: Partial<Chapter> = {}): Chapter {
   return {
     id,
     projectId: PROJECT_ID,
@@ -65,7 +71,7 @@ function makeChapter(id: string, overrides: Partial<Chapter> = {}): Chapter {
 }
 
 function makeCharacter(
-  id: string,
+  id: CharacterId,
   overrides: Partial<Character> = {},
 ): Character {
   return {
@@ -226,7 +232,7 @@ describe("entity upsert / read / delete", () => {
       linkedCharacterIds: [CHARACTER_ID_1],
       images: [
         {
-          id: "00000000-0000-4000-8000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099" as never,
           url: "https://example.com/x.png",
           caption: "headshot",
           isPrimary: true,

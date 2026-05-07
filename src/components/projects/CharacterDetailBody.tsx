@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/AutoResizeTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteCharacter, updateCharacter } from "@/db/operations";
-import type { CharacterRole } from "@/db/schemas";
+import type {
+  CharacterId,
+  CharacterRole,
+  LocationId,
+  ProjectId,
+} from "@/db/schemas";
 import {
   useCharacter,
   useCharactersByProject,
@@ -34,8 +39,8 @@ import {
 import { useCharacterForm } from "@/hooks/forms/useCharacterForm";
 
 export interface CharacterDetailBodyProps {
-  projectId: string;
-  characterId: string;
+  projectId: ProjectId;
+  characterId: CharacterId;
   /** URL prefix without trailing slash; e.g. `/projects/abc` or
    *  `/shared/room/projects/abc`. Used for back navigation. */
   basePath: string;
@@ -75,7 +80,10 @@ export function CharacterDetailBody({
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (readOnly) return;
-    await updateCharacter(characterId, getUpdatePayload());
+    await updateCharacter(
+      characterId,
+      getUpdatePayload() as Parameters<typeof updateCharacter>[1],
+    );
   }
 
   async function handleDelete() {
@@ -321,7 +329,7 @@ export function CharacterDetailBody({
               <p className={labelClass}>Linked Characters</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {form.linkedCharacterIds.map((cid) => {
-                  const c = characterMap.get(cid);
+                  const c = characterMap.get(cid as CharacterId);
                   return (
                     <span
                       key={cid}
@@ -364,7 +372,7 @@ export function CharacterDetailBody({
               <p className={labelClass}>Linked Locations</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {form.linkedLocationIds.map((lid) => {
-                  const l = locationMap.get(lid);
+                  const l = locationMap.get(lid as LocationId);
                   return (
                     <span
                       key={lid}

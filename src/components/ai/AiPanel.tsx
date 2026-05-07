@@ -10,6 +10,7 @@ import {
 } from "react";
 import { getAppSettings } from "@/db/operations";
 import { getAgent } from "@/db/operations/agents";
+import type { AgentDefinitionId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -123,7 +124,8 @@ export function AiPanel() {
     activeDocumentType === "chapter" ? activeDocumentId : null,
   );
 
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] =
+    useState<AgentDefinitionId | null>(null);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -254,6 +256,9 @@ export function AiPanel() {
     if (!selectedAgentId) {
       throw new Error("No agent selected.");
     }
+    if (!projectId) {
+      throw new Error("No active project.");
+    }
     const definition = await getAgent(selectedAgentId);
     if (!definition) {
       throw new Error("Selected agent no longer exists.");
@@ -276,7 +281,7 @@ export function AiPanel() {
 
     const agent: Agent = makeChatAgent({
       definition,
-      projectId: projectId ?? "",
+      projectId,
       context,
       customSystemPrompt: settings.customSystemPrompt,
       postChatInstructions: settings.postChatInstructions,

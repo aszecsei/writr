@@ -9,6 +9,7 @@ import {
   OutlineTemplateDialog,
 } from "@/components/outline/OutlineTemplateDialog";
 import { createOutlineGridColumn, createOutlineGridRow } from "@/db/operations";
+import type { OutlineGridCellId, ProjectId } from "@/db/schemas";
 import { useChaptersByProject } from "@/hooks/data/useChapter";
 import {
   useOutlineGridColumns,
@@ -16,7 +17,7 @@ import {
 } from "@/hooks/outline/useOutlineGrid";
 
 export default function OutlinePage() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const searchParams = useSearchParams();
   const highlightCellId = searchParams.get("highlight");
   const columns = useOutlineGridColumns(params.projectId);
@@ -83,7 +84,7 @@ export default function OutlinePage() {
       <div className="flex-1 overflow-hidden">
         <OutlineGrid
           projectId={params.projectId}
-          highlightCellId={highlightCellId}
+          highlightCellId={highlightCellId as OutlineGridCellId | null}
         />
       </div>
 

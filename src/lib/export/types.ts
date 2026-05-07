@@ -1,4 +1,4 @@
-import type { ProjectMode } from "@/db/schemas";
+import type { ChapterId, ProjectId, ProjectMode } from "@/db/schemas";
 
 export type ExportFormat = "markdown" | "docx" | "pdf" | "fountain";
 export type ExportScope = "chapter" | "book";
@@ -6,8 +6,8 @@ export type ExportScope = "chapter" | "book";
 export interface ExportOptions {
   format: ExportFormat;
   scope: ExportScope;
-  projectId: string;
-  chapterId?: string;
+  projectId: ProjectId;
+  chapterId?: ChapterId;
   includeTitlePage: boolean;
   includeChapterHeadings: boolean;
   pageBreaksBetweenChapters: boolean;

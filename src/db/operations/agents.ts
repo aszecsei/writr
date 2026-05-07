@@ -2,9 +2,11 @@ import { match, P } from "ts-pattern";
 import { db } from "../database";
 import {
   type AgentDefinition,
+  type AgentDefinitionId,
   AgentDefinitionSchema,
   type AgentKind,
   PIPELINE_AGENT_KINDS,
+  type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
@@ -45,7 +47,7 @@ export async function createAgent(
 }
 
 export async function getAgent(
-  id: string,
+  id: AgentDefinitionId,
 ): Promise<AgentDefinition | undefined> {
   return db.agents.get(id);
 }
@@ -80,7 +82,7 @@ export async function getAgentByKind(
  *     this project.
  */
 export async function listAgents(
-  projectId: string | null,
+  projectId: ProjectId | null,
   options: { includePipelineInternal?: boolean } = {},
 ): Promise<AgentDefinition[]> {
   const all = await db.agents.toArray();
@@ -99,7 +101,7 @@ export async function listAgents(
 }
 
 export async function updateAgent(
-  id: string,
+  id: AgentDefinitionId,
   data: Partial<
     Pick<
       AgentDefinition,
@@ -116,7 +118,7 @@ export async function updateAgent(
   await db.agents.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteAgent(id: string): Promise<void> {
+export async function deleteAgent(id: AgentDefinitionId): Promise<void> {
   // Built-in agents are not user-deletable. Callers (the AgentsManager UI)
   // gate the delete button by kind; this is a defense-in-depth check.
   const existing = await db.agents.get(id);
@@ -133,7 +135,9 @@ export async function deleteAgent(id: string): Promise<void> {
  * Restore a built-in agent's editable fields from the bundled defaults. No-op
  * for `kind="user"` agents (they have no canonical default to revert to).
  */
-export async function resetAgentToDefaults(id: string): Promise<void> {
+export async function resetAgentToDefaults(
+  id: AgentDefinitionId,
+): Promise<void> {
   const existing = await db.agents.get(id);
   if (!existing || existing.kind === "user") return;
 

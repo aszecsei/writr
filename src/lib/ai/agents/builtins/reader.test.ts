@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { Chapter } from "@/db/schemas";
+import type { AgentRunId, Chapter, ChapterId, ProjectId } from "@/db/schemas";
 import type { AiContext } from "../../types";
 import { buildComprehensionBriefing, makeReaderAgent } from "./reader";
 
 const ts = "2024-01-01T00:00:00.000Z";
-const runId = "00000000-0000-4000-8000-000000000abc";
-const projectId = "00000000-0000-4000-8000-000000000def";
+const runId = "00000000-0000-4000-8000-000000000abc" as AgentRunId;
+const projectId = "00000000-0000-4000-8000-000000000def" as ProjectId;
 
 function makeContext(): AiContext {
   return {
@@ -27,7 +27,7 @@ function makeContext(): AiContext {
 
 function makeChapter(): Chapter {
   return {
-    id: "00000000-0000-4000-8000-000000000001",
+    id: "00000000-0000-4000-8000-000000000001" as ChapterId,
     projectId,
     title: "The Green Light",
     order: 0,

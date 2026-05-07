@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BUTTON_DANGER } from "@/components/ui/form-styles";
-import type { SnapshotManifest } from "@/db/schemas";
+import type { AgentRunId, ProjectId, SnapshotManifest } from "@/db/schemas";
 import { useSnapshotManifests } from "@/hooks/data/useVerifications";
 import { startRevertTier } from "@/lib/ai/agents/pipeline";
 
 interface SnapshotsPanelProps {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
 }
 
 export function SnapshotsPanel({ runId, projectId }: SnapshotsPanelProps) {

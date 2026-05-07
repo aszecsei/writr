@@ -13,15 +13,16 @@ import {
   deletePlaylistTrack,
   reorderPlaylistTracks,
 } from "@/db/operations";
-import type { PlaylistTrack } from "@/db/schemas";
+import type { PlaylistTrack, PlaylistTrackId, ProjectId } from "@/db/schemas";
 import { usePlaylistByProject } from "@/hooks/data/usePlaylistEntries";
 import { fetchTrackMetadata } from "@/lib/radio/metadata";
 import { parseTrackUrl } from "@/lib/radio/url-parser";
 import { useRadioStore } from "@/store/radioStore";
 
 export default function PlaylistPage() {
-  const params = useParams<{ projectId: string }>();
-  const tracks = usePlaylistByProject(params.projectId);
+  const params = useParams<{ projectId: ProjectId }>();
+  const projectId = params.projectId;
+  const tracks = usePlaylistByProject(projectId);
   const [newUrl, setNewUrl] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export default function PlaylistPage() {
       const metadata = await fetchTrackMetadata(parsed.url);
 
       await createPlaylistTrack({
-        projectId: params.projectId,
+        projectId: projectId,
         title: metadata.title,
         url: parsed.url,
         source: parsed.source,
@@ -83,7 +84,7 @@ export default function PlaylistPage() {
   function handlePlayAll() {
     if (!localTracks || localTracks.length === 0) return;
     loadPlaylist(
-      params.projectId,
+      projectId,
       localTracks.map((t) => t.id),
     );
   }
@@ -102,7 +103,7 @@ export default function PlaylistPage() {
       // Load playlist if not already loaded, then play this track
       if (localTracks) {
         loadPlaylist(
-          params.projectId,
+          projectId,
           localTracks.map((t) => t.id),
         );
       }
@@ -110,7 +111,7 @@ export default function PlaylistPage() {
     }
   }
 
-  async function handleDelete(trackId: string) {
+  async function handleDelete(trackId: PlaylistTrackId) {
     await deletePlaylistTrack(trackId);
   }
 

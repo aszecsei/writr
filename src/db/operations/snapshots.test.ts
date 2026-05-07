@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../database";
+import type { ChapterId, ChapterSnapshotId, ProjectId } from "../schemas";
 import {
   createSnapshot,
   deleteSnapshot,
@@ -7,9 +8,9 @@ import {
   getSnapshotsByChapter,
 } from "./snapshots";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
-const chapterId1 = "b1111111-1111-4111-a111-111111111111";
-const chapterId2 = "c1111111-1111-4111-a111-111111111111";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
+const chapterId1 = "b1111111-1111-4111-a111-111111111111" as ChapterId;
+const chapterId2 = "c1111111-1111-4111-a111-111111111111" as ChapterId;
 
 describe("snapshot operations", () => {
   beforeEach(async () => {
@@ -49,7 +50,9 @@ describe("snapshot operations", () => {
   });
 
   it("should return undefined for non-existent snapshot", async () => {
-    const fetched = await getSnapshot("d1111111-1111-4111-a111-111111111111");
+    const fetched = await getSnapshot(
+      "d1111111-1111-4111-a111-111111111111" as ChapterSnapshotId,
+    );
     expect(fetched).toBeUndefined();
   });
 

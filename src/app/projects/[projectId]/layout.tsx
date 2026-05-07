@@ -4,12 +4,13 @@ import { useParams } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import { HostProjectMirror } from "@/components/collab/HostProjectMirror";
 import { AppShell } from "@/components/layout/AppShell";
+import type { ProjectId } from "@/db/schemas";
 import { useProject } from "@/hooks/data/useProject";
 import { collabSelectors, useCollabStore } from "@/store/collabStore";
 import { useProjectStore } from "@/store/projectStore";
 
 export default function ProjectLayout({ children }: { children: ReactNode }) {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const project = useProject(params.projectId);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const clearActiveProject = useProjectStore((s) => s.clearActiveProject);

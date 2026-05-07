@@ -2,8 +2,9 @@
 
 import { useParams } from "next/navigation";
 import { StyleGuidePageBody } from "@/components/projects/StyleGuidePageBody";
+import type { ProjectId } from "@/db/schemas";
 
 export default function StyleGuidePage() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   return <StyleGuidePageBody projectId={params.projectId} readOnly={false} />;
 }

@@ -1,5 +1,5 @@
 import { db } from "../database";
-import { type Project, ProjectSchema } from "../schemas";
+import { type Project, type ProjectId, ProjectSchema } from "../schemas";
 import { generateId, now } from "./helpers";
 
 // ─── Projects ────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ export async function createProject(
 }
 
 export async function updateProject(
-  id: string,
+  id: ProjectId,
   data: Partial<
     Pick<Project, "title" | "description" | "genre" | "targetWordCount">
   >,
@@ -34,7 +34,9 @@ export async function updateProject(
 }
 
 /** Delete all project-scoped data (but not the project row itself). */
-export async function deleteAllProjectData(projectId: string): Promise<void> {
+export async function deleteAllProjectData(
+  projectId: ProjectId,
+): Promise<void> {
   await db.chapters.where({ projectId }).delete();
   await db.characters.where({ projectId }).delete();
   await db.locations.where({ projectId }).delete();
@@ -66,7 +68,7 @@ export async function deleteAllProjectData(projectId: string): Promise<void> {
   await db.agents.where({ projectId }).delete();
 }
 
-export async function deleteProject(id: string): Promise<void> {
+export async function deleteProject(id: ProjectId): Promise<void> {
   await db.transaction(
     "rw",
     [
@@ -107,7 +109,7 @@ export async function deleteProject(id: string): Promise<void> {
   );
 }
 
-export async function getProject(id: string): Promise<Project | undefined> {
+export async function getProject(id: ProjectId): Promise<Project | undefined> {
   return db.projects.get(id);
 }
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../database";
+import type { AgentRunId, ProjectId } from "../schemas";
 import {
   clearProposedAnswer,
   countAgentQuestionsOpen,
@@ -7,9 +8,9 @@ import {
   proposeAgentQuestionAnswer,
 } from "./agentQuestions";
 
-const projectId = "b2222222-2222-4222-a222-222222222222";
-const runId = "c3333333-3333-4333-a333-333333333333";
-const otherRunId = "d4444444-4444-4444-a444-444444444444";
+const projectId = "b2222222-2222-4222-a222-222222222222" as ProjectId;
+const runId = "c3333333-3333-4333-a333-333333333333" as AgentRunId;
+const otherRunId = "d4444444-4444-4444-a444-444444444444" as AgentRunId;
 
 beforeEach(async () => {
   await db.agentQuestions.clear();

@@ -43,6 +43,14 @@ import {
   getWorldbuildingDoc,
   getWorldbuildingDocsByProject,
 } from "@/db/operations/worldbuilding";
+import type {
+  ChapterId,
+  CharacterId,
+  LocationId,
+  StyleGuideEntryId,
+  TimelineEventId,
+  WorldbuildingDocId,
+} from "@/db/schemas";
 import { buildNameMap, serializeOutlineGrid } from "@/lib/ai/serialize";
 import { defineTool, type ToolExecutionContext } from "../types";
 import { ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
@@ -121,7 +129,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id) {
       if (!id) return { data: null, error: "character get requires an id" };
-      const c = await getCharacter(id);
+      const c = await getCharacter(id as CharacterId);
       if (!c) return { data: null, error: `Character not found: ${id}` };
       return {
         data: {
@@ -152,7 +160,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id) {
       if (!id) return { data: null, error: "location get requires an id" };
-      const l = await getLocation(id);
+      const l = await getLocation(id as LocationId);
       if (!l) return { data: null, error: `Location not found: ${id}` };
       return {
         data: {
@@ -175,7 +183,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id) {
       if (!id) return { data: null, error: "timeline get requires an id" };
-      const e = await getTimelineEvent(id);
+      const e = await getTimelineEvent(id as TimelineEventId);
       if (!e) return { data: null, error: `Timeline event not found: ${id}` };
       return {
         data: {
@@ -209,7 +217,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id, ctx) {
       if (!id) return { data: null, error: "chapter get requires an id" };
-      const ch = await getChapter(id);
+      const ch = await getChapter(id as ChapterId);
       if (!ch) return { data: null, error: `Chapter not found: ${id}` };
       if (
         ctx.maxReadableChapterOrder !== undefined &&
@@ -250,7 +258,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id) {
       if (!id) return { data: null, error: "style_guide get requires an id" };
-      const e = await getStyleGuideEntry(id);
+      const e = await getStyleGuideEntry(id as StyleGuideEntryId);
       if (!e)
         return { data: null, error: `Style guide entry not found: ${id}` };
       return {
@@ -279,7 +287,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     },
     async get(id) {
       if (!id) return { data: null, error: "worldbuilding get requires an id" };
-      const d = await getWorldbuildingDoc(id);
+      const d = await getWorldbuildingDoc(id as WorldbuildingDocId);
       if (!d)
         return { data: null, error: `Worldbuilding doc not found: ${id}` };
       return {
@@ -321,14 +329,14 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
     async get(id, ctx) {
       if (!id)
         return { data: null, error: "summary get requires a chapter id" };
-      const chapter = await getChapter(id);
+      const chapter = await getChapter(id as ChapterId);
       if (!chapter) return { data: null, error: `Chapter not found: ${id}` };
       if (chapter.projectId !== ctx.projectId) {
         return { data: null, error: "Chapter belongs to a different project" };
       }
 
       const hash = await hashChapterContent(chapter.content);
-      const cached = await getChapterSummary(id, hash);
+      const cached = await getChapterSummary(id as ChapterId, hash);
       if (cached) {
         return {
           data: {

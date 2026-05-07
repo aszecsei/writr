@@ -1,10 +1,11 @@
 import { getChapter, getProject } from "@/db/operations";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { HtmlExporter } from "./exporters/html-exporter";
 import { buildExport } from "./visitor";
 
 export interface ClipboardChapterOptions {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   includeChapterHeading: boolean;
 }
 

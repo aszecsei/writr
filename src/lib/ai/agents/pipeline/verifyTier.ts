@@ -9,10 +9,14 @@ import { listVerificationsByTier } from "@/db/operations/verifications";
 import { listWorkUnitsByTier } from "@/db/operations/workUnits";
 import type {
   AgentNoteCategory,
+  AgentRunId,
+  ChapterId,
+  ProjectId,
   ProposedEdit,
   Verification,
   VerificationFinding,
   WorkUnit,
+  WorkUnitId,
 } from "@/db/schemas";
 import type { AiContext } from "../../types";
 import {
@@ -23,11 +27,11 @@ import { invokeAgentForRun } from "../runner";
 import type { PipelineEventEmitter } from "./events";
 
 export interface VerifyTierOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   tier: number;
   /** Chapter ids touched by the tier — usually returned by applyTier. */
-  affectedChapterIds: string[];
+  affectedChapterIds: ChapterId[];
   signal?: AbortSignal;
   onEvent?: PipelineEventEmitter;
   buildContext: () => Promise<AiContext>;
@@ -72,7 +76,7 @@ export async function verifyTier(
     .filter((u): u is WorkUnit => !!u);
 
   const allEdits = await listProposedEditsByRun(runId);
-  const appliedByUnit = new Map<string, ProposedEdit[]>();
+  const appliedByUnit = new Map<WorkUnitId, ProposedEdit[]>();
   for (const edit of allEdits) {
     if (edit.status !== "applied") continue;
     const list = appliedByUnit.get(edit.workUnitId) ?? [];
@@ -202,9 +206,9 @@ export async function verifyTier(
 
 async function emitFindingNotes(
   verification: Verification,
-  projectId: string,
-  runId: string,
-  unitById: Map<string, WorkUnit>,
+  projectId: ProjectId,
+  runId: AgentRunId,
+  unitById: Map<WorkUnitId, WorkUnit>,
   category: AgentNoteCategory,
   findings: VerificationFinding[],
 ): Promise<number> {

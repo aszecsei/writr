@@ -1,15 +1,18 @@
 import { db } from "../database";
 import {
   type AgentQuestion,
+  type AgentQuestionId,
   AgentQuestionSchema,
   type AgentQuestionStatus,
   type AgentReference,
+  type AgentRunId,
+  type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
 export interface CreateAgentQuestionInput {
-  projectId: string;
-  runId: string;
+  projectId: ProjectId;
+  runId: AgentRunId;
   description: string;
   references?: AgentReference[];
 }
@@ -37,13 +40,13 @@ export async function createAgentQuestion(
 }
 
 export async function getAgentQuestion(
-  id: string,
+  id: AgentQuestionId,
 ): Promise<AgentQuestion | undefined> {
   return db.agentQuestions.get(id);
 }
 
 export async function listAgentQuestions(filter: {
-  runId: string;
+  runId: AgentRunId;
   status?: AgentQuestionStatus;
 }): Promise<AgentQuestion[]> {
   const all = await db.agentQuestions.where({ runId: filter.runId }).toArray();
@@ -54,7 +57,7 @@ export async function listAgentQuestions(filter: {
 }
 
 export async function answerAgentQuestion(
-  id: string,
+  id: AgentQuestionId,
   answer: string,
 ): Promise<void> {
   await db.agentQuestions.update(id, {
@@ -64,19 +67,19 @@ export async function answerAgentQuestion(
   });
 }
 
-export async function dismissAgentQuestion(id: string): Promise<void> {
+export async function dismissAgentQuestion(id: AgentQuestionId): Promise<void> {
   await db.agentQuestions.update(id, {
     status: "dismissed",
     updatedAt: now(),
   });
 }
 
-export async function deleteAgentQuestion(id: string): Promise<void> {
+export async function deleteAgentQuestion(id: AgentQuestionId): Promise<void> {
   await db.agentQuestions.delete(id);
 }
 
 export async function countAgentQuestionsSince(
-  runId: string,
+  runId: AgentRunId,
   sinceIso: string,
 ): Promise<number> {
   return db.agentQuestions
@@ -85,7 +88,9 @@ export async function countAgentQuestionsSince(
     .count();
 }
 
-export async function countAgentQuestionsOpen(runId: string): Promise<number> {
+export async function countAgentQuestionsOpen(
+  runId: AgentRunId,
+): Promise<number> {
   return db.agentQuestions
     .where({ runId })
     .filter((q) => q.status === "open")
@@ -93,7 +98,7 @@ export async function countAgentQuestionsOpen(runId: string): Promise<number> {
 }
 
 export interface ProposeAgentQuestionAnswerInput {
-  id: string;
+  id: AgentQuestionId;
   proposedAnswer: string;
   passNumber: number;
 }
@@ -115,7 +120,7 @@ export async function proposeAgentQuestionAnswer(
   });
 }
 
-export async function clearProposedAnswer(id: string): Promise<void> {
+export async function clearProposedAnswer(id: AgentQuestionId): Promise<void> {
   await db.agentQuestions.update(id, {
     proposedAnswer: null,
     proposedAt: null,

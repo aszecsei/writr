@@ -19,7 +19,12 @@
 
 import { generateId } from "@/lib/id";
 import { db } from "./database";
-import { ChapterSchema } from "./schemas";
+import {
+  type ChapterId,
+  ChapterSchema,
+  type OutlineGridRowId,
+  type ProjectId,
+} from "./schemas";
 
 function now(): string {
   return new Date().toISOString();
@@ -32,8 +37,8 @@ function now(): string {
  * Clears the row label (chapter title is used instead).
  */
 export async function linkChapterToRow(
-  chapterId: string,
-  rowId: string,
+  chapterId: ChapterId,
+  rowId: OutlineGridRowId,
 ): Promise<void> {
   await db.outlineGridRows.update(rowId, {
     linkedChapterId: chapterId,
@@ -46,7 +51,9 @@ export async function linkChapterToRow(
  * Unlinks a chapter from an outline row.
  * Preserves the chapter title as the row label.
  */
-export async function unlinkChapterFromRow(rowId: string): Promise<void> {
+export async function unlinkChapterFromRow(
+  rowId: OutlineGridRowId,
+): Promise<void> {
   const row = await db.outlineGridRows.get(rowId);
   if (!row || !row.linkedChapterId) return;
 
@@ -66,8 +73,8 @@ export async function unlinkChapterFromRow(rowId: string): Promise<void> {
  * Reorders all chapters to match outline order.
  */
 export async function createChapterFromRow(
-  rowId: string,
-  projectId: string,
+  rowId: OutlineGridRowId,
+  projectId: ProjectId,
 ): Promise<string> {
   return db.transaction("rw", [db.chapters, db.outlineGridRows], async () => {
     const row = await db.outlineGridRows.get(rowId);
@@ -123,7 +130,7 @@ export async function createChapterFromRow(
  * This is the key function that removes conditional logic from the UI.
  */
 export async function updateRowLabel(
-  rowId: string,
+  rowId: OutlineGridRowId,
   label: string,
 ): Promise<void> {
   const row = await db.outlineGridRows.get(rowId);
@@ -153,7 +160,7 @@ export async function updateRowLabel(
  * Unlinked rows are moved to the end.
  */
 export async function syncReorderChapters(
-  orderedChapterIds: string[],
+  orderedChapterIds: ChapterId[],
 ): Promise<void> {
   await db.transaction("rw", [db.chapters, db.outlineGridRows], async () => {
     // Update chapter orders
@@ -190,7 +197,7 @@ export async function syncReorderChapters(
  * Linked chapters are reordered to match their row order.
  */
 export async function syncReorderOutlineRows(
-  orderedRowIds: string[],
+  orderedRowIds: OutlineGridRowId[],
 ): Promise<void> {
   await db.transaction("rw", [db.outlineGridRows, db.chapters], async () => {
     // Update row orders
@@ -202,7 +209,7 @@ export async function syncReorderOutlineRows(
     const rows = await db.outlineGridRows.bulkGet(orderedRowIds);
     const linkedChapterIds = rows
       .map((r) => r?.linkedChapterId)
-      .filter((id): id is string => id != null);
+      .filter((id): id is ChapterId => id != null);
 
     // Update linked chapter orders
     for (let i = 0; i < linkedChapterIds.length; i++) {
@@ -216,12 +223,12 @@ export async function syncReorderOutlineRows(
  * Used after creating/linking a chapter.
  */
 async function syncChapterOrderFromRows(
-  orderedRowIds: string[],
+  orderedRowIds: OutlineGridRowId[],
 ): Promise<void> {
   const rows = await db.outlineGridRows.bulkGet(orderedRowIds);
   const linkedChapterIds = rows
     .map((r) => r?.linkedChapterId)
-    .filter((id): id is string => id != null);
+    .filter((id): id is ChapterId => id != null);
 
   for (let i = 0; i < linkedChapterIds.length; i++) {
     await db.chapters.update(linkedChapterIds[i], { order: i });
@@ -235,7 +242,7 @@ async function syncChapterOrderFromRows(
  * @param cascade If true, also deletes the linked outline row. If false, just unlinks.
  */
 export async function syncDeleteChapter(
-  chapterId: string,
+  chapterId: ChapterId,
   cascade: boolean,
 ): Promise<void> {
   await db.transaction(
@@ -280,7 +287,7 @@ export async function syncDeleteChapter(
  * @param cascade If true, also deletes the linked chapter. If false, just unlinks.
  */
 export async function syncDeleteOutlineRow(
-  rowId: string,
+  rowId: OutlineGridRowId,
   cascade: boolean,
 ): Promise<void> {
   await db.transaction(
@@ -316,7 +323,7 @@ export async function syncDeleteOutlineRow(
  * Checks if a chapter has a linked outline row.
  * Used by UI for delete confirmation dialogs.
  */
-export async function hasLinkedRow(chapterId: string): Promise<boolean> {
+export async function hasLinkedRow(chapterId: ChapterId): Promise<boolean> {
   const row = await db.outlineGridRows
     .where({ linkedChapterId: chapterId })
     .first();
@@ -328,8 +335,8 @@ export async function hasLinkedRow(chapterId: string): Promise<boolean> {
  * Returns undefined if the chapter has no linked row.
  */
 export async function getLinkedRow(
-  chapterId: string,
-): Promise<{ id: string; label: string } | undefined> {
+  chapterId: ChapterId,
+): Promise<{ id: OutlineGridRowId; label: string } | undefined> {
   const row = await db.outlineGridRows
     .where({ linkedChapterId: chapterId })
     .first();
@@ -341,7 +348,9 @@ export async function getLinkedRow(
  * Checks if an outline row has a linked chapter.
  * Used by UI for delete confirmation dialogs.
  */
-export async function hasLinkedChapter(rowId: string): Promise<boolean> {
+export async function hasLinkedChapter(
+  rowId: OutlineGridRowId,
+): Promise<boolean> {
   const row = await db.outlineGridRows.get(rowId);
   return row?.linkedChapterId != null;
 }

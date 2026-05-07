@@ -2,10 +2,13 @@
 import * as Y from "yjs";
 import { generateId } from "@/db/operations/helpers";
 import {
+  type ChapterId,
   type Comment,
   type CommentColor,
+  type CommentId,
   CommentSchema,
   type CommentStatus,
+  type ProjectId,
 } from "@/db/schemas";
 import type {
   CommentInput,
@@ -36,14 +39,14 @@ export interface YjsCommentsPermissions {
  */
 export interface DexieMirror {
   upsert(comment: Comment): Promise<void>;
-  remove(id: string): Promise<void>;
+  remove(id: CommentId): Promise<void>;
 }
 
 export interface YjsCommentsAdapterOptions {
   commentsDoc: Y.Doc;
   editor: Editor | null;
-  chapterId: string;
-  projectId: string;
+  chapterId: ChapterId;
+  projectId: ProjectId;
   permissions: YjsCommentsPermissions;
   /** Display name + color stamped onto comments this peer authors. */
   author?: string;
@@ -166,9 +169,9 @@ function entryToComment(
     (readEntryOptionalString(entry, FIELD.color) as CommentColor) ?? "yellow";
 
   const draft: Comment = {
-    id,
-    projectId: readEntryString(entry, FIELD.projectId),
-    chapterId: readEntryString(entry, FIELD.chapterId),
+    id: id as CommentId,
+    projectId: readEntryString(entry, FIELD.projectId) as ProjectId,
+    chapterId: readEntryString(entry, FIELD.chapterId) as ChapterId,
     content: readEntryString(entry, FIELD.content),
     color,
     fromOffset: from,
@@ -292,7 +295,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
     return this.opts.permissions.canDelete;
   }
 
-  async create(input: CommentInput): Promise<string> {
+  async create(input: CommentInput): Promise<CommentId> {
     if (!this.canCreate) throw new Error("not allowed: create comment");
     const editor = this.currentEditor;
     const id = generateId();
@@ -331,10 +334,10 @@ export class YjsCommentsAdapter implements CommentsAdapter {
       );
       if (c) await this.opts.dexieMirror.upsert(c);
     }
-    return id;
+    return id as CommentId;
   }
 
-  async update(id: string, patch: CommentPatch): Promise<void> {
+  async update(id: CommentId, patch: CommentPatch): Promise<void> {
     if (!this.canEdit) throw new Error("not allowed: edit comment");
     const entry = this.byId.get(id);
     if (!entry) return;
@@ -373,7 +376,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
     }
   }
 
-  async resolve(id: string): Promise<void> {
+  async resolve(id: CommentId): Promise<void> {
     if (!this.canResolve) throw new Error("not allowed: resolve comment");
     const entry = this.byId.get(id);
     if (!entry) return;
@@ -389,7 +392,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
     }
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: CommentId): Promise<void> {
     if (!this.canDelete) throw new Error("not allowed: delete comment");
     if (!this.byId.has(id)) return;
     this.opts.commentsDoc.transact(() => {
@@ -473,7 +476,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
       }
     }
     for (const id of removals) {
-      await mirror.remove(id);
+      await mirror.remove(id as CommentId);
     }
     for (const id of upserts) {
       const entry = this.byId.get(id);

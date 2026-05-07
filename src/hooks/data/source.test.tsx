@@ -3,7 +3,13 @@ import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DataSourceProvider } from "@/context/DataSourceContext";
-import type { Chapter, Character } from "@/db/schemas";
+import type {
+  Chapter,
+  ChapterId,
+  Character,
+  CharacterId,
+  ProjectId,
+} from "@/db/schemas";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
 import {
   useChapter,
@@ -11,13 +17,17 @@ import {
   useCharactersByProject,
 } from "./source";
 
-const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa";
-const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001";
-const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002";
-const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011";
+const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
+const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001" as ChapterId;
+const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
+const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
 const NOW = "2026-05-06T12:00:00.000Z";
 
-function chapter(id: string, order = 0, title = `Ch ${id.slice(-1)}`): Chapter {
+function chapter(
+  id: ChapterId,
+  order = 0,
+  title = `Ch ${id.slice(-1)}`,
+): Chapter {
   return {
     id,
     projectId: PROJECT_ID,
@@ -32,7 +42,7 @@ function chapter(id: string, order = 0, title = `Ch ${id.slice(-1)}`): Chapter {
   };
 }
 
-function character(id: string, name = "Alice"): Character {
+function character(id: CharacterId, name = "Alice"): Character {
   return {
     id,
     projectId: PROJECT_ID,

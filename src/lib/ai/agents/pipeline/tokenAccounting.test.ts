@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/database";
 import { createAgentRun, getAgentRun } from "@/db/operations/agentRuns";
+import type { AgentRunId, ProjectId } from "@/db/schemas";
 import type { IterationEndInfo, RunAgentCallbacks } from "../types";
 import { withTokenAccounting } from "./tokenAccounting";
 
-const PROJECT_ID = "00000000-0000-4000-8000-aaaaaaaaaaaa";
+const PROJECT_ID = "00000000-0000-4000-8000-aaaaaaaaaaaa" as ProjectId;
 
-async function makeRun(): Promise<string> {
+async function makeRun(): Promise<AgentRunId> {
   // Seed a project row first so the run's projectFk passes Zod validation.
   await db.projects.put({
     id: PROJECT_ID,

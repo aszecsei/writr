@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Chapter } from "@/db/schemas";
+import type { Chapter, ChapterId, ProjectId } from "@/db/schemas";
 import { buildAgenticContext, buildMessages } from "./prompts";
 import type { AiContext, AiMessage, TextContentPart } from "./types";
 
@@ -22,10 +22,10 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
   };
 }
 
-function makeChapter(overrides: Partial<Chapter> & { id: string }): Chapter {
+function makeChapter(overrides: Partial<Chapter> & { id: ChapterId }): Chapter {
   return {
     id: overrides.id,
-    projectId: overrides.projectId ?? "project-1",
+    projectId: overrides.projectId ?? ("project-1" as ProjectId),
     title: overrides.title ?? "Untitled",
     order: overrides.order ?? 0,
     content: overrides.content ?? "",
@@ -174,9 +174,13 @@ describe("buildMessages", () => {
       "user msg",
       emptyContext({
         chapters: [
-          makeChapter({ id: "c1", title: "The Beginning", order: 0 }),
           makeChapter({
-            id: "c2",
+            id: "c1" as ChapterId,
+            title: "The Beginning",
+            order: 0,
+          }),
+          makeChapter({
+            id: "c2" as ChapterId,
             title: "Rising Action",
             order: 1,
             status: "revised",
@@ -237,8 +241,8 @@ describe("buildAgenticContext", () => {
     const xml = buildAgenticContext(
       emptyContext({
         chapters: [
-          makeChapter({ id: "c1", title: "Opening", order: 0 }),
-          makeChapter({ id: "c2", title: "Climax", order: 1 }),
+          makeChapter({ id: "c1" as ChapterId, title: "Opening", order: 0 }),
+          makeChapter({ id: "c2" as ChapterId, title: "Climax", order: 1 }),
         ],
       }),
     );
@@ -253,7 +257,7 @@ describe("buildAgenticContext", () => {
       emptyContext({
         chapters: [
           makeChapter({
-            id: "c1",
+            id: "c1" as ChapterId,
             title: 'Quotes "and" ampersands & angles',
             order: 0,
           }),

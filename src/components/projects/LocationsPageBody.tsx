@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { createLocation, deleteLocation } from "@/db/operations";
-import type { Location } from "@/db/schemas";
+import type { Location, LocationId, ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -18,7 +18,7 @@ interface LocationNode {
 }
 
 function buildLocationTree(locations: Location[]): LocationNode[] {
-  const childrenMap = new Map<string | null, Location[]>();
+  const childrenMap = new Map<LocationId | null, Location[]>();
   for (const loc of locations) {
     const parentId = loc.parentLocationId ?? null;
     const arr = childrenMap.get(parentId) ?? [];
@@ -26,7 +26,10 @@ function buildLocationTree(locations: Location[]): LocationNode[] {
     childrenMap.set(parentId, arr);
   }
 
-  function buildNodes(parentId: string | null, depth: number): LocationNode[] {
+  function buildNodes(
+    parentId: LocationId | null,
+    depth: number,
+  ): LocationNode[] {
     const children = childrenMap.get(parentId) ?? [];
     return children.map((loc) => ({
       location: loc,
@@ -39,7 +42,7 @@ function buildLocationTree(locations: Location[]): LocationNode[] {
 }
 
 export interface LocationsPageBodyProps {
-  projectId: string;
+  projectId: ProjectId;
   basePath: string;
   readOnly: boolean;
 }
@@ -52,8 +55,8 @@ export function LocationsPageBody({
   const router = useRouter();
   const locations = useLocationsByProject(projectId);
   const characters = useCharactersByProject(projectId);
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<LocationId>>(() => new Set());
+  const [deletingId, setDeletingId] = useState<LocationId | null>(null);
   const [initialized, setInitialized] = useState(false);
 
   const tree = useMemo(() => buildLocationTree(locations ?? []), [locations]);
@@ -69,7 +72,7 @@ export function LocationsPageBody({
     setInitialized(true);
   }
 
-  function toggleExpand(id: string) {
+  function toggleExpand(id: LocationId) {
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -78,7 +81,7 @@ export function LocationsPageBody({
     });
   }
 
-  async function handleCreate(parentLocationId?: string) {
+  async function handleCreate(parentLocationId?: LocationId) {
     const location = await createLocation({
       projectId,
       name: "New Location",
@@ -90,7 +93,7 @@ export function LocationsPageBody({
     router.push(`${basePath}/bible/locations/${location.id}`);
   }
 
-  function hasChildren(locationId: string): boolean {
+  function hasChildren(locationId: LocationId): boolean {
     return (locations ?? []).some((l) => l.parentLocationId === locationId);
   }
 

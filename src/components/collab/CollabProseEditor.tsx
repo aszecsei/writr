@@ -15,7 +15,7 @@ import {
   CreateCommentButton,
 } from "@/components/editor/comments";
 import { Comments } from "@/components/editor/extensions/Comments";
-import type { Comment } from "@/db/schemas";
+import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
 
@@ -33,8 +33,8 @@ export interface CollabProseEditorProps {
    * and surfaces inline highlights, the comment margin, and the popover.
    */
   commentsDoc?: Y.Doc;
-  chapterId?: string;
-  projectId?: string;
+  chapterId?: ChapterId;
+  projectId?: ProjectId;
 }
 
 /**
@@ -140,8 +140,8 @@ export function CollabProseEditor(props: CollabProseEditorProps) {
       editorForResolution={editorForResolution}
       commentsRef={commentsRef}
       initializedRef={initializedRef}
-      projectId={projectId as string}
-      chapterId={chapterId as string}
+      projectId={projectId as ProjectId}
+      chapterId={chapterId as ChapterId}
       userName={userName}
       userColor={userColor}
     />
@@ -164,8 +164,8 @@ interface CommentEnabledBodyProps {
   editorForResolution: Editor | null;
   commentsRef: React.MutableRefObject<Comment[]>;
   initializedRef: React.MutableRefObject<boolean>;
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   userName: string;
   userColor: string;
 }

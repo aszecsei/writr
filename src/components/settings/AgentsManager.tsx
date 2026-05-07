@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { deleteAgent, resetAgentToDefaults } from "@/db/operations/agents";
-import type { AgentDefinition } from "@/db/schemas";
+import type { AgentDefinition, AgentDefinitionId } from "@/db/schemas";
 import { useAllAgents } from "@/hooks/data/useAgents";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -17,8 +17,12 @@ export function AgentsManager() {
   const openModal = useUiStore((s) => s.openModal);
   const projectId = useProjectStore((s) => s.activeProjectId);
   const agents = useAllAgents(projectId);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<AgentDefinitionId | null>(
+    null,
+  );
+  const [confirmReset, setConfirmReset] = useState<AgentDefinitionId | null>(
+    null,
+  );
 
   if (modal.id !== "agents-manager") return null;
 

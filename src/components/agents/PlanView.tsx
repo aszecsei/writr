@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BUTTON_PRIMARY, INPUT_CLASS } from "@/components/ui/form-styles";
+import type { AgentRunId, ProjectId } from "@/db/schemas";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
@@ -18,8 +19,8 @@ import {
 import { WorkUnitCard } from "./WorkUnitCard";
 
 interface PlanViewProps {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
 }
 
 export function PlanView({ runId, projectId }: PlanViewProps) {

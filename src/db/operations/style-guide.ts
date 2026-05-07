@@ -1,17 +1,22 @@
 import { db } from "../database";
-import { type StyleGuideEntry, StyleGuideEntrySchema } from "../schemas";
+import {
+  type ProjectId,
+  type StyleGuideEntry,
+  type StyleGuideEntryId,
+  StyleGuideEntrySchema,
+} from "../schemas";
 import { generateId, getNextOrder, now } from "./helpers";
 
 // ─── Style Guide Entries ────────────────────────────────────────────
 
 export async function getStyleGuideByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<StyleGuideEntry[]> {
   return db.styleGuideEntries.where({ projectId }).sortBy("order");
 }
 
 export async function getStyleGuideEntry(
-  id: string,
+  id: StyleGuideEntryId,
 ): Promise<StyleGuideEntry | undefined> {
   return db.styleGuideEntries.get(id);
 }
@@ -40,12 +45,14 @@ export async function createStyleGuideEntry(
 }
 
 export async function updateStyleGuideEntry(
-  id: string,
+  id: StyleGuideEntryId,
   data: Partial<Omit<StyleGuideEntry, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
   await db.styleGuideEntries.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteStyleGuideEntry(id: string): Promise<void> {
+export async function deleteStyleGuideEntry(
+  id: StyleGuideEntryId,
+): Promise<void> {
   await db.styleGuideEntries.delete(id);
 }

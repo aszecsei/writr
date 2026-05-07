@@ -1,5 +1,10 @@
 import { db } from "../database";
-import { type Verification, VerificationSchema } from "../schemas";
+import {
+  type AgentRunId,
+  type Verification,
+  type VerificationId,
+  VerificationSchema,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 export type CreateVerificationInput = Omit<Verification, "id" | "createdAt">;
@@ -17,19 +22,19 @@ export async function createVerification(
 }
 
 export async function getVerification(
-  id: string,
+  id: VerificationId,
 ): Promise<Verification | undefined> {
   return db.verifications.get(id);
 }
 
 export async function listVerificationsByRun(
-  runId: string,
+  runId: AgentRunId,
 ): Promise<Verification[]> {
   return db.verifications.where({ runId }).sortBy("createdAt");
 }
 
 export async function listVerificationsByTier(
-  runId: string,
+  runId: AgentRunId,
   tier: number,
 ): Promise<Verification[]> {
   return db.verifications
@@ -38,6 +43,6 @@ export async function listVerificationsByTier(
     .sortBy("createdAt");
 }
 
-export async function deleteVerification(id: string): Promise<void> {
+export async function deleteVerification(id: VerificationId): Promise<void> {
   await db.verifications.delete(id);
 }

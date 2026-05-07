@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/database";
 import { createAgentRun, getAgentRun } from "@/db/operations/agentRuns";
+import type { ProjectId } from "@/db/schemas";
 import type { AiContext } from "../../types";
 
 // Mock the loop before importing runEngine so the engine binds the mock.
@@ -13,7 +14,7 @@ vi.mock("./readerLoop", () => ({
 
 const { startReaderPhase } = await import("./runEngine");
 
-const projectId = "11111111-1111-4111-a111-111111111111";
+const projectId = "11111111-1111-4111-a111-111111111111" as ProjectId;
 
 const buildContext: () => Promise<AiContext> = async () =>
   ({

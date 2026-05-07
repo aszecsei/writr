@@ -1,13 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Verification, VerificationFinding } from "@/db/schemas";
+import type {
+  AgentRunId,
+  Verification,
+  VerificationFinding,
+} from "@/db/schemas";
 import { useAgentRun } from "@/hooks/data/useAgentRun";
 import { useWorkUnitsByRun } from "@/hooks/data/usePlan";
 import { useVerificationsByRun } from "@/hooks/data/useVerifications";
 
 interface VerificationPanelProps {
-  runId: string;
+  runId: AgentRunId;
 }
 
 export function VerificationPanel({ runId }: VerificationPanelProps) {

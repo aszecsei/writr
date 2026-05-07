@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -24,7 +25,7 @@ import type { AiContext } from "@/lib/ai/types";
  * identical, live-updating context to the agent runner.
  */
 export function useAgentRunContext(
-  projectId: string,
+  projectId: ProjectId,
 ): () => Promise<AiContext> {
   const project = useProject(projectId);
   const characters = useCharactersByProject(projectId);

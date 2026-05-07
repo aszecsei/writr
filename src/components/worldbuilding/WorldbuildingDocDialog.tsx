@@ -5,7 +5,7 @@ import {
   deleteWorldbuildingDoc,
   updateWorldbuildingDoc,
 } from "@/db/operations";
-import type { WorldbuildingDoc } from "@/db/schemas";
+import type { WorldbuildingDoc, WorldbuildingDocId } from "@/db/schemas";
 import { useWorldbuildingDoc } from "@/hooks/data/useBibleEntries";
 import { buildWorldbuildingTree, type DocNode } from "@/lib/worldbuilding-tree";
 
@@ -14,7 +14,7 @@ export function WorldbuildingDocDialog({
   allDocs,
   onClose,
 }: {
-  docId: string;
+  docId: WorldbuildingDocId;
   allDocs: WorldbuildingDoc[];
   onClose: () => void;
 }) {
@@ -23,7 +23,9 @@ export function WorldbuildingDocDialog({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
-  const [parentDocId, setParentDocId] = useState<string | null>(null);
+  const [parentDocId, setParentDocId] = useState<WorldbuildingDocId | null>(
+    null,
+  );
 
   // Build a flat list of docs with depth, excluding self and descendants
   const selectableDocs = useMemo(() => {
@@ -87,7 +89,7 @@ export function WorldbuildingDocDialog({
   }
 
   async function handleParentChange(newValue: string) {
-    const newParentDocId = newValue || null;
+    const newParentDocId = (newValue || null) as WorldbuildingDocId | null;
     setParentDocId(newParentDocId);
     await updateWorldbuildingDoc(docId, { parentDocId: newParentDocId });
   }

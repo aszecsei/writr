@@ -1,5 +1,10 @@
 import { db } from "../database";
-import { type SnapshotManifest, SnapshotManifestSchema } from "../schemas";
+import {
+  type AgentRunId,
+  type SnapshotManifest,
+  type SnapshotManifestId,
+  SnapshotManifestSchema,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 export type CreateSnapshotManifestInput = Omit<
@@ -20,17 +25,19 @@ export async function createSnapshotManifest(
 }
 
 export async function getSnapshotManifest(
-  id: string,
+  id: SnapshotManifestId,
 ): Promise<SnapshotManifest | undefined> {
   return db.snapshotManifests.get(id);
 }
 
 export async function listSnapshotManifestsByRun(
-  runId: string,
+  runId: AgentRunId,
 ): Promise<SnapshotManifest[]> {
   return db.snapshotManifests.where({ runId }).sortBy("createdAt");
 }
 
-export async function deleteSnapshotManifest(id: string): Promise<void> {
+export async function deleteSnapshotManifest(
+  id: SnapshotManifestId,
+): Promise<void> {
   await db.snapshotManifests.delete(id);
 }

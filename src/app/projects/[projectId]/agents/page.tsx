@@ -12,14 +12,15 @@ import {
   getActiveAgentRun,
   isTerminalStatus,
 } from "@/db/operations/agentRuns";
-import type { AgentRun } from "@/db/schemas";
+import type { AgentRun, ProjectId } from "@/db/schemas";
 import { useAgentRunsByProject } from "@/hooks/data/useAgentRun";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 
 export default function AgentsListPage() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
+  const projectId = params.projectId;
   const router = useRouter();
-  const runs = useAgentRunsByProject(params.projectId);
+  const runs = useAgentRunsByProject(projectId);
   const settings = useAppSettings();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,16 +32,16 @@ export default function AgentsListPage() {
     setError(null);
     setCreating(true);
     try {
-      const active = await getActiveAgentRun(params.projectId);
+      const active = await getActiveAgentRun(projectId);
       if (active) {
-        router.push(`/projects/${params.projectId}/agents/${active.id}`);
+        router.push(`/projects/${projectId}/agents/${active.id}`);
         return;
       }
       const run = await createAgentRun({
-        projectId: params.projectId,
+        projectId: projectId,
         name: `Run ${new Date().toLocaleString()}`,
       });
-      router.push(`/projects/${params.projectId}/agents/${run.id}`);
+      router.push(`/projects/${projectId}/agents/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create run");
     } finally {
@@ -116,7 +117,7 @@ export default function AgentsListPage() {
                   className="group relative rounded-md border border-neutral-200 bg-white transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800"
                 >
                   <Link
-                    href={`/projects/${params.projectId}/agents/${run.id}`}
+                    href={`/projects/${projectId}/agents/${run.id}`}
                     className="block px-4 py-3 pr-12"
                   >
                     <div className="flex items-center justify-between">

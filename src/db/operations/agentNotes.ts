@@ -2,22 +2,27 @@ import { db } from "../database";
 import {
   type AgentNote,
   type AgentNoteCategory,
+  type AgentNoteId,
   AgentNoteSchema,
   type AgentNoteSeverity,
   type AgentNoteStatus,
   type AgentReference,
+  type AgentRunId,
+  type ChapterId,
+  type ProjectId,
+  type VerificationId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
 
 export interface CreateAgentNoteInput {
-  projectId: string;
-  runId: string;
-  chapterId?: string | null;
+  projectId: ProjectId;
+  runId: AgentRunId;
+  chapterId?: ChapterId | null;
   category: AgentNoteCategory;
   severity: AgentNoteSeverity;
   description: string;
   references?: AgentReference[];
-  sourceVerificationId?: string | null;
+  sourceVerificationId?: VerificationId | null;
 }
 
 export async function createAgentNote(
@@ -43,14 +48,16 @@ export async function createAgentNote(
   return note;
 }
 
-export async function getAgentNote(id: string): Promise<AgentNote | undefined> {
+export async function getAgentNote(
+  id: AgentNoteId,
+): Promise<AgentNote | undefined> {
   return db.agentNotes.get(id);
 }
 
 export async function listAgentNotes(filter: {
-  runId: string;
+  runId: AgentRunId;
   status?: AgentNoteStatus;
-  chapterId?: string | null;
+  chapterId?: ChapterId | null;
 }): Promise<AgentNote[]> {
   const collection = db.agentNotes.where({ runId: filter.runId });
   const all = await collection.toArray();
@@ -65,7 +72,7 @@ export async function listAgentNotes(filter: {
 }
 
 export async function updateAgentNote(
-  id: string,
+  id: AgentNoteId,
   data: Partial<
     Pick<
       AgentNote,
@@ -82,7 +89,7 @@ export async function updateAgentNote(
   await db.agentNotes.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteAgentNote(id: string): Promise<void> {
+export async function deleteAgentNote(id: AgentNoteId): Promise<void> {
   await db.agentNotes.delete(id);
 }
 
@@ -91,7 +98,7 @@ export async function deleteAgentNote(id: string): Promise<void> {
  * loop's iteration-termination calculator.
  */
 export async function countAgentNotesSince(
-  runId: string,
+  runId: AgentRunId,
   sinceIso: string,
 ): Promise<number> {
   return db.agentNotes

@@ -3,6 +3,7 @@ import { db } from "@/db/database";
 import { createAgentQuestion } from "@/db/operations/agentQuestions";
 import { createAgentRun, getAgentRun } from "@/db/operations/agentRuns";
 import { updateAppSettings } from "@/db/operations/settings";
+import type { ProjectId } from "@/db/schemas";
 import type { AiMessage } from "../../types";
 import type { Agent } from "../types";
 
@@ -16,12 +17,12 @@ vi.mock("../runner", () => ({
 
 const { runReaderLoop } = await import("./readerLoop");
 
-const projectId = "11111111-1111-4111-a111-111111111111";
+const projectId = "11111111-1111-4111-a111-111111111111" as ProjectId;
 const ts = "2024-01-01T00:00:00.000Z";
 
-function uuid(seed: number): string {
+function uuid<T extends string = string>(seed: number): T {
   const hex = seed.toString(16).padStart(12, "0");
-  return `00000000-0000-4000-8000-${hex}`;
+  return `00000000-0000-4000-8000-${hex}` as T;
 }
 
 async function seedProjectAndChapters(chapterCount: number): Promise<void> {
@@ -37,7 +38,7 @@ async function seedProjectAndChapters(chapterCount: number): Promise<void> {
   });
   for (let i = 0; i < chapterCount; i++) {
     await db.chapters.put({
-      id: uuid(i + 1),
+      id: uuid(i + 1) as never,
       projectId,
       title: `Chapter ${i + 1}`,
       order: i,

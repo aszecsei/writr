@@ -14,7 +14,14 @@ import { getChaptersByProject } from "@/db/operations/chapters";
 import { now } from "@/db/operations/helpers";
 import { countBibleLogEntriesSince } from "@/db/operations/readerBible";
 import { getAppSettings } from "@/db/operations/settings";
-import type { AgentRun, Chapter, ReaderMode } from "@/db/schemas";
+import type {
+  AgentRun,
+  AgentRunId,
+  Chapter,
+  ChapterId,
+  ProjectId,
+  ReaderMode,
+} from "@/db/schemas";
 import type { AiMessage } from "../../types";
 import {
   buildComprehensionBriefing,
@@ -33,10 +40,10 @@ export const BUDGET_EXCEEDED_REASON =
   "Token budget exceeded; pause and raise budget to continue.";
 
 export interface ReaderLoopOptions {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   /** Subset of chapter ids; defaults to whole project. */
-  chapterIdsInScope?: string[];
+  chapterIdsInScope?: ChapterId[];
   /** Hard cap on passes. Default 4. */
   maxPasses?: number;
   /** Termination threshold — relative delta below which we stop. Default 0.05. */
@@ -316,8 +323,8 @@ type PassOutcome = "completed" | "aborted" | "budget-exceeded";
  * persistent memory across segments.
  */
 async function runComprehensionPass(
-  runId: string,
-  projectId: string,
+  runId: AgentRunId,
+  projectId: ProjectId,
   passNumber: number,
   chaptersInScope: Chapter[],
   startFromOrder: number,
@@ -445,10 +452,10 @@ async function runComprehensionPass(
 }
 
 async function runThematicPass(
-  runId: string,
-  projectId: string,
+  runId: AgentRunId,
+  projectId: ProjectId,
   passNumber: number,
-  chapterIdsInScope: string[] | undefined,
+  chapterIdsInScope: ChapterId[] | undefined,
   signal: AbortSignal | undefined,
   onEvent: PipelineEventEmitter | undefined,
   buildContext: () => Promise<import("../../types").AiContext>,
@@ -470,10 +477,10 @@ async function runThematicPass(
 }
 
 async function runSelfAnswerPass(
-  runId: string,
-  projectId: string,
+  runId: AgentRunId,
+  projectId: ProjectId,
   passNumber: number,
-  chapterIdsInScope: string[] | undefined,
+  chapterIdsInScope: ChapterId[] | undefined,
   signal: AbortSignal | undefined,
   onEvent: PipelineEventEmitter | undefined,
   buildContext: () => Promise<import("../../types").AiContext>,
@@ -501,7 +508,7 @@ async function runSelfAnswerPass(
 
 function filterChapters(
   all: Chapter[],
-  chapterIdsInScope: string[] | undefined,
+  chapterIdsInScope: ChapterId[] | undefined,
 ): Chapter[] {
   if (!chapterIdsInScope || chapterIdsInScope.length === 0) return all;
   const inScope = new Set(chapterIdsInScope);
@@ -509,7 +516,7 @@ function filterChapters(
 }
 
 async function checkBudget(
-  runId: string,
+  runId: AgentRunId,
   onEvent: PipelineEventEmitter | undefined,
 ): Promise<"ok" | "exceeded"> {
   const run = await getAgentRun(runId);

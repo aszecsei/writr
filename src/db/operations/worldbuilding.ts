@@ -1,17 +1,22 @@
 import { db } from "../database";
-import { type WorldbuildingDoc, WorldbuildingDocSchema } from "../schemas";
+import {
+  type ProjectId,
+  type WorldbuildingDoc,
+  type WorldbuildingDocId,
+  WorldbuildingDocSchema,
+} from "../schemas";
 import { generateId, now, reorderEntities } from "./helpers";
 
 // ─── Worldbuilding Docs ─────────────────────────────────────────────
 
 export async function getWorldbuildingDocsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<WorldbuildingDoc[]> {
   return db.worldbuildingDocs.where({ projectId }).sortBy("order");
 }
 
 export async function getWorldbuildingDoc(
-  id: string,
+  id: WorldbuildingDocId,
 ): Promise<WorldbuildingDoc | undefined> {
   return db.worldbuildingDocs.get(id);
 }
@@ -55,12 +60,12 @@ export async function createWorldbuildingDoc(
 }
 
 export async function updateWorldbuildingDoc(
-  id: string,
+  id: WorldbuildingDocId,
   data: Partial<Omit<WorldbuildingDoc, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
   // Cycle detection when changing parentDocId
   if (data.parentDocId !== undefined) {
-    let cursor = data.parentDocId;
+    let cursor: WorldbuildingDocId | null = data.parentDocId;
     while (cursor) {
       if (cursor === id) {
         throw new Error(
@@ -74,7 +79,9 @@ export async function updateWorldbuildingDoc(
   await db.worldbuildingDocs.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteWorldbuildingDoc(id: string): Promise<void> {
+export async function deleteWorldbuildingDoc(
+  id: WorldbuildingDocId,
+): Promise<void> {
   const doc = await db.worldbuildingDocs.get(id);
   if (!doc) return;
   const newParent = doc.parentDocId;
@@ -88,7 +95,7 @@ export async function deleteWorldbuildingDoc(id: string): Promise<void> {
 }
 
 export async function reorderWorldbuildingDocs(
-  orderedIds: string[],
+  orderedIds: WorldbuildingDocId[],
 ): Promise<void> {
   return reorderEntities(db.worldbuildingDocs, orderedIds);
 }

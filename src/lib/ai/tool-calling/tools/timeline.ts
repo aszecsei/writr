@@ -4,6 +4,7 @@ import {
   getTimelineEvent,
   updateTimelineEvent,
 } from "@/db/operations/timeline";
+import type { TimelineEventId } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -75,9 +76,9 @@ export const updateTimelineEventTool = defineTool({
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
-    const existing = await getTimelineEvent(id);
+    const existing = await getTimelineEvent(id as TimelineEventId);
     if (!existing) return fail(`Timeline event not found: ${id}`);
-    await updateTimelineEvent(id, fields);
+    await updateTimelineEvent(id as TimelineEventId, fields);
     return ok(`Updated event "${existing.title}"`);
   },
 });

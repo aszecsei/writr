@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data";
 import {
   useCharactersByProject,
@@ -25,7 +26,7 @@ import { useProjectStore } from "@/store/projectStore";
  *
  * Renders nothing. Mounted from `src/app/projects/[projectId]/layout.tsx`.
  */
-export function HostProjectMirror({ projectId }: { projectId: string }) {
+export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
   const session = useCollabStore((s) => s.session);
   const isHost = useCollabStore(collabSelectors.isHost);
   const isProjectMode = useCollabStore(collabSelectors.isProjectMode);

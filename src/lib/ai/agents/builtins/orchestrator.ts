@@ -1,4 +1,9 @@
-import type { AgentNote, AgentQuestion } from "@/db/schemas";
+import type {
+  AgentNote,
+  AgentQuestion,
+  AgentRunId,
+  ProjectId,
+} from "@/db/schemas";
 import type { AiContext, AiMessage } from "../../types";
 import { makeAgentBuildMessages } from "../build-messages";
 import type { Agent } from "../types";
@@ -52,8 +57,8 @@ The user is going to plan one tier at a time. Focus on the CURRENT tier you are 
 You may NOT propose edits or write prose. Only create work units and finalize the tier.`;
 
 export interface MakeOrchestratorAgentInput {
-  runId: string;
-  projectId: string;
+  runId: AgentRunId;
+  projectId: ProjectId;
   /** Tier the orchestrator should plan. */
   tier: number;
   /** Open notes available for grouping into work units. */

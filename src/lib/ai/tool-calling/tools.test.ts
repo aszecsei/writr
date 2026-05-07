@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
+import type { ProjectId } from "@/db/schemas";
 import {
   makeChapter,
   makeCharacter,
@@ -8,7 +9,7 @@ import {
 } from "@/test/helpers";
 import { AI_TOOL_MAP, executeTool, getToolDefinitionsForModel } from "./tools";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
 
 describe("tool registry", () => {

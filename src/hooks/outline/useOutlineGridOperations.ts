@@ -15,35 +15,41 @@ import {
   upsertOutlineGridCell,
 } from "@/db/operations";
 import type {
+  ChapterId,
   OutlineCardColor,
   OutlineGridColumn,
+  OutlineGridColumnId,
   OutlineGridRow,
+  OutlineGridRowId,
+  ProjectId,
 } from "@/db/schemas";
 
 interface UseOutlineGridOperationsProps {
-  projectId: string;
+  projectId: ProjectId;
   localRows: OutlineGridRow[];
   columns: OutlineGridColumn[] | undefined;
   contextMenu: {
     position: { x: number; y: number };
     target: ContextMenuTarget;
   } | null;
-  chapterMap: Map<string, { title: string; status: string }>;
+  chapterMap: Map<ChapterId, { title: string; status: string }>;
   closeContextMenu: () => void;
   setDeleteConfirm: (
     confirm: {
-      rowId: string;
-      linkedChapterId: string;
+      rowId: OutlineGridRowId;
+      linkedChapterId: ChapterId;
       chapterTitle: string;
     } | null,
   ) => void;
 }
 
-function getTargetRowId(target: ContextMenuTarget): string | null {
+function getTargetRowId(target: ContextMenuTarget): OutlineGridRowId | null {
   return target.type === "cell" || target.type === "row" ? target.rowId : null;
 }
 
-function getTargetColumnId(target: ContextMenuTarget): string | null {
+function getTargetColumnId(
+  target: ContextMenuTarget,
+): OutlineGridColumnId | null {
   return target.type === "cell" || target.type === "column"
     ? target.columnId
     : null;
@@ -69,7 +75,7 @@ export function useOutlineGridOperations({
 
   // Column header handlers
   const handleRenameColumn = useCallback(
-    async (columnId: string, title: string) => {
+    async (columnId: OutlineGridColumnId, title: string) => {
       await updateOutlineGridColumn(columnId, { title });
     },
     [],
@@ -77,7 +83,7 @@ export function useOutlineGridOperations({
 
   // Row handlers
   const handleRowLabelChange = useCallback(
-    async (rowId: string, label: string) => {
+    async (rowId: OutlineGridRowId, label: string) => {
       await updateRowLabel(rowId, label);
     },
     [],
@@ -85,7 +91,11 @@ export function useOutlineGridOperations({
 
   // Cell handlers
   const handleCellSave = useCallback(
-    async (rowId: string, columnId: string, content: string) => {
+    async (
+      rowId: OutlineGridRowId,
+      columnId: OutlineGridColumnId,
+      content: string,
+    ) => {
       await upsertOutlineGridCell({ projectId, rowId, columnId, content });
     },
     [projectId],
@@ -93,14 +103,14 @@ export function useOutlineGridOperations({
 
   // Helper to get row/column order
   const getRowOrder = useCallback(
-    (rowId: string) => {
+    (rowId: OutlineGridRowId) => {
       return localRows.find((r) => r.id === rowId)?.order ?? 0;
     },
     [localRows],
   );
 
   const getColumnOrder = useCallback(
-    (columnId: string) => {
+    (columnId: OutlineGridColumnId) => {
       return columns?.find((c) => c.id === columnId)?.order ?? 0;
     },
     [columns],
@@ -197,7 +207,7 @@ export function useOutlineGridOperations({
 
   // Chapter linking
   const handleLinkChapter = useCallback(
-    async (chapterId: string) => {
+    async (chapterId: ChapterId) => {
       if (!contextMenu || contextMenu.target.type !== "row") return;
       const { rowId } = contextMenu.target;
       await linkChapterToRow(chapterId, rowId);

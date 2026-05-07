@@ -13,6 +13,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
+import type { ProjectId } from "@/db/schemas";
 import { useAllProjects } from "@/hooks/data/useProject";
 import { useUiStore } from "@/store/uiStore";
 
@@ -20,10 +21,10 @@ export default function DashboardPage() {
   const projects = useAllProjects();
   const openModal = useUiStore((s) => s.openModal);
 
-  const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+  const [menuProjectId, setMenuProjectId] = useState<ProjectId | null>(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
-  function handleContextMenu(e: React.MouseEvent, projectId: string) {
+  function handleContextMenu(e: React.MouseEvent, projectId: ProjectId) {
     e.preventDefault();
     setMenuProjectId(projectId);
     setMenuPos({ x: e.clientX, y: e.clientY });

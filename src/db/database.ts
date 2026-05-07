@@ -6,6 +6,7 @@ import {
 import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
 import type {
   AgentDefinition,
+  AgentDefinitionId,
   AgentNote,
   AgentQuestion,
   AgentRun,
@@ -1019,7 +1020,7 @@ export class WritrDatabase extends Dexie {
             if (presentKinds.has(kind)) continue;
             const def = BUILTIN_AGENT_DEFAULTS[kind];
             await this.agents.add({
-              id: crypto.randomUUID(),
+              id: crypto.randomUUID() as AgentDefinitionId,
               kind,
               projectId: null,
               name: def.name,

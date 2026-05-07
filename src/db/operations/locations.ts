@@ -1,16 +1,23 @@
 import { db } from "../database";
-import { type Location, LocationSchema } from "../schemas";
+import {
+  type Location,
+  type LocationId,
+  LocationSchema,
+  type ProjectId,
+} from "../schemas";
 import { generateId, now } from "./helpers";
 
 // ─── Locations ───────────────────────────────────────────────────────
 
 export async function getLocationsByProject(
-  projectId: string,
+  projectId: ProjectId,
 ): Promise<Location[]> {
   return db.locations.where({ projectId }).sortBy("name");
 }
 
-export async function getLocation(id: string): Promise<Location | undefined> {
+export async function getLocation(
+  id: LocationId,
+): Promise<Location | undefined> {
   return db.locations.get(id);
 }
 
@@ -44,12 +51,12 @@ export async function createLocation(
 }
 
 export async function updateLocation(
-  id: string,
+  id: LocationId,
   data: Partial<Omit<Location, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
   await db.locations.update(id, { ...data, updatedAt: now() });
 }
 
-export async function deleteLocation(id: string): Promise<void> {
+export async function deleteLocation(id: LocationId): Promise<void> {
   await db.locations.delete(id);
 }

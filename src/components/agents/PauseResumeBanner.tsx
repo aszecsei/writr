@@ -6,7 +6,7 @@ import {
   isTerminalStatus,
   updateAgentRunStatus,
 } from "@/db/operations/agentRuns";
-import type { AgentRun, AgentRunStatus } from "@/db/schemas";
+import type { AgentRun, AgentRunStatus, ProjectId } from "@/db/schemas";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
   getRunController,
@@ -18,7 +18,7 @@ import {
 
 interface PauseResumeBannerProps {
   run: AgentRun;
-  projectId: string;
+  projectId: ProjectId;
 }
 
 /** Statuses that can mean "in flight" — i.e. an agent loop is supposed to be

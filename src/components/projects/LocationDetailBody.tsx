@@ -16,6 +16,7 @@ import { ImageGallery } from "@/components/bible/ImageGallery";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteLocation, updateLocation } from "@/db/operations";
+import type { CharacterId, LocationId, ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocation,
@@ -24,8 +25,8 @@ import {
 import { useLocationForm } from "@/hooks/forms/useLocationForm";
 
 export interface LocationDetailBodyProps {
-  projectId: string;
-  locationId: string;
+  projectId: ProjectId;
+  locationId: LocationId;
   basePath: string;
   readOnly: boolean;
 }
@@ -73,7 +74,10 @@ export function LocationDetailBody({
   async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (readOnly) return;
-    await updateLocation(locationId, getUpdatePayload());
+    await updateLocation(
+      locationId,
+      getUpdatePayload() as Parameters<typeof updateLocation>[1],
+    );
   }
 
   async function handleDelete() {
@@ -175,7 +179,7 @@ export function LocationDetailBody({
             <p className={labelClass}>Linked Characters</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {form.linkedCharacterIds.map((cid) => {
-                const c = characterMap.get(cid);
+                const c = characterMap.get(cid as CharacterId);
                 return (
                   <span
                     key={cid}

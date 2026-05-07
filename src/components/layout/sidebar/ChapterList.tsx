@@ -29,6 +29,7 @@ import {
   syncReorderChapters,
   updateChapter,
 } from "@/db/operations";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useChaptersByProject } from "@/hooks/data/useChapter";
 import { getTerm } from "@/lib/terminology";
 import { useProjectStore } from "@/store/projectStore";
@@ -45,7 +46,7 @@ export function ChapterList({
   projectId,
   pathname,
 }: {
-  projectId: string;
+  projectId: ProjectId;
   pathname: string;
 }) {
   const chapters = useChaptersByProject(projectId);
@@ -66,11 +67,11 @@ export function ChapterList({
   }, [chapters]);
 
   // Context menu state
-  const [menuChapterId, setMenuChapterId] = useState<string | null>(null);
+  const [menuChapterId, setMenuChapterId] = useState<ChapterId | null>(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
   // Inline rename state
-  const [renamingChapterId, setRenamingChapterId] = useState<string | null>(
+  const [renamingChapterId, setRenamingChapterId] = useState<ChapterId | null>(
     null,
   );
   const [renameValue, setRenameValue] = useState("");
@@ -78,7 +79,7 @@ export function ChapterList({
 
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    chapterId: string;
+    chapterId: ChapterId;
     chapterTitle: string;
     hasLinkedRow: boolean;
   } | null>(null);
@@ -93,13 +94,13 @@ export function ChapterList({
     }
   }, [renamingChapterId]);
 
-  function handleContextMenu(e: React.MouseEvent, chapterId: string) {
+  function handleContextMenu(e: React.MouseEvent, chapterId: ChapterId) {
     e.preventDefault();
     setMenuChapterId(chapterId);
     setMenuPos({ x: e.clientX, y: e.clientY });
   }
 
-  function handleRenameStart(chapterId: string, currentTitle: string) {
+  function handleRenameStart(chapterId: ChapterId, currentTitle: string) {
     setRenamingChapterId(chapterId);
     setRenameValue(currentTitle);
     closeMenu();
@@ -125,14 +126,14 @@ export function ChapterList({
   }
 
   async function handleSetStatus(
-    chapterId: string,
+    chapterId: ChapterId,
     status: "draft" | "revised" | "final",
   ) {
     await updateChapter(chapterId, { status });
     closeMenu();
   }
 
-  async function handleDelete(chapterId: string) {
+  async function handleDelete(chapterId: ChapterId) {
     closeMenu();
     const chapter = localChapters.find((c) => c.id === chapterId);
     if (!chapter) return;

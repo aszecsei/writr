@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../database";
+import type { AgentRunId, ChapterId, ProjectId, WorkUnitId } from "../schemas";
 import {
   createAgentRun,
   deleteAgentRun,
@@ -9,13 +10,13 @@ import {
   updateBudgetTokens,
 } from "./agentRuns";
 
-const projectId = "a1111111-1111-4111-a111-111111111111";
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
 const ts = "2024-01-01T00:00:00.000Z";
 
-function uuid(seed: number): string {
+function uuid<T extends string = string>(seed: number): T {
   const hex = seed.toString(16).padStart(12, "0");
-  return `00000000-0000-4000-8000-${hex}`;
+  return `00000000-0000-4000-8000-${hex}` as T;
 }
 
 describe("updateBudgetTokens", () => {
@@ -153,9 +154,9 @@ describe("deleteAgentRun", () => {
     );
   });
 
-  async function seedRunWithChildren(runId: string): Promise<void> {
-    const chapterId = uuid(0xc0);
-    const workUnitId = uuid(0xc1);
+  async function seedRunWithChildren(runId: AgentRunId): Promise<void> {
+    const chapterId = uuid<ChapterId>(0xc0);
+    const workUnitId = uuid<WorkUnitId>(0xc1);
 
     await db.readerBibleLog.add({
       id: uuid(0x10),
@@ -167,7 +168,7 @@ describe("deleteAgentRun", () => {
       asOfChapter: 1,
       agentMessageId: null,
       createdAt: ts,
-    });
+    } as never);
     await db.readerBibleView.add({
       id: uuid(0x11),
       projectId,
@@ -176,7 +177,7 @@ describe("deleteAgentRun", () => {
       value: { name: "Alice" },
       lastUpdatedAt: ts,
       lastLogEntryId: uuid(0x10),
-    });
+    } as never);
     await db.agentNotes.add({
       id: uuid(0x12),
       projectId,
@@ -191,7 +192,7 @@ describe("deleteAgentRun", () => {
       sourceVerificationId: null,
       createdAt: ts,
       updatedAt: ts,
-    });
+    } as never);
     await db.agentQuestions.add({
       id: uuid(0x13),
       projectId,
@@ -205,7 +206,7 @@ describe("deleteAgentRun", () => {
       proposedByPassNumber: null,
       createdAt: ts,
       updatedAt: ts,
-    });
+    } as never);
     await db.workUnits.add({
       id: workUnitId,
       projectId,
@@ -233,7 +234,7 @@ describe("deleteAgentRun", () => {
       tiers: [],
       createdAt: ts,
       updatedAt: ts,
-    });
+    } as never);
     await db.proposedEdits.add({
       id: uuid(0x15),
       projectId,
@@ -247,7 +248,7 @@ describe("deleteAgentRun", () => {
       status: "pending",
       createdAt: ts,
       updatedAt: ts,
-    });
+    } as never);
     await db.verifications.add({
       id: uuid(0x16),
       projectId,
@@ -260,7 +261,7 @@ describe("deleteAgentRun", () => {
       voiceMismatches: [],
       notes: [],
       createdAt: ts,
-    });
+    } as never);
     await db.snapshotManifests.add({
       id: uuid(0x17),
       projectId,
@@ -272,7 +273,7 @@ describe("deleteAgentRun", () => {
       notesSnapshot: [],
       workUnitsSnapshot: [],
       createdAt: ts,
-    });
+    } as never);
     await db.chapterSnapshots.add({
       id: uuid(0xc2),
       chapterId,
@@ -281,10 +282,12 @@ describe("deleteAgentRun", () => {
       content: "Original chapter text.",
       wordCount: 3,
       createdAt: ts,
-    });
+    } as never);
   }
 
-  async function countRunRows(runId: string): Promise<Record<string, number>> {
+  async function countRunRows(
+    runId: AgentRunId,
+  ): Promise<Record<string, number>> {
     return {
       readerBibleLog: await db.readerBibleLog.where({ runId }).count(),
       readerBibleView: await db.readerBibleView.where({ runId }).count(),
@@ -360,7 +363,7 @@ describe("deleteAgentRun", () => {
     await seedRunWithChildren(runA.id);
     await updateAgentRunStatus(runA.id, "complete");
 
-    const otherProjectId = "b2222222-2222-4222-a222-222222222222";
+    const otherProjectId = "b2222222-2222-4222-a222-222222222222" as ProjectId;
     const runB = await createAgentRun({
       projectId: otherProjectId,
       name: "B",
@@ -376,7 +379,7 @@ describe("deleteAgentRun", () => {
       asOfChapter: 1,
       agentMessageId: null,
       createdAt: ts,
-    });
+    } as never);
 
     await deleteAgentRun(runA.id);
 

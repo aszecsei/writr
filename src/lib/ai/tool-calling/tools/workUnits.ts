@@ -5,6 +5,7 @@ import {
   listWorkUnitsByTier,
   updateWorkUnit,
 } from "@/db/operations/workUnits";
+import type { AgentNoteId, ChapterId, WorkUnitId } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -100,13 +101,13 @@ export const createWorkUnitTool = defineTool({
       runId: context.runId,
       tier: params.tier,
       goal: params.goal,
-      placement,
+      placement: { ...placement, chapterId: placement.chapterId as ChapterId },
       targetLengthWords: params.targetLengthWords ?? null,
       requiredBeats: arrays.requiredBeats as string[],
       constraints: arrays.constraints as string[],
       bibleRefs: arrays.bibleRefs as string[],
-      sourceNoteIds: arrays.sourceNoteIds as string[],
-      dependencies: arrays.dependencies as string[],
+      sourceNoteIds: arrays.sourceNoteIds as AgentNoteId[],
+      dependencies: arrays.dependencies as WorkUnitId[],
     });
     return ok(`Created work unit "${wu.goal.slice(0, 50)}…"`, {
       workUnitId: wu.id,
@@ -162,7 +163,10 @@ export const updateWorkUnitTool = defineTool({
       const parsed = parseJson(params.placement, placementSchema);
       if (parsed instanceof Error)
         return fail(`Invalid placement: ${parsed.message}`);
-      patch.placement = parsed;
+      patch.placement = {
+        ...parsed,
+        chapterId: parsed.chapterId as ChapterId,
+      };
     }
 
     const arrayFields: Array<{
@@ -179,10 +183,10 @@ export const updateWorkUnitTool = defineTool({
       const parsed = parseStringArray(raw);
       if (parsed instanceof Error)
         return fail(`Invalid ${key}: ${parsed.message}`);
-      patch[key] = parsed;
+      (patch as Record<string, unknown>)[key] = parsed;
     }
 
-    await updateWorkUnit(params.id, patch);
+    await updateWorkUnit(params.id as WorkUnitId, patch);
     return ok("Updated work unit", { workUnitId: params.id });
   },
 });
@@ -227,7 +231,7 @@ export const finalizeTierTool = defineTool({
     // Sanity-check ids exist and belong to this tier.
     const tierUnits = await listWorkUnitsByTier(context.runId, params.tier);
     const tierUnitIds = new Set(tierUnits.map((u) => u.id));
-    const missing = ids.filter((id) => !tierUnitIds.has(id));
+    const missing = ids.filter((id) => !tierUnitIds.has(id as WorkUnitId));
     if (missing.length > 0) {
       return fail(
         `These work-unit ids are not in tier ${params.tier}: ${missing.join(", ")}`,
@@ -239,7 +243,7 @@ export const finalizeTierTool = defineTool({
       {
         tierNumber: params.tier,
         summary: params.summary ?? "",
-        workUnitIds: ids,
+        workUnitIds: ids as WorkUnitId[],
       },
       context.projectId,
     );

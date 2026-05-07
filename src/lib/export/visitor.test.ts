@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import type { ProjectId } from "@/db/schemas";
 import type { DocNode } from "./markdown-to-nodes";
 import type { DocNodeVisitor, Exporter } from "./visitor";
 import { buildExport, visitNode, visitNodes } from "./visitor";
+
+const PROJECT_ID = "p1" as ProjectId;
 
 function createMockVisitor(): DocNodeVisitor &
   Record<string, ReturnType<typeof vi.fn>> {
@@ -125,7 +128,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "book",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: true,
         includeChapterHeadings: false,
         pageBreaksBetweenChapters: false,
@@ -142,7 +145,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "chapter",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: true,
         includeChapterHeadings: false,
         pageBreaksBetweenChapters: false,
@@ -165,7 +168,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "book",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: false,
         includeChapterHeadings: true,
         pageBreaksBetweenChapters: false,
@@ -191,7 +194,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "book",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: false,
         includeChapterHeadings: false,
         pageBreaksBetweenChapters: true,
@@ -215,7 +218,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "chapter",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: false,
         includeChapterHeadings: false,
         pageBreaksBetweenChapters: true,
@@ -235,7 +238,7 @@ describe("buildExport", () => {
       {
         format: "docx",
         scope: "chapter",
-        projectId: "p1",
+        projectId: PROJECT_ID,
         includeTitlePage: false,
         includeChapterHeadings: false,
         pageBreaksBetweenChapters: false,

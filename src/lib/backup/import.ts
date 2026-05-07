@@ -1,5 +1,6 @@
 import { db } from "@/db/database";
 import { deleteAllProjectData } from "@/db/operations/projects";
+import type { ProjectId } from "@/db/schemas";
 import { generateId } from "@/lib/id";
 import type {
   Backup,
@@ -225,6 +226,9 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
       }
     : undefined;
 
+  // Remap helpers return plain `string` ids; the schemas now use branded types.
+  // Brands are erased at runtime, so the assertion is safe — the cast lives at
+  // this boundary instead of every entity-shape cast above.
   return {
     project: {
       ...data.project,
@@ -247,10 +251,10 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     comments,
     chapterSnapshots,
     projectDictionary,
-  };
+  } as unknown as ProjectBackupData;
 }
 
-async function deleteProjectData(projectId: string): Promise<void> {
+async function deleteProjectData(projectId: ProjectId): Promise<void> {
   await deleteAllProjectData(projectId);
   await db.projects.delete(projectId);
 }

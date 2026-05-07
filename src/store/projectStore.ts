@@ -1,18 +1,18 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { ProjectMode } from "@/db/schemas";
+import type { ChapterId, ProjectId, ProjectMode } from "@/db/schemas";
 
 interface ProjectState {
-  activeProjectId: string | null;
+  activeProjectId: ProjectId | null;
   activeProjectTitle: string | null;
   activeProjectMode: ProjectMode | null;
-  activeChapterId: string | null;
-  chapterOrder: string[];
+  activeChapterId: ChapterId | null;
+  chapterOrder: ChapterId[];
 
-  setActiveProject: (id: string, title: string, mode: ProjectMode) => void;
+  setActiveProject: (id: ProjectId, title: string, mode: ProjectMode) => void;
   clearActiveProject: () => void;
-  setActiveChapter: (id: string | null) => void;
-  setChapterOrder: (ids: string[]) => void;
+  setActiveChapter: (id: ChapterId | null) => void;
+  setChapterOrder: (ids: ChapterId[]) => void;
 }
 
 export const useProjectStore = create<ProjectState>()(

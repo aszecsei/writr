@@ -3,16 +3,17 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import Link from "next/link";
 import { DragHandle } from "@/components/bible/DragHandle";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { formatReadingTimeCompact } from "@/lib/reading-time";
 
 interface SortableChapterItemProps {
   chapter: {
-    id: string;
+    id: ChapterId;
     title: string;
     wordCount: number;
   };
   index: number;
-  projectId: string;
+  projectId: ProjectId;
   isActive: boolean;
   isRenaming: boolean;
   renameValue: string;
@@ -20,7 +21,7 @@ interface SortableChapterItemProps {
   onRenameChange: (value: string) => void;
   onRenameCommit: () => void;
   onRenameKeyDown: (e: React.KeyboardEvent) => void;
-  onContextMenu: (e: React.MouseEvent, chapterId: string) => void;
+  onContextMenu: (e: React.MouseEvent, chapterId: ChapterId) => void;
 }
 
 export function SortableChapterItem({

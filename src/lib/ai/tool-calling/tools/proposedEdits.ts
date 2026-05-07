@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getChapter } from "@/db/operations/chapters";
 import { createProposedEdit } from "@/db/operations/proposedEdits";
 import { getWorkUnit } from "@/db/operations/workUnits";
+import type { ChapterId } from "@/db/schemas";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -82,7 +83,7 @@ export const proposeEditTool = defineTool({
   }),
   requiresApproval: false,
   async execute(params, context) {
-    const chapter = await getChapter(params.chapterId);
+    const chapter = await getChapter(params.chapterId as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.chapterId}`);
     if (chapter.projectId !== context.projectId)
       return fail("Chapter belongs to a different project");
@@ -128,7 +129,7 @@ export const proposeEditTool = defineTool({
         projectId: context.projectId,
         runId: context.runId,
         workUnitId: context.workUnitId,
-        chapterId: params.chapterId,
+        chapterId: params.chapterId as ChapterId,
         kind: params.kind,
         fromOffset: params.fromOffset,
         anchorText: params.anchorText,

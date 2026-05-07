@@ -5,7 +5,9 @@ import { DragHandle } from "@/components/bible/DragHandle";
 import type {
   ChapterStatus,
   OutlineGridCell,
+  OutlineGridCellId,
   OutlineGridColumn,
+  OutlineGridColumnId,
   OutlineGridRow as OutlineGridRowType,
 } from "@/db/schemas";
 import { useInlineEdit } from "@/hooks/forms/useInlineEdit";
@@ -17,13 +19,16 @@ interface OutlineGridRowProps {
   index: number;
   columns: OutlineGridColumn[];
   cellsMap: Map<string, OutlineGridCell>;
-  highlightCellId?: string | null;
+  highlightCellId?: OutlineGridCellId | null;
   chapterTitle?: string;
   chapterStatus?: string;
   onRowLabelChange: (label: string) => void;
-  onCellSave: (columnId: string, content: string) => void;
+  onCellSave: (columnId: OutlineGridColumnId, content: string) => void;
   onRowContextMenu: (e: React.MouseEvent) => void;
-  onCellContextMenu: (e: React.MouseEvent, columnId: string) => void;
+  onCellContextMenu: (
+    e: React.MouseEvent,
+    columnId: OutlineGridColumnId,
+  ) => void;
 }
 
 export function OutlineGridRow({

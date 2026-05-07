@@ -2,11 +2,11 @@
 
 import { Calendar } from "lucide-react";
 import Link from "next/link";
-import type { Project } from "@/db/schemas";
+import type { Project, ProjectId } from "@/db/schemas";
 
 interface ProjectCardProps {
   project: Project;
-  onContextMenu?: (e: React.MouseEvent, projectId: string) => void;
+  onContextMenu?: (e: React.MouseEvent, projectId: ProjectId) => void;
 }
 
 export function ProjectCard({ project, onContextMenu }: ProjectCardProps) {

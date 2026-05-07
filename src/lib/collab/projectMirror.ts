@@ -1,5 +1,5 @@
 import type * as Y from "yjs";
-import type { Project } from "@/db/schemas";
+import type { ChapterId, Project, ProjectId } from "@/db/schemas";
 import {
   deleteEntity,
   getProjectTable,
@@ -16,14 +16,14 @@ export const MIRROR_ORIGIN = Symbol("writr-collab-project-mirror");
 
 export type ProjectSnapshot = {
   project: Project;
-  activeChapterId: string | null;
+  activeChapterId: ChapterId | null;
 } & {
   [K in ProjectDocTable]: ProjectDocEntity<K>[];
 };
 
 export interface ProjectMirrorOptions {
   doc: Y.Doc;
-  projectId: string;
+  projectId: ProjectId;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface ProjectMirrorOptions {
  */
 export class ProjectMirror {
   readonly doc: Y.Doc;
-  readonly projectId: string;
+  readonly projectId: ProjectId;
   private readonly hashes: Map<ProjectDocTable, Map<string, string>> =
     new Map();
   private projectHash: string | null = null;
@@ -127,7 +127,7 @@ export class ProjectMirror {
     this.writeProject(project);
   }
 
-  setActiveChapterId(id: string | null): void {
+  setActiveChapterId(id: ChapterId | null): void {
     if (this.destroyed) return;
     writeProjectMeta(this.doc, { activeChapterId: id }, MIRROR_ORIGIN);
   }

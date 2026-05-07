@@ -2,12 +2,13 @@
 
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useChapter, useChaptersByProject } from "@/hooks/data/source";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
 
 export interface ChapterReadOnlyBodyProps {
-  projectId: string;
-  chapterId: string;
+  projectId: ProjectId;
+  chapterId: ChapterId;
   basePath: string;
 }
 

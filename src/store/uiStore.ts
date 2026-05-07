@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import type { AgentDefinitionId, ChapterId, ProjectId } from "@/db/schemas";
 
 export type SidebarPanel = "chapters" | "bible" | "agents";
 
@@ -7,14 +8,14 @@ export type SidebarPanel = "chapters" | "bible" | "agents";
 export type ModalState =
   | { id: null }
   | { id: "create-project" }
-  | { id: "edit-project"; projectId: string }
-  | { id: "delete-project"; projectId: string }
+  | { id: "edit-project"; projectId: ProjectId }
+  | { id: "delete-project"; projectId: ProjectId }
   | { id: "project-settings" }
   | { id: "app-settings" }
   | {
       id: "export";
-      projectId: string;
-      chapterId?: string;
+      projectId: ProjectId;
+      chapterId?: ChapterId;
       scope?: "book" | "chapter";
     }
   | {
@@ -27,9 +28,9 @@ export type ModalState =
   | { id: "insert-image" }
   | { id: "ruby-editor"; currentAnnotation?: string }
   | { id: "dictionary-manager" }
-  | { id: "version-history"; chapterId: string; projectId: string }
+  | { id: "version-history"; chapterId: ChapterId; projectId: ProjectId }
   | { id: "agents-manager" }
-  | { id: "agent-editor"; agentId?: string }
+  | { id: "agent-editor"; agentId?: AgentDefinitionId }
   | { id: "share-collab-session" }
   | {
       id: "collab-approve-join";

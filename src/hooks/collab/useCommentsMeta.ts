@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type * as Y from "yjs";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 
 interface CommentsMeta {
-  chapterId: string | null;
-  projectId: string | null;
+  chapterId: ChapterId | null;
+  projectId: ProjectId | null;
 }
 
 /**
@@ -29,8 +30,10 @@ export function useCommentsMeta(doc: Y.Doc | null): CommentsMeta {
       const chapterId = map.get("chapterId");
       const projectId = map.get("projectId");
       setMeta({
-        chapterId: typeof chapterId === "string" ? chapterId : null,
-        projectId: typeof projectId === "string" ? projectId : null,
+        chapterId:
+          typeof chapterId === "string" ? (chapterId as ChapterId) : null,
+        projectId:
+          typeof projectId === "string" ? (projectId as ProjectId) : null,
       });
     };
     read();
