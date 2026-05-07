@@ -4,6 +4,7 @@ import {
   createAgentRun,
   deleteAgentRun,
   getAgentRun,
+  markAgentRunFailed,
   updateAgentRunStatus,
   updateBudgetTokens,
 } from "./agentRuns";
@@ -71,6 +72,51 @@ describe("updateBudgetTokens", () => {
     await expect(updateBudgetTokens(run.id, 1.5)).rejects.toThrow(
       /positive integer/,
     );
+  });
+});
+
+describe("markAgentRunFailed / failedFromStatus", () => {
+  beforeEach(async () => {
+    await db.agentRuns.clear();
+  });
+
+  it("creates new runs with failedFromStatus null", async () => {
+    const run = await createAgentRun({ projectId, name: "Fresh" });
+    expect(run.failedFromStatus).toBeNull();
+  });
+
+  it("records the failed phase and error reason", async () => {
+    const run = await createAgentRun({ projectId, name: "Boom" });
+    await markAgentRunFailed(run.id, "openrouter 500", "reading");
+
+    const updated = await getAgentRun(run.id);
+    expect(updated?.status).toBe("error");
+    expect(updated?.statusReason).toBe("openrouter 500");
+    expect(updated?.failedFromStatus).toBe("reading");
+  });
+
+  it("clears failedFromStatus when transitioning out of error via updateAgentRunStatus", async () => {
+    const run = await createAgentRun({ projectId, name: "Retry me" });
+    await markAgentRunFailed(run.id, "boom", "executing-tier");
+
+    // Simulate the dashboard's Retry handler restoring the active phase.
+    await updateAgentRunStatus(run.id, "executing-tier", null);
+
+    const updated = await getAgentRun(run.id);
+    expect(updated?.status).toBe("executing-tier");
+    expect(updated?.statusReason).toBeNull();
+    expect(updated?.failedFromStatus).toBeNull();
+  });
+
+  it("preserves failedFromStatus when status stays at error", async () => {
+    const run = await createAgentRun({ projectId, name: "Sticky" });
+    await markAgentRunFailed(run.id, "first", "reading");
+    // A subsequent error-level update should not wipe the retry pointer.
+    await updateAgentRunStatus(run.id, "error", "second");
+
+    const updated = await getAgentRun(run.id);
+    expect(updated?.failedFromStatus).toBe("reading");
+    expect(updated?.statusReason).toBe("second");
   });
 });
 

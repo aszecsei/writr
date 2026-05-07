@@ -53,6 +53,7 @@ export async function createAgentRun(
     lastIterationPromptTokens: 0,
     requiresIncrementalReread: false,
     statusReason: null,
+    failedFromStatus: null,
     createdAt: timestamp,
     updatedAt: timestamp,
   });
@@ -83,9 +84,33 @@ export async function updateAgentRunStatus(
   status: AgentRunStatus,
   reason?: string | null,
 ): Promise<void> {
+  // Any status transition out of "error" should clear the retry pointer —
+  // there's no longer an error to retry from.
+  const clearFailed = status !== "error";
   await db.agentRuns.update(id, {
     status,
     statusReason: reason ?? null,
+    ...(clearFailed ? { failedFromStatus: null } : {}),
+    updatedAt: now(),
+  });
+}
+
+/**
+ * Mark a run as errored due to a thrown failure during a phase. Records the
+ * phase that was active so the dashboard's Retry button knows which entry
+ * point to re-invoke. Use {@link updateAgentRunStatus} for proactive errors
+ * (e.g. missing API key) where retrying without fixing the underlying cause
+ * is pointless — those leave `failedFromStatus` null and the UI hides Retry.
+ */
+export async function markAgentRunFailed(
+  id: string,
+  reason: string,
+  fromStatus: AgentRunStatus | null,
+): Promise<void> {
+  await db.agentRuns.update(id, {
+    status: "error",
+    statusReason: reason,
+    failedFromStatus: fromStatus,
     updatedAt: now(),
   });
 }

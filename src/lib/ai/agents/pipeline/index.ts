@@ -38,6 +38,14 @@ export type { VerifyTierOptions, VerifyTierResult } from "./verifyTier";
 
 export { BUDGET_EXCEEDED_REASON } from "./readerLoop";
 
+// ─── Status labels & retry-eligible phases ────────────────────────
+
+export {
+  isRetryablePhase,
+  PHASE_STATUS_LABEL,
+  RETRYABLE_PHASE_STATUSES,
+} from "./statusLabels";
+
 // ─── Events / activity ─────────────────────────────────────────────
 
 export { composeEmitters, createActivityEmitter } from "./activityEmitter";

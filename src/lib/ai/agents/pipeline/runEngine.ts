@@ -1,4 +1,5 @@
-import { getAgentRun } from "@/db/operations/agentRuns";
+import { getAgentRun, markAgentRunFailed } from "@/db/operations/agentRuns";
+import type { AgentRunStatus } from "@/db/schemas";
 import type { AiContext } from "../../types";
 import { type ApplyTierResult, applyTier } from "./applyTier";
 import { getChaptersAwaitingReread } from "./driftDetect";
@@ -22,6 +23,31 @@ export function getRunController(runId: string): AbortController | undefined {
 export function cancelRun(runId: string): void {
   const controller = runControllers.get(runId);
   if (controller) controller.abort();
+}
+
+/**
+ * Run a phase function and persist any thrown error onto the AgentRun row so
+ * the dashboard can offer a Retry button. `phase` is the active status the
+ * run is in while `fn` is executing — retry will re-enter at this status.
+ *
+ * User-initiated cancellation (signal.aborted) is treated as a normal abort,
+ * not a failure: we re-throw without touching status so the caller's
+ * cancel-path (which sets status="cancelled") wins.
+ */
+async function withRunErrorCapture<T>(
+  runId: string,
+  phase: AgentRunStatus,
+  signal: AbortSignal,
+  fn: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (signal.aborted) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    await markAgentRunFailed(runId, message, phase);
+    throw err;
+  }
 }
 
 export interface StartReaderPhaseOptions {
@@ -58,16 +84,18 @@ export async function startReaderPhase(
   runControllers.set(options.runId, controller);
 
   try {
-    await runReaderLoop({
-      runId: options.runId,
-      projectId: options.projectId,
-      chapterIdsInScope: options.chapterIdsInScope,
-      maxPasses: options.maxPasses,
-      deltaThreshold: options.deltaThreshold,
-      signal: controller.signal,
-      onEvent: options.onEvent,
-      buildContext: options.buildContext,
-    });
+    await withRunErrorCapture(options.runId, "reading", controller.signal, () =>
+      runReaderLoop({
+        runId: options.runId,
+        projectId: options.projectId,
+        chapterIdsInScope: options.chapterIdsInScope,
+        maxPasses: options.maxPasses,
+        deltaThreshold: options.deltaThreshold,
+        signal: controller.signal,
+        onEvent: options.onEvent,
+        buildContext: options.buildContext,
+      }),
+    );
   } finally {
     runControllers.delete(options.runId);
   }
@@ -97,15 +125,21 @@ export async function startPlanTier(
   const controller = new AbortController();
   runControllers.set(options.runId, controller);
   try {
-    await planTier({
-      runId: options.runId,
-      projectId: options.projectId,
-      tier: options.tier,
-      humanBriefing: options.humanBriefing,
-      signal: controller.signal,
-      onEvent: options.onEvent,
-      buildContext: options.buildContext,
-    });
+    await withRunErrorCapture(
+      options.runId,
+      "planning",
+      controller.signal,
+      () =>
+        planTier({
+          runId: options.runId,
+          projectId: options.projectId,
+          tier: options.tier,
+          humanBriefing: options.humanBriefing,
+          signal: controller.signal,
+          onEvent: options.onEvent,
+          buildContext: options.buildContext,
+        }),
+    );
   } finally {
     runControllers.delete(options.runId);
   }
@@ -131,14 +165,20 @@ export async function startExecuteTier(
   const controller = new AbortController();
   runControllers.set(options.runId, controller);
   try {
-    await executeTier({
-      runId: options.runId,
-      projectId: options.projectId,
-      tier: options.tier,
-      signal: controller.signal,
-      onEvent: options.onEvent,
-      buildContext: options.buildContext,
-    });
+    await withRunErrorCapture(
+      options.runId,
+      "executing-tier",
+      controller.signal,
+      () =>
+        executeTier({
+          runId: options.runId,
+          projectId: options.projectId,
+          tier: options.tier,
+          signal: controller.signal,
+          onEvent: options.onEvent,
+          buildContext: options.buildContext,
+        }),
+    );
   } finally {
     runControllers.delete(options.runId);
   }
@@ -177,27 +217,39 @@ export async function startApplyTier(
   const controller = new AbortController();
   runControllers.set(options.runId, controller);
   try {
-    const apply = await applyTier({
-      runId: options.runId,
-      projectId: options.projectId,
-      tier: options.tier,
-      approvedEditIds: options.approvedEditIds,
-      manifestName: options.manifestName,
-    });
+    const apply = await withRunErrorCapture(
+      options.runId,
+      "applying-tier",
+      controller.signal,
+      () =>
+        applyTier({
+          runId: options.runId,
+          projectId: options.projectId,
+          tier: options.tier,
+          approvedEditIds: options.approvedEditIds,
+          manifestName: options.manifestName,
+        }),
+    );
 
     if (options.skipVerification || apply.appliedEditIds.length === 0) {
       return { apply };
     }
 
-    const verify = await verifyTier({
-      runId: options.runId,
-      projectId: options.projectId,
-      tier: options.tier,
-      affectedChapterIds: apply.affectedChapterIds,
-      signal: controller.signal,
-      onEvent: options.onEvent,
-      buildContext: options.buildContext,
-    });
+    const verify = await withRunErrorCapture(
+      options.runId,
+      "verifying-tier",
+      controller.signal,
+      () =>
+        verifyTier({
+          runId: options.runId,
+          projectId: options.projectId,
+          tier: options.tier,
+          affectedChapterIds: apply.affectedChapterIds,
+          signal: controller.signal,
+          onEvent: options.onEvent,
+          buildContext: options.buildContext,
+        }),
+    );
 
     return { apply, verify };
   } finally {
@@ -246,16 +298,18 @@ export async function startIncrementalReread(
   const controller = new AbortController();
   runControllers.set(options.runId, controller);
   try {
-    await runReaderLoop({
-      runId: options.runId,
-      projectId: options.projectId,
-      chapterIdsInScope: scope,
-      maxPasses: 2,
-      deltaThreshold: 0.05,
-      signal: controller.signal,
-      onEvent: options.onEvent,
-      buildContext: options.buildContext,
-    });
+    await withRunErrorCapture(options.runId, "reading", controller.signal, () =>
+      runReaderLoop({
+        runId: options.runId,
+        projectId: options.projectId,
+        chapterIdsInScope: scope,
+        maxPasses: 2,
+        deltaThreshold: 0.05,
+        signal: controller.signal,
+        onEvent: options.onEvent,
+        buildContext: options.buildContext,
+      }),
+    );
   } finally {
     runControllers.delete(options.runId);
   }

@@ -965,6 +965,17 @@ export class WritrDatabase extends Dexie {
         });
     });
 
+    // v34: backfill `failedFromStatus` on existing agentRuns rows so legacy
+    // rows survive Zod parse after the field was added.
+    this.version(34).upgrade((tx) =>
+      tx
+        .table("agentRuns")
+        .toCollection()
+        .modify((r: { failedFromStatus?: unknown }) => {
+          if (r.failedFromStatus === undefined) r.failedFromStatus = null;
+        }),
+    );
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

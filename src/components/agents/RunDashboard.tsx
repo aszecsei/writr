@@ -13,6 +13,10 @@ import {
   cancelRun,
   createActivityEmitter,
   getRunController,
+  isRetryablePhase,
+  PHASE_STATUS_LABEL,
+  startExecuteTier,
+  startPlanTier,
   startReaderPhase,
 } from "@/lib/ai/agents/pipeline";
 import { ActivityPanel } from "./ActivityPanel";
@@ -80,6 +84,49 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
     await updateAgentRunStatus(runId, "cancelled", "Cancelled by user");
   }
 
+  async function handleRetry() {
+    if (!run || !run.failedFromStatus) return;
+    const phase = run.failedFromStatus;
+    setActionError(null);
+    // Restore the run to the phase that errored. updateAgentRunStatus clears
+    // failedFromStatus on any non-error transition so the Retry button hides
+    // immediately and the entry point's error-capture wrapper has a clean
+    // slate to write into if this attempt also fails.
+    await updateAgentRunStatus(runId, phase, null);
+    try {
+      switch (phase) {
+        case "reading":
+          await startReaderPhase({
+            runId,
+            projectId,
+            buildContext,
+            onEvent: createActivityEmitter(),
+          });
+          break;
+        case "planning":
+          await startPlanTier({
+            runId,
+            projectId,
+            tier: Math.max(1, run.currentTier),
+            buildContext,
+          });
+          break;
+        case "executing-tier":
+          await startExecuteTier({
+            runId,
+            projectId,
+            tier: Math.max(1, run.currentTier),
+            buildContext,
+          });
+          break;
+        // applying-tier / verifying-tier are not safely resumable; the
+        // Retry button is hidden for those phases (see render gate below).
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to retry");
+    }
+  }
+
   if (!run) return <div className="p-6 text-sm">Loading run…</div>;
 
   const tokenUsage =
@@ -102,7 +149,13 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
               {run.readerPasses.length === 1 ? "" : "es"}
             </p>
             {run.statusReason && (
-              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+              <p
+                className={
+                  run.status === "error"
+                    ? "mt-1 text-xs text-red-600 dark:text-red-400"
+                    : "mt-1 text-xs text-amber-600 dark:text-amber-400"
+                }
+              >
                 {run.statusReason}
               </p>
             )}
@@ -117,6 +170,21 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
                 Raise Budget
               </button>
             )}
+            {run.status === "error" &&
+              isRetryablePhase(run.failedFromStatus) &&
+              !isInFlight && (
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  className={BUTTON_PRIMARY}
+                >
+                  Retry{" "}
+                  {run.failedFromStatus
+                    ? (PHASE_STATUS_LABEL[run.failedFromStatus] ??
+                      run.failedFromStatus)
+                    : ""}
+                </button>
+              )}
             {(run.status === "idle" ||
               run.status === "awaiting-plan-approval") &&
               !isInFlight && (

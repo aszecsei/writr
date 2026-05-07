@@ -99,11 +99,21 @@ export async function runReaderLoop(
   const allChapters = await getChaptersByProject(projectId);
   const chaptersInScope = filterChapters(allChapters, chapterIdsInScope);
 
+  // Seed `passNumber` from the existing run so labels stay globally unique
+  // across re-entries (subsequent "Run Another Reader Pass" clicks and
+  // retries). `passesThisInvocation` is the loop-bound counter so `maxPasses`
+  // remains a per-invocation cap, not a per-run total.
+  const initialRun = await getAgentRun(runId);
+  if (!initialRun) throw new Error(`Agent run not found: ${runId}`);
+  let passNumber = initialRun.readerPasses.reduce(
+    (max, p) => Math.max(max, p.passNumber),
+    0,
+  );
+  let passesThisInvocation = 0;
   let priorTotal = 0;
-  let passNumber = 0;
   let exitReason: "delta" | "max" | "aborted" = "max";
 
-  while (passNumber < maxPasses) {
+  while (passesThisInvocation < maxPasses) {
     if (signal?.aborted) {
       exitReason = "aborted";
       break;
@@ -126,6 +136,7 @@ export async function runReaderLoop(
     }
 
     passNumber += 1;
+    passesThisInvocation += 1;
     const { mode, startFromOrder } = next;
     const passStartIso = now();
     await appendReaderPass(runId, {
@@ -242,7 +253,7 @@ export async function runReaderLoop(
     await updateAgentRunStatus(runId, "cancelled");
   }
 
-  return { passesCompleted: passNumber, reason: exitReason };
+  return { passesCompleted: passesThisInvocation, reason: exitReason };
 }
 
 /**

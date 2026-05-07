@@ -190,6 +190,42 @@ describe("runReaderLoop — mode dispatch", () => {
     );
   });
 
+  it("passNumber continues from prior invocation when reader loop is re-entered", async () => {
+    await seedProjectAndChapters(2);
+    const run = await createAgentRun({
+      projectId,
+      name: "RReentry",
+      budgetTokens: 1_000_000,
+    });
+
+    // First invocation: cap to 1 pass (comprehension over both chapters).
+    await runReaderLoop({
+      runId: run.id,
+      projectId,
+      maxPasses: 1,
+      buildContext,
+    });
+
+    // Second invocation: thematic + self-answer. `passesCompleted` is the
+    // per-invocation count, not the run total — that contract is what the
+    // existing tests rely on, so it must stay 2 here.
+    const second = await runReaderLoop({
+      runId: run.id,
+      projectId,
+      maxPasses: 2,
+      buildContext,
+    });
+    expect(second.passesCompleted).toBe(2);
+
+    const stored = await getAgentRun(run.id);
+    expect(stored?.readerPasses.map((p) => p.passNumber)).toEqual([1, 2, 3]);
+    expect(stored?.readerPasses.map((p) => p.mode)).toEqual([
+      "comprehension",
+      "thematic",
+      "self-answer",
+    ]);
+  });
+
   it("comprehension threads accumulating history across chapters within a segment", async () => {
     await seedProjectAndChapters(3);
     const run = await createAgentRun({

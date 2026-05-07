@@ -10,6 +10,7 @@ import type { AgentRun, AgentRunStatus } from "@/db/schemas";
 import { useAgentRunContext } from "@/hooks/data/useAgentRunContext";
 import {
   getRunController,
+  PHASE_STATUS_LABEL,
   startExecuteTier,
   startPlanTier,
   startReaderPhase,
@@ -30,14 +31,6 @@ const ACTIVE_STATUSES: AgentRunStatus[] = [
   "applying-tier",
   "verifying-tier",
 ];
-
-const STATUS_LABEL: Partial<Record<AgentRunStatus, string>> = {
-  reading: "Reader pass",
-  planning: "Orchestrator (planning)",
-  "executing-tier": "Editor agents (executing tier)",
-  "applying-tier": "Applying tier to manuscript",
-  "verifying-tier": "Verifier",
-};
 
 /**
  * Detects mid-flight runs that lost their controller (page reload, tab close,
@@ -114,7 +107,7 @@ export function PauseResumeBanner({ run, projectId }: PauseResumeBannerProps) {
     }
   }
 
-  const phase = STATUS_LABEL[run.status] ?? run.status;
+  const phase = PHASE_STATUS_LABEL[run.status] ?? run.status;
   const fragile =
     run.status === "applying-tier" || run.status === "verifying-tier";
 

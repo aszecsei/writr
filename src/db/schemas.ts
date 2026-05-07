@@ -951,6 +951,13 @@ export const AgentRunSchema = z.object({
   requiresIncrementalReread: z.boolean().default(false),
   /** Last status-change reason — surfaced in UI banners. */
   statusReason: z.string().nullable().default(null),
+  /**
+   * When `status === "error"` because a phase threw, records the active
+   * phase that was running so a Retry button can re-enter it. Null for
+   * proactive config errors (e.g. missing API key) that aren't recoverable
+   * by simply retrying, and for non-error states.
+   */
+  failedFromStatus: AgentRunStatusEnum.nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
