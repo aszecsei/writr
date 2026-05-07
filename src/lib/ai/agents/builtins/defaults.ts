@@ -15,7 +15,13 @@
 import type { AgentKind } from "@/db/schemas";
 import { EDITOR_CHAT_PROMPT } from "./editor";
 import { READER_CHAT_PROMPT } from "./reader";
-import { EDITOR_CHAT_TOOLS, READER_CHAT_TOOLS } from "./tool-permissions";
+import {
+  BRAINSTORM_TOOLS,
+  CHARACTER_DIALOGUE_TOOLS,
+  CHAT_TOOLS,
+  EDITOR_CHAT_TOOLS,
+  READER_CHAT_TOOLS,
+} from "./tool-permissions";
 
 /**
  * UI behaviour hint derived from agent kind. Drives how the AiPanel renders
@@ -142,7 +148,7 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     name: "Character Dialogue",
     description: "Write dialogue between specific characters.",
     systemPrompt: CHARACTER_DIALOGUE_PROMPT,
-    allowedToolIds: [],
+    allowedToolIds: [...CHARACTER_DIALOGUE_TOOLS],
     behavior: "chat",
     exposed: true,
   },
@@ -150,7 +156,7 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     name: "Brainstorm",
     description: "Generate distinct ideas around a prompt.",
     systemPrompt: BRAINSTORM_PROMPT,
-    allowedToolIds: [],
+    allowedToolIds: [...BRAINSTORM_TOOLS],
     behavior: "chat",
     exposed: true,
   },
@@ -158,7 +164,7 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     name: "Chat",
     description: "Freeform writer's-room companion with full bible context.",
     systemPrompt: CHAT_PROMPT,
-    allowedToolIds: [],
+    allowedToolIds: [...CHAT_TOOLS],
     behavior: "chat",
     exposed: true,
   },

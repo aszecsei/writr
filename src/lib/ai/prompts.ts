@@ -1,81 +1,29 @@
-import {
-  buildNameMap,
-  serializeCharacter,
-  serializeLocation,
-  serializeOutlineGrid,
-  serializeRelationship,
-  serializeStyleGuideEntry,
-  serializeTimelineEvent,
-  serializeWorldbuildingTree,
-} from "./serialize";
+import type { Chapter } from "@/db/schemas";
+import { serializeStyleGuideEntry } from "./serialize";
 import type { AiContext, AiMessage } from "./types";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
 
-function buildNovelContext(
-  context: AiContext,
-  options?: { excludeMinorCharacters?: boolean },
-): string {
-  const isScreenplay = context.projectMode === "screenplay";
-  const rootTag = isScreenplay ? "screenplay" : "novel";
-  const genreAttr = context.genre ? ` genre="${context.genre}"` : "";
-  let novel = `<${rootTag} title="${context.projectTitle}"${genreAttr}>\n\n`;
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
 
-  const charMap = buildNameMap(context.characters, (c) => c.name);
-
-  const characters = options?.excludeMinorCharacters
-    ? context.characters.filter((c) => c.role !== "minor")
-    : context.characters;
-
-  function addSection<T>(
-    tag: string,
-    items: T[],
-    serialize: (item: T) => string,
-  ) {
-    if (items.length === 0) return;
-    const lines = items.map(serialize).filter(Boolean);
-    if (lines.length === 0) return;
-    novel += `<${tag}>\n${lines.join("\n")}\n</${tag}>\n\n`;
-  }
-
-  addSection("characters", characters, serializeCharacter);
-  addSection("relationships", context.relationships, (r) =>
-    serializeRelationship(r, charMap),
+function buildTableOfContents(chapters: readonly Chapter[]): string {
+  if (chapters.length === 0) return "";
+  const lines = chapters.map(
+    (c) =>
+      `  <chapter id="${escapeAttr(c.id)}" order="${c.order}" title="${escapeAttr(c.title)}" status="${c.status}" wordCount="${c.wordCount}" />`,
   );
-  addSection("locations", context.locations, (l) =>
-    serializeLocation(l, charMap),
-  );
-  addSection("style-guide", context.styleGuide, serializeStyleGuideEntry);
-  addSection("timeline", context.timelineEvents, (e) =>
-    serializeTimelineEvent(e, charMap),
-  );
-
-  if (context.worldbuildingDocs.length > 0) {
-    novel += "<worldbuilding>\n";
-    novel += serializeWorldbuildingTree(context.worldbuildingDocs);
-    novel += "\n</worldbuilding>\n\n";
-  }
-
-  if (context.outlineGridColumns.length > 0) {
-    const chapterMap = buildNameMap(context.chapters, (c) => c.title);
-    novel += "<outline>\n";
-    novel += serializeOutlineGrid(
-      context.outlineGridColumns,
-      context.outlineGridRows,
-      context.outlineGridCells,
-      chapterMap,
-    );
-    novel += "\n</outline>\n\n";
-  }
-
-  novel += `</${rootTag}>`;
-  return novel;
+  return `<table-of-contents>\n${lines.join("\n")}\n</table-of-contents>\n\n`;
 }
 
 /**
- * Build a minimal, cache-stable context for agentic (tool-calling) mode.
- * Contains only project metadata and style guide — the AI fetches everything
- * else on demand via tools, saving tokens and improving cache hit rates.
+ * Build the cache-stable initial project context for chat-mode and pipeline
+ * agents. Includes top-level project details (title, description, genre,
+ * mode) plus the style guide and a chapter table of contents so the model
+ * knows the manuscript's shape before reaching for tools. Everything else
+ * (characters, locations, timeline, worldbuilding, outline grid, chapter
+ * prose) is fetched on demand via tool calls.
  */
 export function buildAgenticContext(context: AiContext): string {
   const isScreenplay = context.projectMode === "screenplay";
@@ -95,6 +43,8 @@ export function buildAgenticContext(context: AiContext): string {
       xml += `<style-guide>\n${lines.join("\n")}\n</style-guide>\n\n`;
     }
   }
+
+  xml += buildTableOfContents(context.chapters);
 
   xml += `</${rootTag}>`;
   return xml;
@@ -121,7 +71,7 @@ interface BuildMessagesOptions {
  * AgentDefinition row, with any screenplay suffix already applied). This
  * function wraps it with the optional `customSystemPrompt` preamble and a
  * <task>...</task> framing block, then appends:
- *   1. Story-bible context (full or agentic-minimal)
+ *   1. Minimal project context (top-level details + style guide + TOC)
  *   2. Optional <chapter>...</chapter> block for the active chapter
  *   3. Conversation history (with cache_control on the last entry in agentic mode)
  *   4. The user's prompt (with selected text and image attachments)
@@ -146,7 +96,7 @@ export function buildMessages(
     systemContent +=
       "\n\n<tool-calling-instructions>\n" +
       "You have tools to discover and manage the user's project.\n" +
-      "The context above contains only the project's style guide for voice/tone reference.\n" +
+      "The context above contains the project's top-level details, style guide, and a chapter table of contents (id + title).\n" +
       "Use tools to discover all other project data on demand:\n\n" +
       "DISCOVERY PATTERN:\n" +
       "1. `list({ category })` returns the index for one category. Categories: character, location, timeline, chapter, style_guide, worldbuilding.\n" +
@@ -171,10 +121,11 @@ export function buildMessages(
     },
   ];
 
-  // Story bible context as a user message (cacheable)
-  const contextXml = enableToolCalling
-    ? buildAgenticContext(context)
-    : buildNovelContext(context);
+  // Story bible context as a user message (cacheable). Tool-calling agents
+  // and chat agents now share the same minimal shape — top-level project
+  // details, style guide, and chapter TOC. Anything richer (characters,
+  // locations, etc.) is fetched on demand via tools.
+  const contextXml = buildAgenticContext(context);
   messages.push({
     role: "user",
     content: [

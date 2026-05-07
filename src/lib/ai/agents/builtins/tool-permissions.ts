@@ -3,10 +3,10 @@
  *
  * Agent kinds map to multiple variants when an agent is invoked under
  * different operating contexts:
- *   - Reader has a chat variant (no tools by default) and three pipeline
+ *   - Reader has a chat variant (broad reads, no writes) and three pipeline
  *     modes (comprehension / thematic / self-answer).
- *   - Editor has a chat variant (only `propose_edit`) and a pipeline variant
- *     scoped to a single work unit.
+ *   - Editor has a chat variant (broad reads + `propose_edit`) and a
+ *     pipeline variant scoped to a single work unit.
  *   - Orchestrator and Verifier are pipeline-only.
  *
  * Tool ids must match registered ids in `AI_TOOLS`. The consolidated `list`
@@ -16,10 +16,53 @@
  * unscoped `list` / `get` to grant all categories.
  */
 
+// ─── Chat-mode read baseline ─────────────────────────────────────────
+
+/**
+ * Broad read-only toolset for chat-mode agents. Mirrors `ALL_READ_TOOL_IDS`
+ * in the AgentEditor's tool picker minus the pipeline-only groups (reader
+ * bible, reader notes/questions) which require an active pipeline run.
+ *
+ * Spans every project read surface a writing-room collaborator might want:
+ * the full story bible (per-category scoped ids), chapter metadata and
+ * content, project-wide search, and the outline grid.
+ */
+export const CHAT_READS_BASE: readonly string[] = [
+  // Story bible (scoped per-category for explicit narrowing in the UI).
+  "list:character",
+  "get:character",
+  "list:location",
+  "get:location",
+  "list:timeline",
+  "get:timeline",
+  "list:style_guide",
+  "get:style_guide",
+  "list:worldbuilding",
+  "get:worldbuilding",
+  // Chapters: metadata, content, structure.
+  "list:chapter",
+  "get:chapter",
+  "read_chapter",
+  "read_chapter_range",
+  "search_chapter",
+  "search_chapters",
+  "get_chapter_structure",
+  "get:summary",
+  // Project-wide.
+  "get:outline",
+  "search_project",
+];
+
 // ─── Reader ──────────────────────────────────────────────────────────
 
-/** Chat-mode reader: text-only by default (no tool calls). */
-export const READER_CHAT_TOOLS: readonly string[] = [];
+/**
+ * Chat-mode reader: read-only review of the manuscript and bible. Same
+ * surface as the broad chat baseline — readers ground their answers in
+ * the bible and chapter content but never mutate. Pipeline-only reader
+ * tools (bible_*, list_notes/list_questions) are excluded; they require
+ * an active run.
+ */
+export const READER_CHAT_TOOLS: readonly string[] = [...CHAT_READS_BASE];
 
 /**
  * Comprehension pass: reader sees ONE inlined chapter. Read-back tools are
@@ -79,10 +122,57 @@ export const READER_SELF_ANSWER_TOOLS: readonly string[] = [
 // ─── Editor ──────────────────────────────────────────────────────────
 
 /**
- * Chat-mode editor: only `propose_edit`. The model writes prose inline;
- * staging-via-tool is opt-in for "rewrite this" requests.
+ * Chat-mode editor: full read surface so the model can ground its edits
+ * in surrounding chapters and bible context, plus `propose_edit` for
+ * staging "rewrite this" suggestions. The model can still write prose
+ * inline; staging-via-tool is opt-in.
  */
-export const EDITOR_CHAT_TOOLS: readonly string[] = ["propose_edit"];
+export const EDITOR_CHAT_TOOLS: readonly string[] = [
+  ...CHAT_READS_BASE,
+  "propose_edit",
+];
+
+// ─── Chat / Brainstorm / Character Dialogue ──────────────────────────
+
+/**
+ * Free-form Chat agent: same broad read surface as Reader. Used by the
+ * "Chat" built-in for writer's-room conversations where the model needs
+ * on-demand access to anything in the project.
+ */
+export const CHAT_TOOLS: readonly string[] = [...CHAT_READS_BASE];
+
+/**
+ * Brainstorm agent: bible reads + outline + project-wide search, but no
+ * chapter content. Brainstorms work from premises and the bible — letting
+ * the model pull entire chapters tends to produce summaries instead of
+ * fresh ideas.
+ */
+export const BRAINSTORM_TOOLS: readonly string[] = [
+  "list:character",
+  "get:character",
+  "list:location",
+  "get:location",
+  "list:timeline",
+  "get:timeline",
+  "list:style_guide",
+  "get:style_guide",
+  "list:worldbuilding",
+  "get:worldbuilding",
+  "get:outline",
+  "search_project",
+];
+
+/**
+ * Character Dialogue agent: minimal surface for voice consistency —
+ * character voice cues and the style guide. No chapter access; dialogue
+ * is generated from voice notes, not by mimicking prior scenes verbatim.
+ */
+export const CHARACTER_DIALOGUE_TOOLS: readonly string[] = [
+  "list:character",
+  "get:character",
+  "list:style_guide",
+  "get:style_guide",
+];
 
 /**
  * Pipeline editor: scoped to a single work unit. Read summaries / chapter
