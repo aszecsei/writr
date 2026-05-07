@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import { getChapter } from "@/db/operations/chapters";
 import { listApprovedEditsForChapter } from "@/db/operations/proposedEdits";
 import type { ProposedEdit } from "@/db/schemas";
@@ -29,7 +30,7 @@ export function applyEditsToContent(
   // First pass: resolve every edit against the original content. `replace`
   // has no offsets, so we can't sort before locating.
   for (const edit of edits) {
-    const range = locateEdit(content, edit);
+    const range = locateProposedEdit(content, edit);
     if (!range) {
       skipped.push(edit.id);
       continue;
@@ -54,54 +55,62 @@ export function applyEditsToContent(
   return { content: working, applied, skipped };
 }
 
-interface ResolvedRange {
+export interface ResolvedRange {
   from: number;
   to: number;
 }
 
-function locateEdit(content: string, edit: ProposedEdit): ResolvedRange | null {
-  switch (edit.kind) {
-    case "full_chapter":
-      return { from: 0, to: content.length };
-    case "append":
-      return { from: content.length, to: content.length };
-    case "insert_at": {
-      // Prefer recorded offset if it still matches the anchor (or is empty);
-      // otherwise search for the anchor.
+/**
+ * Resolve a proposed edit's range against the given chapter content.
+ * Returns null if the locator can't be matched (anchor drift, missing anchor).
+ *
+ * Used both by `applyEditsToContent` (apply path) and by `EditDiffCard` (UI
+ * preview). For `insert_at`, prefers the recorded offset when it still
+ * matches the anchor and falls back to indexOf otherwise.
+ */
+export function locateProposedEdit(
+  content: string,
+  edit: ProposedEdit,
+): ResolvedRange | null {
+  return match(edit)
+    .with({ kind: "full_chapter" }, () => ({ from: 0, to: content.length }))
+    .with({ kind: "append" }, () => ({
+      from: content.length,
+      to: content.length,
+    }))
+    .with({ kind: "insert_at" }, (e): ResolvedRange | null => {
       if (
-        typeof edit.fromOffset === "number" &&
-        edit.fromOffset >= 0 &&
-        edit.fromOffset <= content.length
+        typeof e.fromOffset === "number" &&
+        e.fromOffset >= 0 &&
+        e.fromOffset <= content.length
       ) {
-        if (!edit.anchorText) {
-          return { from: edit.fromOffset, to: edit.fromOffset };
+        if (!e.anchorText) {
+          return { from: e.fromOffset, to: e.fromOffset };
         }
         const slice = content.slice(
-          edit.fromOffset,
-          edit.fromOffset + edit.anchorText.length,
+          e.fromOffset,
+          e.fromOffset + e.anchorText.length,
         );
-        if (slice === edit.anchorText) {
-          return { from: edit.fromOffset, to: edit.fromOffset };
+        if (slice === e.anchorText) {
+          return { from: e.fromOffset, to: e.fromOffset };
         }
       }
-      if (edit.anchorText) {
-        const idx = content.indexOf(edit.anchorText);
+      if (e.anchorText) {
+        const idx = content.indexOf(e.anchorText);
         if (idx >= 0) return { from: idx, to: idx };
       }
       return null;
-    }
-    case "replace": {
-      if (!edit.anchorText) return null;
+    })
+    .with({ kind: "replace" }, (e): ResolvedRange | null => {
       // Uniqueness was the proposal-time guarantee; the chapter has likely
       // shifted by apply time, so first match is the best we can do.
-      const combined =
-        (edit.prefix ?? "") + edit.anchorText + (edit.suffix ?? "");
+      const combined = (e.prefix ?? "") + e.anchorText + (e.suffix ?? "");
       const idx = content.indexOf(combined);
       if (idx < 0) return null;
-      const from = idx + (edit.prefix ?? "").length;
-      return { from, to: from + edit.anchorText.length };
-    }
-  }
+      const from = idx + (e.prefix ?? "").length;
+      return { from, to: from + e.anchorText.length };
+    })
+    .exhaustive();
 }
 
 /**

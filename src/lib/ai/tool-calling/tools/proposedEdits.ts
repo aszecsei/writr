@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { z } from "zod";
 import { getChapter } from "@/db/operations/chapters";
 import { createProposedEdit } from "@/db/operations/proposedEdits";
@@ -153,18 +154,19 @@ export const proposeEditTool = defineTool({
     // if the chapter has shifted between proposal and click. For `replace`
     // proposal-time uniqueness already guaranteed a match exists, so this is
     // a guard against the chat user editing the chapter before clicking.
-    const anchorFound =
-      params.kind === "append" ||
-      params.kind === "full_chapter" ||
-      (params.kind === "replace" &&
+    const anchorFound = match(params)
+      .with({ kind: P.union("append", "full_chapter") }, () => true)
+      .with({ kind: "replace" }, (p) =>
         chapter.content.includes(
-          (params.prefix ?? "") +
-            (params.anchorText ?? "") +
-            (params.suffix ?? ""),
-        )) ||
-      (params.kind === "insert_at" &&
-        params.anchorText !== undefined &&
-        chapter.content.includes(params.anchorText));
+          (p.prefix ?? "") + (p.anchorText ?? "") + (p.suffix ?? ""),
+        ),
+      )
+      .with(
+        { kind: "insert_at" },
+        (p) =>
+          p.anchorText !== undefined && chapter.content.includes(p.anchorText),
+      )
+      .exhaustive();
 
     return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
       mode: "chat",
@@ -187,15 +189,11 @@ function resolveOriginalText(args: {
   anchorText?: string;
   chapterContent: string;
 }): string {
-  switch (args.kind) {
-    case "full_chapter":
-      return args.chapterContent;
-    case "replace":
-      return args.anchorText ?? "";
-    case "insert_at":
-    case "append":
-      return "";
-  }
+  return match(args)
+    .with({ kind: "full_chapter" }, (a) => a.chapterContent)
+    .with({ kind: "replace" }, (a) => a.anchorText ?? "")
+    .with({ kind: P.union("insert_at", "append") }, () => "")
+    .exhaustive();
 }
 
 function countOccurrences(haystack: string, needle: string): number {

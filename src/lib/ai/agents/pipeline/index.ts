@@ -57,4 +57,8 @@ export type {
 
 // ─── Staged-content helpers (used by EditDiffCard) ─────────────────
 
-export { applyEditsToContent } from "./stagedChapterContent";
+export type { ResolvedRange } from "./stagedChapterContent";
+export {
+  applyEditsToContent,
+  locateProposedEdit,
+} from "./stagedChapterContent";

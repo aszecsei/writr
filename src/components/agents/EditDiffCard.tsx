@@ -5,7 +5,10 @@ import { InlineDiff } from "@/components/editor/VersionHistoryDialog";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import type { ProposedEdit } from "@/db/schemas";
 import { useChapter } from "@/hooks/data/useChapter";
-import { applyEditsToContent } from "@/lib/ai/agents/pipeline";
+import {
+  applyEditsToContent,
+  locateProposedEdit,
+} from "@/lib/ai/agents/pipeline";
 
 const SEAM_WORDS = 80;
 
@@ -153,7 +156,7 @@ async function computeDiffSlice(
   }
 
   // Locate the edit's range in the OLD content for slicing.
-  const range = findEditRangeInOld(edit, chapterContent);
+  const range = locateProposedEdit(chapterContent, edit);
   if (!range) {
     // Fallback: full diff if we can't locate.
     return {
@@ -183,41 +186,6 @@ async function computeDiffSlice(
       after: after.truncated,
     },
   };
-}
-
-function findEditRangeInOld(
-  edit: ProposedEdit,
-  content: string,
-): { from: number; to: number } | null {
-  switch (edit.kind) {
-    case "full_chapter":
-      return { from: 0, to: content.length };
-    case "append":
-      return { from: content.length, to: content.length };
-    case "insert_at": {
-      if (
-        typeof edit.fromOffset === "number" &&
-        edit.fromOffset >= 0 &&
-        edit.fromOffset <= content.length
-      ) {
-        return { from: edit.fromOffset, to: edit.fromOffset };
-      }
-      if (edit.anchorText) {
-        const idx = content.indexOf(edit.anchorText);
-        if (idx >= 0) return { from: idx, to: idx };
-      }
-      return null;
-    }
-    case "replace": {
-      if (!edit.anchorText) return null;
-      const combined =
-        (edit.prefix ?? "") + edit.anchorText + (edit.suffix ?? "");
-      const idx = content.indexOf(combined);
-      if (idx < 0) return null;
-      const from = idx + (edit.prefix ?? "").length;
-      return { from, to: from + edit.anchorText.length };
-    }
-  }
 }
 
 function sliceLastWords(
