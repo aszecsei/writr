@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { useAgentActivityStore } from "@/store/agentActivityStore";
 import type { PipelineEvent, PipelineEventEmitter } from "./events";
 
@@ -13,40 +14,46 @@ import type { PipelineEvent, PipelineEventEmitter } from "./events";
 export function createActivityEmitter(): PipelineEventEmitter {
   const store = useAgentActivityStore.getState;
   return (event: PipelineEvent) => {
-    switch (event.type) {
-      case "agent-iteration-start":
+    match(event)
+      .with({ type: "agent-iteration-start" }, (e) =>
         store().beginIteration(
-          event.runId,
-          event.info,
-          event.origin.agentKind,
-          event.origin.agentId,
-        );
-        return;
-      case "agent-chunk":
-        store().appendChunk(event.runId, event.messageId, event.chunk);
-        return;
-      case "agent-iteration-end":
-        store().completeIteration(event.runId, event.info);
-        return;
-      case "agent-tool-calls":
-        store().setToolCalls(
-          event.runId,
-          event.info.messageId,
-          event.info.entries,
-        );
-        return;
-      case "agent-tool-update":
-        store().updateToolCall(
-          event.runId,
-          event.info.messageId,
-          event.info.entry,
-        );
-        return;
-      // reader-pass-*, budget-exceeded, run-complete, run-error are surfaced
-      // elsewhere (run dashboard banners) — the activity log doesn't need them.
-      default:
-        return;
-    }
+          e.runId,
+          e.info,
+          e.origin.agentKind,
+          e.origin.agentId,
+        ),
+      )
+      .with({ type: "agent-chunk" }, (e) =>
+        store().appendChunk(e.runId, e.messageId, e.chunk),
+      )
+      .with({ type: "agent-iteration-end" }, (e) =>
+        store().completeIteration(e.runId, e.info),
+      )
+      .with({ type: "agent-tool-calls" }, (e) =>
+        store().setToolCalls(e.runId, e.info.messageId, e.info.entries),
+      )
+      .with({ type: "agent-tool-update" }, (e) =>
+        store().updateToolCall(e.runId, e.info.messageId, e.info.entry),
+      )
+      // reader-pass-*, reader-chapter-*, budget-exceeded, run-complete,
+      // run-error are surfaced elsewhere (run dashboard banners) — the
+      // activity log doesn't need them. Listed explicitly so a new
+      // PipelineEvent variant fails the .exhaustive() check.
+      .with(
+        {
+          type: P.union(
+            "reader-pass-start",
+            "reader-pass-complete",
+            "reader-chapter-start",
+            "reader-chapter-complete",
+            "budget-exceeded",
+            "run-complete",
+            "run-error",
+          ),
+        },
+        () => undefined,
+      )
+      .exhaustive();
   };
 }
 
