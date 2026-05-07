@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { match, P } from "ts-pattern";
 import type {
   AiMessage,
+  AiStreamChunk,
   AiToolCall,
   ContentPart,
   FinishReason,
@@ -15,18 +17,17 @@ import type { CompletionParams, ProviderAdapter } from "./types";
 function normalizeStopReason(
   stopReason: string | null | undefined,
 ): FinishReason {
-  switch (stopReason) {
-    case "end_turn":
-      return "stop";
-    case "max_tokens":
-      return "length";
-    case "stop_sequence":
-      return "stop";
-    case "tool_use":
-      return "tool_use";
-    default:
-      return stopReason ? "unknown" : "stop";
-  }
+  return (
+    match(stopReason)
+      .with("end_turn", (): FinishReason => "stop")
+      .with("max_tokens", (): FinishReason => "length")
+      .with("stop_sequence", (): FinishReason => "stop")
+      .with("tool_use", (): FinishReason => "tool_use")
+      // null, undefined, or empty string fall back to "stop" — same as the
+      // original `stopReason ? "unknown" : "stop"` branch.
+      .with(P.union(null, undefined, ""), (): FinishReason => "stop")
+      .otherwise((): FinishReason => "unknown")
+  );
 }
 
 type AnthropicImageMediaType =
@@ -270,17 +271,24 @@ export function createAnthropicAdapter(): ProviderAdapter {
       let reasoning = "";
       const toolCalls: AiToolCall[] = [];
       for (const block of response.content) {
-        if (block.type === "text") {
-          text += block.text;
-        } else if (block.type === "thinking") {
-          reasoning += block.thinking;
-        } else if (block.type === "tool_use") {
-          toolCalls.push({
-            id: generateToolUseId(),
-            name: block.name,
-            arguments: block.input as Record<string, unknown>,
+        match(block)
+          .with({ type: "text" }, (b) => {
+            text += b.text;
+          })
+          .with({ type: "thinking" }, (b) => {
+            reasoning += b.thinking;
+          })
+          .with({ type: "tool_use" }, (b) => {
+            toolCalls.push({
+              id: generateToolUseId(),
+              name: b.name,
+              arguments: b.input as Record<string, unknown>,
+            });
+          })
+          .otherwise(() => {
+            // Other content block kinds (server tool results, redacted
+            // thinking, etc.) are not surfaced into our internal AiResponse.
           });
-        }
       }
 
       const cacheCreationTokens =
@@ -336,98 +344,106 @@ export function createAnthropicAdapter(): ProviderAdapter {
       let outputTokens = 0;
 
       for await (const event of stream) {
-        if (event.type === "message_start") {
-          const usage = (
-            event as unknown as {
-              message: { usage?: Record<string, number | undefined> };
-            }
-          ).message.usage;
-          if (usage) {
+        // Match yields per-event side effects; tool_use start/stop transitions
+        // mutate `currentToolUse`; deltas yield chunks via a buffered queue.
+        const yields: AiStreamChunk[] = [];
+
+        match(event)
+          .with({ type: "message_start" }, (e) => {
+            // Test fixtures and some upstream paths omit message.usage even
+            // though the SDK types it as required.
+            const usage = e.message.usage as typeof e.message.usage | undefined;
+            if (!usage) return;
             usageSeen = true;
             inputTokens = usage.input_tokens ?? 0;
             cacheCreationTokens = usage.cache_creation_input_tokens ?? 0;
             cacheReadTokens = usage.cache_read_input_tokens ?? 0;
             outputTokens = usage.output_tokens ?? 0;
-          }
-        } else if (event.type === "content_block_start") {
-          const block = (
-            event as {
-              content_block: { type: string; id?: string; name?: string };
+          })
+          .with({ type: "content_block_start" }, (e) => {
+            if (e.content_block.type === "tool_use") {
+              currentToolUse = {
+                name: e.content_block.name,
+                inputJson: "",
+              };
             }
-          ).content_block;
-          if (block.type === "tool_use") {
-            currentToolUse = {
-              name: block.name ?? "",
-              inputJson: "",
-            };
-          }
-        } else if (event.type === "content_block_delta") {
-          const delta = event.delta;
-          if (delta.type === "text_delta") {
-            yield { type: "content" as const, text: delta.text };
-          } else if (delta.type === "thinking_delta") {
-            yield { type: "reasoning" as const, text: delta.thinking };
-          } else if (delta.type === "input_json_delta" && currentToolUse) {
-            currentToolUse.inputJson +=
-              (delta as { partial_json?: string }).partial_json ?? "";
-          }
-        } else if (event.type === "content_block_stop") {
-          if (currentToolUse) {
-            yield {
-              type: "tool_use" as const,
-              id: generateToolUseId(),
-              name: currentToolUse.name,
-              input: JSON.parse(currentToolUse.inputJson || "{}"),
-            };
-            currentToolUse = null;
-          }
-        } else if (event.type === "message_delta") {
-          // The final message_delta carries cumulative output_tokens (and
-          // sometimes refines input/cache figures).
-          const usage = (
-            event as unknown as {
-              usage?: Record<string, number | undefined>;
+          })
+          .with({ type: "content_block_delta" }, (e) => {
+            match(e.delta)
+              .with({ type: "text_delta" }, (d) => {
+                yields.push({ type: "content", text: d.text });
+              })
+              .with({ type: "thinking_delta" }, (d) => {
+                yields.push({ type: "reasoning", text: d.thinking });
+              })
+              .with({ type: "input_json_delta" }, (d) => {
+                if (currentToolUse) {
+                  currentToolUse.inputJson += d.partial_json;
+                }
+              })
+              // citations_delta and signature_delta are not surfaced.
+              .with(
+                { type: P.union("citations_delta", "signature_delta") },
+                () => undefined,
+              )
+              .exhaustive();
+          })
+          .with({ type: "content_block_stop" }, () => {
+            if (currentToolUse) {
+              yields.push({
+                type: "tool_use",
+                id: generateToolUseId(),
+                name: currentToolUse.name,
+                input: JSON.parse(currentToolUse.inputJson || "{}"),
+              });
+              currentToolUse = null;
             }
-          ).usage;
-          if (usage) {
-            usageSeen = true;
-            if (typeof usage.output_tokens === "number") {
-              outputTokens = usage.output_tokens;
+          })
+          .with({ type: "message_delta" }, (e) => {
+            // The final message_delta carries cumulative output_tokens (and
+            // sometimes refines input/cache figures). usage may be omitted on
+            // upstream paths that don't surface accounting per delta.
+            const usage = e.usage as typeof e.usage | undefined;
+            if (usage) {
+              usageSeen = true;
+              if (usage.output_tokens != null)
+                outputTokens = usage.output_tokens;
+              if (usage.input_tokens != null) inputTokens = usage.input_tokens;
+              if (usage.cache_creation_input_tokens != null)
+                cacheCreationTokens = usage.cache_creation_input_tokens;
+              if (usage.cache_read_input_tokens != null)
+                cacheReadTokens = usage.cache_read_input_tokens;
             }
-            if (typeof usage.input_tokens === "number") {
-              inputTokens = usage.input_tokens;
+            if (e.delta.stop_reason) {
+              const promptTokens =
+                inputTokens + cacheCreationTokens + cacheReadTokens;
+              yields.push({
+                type: "stop",
+                finishReason: normalizeStopReason(e.delta.stop_reason),
+                ...(usageSeen
+                  ? {
+                      usage: {
+                        prompt_tokens: promptTokens,
+                        completion_tokens: outputTokens,
+                        total_tokens: promptTokens + outputTokens,
+                        ...(cacheCreationTokens > 0
+                          ? { cache_creation_tokens: cacheCreationTokens }
+                          : {}),
+                        ...(cacheReadTokens > 0
+                          ? { cache_read_tokens: cacheReadTokens }
+                          : {}),
+                      },
+                    }
+                  : {}),
+              });
             }
-            if (typeof usage.cache_creation_input_tokens === "number") {
-              cacheCreationTokens = usage.cache_creation_input_tokens;
-            }
-            if (typeof usage.cache_read_input_tokens === "number") {
-              cacheReadTokens = usage.cache_read_input_tokens;
-            }
-          }
-          if (event.delta.stop_reason) {
-            const promptTokens =
-              inputTokens + cacheCreationTokens + cacheReadTokens;
-            yield {
-              type: "stop" as const,
-              finishReason: normalizeStopReason(event.delta.stop_reason),
-              ...(usageSeen
-                ? {
-                    usage: {
-                      prompt_tokens: promptTokens,
-                      completion_tokens: outputTokens,
-                      total_tokens: promptTokens + outputTokens,
-                      ...(cacheCreationTokens > 0
-                        ? { cache_creation_tokens: cacheCreationTokens }
-                        : {}),
-                      ...(cacheReadTokens > 0
-                        ? { cache_read_tokens: cacheReadTokens }
-                        : {}),
-                    },
-                  }
-                : {}),
-            };
-          }
-        }
+          })
+          .with({ type: "message_stop" }, () => {
+            // No-op; usage and stop are emitted on message_delta.
+          })
+          .exhaustive();
+
+        for (const chunk of yields) yield chunk;
       }
     },
   };
