@@ -13,9 +13,14 @@ export interface CreateProposedEditInput {
   workUnitId: string;
   chapterId: string;
   kind: ProposedEditKind;
+  /** `insert_at` only. */
   fromOffset?: number;
-  toOffset?: number;
+  /** Required for `replace`; optional fallback locator for `insert_at`. */
   anchorText?: string;
+  /** `replace` only — disambiguation context concatenated before `anchorText`. */
+  prefix?: string;
+  /** `replace` only — disambiguation context concatenated after `anchorText`. */
+  suffix?: string;
   newContent: string;
   rationale?: string;
 }
@@ -32,8 +37,9 @@ export async function createProposedEdit(
     chapterId: input.chapterId,
     kind: input.kind,
     fromOffset: input.fromOffset,
-    toOffset: input.toOffset,
     anchorText: input.anchorText,
+    prefix: input.prefix,
+    suffix: input.suffix,
     newContent: input.newContent,
     rationale: input.rationale ?? "",
     status: "pending",
@@ -73,9 +79,10 @@ export async function listProposedEditsByChapter(
 }
 
 /**
- * Approved edits for a chapter, sorted earliest-first by offset (so callers
- * can choose the order). Used by `getChapterWithStagedEdits` to overlay
- * staged content onto a chapter for the next editor in the tier.
+ * Approved edits for a chapter, in insertion order. `applyEditsToContent`
+ * re-sorts by *resolved* range position (after locating each anchor) so the
+ * apply phase doesn't depend on a meaningful comparator here — `replace`
+ * edits don't carry an offset to sort by.
  */
 export async function listApprovedEditsForChapter(
   runId: string,
@@ -84,7 +91,7 @@ export async function listApprovedEditsForChapter(
   const all = await db.proposedEdits.where({ runId }).toArray();
   return all
     .filter((e) => e.chapterId === chapterId && e.status === "approved")
-    .sort((a, b) => (a.fromOffset ?? 0) - (b.fromOffset ?? 0));
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function updateProposedEditStatus(

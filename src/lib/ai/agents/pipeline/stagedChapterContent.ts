@@ -3,45 +3,53 @@ import { listApprovedEditsForChapter } from "@/db/operations/proposedEdits";
 import type { ProposedEdit } from "@/db/schemas";
 
 /**
- * Apply a list of proposed edits to a chapter content string. Edits are
- * applied in REVERSE offset order so earlier offsets remain valid as later
- * portions of the string change. Falls back to anchorText search when the
- * recorded `(fromOffset, toOffset)` no longer matches.
+ * Apply a list of proposed edits to a chapter content string. Locates each
+ * edit against the original (unmutated) `content`, then applies them in
+ * descending position order so earlier splices don't perturb later ones.
  *
  * Returns:
  *   - `content`: the patched string
  *   - `applied`: edit ids that were successfully applied
- *   - `skipped`: edit ids that couldn't be located
+ *   - `skipped`: edit ids that couldn't be located (anchor drift)
  *
  * Used both by `getChapterWithStagedEdits` (read-only overlay for editor
  * agents) and by `applyTier` (final commit). Pure — no DB writes.
+ *
+ * Overlapping edits are not handled — if two edits' ranges overlap, the
+ * result is undefined. We treat non-overlap as an invariant of the proposal
+ * step (different work units shouldn't target the same span).
  */
 export function applyEditsToContent(
   content: string,
   edits: ProposedEdit[],
 ): { content: string; applied: string[]; skipped: string[] } {
-  const applied: string[] = [];
   const skipped: string[] = [];
+  const located: { edit: ProposedEdit; range: ResolvedRange }[] = [];
 
-  // Order in document position so we can apply right-to-left without races.
-  const ordered = [...edits].sort((a, b) => {
-    const ao = a.fromOffset ?? 0;
-    const bo = b.fromOffset ?? 0;
-    return bo - ao;
-  });
-
-  let working = content;
-
-  for (const edit of ordered) {
-    const range = locateEdit(working, edit);
+  // First pass: resolve every edit against the original content. `replace`
+  // has no offsets, so we can't sort before locating.
+  for (const edit of edits) {
+    const range = locateEdit(content, edit);
     if (!range) {
       skipped.push(edit.id);
       continue;
     }
+    located.push({ edit, range });
+  }
+
+  // Apply right-to-left so earlier ranges stay valid as later portions splice.
+  located.sort((a, b) => b.range.from - a.range.from);
+
+  let working = content;
+  const applied: string[] = [];
+  for (const { edit, range } of located) {
     working =
       working.slice(0, range.from) + edit.newContent + working.slice(range.to);
     applied.push(edit.id);
   }
+  // Preserve the order in which edits were located (i.e. input order minus
+  // skipped) so callers can correlate ids back to their inputs.
+  applied.reverse();
 
   return { content: working, applied, skipped };
 }
@@ -82,29 +90,16 @@ function locateEdit(content: string, edit: ProposedEdit): ResolvedRange | null {
       }
       return null;
     }
-    case "replace_range": {
-      if (
-        typeof edit.fromOffset === "number" &&
-        typeof edit.toOffset === "number" &&
-        edit.fromOffset >= 0 &&
-        edit.toOffset <= content.length &&
-        edit.fromOffset <= edit.toOffset
-      ) {
-        if (!edit.anchorText) {
-          return { from: edit.fromOffset, to: edit.toOffset };
-        }
-        const slice = content.slice(edit.fromOffset, edit.toOffset);
-        if (slice === edit.anchorText) {
-          return { from: edit.fromOffset, to: edit.toOffset };
-        }
-      }
-      if (edit.anchorText) {
-        const idx = content.indexOf(edit.anchorText);
-        if (idx >= 0) {
-          return { from: idx, to: idx + edit.anchorText.length };
-        }
-      }
-      return null;
+    case "replace": {
+      if (!edit.anchorText) return null;
+      // Uniqueness was the proposal-time guarantee; the chapter has likely
+      // shifted by apply time, so first match is the best we can do.
+      const combined =
+        (edit.prefix ?? "") + edit.anchorText + (edit.suffix ?? "");
+      const idx = content.indexOf(combined);
+      if (idx < 0) return null;
+      const from = idx + (edit.prefix ?? "").length;
+      return { from, to: from + edit.anchorText.length };
     }
   }
 }

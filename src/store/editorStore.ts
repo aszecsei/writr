@@ -30,9 +30,16 @@ export interface PendingInsertion {
 export interface PendingStagedEdit {
   /** Safety check: edit applies only when this matches activeDocumentId. */
   chapterId: string;
-  kind: "replace_range" | "insert_at" | "append" | "full_chapter";
-  /** Required for replace_range / insert_at. Matched verbatim against the doc text. */
+  kind: "replace" | "insert_at" | "append" | "full_chapter";
+  /** Required for replace / insert_at. Matched verbatim against the doc text. */
   anchorText?: string;
+  /**
+   * `replace` only — verbatim disambiguation context. The editor consumer
+   * locates `prefix + anchorText + suffix` in the doc, then narrows to the
+   * anchorText slice for the splice.
+   */
+  prefix?: string;
+  suffix?: string;
   /** Markdown to insert / replace with. */
   newContent: string;
 }

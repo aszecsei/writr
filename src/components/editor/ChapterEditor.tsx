@@ -95,6 +95,70 @@ function findTextRange(
   return result;
 }
 
+// Flatten the doc to a markdown-shaped string (text nodes joined with \n\n
+// between blocks, matching the markdown the LLM sees in tool calls), and
+// return per-text-node entries that map flat-string offsets back to PM
+// positions. Used by the `replace` staged-edit applier so prefix/suffix can
+// span paragraph boundaries even though the splice target (anchorText) must
+// stay within a single text node.
+interface DocTextEntry {
+  flatStart: number;
+  flatEnd: number;
+  pmStart: number;
+}
+
+function buildFlatDocText(editor: Editor): {
+  flat: string;
+  entries: DocTextEntry[];
+} {
+  const entries: DocTextEntry[] = [];
+  let flat = "";
+  editor.state.doc.descendants((node, pos) => {
+    if (node.isText && node.text) {
+      const flatStart = flat.length;
+      flat += node.text;
+      entries.push({ flatStart, flatEnd: flat.length, pmStart: pos });
+      return false;
+    }
+    if (node.isBlock && flat.length > 0 && !flat.endsWith("\n\n")) {
+      flat += "\n\n";
+    }
+  });
+  return { flat, entries };
+}
+
+function findReplaceRangeInDoc(
+  editor: Editor,
+  prefix: string,
+  anchorText: string,
+  suffix: string,
+): { from: number; to: number } | null {
+  if (!anchorText) return null;
+  const combined = prefix + anchorText + suffix;
+  const { flat, entries } = buildFlatDocText(editor);
+  const idx = flat.indexOf(combined);
+  if (idx < 0) return null;
+
+  const flatFrom = idx + prefix.length;
+  const flatTo = flatFrom + anchorText.length;
+
+  // anchorText itself must lie within a single text node — a clean PM splice
+  // across block boundaries would need merge logic we don't have. Skip
+  // (anchor not located) when the LLM picks an anchor crossing \n\n.
+  const fromEntry = entries.find(
+    (e) => flatFrom >= e.flatStart && flatFrom <= e.flatEnd,
+  );
+  const toEntry = entries.find(
+    (e) => flatTo >= e.flatStart && flatTo <= e.flatEnd,
+  );
+  if (!fromEntry || !toEntry || fromEntry !== toEntry) return null;
+
+  return {
+    from: fromEntry.pmStart + (flatFrom - fromEntry.flatStart),
+    to: toEntry.pmStart + (flatTo - toEntry.flatStart),
+  };
+}
+
 interface ChapterEditorProps {
   chapterId: string;
 }
@@ -412,7 +476,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     if (!pendingStagedEdit || !editor || editor.isDestroyed) return;
     if (pendingStagedEdit.chapterId !== chapterId) return;
 
-    const { kind, anchorText, newContent } = pendingStagedEdit;
+    const { kind, anchorText, prefix, suffix, newContent } = pendingStagedEdit;
     const nodes = markdownToParagraphNodes(newContent);
     const docEnd = editor.state.doc.content.size;
 
@@ -424,9 +488,14 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       case "append":
         range = { from: docEnd, to: docEnd };
         break;
-      case "replace_range": {
+      case "replace": {
         if (!anchorText) break;
-        const found = findTextRange(editor, anchorText);
+        const found = findReplaceRangeInDoc(
+          editor,
+          prefix ?? "",
+          anchorText,
+          suffix ?? "",
+        );
         if (found) range = found;
         break;
       }

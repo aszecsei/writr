@@ -792,7 +792,7 @@ export const EditPlanSchema = z.object({
 export type EditPlan = z.infer<typeof EditPlanSchema>;
 
 export const ProposedEditKindEnum = z.enum([
-  "replace_range",
+  "replace",
   "insert_at",
   "append",
   "full_chapter",
@@ -815,10 +815,17 @@ export const ProposedEditSchema = z.object({
   workUnitId: z.uuid(),
   chapterId: z.uuid(),
   kind: ProposedEditKindEnum,
+  /** Used by `insert_at` only. `replace` locates via prefix+anchorText+suffix. */
   fromOffset: z.number().int().nonnegative().optional(),
-  toOffset: z.number().int().nonnegative().optional(),
-  /** Resilient anchor: searched if (fromOffset,toOffset) no longer match. */
+  /**
+   * For `replace`: the verbatim text being replaced (required).
+   * For `insert_at`: optional fallback locator if `fromOffset` no longer matches.
+   */
   anchorText: z.string().optional(),
+  /** `replace` only. Concatenated verbatim before `anchorText` to form a unique locator. */
+  prefix: z.string().optional(),
+  /** `replace` only. Concatenated verbatim after `anchorText` to form a unique locator. */
+  suffix: z.string().optional(),
   newContent: z.string(),
   rationale: z.string().default(""),
   status: ProposedEditStatusEnum.default("pending"),

@@ -26,12 +26,16 @@ Focus on the highest-leverage changes — don't nitpick punctuation when the pro
 If the propose_edit tool is available, prefer it over the numbered list whenever the writer asks for actual edits ("rewrite", "tighten this", "apply your suggestions", etc.). The user reviews each staged edit as a diff card with Apply / Discard buttons before anything touches the manuscript.
 
 The active chapter in context (the \`<chapter title="...">\` block) is the implicit target — pass its chapterId. Use one of:
-- replace_range: rewriting an existing passage. Set anchorText to the EXACT verbatim text being replaced (the user's selection if there is one). newContent is the replacement.
+- replace: rewriting an existing passage. Set anchorText to the EXACT verbatim text being replaced. newContent is the replacement.
 - insert_at: adding a paragraph next to existing text. Set anchorText to the surrounding text the insertion sits next to. newContent is the new prose.
 - append: adding to the end of the chapter. No anchor needed.
 - full_chapter: a complete rewrite. Reserve for explicit "rewrite the whole chapter" requests.
 
 anchorText must match the chapter VERBATIM — copy it character-for-character. If you can't quote the original exactly, fall back to the numbered-list format instead.
+
+For \`replace\`, the combination of \`prefix + anchorText + suffix\` MUST occur exactly once in the chapter. If anchorText alone is unique, you can omit prefix and suffix. If anchorText repeats, add as much surrounding context to \`prefix\` and/or \`suffix\` as needed to make the combination unique. The tool will reject the call (with a count) if it finds zero or multiple matches — widen the context and retry.
+
+Whitespace warning: prefix, anchorText, and suffix are concatenated VERBATIM. Do NOT add a space between them; if a leading/trailing space belongs at the boundary, include it inside one of the strings (most naturally in anchorText). Keep anchorText within a single paragraph — prefix and suffix may span paragraph breaks.
 
 A short rationale is helpful but optional. Issue one propose_edit call per discrete change so each can be Applied or Discarded independently.
 </staging-edits>`;
@@ -48,12 +52,12 @@ const SYSTEM_PROMPT = `You are an editor implementing a single work unit. You re
 </scope-discipline>
 
 <edit-types>
-- replace_range: replace existing text. Provide fromOffset, toOffset, and anchorText (exact text being replaced). Use this for rewrites.
+- replace: replace existing text. Set anchorText to the verbatim text being replaced. The combination prefix+anchorText+suffix must occur EXACTLY ONCE in the chapter. If anchorText is unique on its own, you can omit prefix/suffix; otherwise widen them with verbatim surrounding context until the combination is unique. The tool returns a match count when it rejects — widen and retry.
 - insert_at: insert new text at a position. Provide fromOffset and anchorText (the text the insertion sits before). Use this for added scenes / paragraphs.
 - append: append to end of chapter. No offsets needed.
 - full_chapter: replace the entire chapter. Reserved for major restructuring.
 
-ALWAYS include anchorText when applicable — it's used as a fallback locator if offsets drift.
+prefix/anchorText/suffix are concatenated VERBATIM — do not insert spaces between them. Keep anchorText within a single paragraph; prefix and suffix may span paragraph breaks if you need that much context to disambiguate.
 </edit-types>
 
 <process>

@@ -14,6 +14,10 @@ import { fail, ok } from "./helpers";
 //   • Chat mode (workUnitId absent): does not persist. Returns a diff
 //     payload in `result.data` for the AiPanel to render with Apply /
 //     Discard controls. The user is the apply gate.
+//
+// `replace` locates an edit by anchorText with optional prefix/suffix
+// disambiguation; the combined string `prefix + anchorText + suffix` MUST
+// occur exactly once in the chapter at proposal time (uniqueness contract).
 
 export const proposeEditTool = defineTool({
   id: "propose_edit",
@@ -21,32 +25,38 @@ export const proposeEditTool = defineTool({
   name: "Propose Edit",
   description:
     "Propose a developmental edit to a chapter. " +
-    "kind=replace_range needs fromOffset+toOffset+anchorText. " +
-    "kind=insert_at needs fromOffset+anchorText (or anchorText alone if you can't compute the offset). " +
+    "kind=replace replaces existing text. anchorText is the verbatim text being replaced. " +
+    "Use prefix/suffix (also verbatim) to disambiguate when anchorText alone repeats — the combined " +
+    "prefix+anchorText+suffix must occur EXACTLY ONCE in the chapter, or the call is rejected. " +
+    "kind=insert_at needs fromOffset+anchorText (or anchorText alone). " +
     "kind=append appends to the chapter end. " +
-    "kind=full_chapter replaces the whole chapter. " +
-    "Always include anchorText (the exact text being replaced or inserted next to) — it's the primary locator and must match the chapter verbatim.",
+    "kind=full_chapter replaces the whole chapter.",
   parameters: {
     type: "object",
     properties: {
       chapterId: { type: "string", description: "Target chapter id" },
       kind: {
         type: "string",
-        enum: ["replace_range", "insert_at", "append", "full_chapter"],
-      },
-      fromOffset: {
-        type: "number",
-        description:
-          "0-indexed character offset (for replace_range / insert_at)",
-      },
-      toOffset: {
-        type: "number",
-        description: "Exclusive end offset (for replace_range)",
+        enum: ["replace", "insert_at", "append", "full_chapter"],
       },
       anchorText: {
         type: "string",
         description:
-          "Exact text at the edit site — used as the primary locator. Required for replace_range and insert_at.",
+          "Required for replace (the exact text being replaced) and for insert_at (the surrounding text the insertion sits next to). Must match the chapter VERBATIM, character-for-character.",
+      },
+      prefix: {
+        type: "string",
+        description:
+          "replace only. Verbatim text immediately preceding anchorText, concatenated as prefix+anchorText+suffix to form a unique locator. Use only when anchorText alone repeats. Do NOT add spaces between prefix and anchorText — the substrings are concatenated as-is.",
+      },
+      suffix: {
+        type: "string",
+        description:
+          "replace only. Verbatim text immediately following anchorText. See prefix.",
+      },
+      fromOffset: {
+        type: "number",
+        description: "0-indexed character offset (insert_at only).",
       },
       newContent: {
         type: "string",
@@ -61,10 +71,11 @@ export const proposeEditTool = defineTool({
   },
   inputSchema: z.object({
     chapterId: z.string().uuid(),
-    kind: z.enum(["replace_range", "insert_at", "append", "full_chapter"]),
+    kind: z.enum(["replace", "insert_at", "append", "full_chapter"]),
     fromOffset: z.number().int().nonnegative().optional(),
-    toOffset: z.number().int().nonnegative().optional(),
     anchorText: z.string().optional(),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
     newContent: z.string(),
     rationale: z.string().optional(),
   }),
@@ -75,12 +86,22 @@ export const proposeEditTool = defineTool({
     if (chapter.projectId !== context.projectId)
       return fail("Chapter belongs to a different project");
 
-    if (params.kind === "replace_range") {
-      if (params.fromOffset === undefined || params.toOffset === undefined) {
-        return fail("replace_range requires fromOffset and toOffset");
+    if (params.kind === "replace") {
+      if (!params.anchorText || params.anchorText.length === 0) {
+        return fail("replace requires non-empty anchorText");
       }
-      if (params.fromOffset > params.toOffset) {
-        return fail("fromOffset must be <= toOffset");
+      const combined =
+        (params.prefix ?? "") + params.anchorText + (params.suffix ?? "");
+      const matches = countOccurrences(chapter.content, combined);
+      if (matches === 0) {
+        return fail(
+          "replace anchor not found in chapter — verify the prefix/anchorText/suffix you quoted matches the chapter verbatim (no added or normalized whitespace)",
+        );
+      }
+      if (matches > 1) {
+        return fail(
+          `replace anchor is not unique (found ${matches} matches) — widen prefix and/or suffix until the combination occurs exactly once`,
+        );
       }
     }
     if (params.kind === "insert_at" && params.fromOffset === undefined) {
@@ -109,8 +130,9 @@ export const proposeEditTool = defineTool({
         chapterId: params.chapterId,
         kind: params.kind,
         fromOffset: params.fromOffset,
-        toOffset: params.toOffset,
         anchorText: params.anchorText,
+        prefix: params.prefix,
+        suffix: params.suffix,
         newContent: params.newContent,
         rationale: params.rationale,
       });
@@ -127,10 +149,21 @@ export const proposeEditTool = defineTool({
       anchorText: params.anchorText,
       chapterContent: chapter.content,
     });
+    // Apply-time safety: re-check locatability so the card can disable Apply
+    // if the chapter has shifted between proposal and click. For `replace`
+    // proposal-time uniqueness already guaranteed a match exists, so this is
+    // a guard against the chat user editing the chapter before clicking.
     const anchorFound =
       params.kind === "append" ||
       params.kind === "full_chapter" ||
-      (params.anchorText !== undefined &&
+      (params.kind === "replace" &&
+        chapter.content.includes(
+          (params.prefix ?? "") +
+            (params.anchorText ?? "") +
+            (params.suffix ?? ""),
+        )) ||
+      (params.kind === "insert_at" &&
+        params.anchorText !== undefined &&
         chapter.content.includes(params.anchorText));
 
     return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
@@ -139,6 +172,8 @@ export const proposeEditTool = defineTool({
       chapterTitle: chapter.title,
       kind: params.kind,
       anchorText: params.anchorText,
+      prefix: params.prefix,
+      suffix: params.suffix,
       newContent: params.newContent,
       rationale: params.rationale,
       originalText,
@@ -148,17 +183,29 @@ export const proposeEditTool = defineTool({
 });
 
 function resolveOriginalText(args: {
-  kind: "replace_range" | "insert_at" | "append" | "full_chapter";
+  kind: "replace" | "insert_at" | "append" | "full_chapter";
   anchorText?: string;
   chapterContent: string;
 }): string {
   switch (args.kind) {
     case "full_chapter":
       return args.chapterContent;
-    case "replace_range":
+    case "replace":
       return args.anchorText ?? "";
     case "insert_at":
     case "append":
       return "";
+  }
+}
+
+function countOccurrences(haystack: string, needle: string): number {
+  if (needle.length === 0) return 0;
+  let count = 0;
+  let from = 0;
+  for (;;) {
+    const idx = haystack.indexOf(needle, from);
+    if (idx < 0) return count;
+    count++;
+    from = idx + needle.length;
   }
 }

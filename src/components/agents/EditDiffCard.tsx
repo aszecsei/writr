@@ -208,18 +208,14 @@ function findEditRangeInOld(
       }
       return null;
     }
-    case "replace_range": {
-      if (
-        typeof edit.fromOffset === "number" &&
-        typeof edit.toOffset === "number"
-      ) {
-        return { from: edit.fromOffset, to: edit.toOffset };
-      }
-      if (edit.anchorText) {
-        const idx = content.indexOf(edit.anchorText);
-        if (idx >= 0) return { from: idx, to: idx + edit.anchorText.length };
-      }
-      return null;
+    case "replace": {
+      if (!edit.anchorText) return null;
+      const combined =
+        (edit.prefix ?? "") + edit.anchorText + (edit.suffix ?? "");
+      const idx = content.indexOf(combined);
+      if (idx < 0) return null;
+      const from = idx + (edit.prefix ?? "").length;
+      return { from, to: from + edit.anchorText.length };
     }
   }
 }

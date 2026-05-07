@@ -13,8 +13,12 @@ export interface ProposedEditChatPayload {
   mode: "chat";
   chapterId: string;
   chapterTitle: string;
-  kind: "replace_range" | "insert_at" | "append" | "full_chapter";
+  kind: "replace" | "insert_at" | "append" | "full_chapter";
   anchorText?: string;
+  /** `replace` only — verbatim disambiguation context preceding anchorText. */
+  prefix?: string;
+  /** `replace` only — verbatim disambiguation context following anchorText. */
+  suffix?: string;
   newContent: string;
   rationale?: string;
   originalText: string;
@@ -22,7 +26,7 @@ export interface ProposedEditChatPayload {
 }
 
 const KIND_LABEL: Record<ProposedEditChatPayload["kind"], string> = {
-  replace_range: "Replace",
+  replace: "Replace",
   insert_at: "Insert",
   append: "Append",
   full_chapter: "Rewrite chapter",
@@ -61,6 +65,8 @@ export function ProposedEditCard({ payload }: Props) {
       chapterId: payload.chapterId,
       kind: payload.kind,
       anchorText: payload.anchorText,
+      prefix: payload.prefix,
+      suffix: payload.suffix,
       newContent: payload.newContent,
     });
     setStatus("applied");
