@@ -42,3 +42,17 @@ Read the docs that match the area you're touching:
 - **Stores hold ephemeral UI state only.** If state survives a refresh, it belongs in Dexie.
 - **Use `terminology.ts`** for user-facing labels that change between prose and screenplay modes — don't hard-code "Chapter".
 - **Test gated UI both ways.** Features gated on env vars (e.g., `NEXT_PUBLIC_COLLAB_URL`) need snapshots with the var unset to lock in the disabled-feature baseline.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues at `aszecsei/writr`, accessed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
