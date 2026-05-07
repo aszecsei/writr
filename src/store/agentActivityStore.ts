@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type {
@@ -79,12 +80,16 @@ export const useAgentActivityStore = create<AgentActivityState>()(
         if (!list) return;
         const entry = list.find((e) => e.messageId === messageId);
         if (!entry) return;
-        if (chunk.type === "reasoning") {
-          entry.reasoning += chunk.text;
-        } else if (chunk.type === "content") {
-          entry.content += chunk.text;
-        }
-        // tool_use and stop chunks are handled by their own events, not here.
+        match(chunk)
+          .with({ type: "reasoning" }, (c) => {
+            entry.reasoning += c.text;
+          })
+          .with({ type: "content" }, (c) => {
+            entry.content += c.text;
+          })
+          // tool_use and stop chunks are handled by their own events, not here.
+          .with({ type: P.union("tool_use", "stop") }, () => undefined)
+          .exhaustive();
       }),
 
     completeIteration: (runId, info) =>

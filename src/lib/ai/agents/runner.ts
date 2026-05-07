@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import { getAppSettings } from "@/db/operations/settings";
 import type { AppSettings } from "@/db/schemas";
 import type {
@@ -261,22 +262,27 @@ export async function runAgent(
             continue;
           }
 
+          // `stop` is terminal accounting and skips the onChunk forward.
           if (chunk.type === "stop") {
             finishReason = chunk.finishReason;
             if (chunk.usage) iterationUsage = chunk.usage;
             continue;
           }
-          if (chunk.type === "tool_use") {
-            collectedToolCalls.push({
-              id: chunk.id,
-              name: chunk.name,
-              input: chunk.input,
-            });
-          } else if (chunk.type === "reasoning") {
-            assistantReasoning = (assistantReasoning ?? "") + chunk.text;
-          } else if (chunk.type === "content") {
-            assistantContent += chunk.text;
-          }
+          match(chunk)
+            .with({ type: "tool_use" }, (c) => {
+              collectedToolCalls.push({
+                id: c.id,
+                name: c.name,
+                input: c.input,
+              });
+            })
+            .with({ type: "reasoning" }, (c) => {
+              assistantReasoning = (assistantReasoning ?? "") + c.text;
+            })
+            .with({ type: "content" }, (c) => {
+              assistantContent += c.text;
+            })
+            .exhaustive();
           onChunk?.({ messageId, chunk });
         }
       }
