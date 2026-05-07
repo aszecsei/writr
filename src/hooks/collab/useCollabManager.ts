@@ -33,6 +33,10 @@ export interface StartAsHostOptions {
   wsFactory?: WebSocketFactory;
   /** Display name + caret color used for this peer. */
   identity?: CollabIdentityInput;
+  /** When true, share the entire project read-only alongside the active
+   *  chapter. Existing edit/review/view roles still apply to the active
+   *  chapter; everything else is read-only for every guest. */
+  projectMode?: boolean;
 }
 
 export interface JoinAsGuestOptions {
@@ -43,6 +47,10 @@ export interface JoinAsGuestOptions {
   wsFactory?: WebSocketFactory;
   /** Display name + caret color used for this peer. Required for the join-request payload. */
   identity: CollabIdentityInput;
+  /** Mirror of the `mode=project` URL fragment flag. The guest's UI
+   *  should pre-set this from the URL before calling joinAsGuest so the
+   *  shell knows which layout to render before the project meta arrives. */
+  projectMode?: boolean;
 }
 
 export interface UseCollabManager {
@@ -162,6 +170,9 @@ export function useCollabManager(): UseCollabManager {
       if (opts?.identity) {
         useCollabStore.getState().setIdentity(opts.identity);
       }
+      // Pre-set projectMode so any host-side effect that mounts on
+      // session-creation (e.g. HostProjectMirror) sees the right value.
+      useCollabStore.getState().setProjectMode(opts?.projectMode === true);
       const { identity: _hostIdentity, ...connectOpts } = opts ?? {};
       try {
         const conn = await connectAsHost({ baseUrl, ...connectOpts });
@@ -270,6 +281,9 @@ export function useCollabManager(): UseCollabManager {
       useCollabStore.getState().setIdentity(opts.identity);
       useCollabStore.getState().setStatus("awaiting_approval");
       useCollabStore.getState().setDeniedReason(null);
+      // Pre-set projectMode from the URL fragment so the guest shell can
+      // render the right layout before the project meta arrives.
+      useCollabStore.getState().setProjectMode(opts.projectMode === true);
 
       const connectOpts: Parameters<typeof connectAsGuest>[0] = {
         baseUrl,

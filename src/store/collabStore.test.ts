@@ -5,6 +5,7 @@ import { collabSelectors, useCollabStore } from "./collabStore";
 
 const fakeSession = {} as CollabSession;
 const fakeShareUrls: ShareUrls = {
+  mode: "chapter",
   edit: "https://writr.app/shared/r1?t=e#h=h",
   review: "https://writr.app/shared/r1?t=r#h=h",
   view: "https://writr.app/shared/r1?t=v#h=h",

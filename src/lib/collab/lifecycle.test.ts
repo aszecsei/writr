@@ -210,7 +210,40 @@ describe("connectAsHost", () => {
     expect(result.shareUrls.review).toContain("?t=review-tok#h=");
     expect(result.shareUrls.view).toContain("?t=view-tok#h=");
     expect(result.shareUrls.edit).not.toContain("#k=");
+    expect(result.shareUrls.mode).toBe("chapter");
+    expect(result.shareUrls.edit).not.toContain("p=1");
     expect(result.client.role).toBe("host");
+  });
+
+  it("flags share URLs with mode=project when projectMode is true", async () => {
+    const { factory, sockets } = captureFactory();
+    const fetchFn = mockFetch(SAMPLE_ROOM);
+
+    const promise = connectAsHost({
+      baseUrl: "ws://localhost:4444",
+      appOrigin: "https://app.example",
+      fetchFn,
+      wsFactory: factory,
+      projectMode: true,
+    });
+
+    await flush();
+    const ws = sockets[0];
+    if (!ws) throw new Error("no socket");
+    ws.fireOpen();
+    ws.fireServer({
+      type: "welcome",
+      peerId: "p-host",
+      role: "host",
+      peerCount: 1,
+      hostPresent: true,
+    });
+
+    const result = await promise;
+    expect(result.shareUrls.mode).toBe("project");
+    expect(result.shareUrls.edit).toContain("&p=1");
+    expect(result.shareUrls.review).toContain("&p=1");
+    expect(result.shareUrls.view).toContain("&p=1");
   });
 
   it("rejects and closes the socket if the connection drops before welcome", async () => {

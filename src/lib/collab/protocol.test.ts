@@ -111,3 +111,54 @@ describe("canSendClient (role gating for handshake messages)", () => {
     expect(canSendClient("view", joinApproved)).toBe(false);
   });
 });
+
+describe("canSendClient (y-update gating per docKind)", () => {
+  const proseUpdate: ClientMessage = {
+    type: "y-update",
+    docKind: "prose",
+    streamId: 1,
+    payload: "abc",
+  };
+  const commentsUpdate: ClientMessage = {
+    type: "y-update",
+    docKind: "comments",
+    streamId: 1,
+    payload: "abc",
+  };
+  const projectUpdate: ClientMessage = {
+    type: "y-update",
+    docKind: "project",
+    streamId: 1,
+    payload: "abc",
+  };
+
+  it("host can send y-updates on every docKind", () => {
+    expect(canSendClient("host", proseUpdate)).toBe(true);
+    expect(canSendClient("host", commentsUpdate)).toBe(true);
+    expect(canSendClient("host", projectUpdate)).toBe(true);
+  });
+
+  it("only host can send project y-updates", () => {
+    expect(canSendClient("edit", projectUpdate)).toBe(false);
+    expect(canSendClient("review", projectUpdate)).toBe(false);
+    expect(canSendClient("view", projectUpdate)).toBe(false);
+  });
+
+  it("edit can send prose and comments y-updates but not project", () => {
+    expect(canSendClient("edit", proseUpdate)).toBe(true);
+    expect(canSendClient("edit", commentsUpdate)).toBe(true);
+    expect(canSendClient("edit", projectUpdate)).toBe(false);
+  });
+
+  it("review can only send comments y-updates", () => {
+    expect(canSendClient("review", proseUpdate)).toBe(false);
+    expect(canSendClient("review", commentsUpdate)).toBe(true);
+    expect(canSendClient("review", projectUpdate)).toBe(false);
+  });
+
+  it("view cannot send y-updates on any docKind", () => {
+    expect(canSendClient("view", proseUpdate)).toBe(false);
+    expect(canSendClient("view", commentsUpdate)).toBe(false);
+    expect(canSendClient("view", projectUpdate)).toBe(false);
+  });
+});

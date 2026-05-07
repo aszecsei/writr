@@ -79,9 +79,17 @@ export interface ConnectAsHostOptions {
   fetchFn?: typeof fetch;
   wsFactory?: WebSocketFactory;
   signal?: AbortSignal;
+  /** When true, the share URLs encode `mode=project` so guests mount the
+   *  read-only project shell instead of the active-chapter editor. The
+   *  host's role-based tokens (edit/review/view) still apply to the
+   *  active chapter. */
+  projectMode?: boolean;
 }
 
+export type ShareMode = "chapter" | "project";
+
 export interface ShareUrls {
+  mode: ShareMode;
   edit: string;
   review: string;
   view: string;
@@ -128,24 +136,29 @@ export async function connectAsHost(
   const session = new CollabSession({ client });
   const appOrigin = opts.appOrigin ?? defaultAppOrigin();
 
+  const mode: ShareMode = opts.projectMode ? "project" : "chapter";
   const shareUrls: ShareUrls = {
+    mode,
     edit: buildShareUrl({
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.edit,
       hostPubEncoded: hostKeypair.pubEncoded,
+      mode,
     }),
     review: buildShareUrl({
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.review,
       hostPubEncoded: hostKeypair.pubEncoded,
+      mode,
     }),
     view: buildShareUrl({
       origin: appOrigin,
       roomUuid: room.roomUuid,
       token: room.inviteTokens.view,
       hostPubEncoded: hostKeypair.pubEncoded,
+      mode,
     }),
   };
 

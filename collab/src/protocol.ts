@@ -4,7 +4,7 @@ import { z } from "zod";
 export const ROLES = ["view", "review", "edit", "host"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const DOC_KINDS = ["prose", "comments"] as const;
+export const DOC_KINDS = ["prose", "comments", "project"] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 
 const roleSchema = z.enum(ROLES);
@@ -171,6 +171,12 @@ export function canSend(
       allowed: true as const,
     }))
     .with({ type: "y-update" }, (m) => {
+      if (m.docKind === "project") {
+        if (role !== "host") {
+          return { allowed: false as const, reason: "unauthorized" as const };
+        }
+        return { allowed: true as const };
+      }
       if (role === "view") {
         return { allowed: false as const, reason: "unauthorized" as const };
       }
