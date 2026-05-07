@@ -808,30 +808,48 @@ export const ProposedEditStatusEnum = z.enum([
 ]);
 export type ProposedEditStatus = z.infer<typeof ProposedEditStatusEnum>;
 
-export const ProposedEditSchema = z.object({
+// Fields shared by every proposed-edit variant. The variant-specific fields
+// (locator and disambiguators) live on each branch of the discriminated union.
+const proposedEditBase = {
   id,
   projectId: projectFk,
   runId: z.uuid(),
   workUnitId: z.uuid(),
   chapterId: z.uuid(),
-  kind: ProposedEditKindEnum,
-  /** Used by `insert_at` only. `replace` locates via prefix+anchorText+suffix. */
-  fromOffset: z.number().int().nonnegative().optional(),
-  /**
-   * For `replace`: the verbatim text being replaced (required).
-   * For `insert_at`: optional fallback locator if `fromOffset` no longer matches.
-   */
-  anchorText: z.string().optional(),
-  /** `replace` only. Concatenated verbatim before `anchorText` to form a unique locator. */
-  prefix: z.string().optional(),
-  /** `replace` only. Concatenated verbatim after `anchorText` to form a unique locator. */
-  suffix: z.string().optional(),
   newContent: z.string(),
   rationale: z.string().default(""),
   status: ProposedEditStatusEnum.default("pending"),
   createdAt: timestamp,
   updatedAt: timestamp,
-});
+};
+
+export const ProposedEditSchema = z.discriminatedUnion("kind", [
+  // `replace` locates by `prefix + anchorText + suffix` — anchorText must be
+  // a non-empty verbatim slice of the chapter, prefix/suffix disambiguate.
+  z.object({
+    ...proposedEditBase,
+    kind: z.literal("replace"),
+    anchorText: z.string().min(1),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+  }),
+  // `insert_at` uses fromOffset and/or anchorText as the insertion locator.
+  // The runtime guard in tools/proposedEdits.ts requires at least one.
+  z.object({
+    ...proposedEditBase,
+    kind: z.literal("insert_at"),
+    fromOffset: z.number().int().nonnegative().optional(),
+    anchorText: z.string().optional(),
+  }),
+  z.object({
+    ...proposedEditBase,
+    kind: z.literal("append"),
+  }),
+  z.object({
+    ...proposedEditBase,
+    kind: z.literal("full_chapter"),
+  }),
+]);
 export type ProposedEdit = z.infer<typeof ProposedEditSchema>;
 
 export const VerificationFindingSchema = z.object({
