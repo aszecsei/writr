@@ -16,15 +16,12 @@ import { countBibleLogEntriesSince } from "@/db/operations/readerBible";
 import { getAppSettings } from "@/db/operations/settings";
 import type { AgentRun, Chapter, ReaderMode } from "@/db/schemas";
 import type { AiMessage } from "../../types";
-import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import {
   buildComprehensionBriefing,
   makeReaderAgent,
 } from "../builtins/reader";
-import { resolveAgentModel, runAgent } from "../runner";
-import type { Agent, RunAgentCallbacks, RunAgentResult } from "../types";
+import { invokeAgentForRun } from "../runner";
 import type { PipelineEvent, PipelineEventEmitter } from "./events";
-import { withTokenAccounting } from "./tokenAccounting";
 
 /**
  * Status reason written to the agent run when the cumulative token usage
@@ -336,6 +333,10 @@ async function runComprehensionPass(
   const totalChapters = chaptersInScope.length;
   let segmentHistory: AiMessage[] = [];
   let firstChapterInSegmentRecorded = false;
+  // Threshold doesn't change mid-pass; fetch once and reuse for the soft-reset
+  // check. Model resolution / stream flag come from a fresh fetch inside
+  // invokeAgentForRun on every chapter (cheap IDB read).
+  const settings = await getAppSettings();
 
   for (let i = 0; i < segmentChapters.length; i++) {
     if (signal?.aborted) return "aborted";
@@ -362,7 +363,6 @@ async function runComprehensionPass(
     });
 
     const chapterStartIso = now();
-    const settings = await getAppSettings();
     const context = await buildContext();
     const agent = makeReaderAgent({
       runId,
@@ -374,7 +374,6 @@ async function runComprehensionPass(
       totalChapters,
       context,
     });
-    await applyDefinitionOverride(agent);
 
     const briefing = buildComprehensionBriefing({
       chapter,
@@ -387,14 +386,13 @@ async function runComprehensionPass(
     // segment. (runAgent's `userInput` parameter only flows on iteration 1.)
     segmentHistory = [...segmentHistory, { role: "user", content: briefing }];
 
-    const result = await invokeAgent(
-      agent,
+    const result = await invokeAgentForRun({
       runId,
-      settings,
+      agent,
+      history: segmentHistory,
       signal,
       onEvent,
-      segmentHistory,
-    );
+    });
 
     if (signal?.aborted || result.aborted) return "aborted";
 
@@ -455,7 +453,6 @@ async function runThematicPass(
   onEvent: PipelineEventEmitter | undefined,
   buildContext: () => Promise<import("../../types").AiContext>,
 ): Promise<PassOutcome> {
-  const settings = await getAppSettings();
   const context = await buildContext();
   const agent = makeReaderAgent({
     runId,
@@ -465,9 +462,8 @@ async function runThematicPass(
     chapterIdsInScope,
     context,
   });
-  await applyDefinitionOverride(agent);
 
-  await invokeAgent(agent, runId, settings, signal, onEvent);
+  await invokeAgentForRun({ runId, agent, signal, onEvent });
 
   if (signal?.aborted) return "aborted";
   return "completed";
@@ -487,7 +483,6 @@ async function runSelfAnswerPass(
   const remaining = await countAgentQuestionsOpen(runId);
   if (remaining === 0) return "completed";
 
-  const settings = await getAppSettings();
   const context = await buildContext();
   const agent = makeReaderAgent({
     runId,
@@ -497,9 +492,8 @@ async function runSelfAnswerPass(
     chapterIdsInScope,
     context,
   });
-  await applyDefinitionOverride(agent);
 
-  await invokeAgent(agent, runId, settings, signal, onEvent);
+  await invokeAgentForRun({ runId, agent, signal, onEvent });
 
   if (signal?.aborted) return "aborted";
   return "completed";
@@ -512,53 +506,6 @@ function filterChapters(
   if (!chapterIdsInScope || chapterIdsInScope.length === 0) return all;
   const inScope = new Set(chapterIdsInScope);
   return all.filter((c) => inScope.has(c.id));
-}
-
-async function invokeAgent(
-  agent: Agent,
-  runId: string,
-  settings: Awaited<ReturnType<typeof getAppSettings>>,
-  signal: AbortSignal | undefined,
-  onEvent: PipelineEventEmitter | undefined,
-  history: AiMessage[] = [],
-): Promise<RunAgentResult> {
-  const model = resolveAgentModel(agent, settings);
-  if (!model.apiKey) {
-    await updateAgentRunStatus(
-      runId,
-      "error",
-      `No API key configured for provider '${model.provider}'.`,
-    );
-    throw new Error(`No API key configured for provider '${model.provider}'`);
-  }
-
-  const origin = { agentKind: agent.kind, agentId: agent.id };
-  const baseCallbacks: RunAgentCallbacks = {
-    onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
-    onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
-    onChunk: ({ messageId, chunk }) =>
-      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
-    onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
-    onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
-  };
-  const callbacks = withTokenAccounting(runId, baseCallbacks);
-
-  return runAgent({
-    agent,
-    // The per-chapter briefing is supplied via `history` (pushed by the
-    // comprehension loop) for thematic/self-answer agents that still rely
-    // on initialMessages for their briefing, history will simply be empty.
-    userInput: undefined,
-    history,
-    model,
-    stream: settings.streamResponses,
-    signal,
-    ...callbacks,
-  });
 }
 
 async function checkBudget(

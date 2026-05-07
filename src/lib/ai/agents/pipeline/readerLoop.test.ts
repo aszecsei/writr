@@ -7,12 +7,11 @@ import type { AiMessage } from "../../types";
 import type { Agent } from "../types";
 
 // Mock the runner before importing the loop so the loop binds the mock.
-const runAgentMock = vi.fn();
-const resolveAgentModelMock = vi.fn();
+// invokeAgentForRun is the seam every readerLoop callsite goes through.
+const invokeAgentForRunMock = vi.fn();
 
 vi.mock("../runner", () => ({
-  runAgent: (...args: unknown[]) => runAgentMock(...args),
-  resolveAgentModel: (...args: unknown[]) => resolveAgentModelMock(...args),
+  invokeAgentForRun: (...args: unknown[]) => invokeAgentForRunMock(...args),
 }));
 
 const { runReaderLoop } = await import("./readerLoop");
@@ -62,15 +61,9 @@ beforeEach(async () => {
     db.readerBibleLog.clear(),
     db.readerBibleView.clear(),
   ]);
-  runAgentMock.mockReset();
-  resolveAgentModelMock.mockReset();
+  invokeAgentForRunMock.mockReset();
 
-  resolveAgentModelMock.mockReturnValue({
-    apiKey: "fake-key",
-    provider: "openrouter",
-    model: "fake-model",
-  });
-  runAgentMock.mockImplementation(async (_opts: { agent: Agent }) => ({
+  invokeAgentForRunMock.mockImplementation(async (_opts: { agent: Agent }) => ({
     iterations: 1,
     history: [],
     content: "ack",
@@ -121,7 +114,7 @@ describe("runReaderLoop — mode dispatch", () => {
 
     expect(result.passesCompleted).toBe(3);
 
-    const agentIds: string[] = runAgentMock.mock.calls.map(
+    const agentIds: string[] = invokeAgentForRunMock.mock.calls.map(
       (call) => (call[0] as { agent: Agent }).agent.id,
     );
     // Pass 1: 3 comprehension agents (one per chapter).
@@ -182,7 +175,7 @@ describe("runReaderLoop — mode dispatch", () => {
 
     // Pass 3 still appended to the run, but no agent invocation for it.
     expect(result.passesCompleted).toBe(3);
-    const agentIds: string[] = runAgentMock.mock.calls.map(
+    const agentIds: string[] = invokeAgentForRunMock.mock.calls.map(
       (call) => (call[0] as { agent: Agent }).agent.id,
     );
     expect(agentIds.filter((id) => id.includes(":self-answer"))).toHaveLength(
@@ -239,12 +232,13 @@ describe("runReaderLoop — mode dispatch", () => {
     // After each call we synthesise a one-iteration assistant turn and let the
     // loop chain it into the next chapter's history.
     const historiesSeen: AiMessage[][] = [];
-    runAgentMock.mockImplementation(
-      async (opts: { agent: Agent; history: AiMessage[] }) => {
-        historiesSeen.push([...opts.history]);
+    invokeAgentForRunMock.mockImplementation(
+      async (opts: { agent: Agent; history?: AiMessage[] }) => {
+        const history = opts.history ?? [];
+        historiesSeen.push([...history]);
         return {
           iterations: 1,
-          history: [...opts.history, { role: "assistant", content: "ack" }],
+          history: [...history, { role: "assistant", content: "ack" }],
           content: "ack",
           toolCalls: [],
           aborted: false,
@@ -294,8 +288,9 @@ describe("runReaderLoop — mode dispatch", () => {
     });
 
     let comprehensionCallIndex = 0;
-    runAgentMock.mockImplementation(
-      async (opts: { agent: Agent; history: AiMessage[] }) => {
+    invokeAgentForRunMock.mockImplementation(
+      async (opts: { agent: Agent; history?: AiMessage[] }) => {
+        const history = opts.history ?? [];
         const isComprehension = opts.agent.id.includes(":comprehension");
         if (isComprehension) {
           comprehensionCallIndex += 1;
@@ -309,7 +304,7 @@ describe("runReaderLoop — mode dispatch", () => {
         }
         return {
           iterations: 1,
-          history: [...opts.history, { role: "assistant", content: "ack" }],
+          history: [...history, { role: "assistant", content: "ack" }],
           content: "ack",
           toolCalls: [],
           aborted: false,
@@ -356,7 +351,7 @@ describe("runReaderLoop — mode dispatch", () => {
       description: "open?",
     });
 
-    runAgentMock.mockImplementation(async (opts: { agent: Agent }) => {
+    invokeAgentForRunMock.mockImplementation(async (opts: { agent: Agent }) => {
       // Simulate the self-answer pass fully resolving the only open question
       // (a human Accept happening mid-run).
       if (opts.agent.id.includes(":self-answer")) {

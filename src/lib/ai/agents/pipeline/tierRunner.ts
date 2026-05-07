@@ -4,17 +4,13 @@ import { updateAgentRunStatus } from "@/db/operations/agentRuns";
 import { getChapter } from "@/db/operations/chapters";
 import { getEditPlanByRun, upsertEditPlan } from "@/db/operations/editPlans";
 import { listBiblePaths, readBibleAtPath } from "@/db/operations/readerBible";
-import { getAppSettings } from "@/db/operations/settings";
 import { listWorkUnitsByTier, updateWorkUnit } from "@/db/operations/workUnits";
 import type { ReaderBibleViewEntry, WorkUnit } from "@/db/schemas";
 import type { AiContext } from "../../types";
-import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import { makeEditorAgent } from "../builtins/editor";
 import { makeOrchestratorAgent } from "../builtins/orchestrator";
-import { resolveAgentModel, runAgent } from "../runner";
-import type { RunAgentCallbacks } from "../types";
+import { invokeAgentForRun } from "../runner";
 import type { PipelineEventEmitter } from "./events";
-import { withTokenAccounting } from "./tokenAccounting";
 
 export interface PlanTierOptions {
   runId: string;
@@ -44,10 +40,9 @@ export async function planTier(options: PlanTierOptions): Promise<void> {
 
   await updateAgentRunStatus(runId, "planning");
 
-  const [openNotes, openQuestions, settings, context] = await Promise.all([
+  const [openNotes, openQuestions, context] = await Promise.all([
     listAgentNotes({ runId, status: "open" }),
     listAgentQuestions({ runId, status: "open" }),
-    getAppSettings(),
     buildContext(),
   ]);
 
@@ -60,45 +55,11 @@ export async function planTier(options: PlanTierOptions): Promise<void> {
     humanBriefing,
     context,
   });
-  await applyDefinitionOverride(agent);
-
-  const model = resolveAgentModel(agent, settings);
-  if (!model.apiKey) {
-    await updateAgentRunStatus(
-      runId,
-      "error",
-      `No API key configured for provider '${model.provider}'.`,
-    );
-    throw new Error(`No API key configured for provider '${model.provider}'`);
-  }
 
   // Ensure a plan row exists so the orchestrator's finalize_tier can attach.
   await upsertEditPlan({ projectId, runId });
 
-  const origin = { agentKind: agent.kind, agentId: agent.id };
-  const baseCallbacks: RunAgentCallbacks = {
-    onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
-    onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
-    onChunk: ({ messageId, chunk }) =>
-      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
-    onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
-    onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
-  };
-  const callbacks = withTokenAccounting(runId, baseCallbacks);
-
-  await runAgent({
-    agent,
-    userInput: undefined,
-    history: [],
-    model,
-    stream: settings.streamResponses,
-    signal,
-    ...callbacks,
-  });
+  await invokeAgentForRun({ runId, agent, signal, onEvent });
 
   if (signal?.aborted) {
     await updateAgentRunStatus(runId, "cancelled", "Cancelled during planning");
@@ -174,7 +135,6 @@ export async function executeTier(options: ExecuteTierOptions): Promise<void> {
   // is positioned earlier (so the second editor sees the first's staged work).
   const levels = computeLevels(units);
 
-  const settings = await getAppSettings();
   const context = await buildContext();
   const concurrency = Math.max(
     1,
@@ -197,15 +157,7 @@ export async function executeTier(options: ExecuteTierOptions): Promise<void> {
     const launchNext = (): Promise<void> | null => {
       if (cursor >= level.length) return null;
       const unit = level[cursor++];
-      return runOneEditor(
-        unit,
-        runId,
-        projectId,
-        settings,
-        context,
-        signal,
-        onEvent,
-      )
+      return runOneEditor(unit, runId, projectId, context, signal, onEvent)
         .catch(async (err) => {
           await updateWorkUnit(unit.id, { status: "rejected" });
           onEvent?.({
@@ -244,7 +196,6 @@ async function runOneEditor(
   unit: WorkUnit,
   runId: string,
   projectId: string,
-  settings: Awaited<ReturnType<typeof getAppSettings>>,
   context: AiContext,
   signal: AbortSignal | undefined,
   onEvent: PipelineEventEmitter | undefined,
@@ -262,37 +213,8 @@ async function runOneEditor(
     chapterTitle: chapter?.title ?? "(unknown)",
     context,
   });
-  await applyDefinitionOverride(agent);
 
-  const model = resolveAgentModel(agent, settings);
-  if (!model.apiKey) {
-    throw new Error(`No API key configured for provider '${model.provider}'`);
-  }
-
-  const origin = { agentKind: agent.kind, agentId: agent.id };
-  const baseCallbacks: RunAgentCallbacks = {
-    onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
-    onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
-    onChunk: ({ messageId, chunk }) =>
-      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
-    onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
-    onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
-  };
-  const callbacks = withTokenAccounting(runId, baseCallbacks);
-
-  await runAgent({
-    agent,
-    userInput: undefined,
-    history: [],
-    model,
-    stream: settings.streamResponses,
-    signal,
-    ...callbacks,
-  });
+  await invokeAgentForRun({ runId, agent, signal, onEvent });
 
   await updateWorkUnit(unit.id, { status: "awaiting-approval" });
 }

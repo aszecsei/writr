@@ -1,3 +1,4 @@
+import { getAppSettings } from "@/db/operations/settings";
 import type { AppSettings } from "@/db/schemas";
 import type {
   ToolCallEntry,
@@ -12,6 +13,9 @@ import type {
   AiUsage,
   FinishReason,
 } from "../types";
+import { applyDefinitionOverride } from "./applyDefinitionOverride";
+import type { PipelineEventEmitter } from "./pipeline/events";
+import { withTokenAccounting } from "./pipeline/tokenAccounting";
 import {
   executeAgentTool,
   getAgentToolDefinition,
@@ -20,6 +24,7 @@ import {
 import type {
   Agent,
   ResolvedAgentModel,
+  RunAgentCallbacks,
   RunAgentOptions,
   RunAgentResult,
 } from "./types";
@@ -408,4 +413,71 @@ export async function runAgent(
     toolCalls: allToolCalls,
     aborted,
   };
+}
+
+export interface InvokeAgentForRunOptions {
+  runId: string;
+  /**
+   * Bare agent built by a builtin factory. The helper applies user-configured
+   * definition overrides — callers must NOT call `applyDefinitionOverride`
+   * separately or the override will run twice.
+   */
+  agent: Agent;
+  /** Prior conversation history threaded into the first iteration. */
+  history?: AiMessage[];
+  signal?: AbortSignal;
+  /** Receives `agent-*` PipelineEvents stamped with `{ runId, origin }`. */
+  onEvent?: PipelineEventEmitter;
+}
+
+/**
+ * Run a single agent in the context of an existing AgentRun. Wraps `runAgent`
+ * with the per-run scaffolding every pipeline phase (planTier, executeTier
+ * editors, verifyTier, readerLoop) needs:
+ *
+ *  - applies user-configured definition overrides to the agent
+ *  - resolves the model from current AppSettings
+ *  - throws on missing API key (callers' `withRunErrorCapture` writes
+ *    status=error; this helper deliberately does not duplicate that write)
+ *  - stamps every callback with `{ runId, origin: { agentKind, agentId } }`
+ *    and forwards as a `PipelineEvent` through `onEvent`
+ *  - tracks token usage via `withTokenAccounting`
+ */
+export async function invokeAgentForRun(
+  options: InvokeAgentForRunOptions,
+): Promise<RunAgentResult> {
+  const { runId, agent, history = [], signal, onEvent } = options;
+
+  await applyDefinitionOverride(agent);
+
+  const settings = await getAppSettings();
+  const model = resolveAgentModel(agent, settings);
+  if (!model.apiKey) {
+    throw new Error(`No API key configured for provider '${model.provider}'`);
+  }
+
+  const origin = { agentKind: agent.kind, agentId: agent.id };
+  const baseCallbacks: RunAgentCallbacks = {
+    onIterationStart: (info) =>
+      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
+    onIterationEnd: (info) =>
+      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
+    onChunk: ({ messageId, chunk }) =>
+      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
+    onToolCallsCollected: (info) =>
+      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
+    onToolCallUpdate: (info) =>
+      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
+  };
+  const callbacks = withTokenAccounting(runId, baseCallbacks);
+
+  return runAgent({
+    agent,
+    userInput: undefined,
+    history,
+    model,
+    stream: settings.streamResponses,
+    signal,
+    ...callbacks,
+  });
 }

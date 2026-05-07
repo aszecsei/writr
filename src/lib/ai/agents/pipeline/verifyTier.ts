@@ -5,7 +5,6 @@ import {
 } from "@/db/operations/agentRuns";
 import { getEditPlanByRun } from "@/db/operations/editPlans";
 import { listProposedEditsByRun } from "@/db/operations/proposedEdits";
-import { getAppSettings } from "@/db/operations/settings";
 import { listVerificationsByTier } from "@/db/operations/verifications";
 import { listWorkUnitsByTier } from "@/db/operations/workUnits";
 import type {
@@ -16,15 +15,12 @@ import type {
   WorkUnit,
 } from "@/db/schemas";
 import type { AiContext } from "../../types";
-import { applyDefinitionOverride } from "../applyDefinitionOverride";
 import {
   makeVerifierAgent,
   type VerifierWorkUnitContext,
 } from "../builtins/verifier";
-import { resolveAgentModel, runAgent } from "../runner";
-import type { RunAgentCallbacks } from "../types";
+import { invokeAgentForRun } from "../runner";
 import type { PipelineEventEmitter } from "./events";
-import { withTokenAccounting } from "./tokenAccounting";
 
 export interface VerifyTierOptions {
   runId: string;
@@ -105,7 +101,6 @@ export async function verifyTier(
     };
   }
 
-  const settings = await getAppSettings();
   const context = await buildContext();
   const agent = makeVerifierAgent({
     runId,
@@ -115,42 +110,8 @@ export async function verifyTier(
     affectedChapterIds,
     context,
   });
-  await applyDefinitionOverride(agent);
 
-  const model = resolveAgentModel(agent, settings);
-  if (!model.apiKey) {
-    await updateAgentRunStatus(
-      runId,
-      "error",
-      `No API key configured for provider '${model.provider}'.`,
-    );
-    throw new Error(`No API key configured for provider '${model.provider}'`);
-  }
-
-  const origin = { agentKind: agent.kind, agentId: agent.id };
-  const baseCallbacks: RunAgentCallbacks = {
-    onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
-    onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
-    onChunk: ({ messageId, chunk }) =>
-      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
-    onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
-    onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
-  };
-  const callbacks = withTokenAccounting(runId, baseCallbacks);
-
-  await runAgent({
-    agent,
-    userInput: undefined,
-    history: [],
-    model,
-    stream: settings.streamResponses,
-    signal,
-    ...callbacks,
-  });
+  await invokeAgentForRun({ runId, agent, signal, onEvent });
 
   if (signal?.aborted) {
     await updateAgentRunStatus(
