@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { searchProjectPaginated } from "@/lib/search/search";
+import { searchProjectKeywordPaginated } from "@/lib/search/keyword/search";
 import { defineTool } from "../types";
 import { ok } from "./helpers";
 
@@ -18,7 +18,11 @@ export const searchProjectTool = defineTool({
   category: "search",
   name: "Search Project",
   description:
-    "Search across the entire project for a keyword or phrase. " +
+    "Tokenized keyword search across the project (BM25-ranked). " +
+    "Throw multiple relevant keywords; documents matching ANY term are " +
+    "returned, ranked by relevance. Prefix matches and small typos are " +
+    'tolerated. Wrap text in double quotes (e.g. "moonlit garden") to ' +
+    "require an exact phrase. " +
     "Returns matches from chapters, characters, locations, timeline events, " +
     "style guide, worldbuilding docs, and outline cells. " +
     "Each result includes the entity type, title, matching field, and a text snippet. " +
@@ -54,7 +58,7 @@ export const searchProjectTool = defineTool({
     .strip(),
   requiresApproval: false,
   async execute(params, context) {
-    const result = await searchProjectPaginated(
+    const result = await searchProjectKeywordPaginated(
       context.projectId,
       params.query,
       1,

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "./database";
-import type { WorldbuildingDocId } from "./schemas";
 import {
   clearSessionCache,
   createChapter,
@@ -44,6 +43,7 @@ import {
   updateWorldbuildingDoc,
 } from "./operations";
 import { toLocalDateString } from "./operations/helpers";
+import type { WorldbuildingDocId } from "./schemas";
 
 beforeEach(async () => {
   clearSessionCache();

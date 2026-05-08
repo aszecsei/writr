@@ -3,7 +3,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useDeferredValue, useMemo, useState } from "react";
 import type { GroupedSearchResults } from "@/lib/search";
-import { getTotalResultCount, searchProject } from "@/lib/search";
+import { getTotalResultCount } from "@/lib/search";
+import { searchProjectKeywordGrouped } from "@/lib/search/keyword/search";
 
 const MAX_PER_CATEGORY = 5;
 
@@ -17,7 +18,11 @@ export function useSearch(projectId: string | null) {
       if (!projectId || !deferredQuery.trim()) {
         return [] as GroupedSearchResults[];
       }
-      return searchProject(projectId, deferredQuery, MAX_PER_CATEGORY);
+      return searchProjectKeywordGrouped(
+        projectId,
+        deferredQuery,
+        MAX_PER_CATEGORY,
+      );
     },
     [projectId, deferredQuery],
     [] as GroupedSearchResults[],

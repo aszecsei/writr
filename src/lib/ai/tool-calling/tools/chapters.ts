@@ -2,11 +2,13 @@ import { z } from "zod";
 import {
   createChapter,
   getChapter,
-  getChaptersByProject,
   updateChapter,
 } from "@/db/operations/chapters";
 import { type ChapterId, ChapterStatusEnum } from "@/db/schemas";
-import { extractSnippet, textContainsQuery } from "@/lib/search/highlight";
+import {
+  searchChapterParagraphsKeyword,
+  searchChaptersKeyword,
+} from "@/lib/search/keyword/search";
 import { defineTool } from "../types";
 import { fail, ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
 
@@ -92,36 +94,26 @@ export const searchChaptersTool = defineTool({
   category: "chapter",
   name: "Search Chapters",
   description:
-    "Search chapter content by a phrase or keyword. Returns matching chapter titles, IDs, and snippets.",
+    "Tokenized keyword search across chapter titles and content (BM25-ranked). " +
+    "Throw multiple relevant keywords; chapters matching ANY term are returned, " +
+    "ranked by relevance. Prefix matches and small typos are tolerated. Wrap " +
+    'text in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
+    "Returns matching chapter titles, IDs, and snippets.",
   parameters: {
     type: "object",
     properties: {
-      query: { type: "string", description: "Search phrase" },
+      query: { type: "string", description: "Search phrase or keywords" },
     },
     required: ["query"],
   },
   inputSchema: z.object({ query: z.string().min(1) }).strip(),
   requiresApproval: false,
   async execute(params, context) {
-    const query = params.query;
-    const allChapters = await getChaptersByProject(context.projectId);
-    const chapters =
-      context.maxReadableChapterOrder !== undefined
-        ? allChapters.filter(
-            (ch) => ch.order <= (context.maxReadableChapterOrder as number),
-          )
-        : allChapters;
-    const matches = chapters
-      .filter(
-        (ch) =>
-          textContainsQuery(ch.title, query) ||
-          textContainsQuery(ch.content, query),
-      )
-      .map((ch) => ({
-        id: ch.id,
-        title: ch.title,
-        snippet: extractSnippet(ch.content, query),
-      }));
+    const matches = await searchChaptersKeyword(
+      context.projectId,
+      params.query,
+      { maxReadableOrder: context.maxReadableChapterOrder },
+    );
     return ok(`Found ${matches.length} matching chapters`, { matches });
   },
 });
@@ -253,13 +245,17 @@ export const searchChapterTool = defineTool({
   category: "chapter",
   name: "Search Chapter",
   description:
-    "Search within a single chapter by keyword. Returns matching paragraph numbers with surrounding context. " +
+    "Tokenized keyword search within a single chapter (BM25-ranked over paragraphs). " +
+    "Throw multiple relevant keywords; paragraphs matching ANY term are returned, " +
+    "ranked by relevance. Prefix matches and small typos are tolerated. Wrap text " +
+    'in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
+    "Returns matching paragraph numbers with surrounding context. " +
     "Use this instead of read_chapter when looking for a specific passage.",
   parameters: {
     type: "object",
     properties: {
       id: { type: "string", description: "Chapter ID" },
-      query: { type: "string", description: "Search keyword or phrase" },
+      query: { type: "string", description: "Search keywords or phrase" },
       context_paragraphs: {
         type: "number",
         description:
@@ -287,25 +283,21 @@ export const searchChapterTool = defineTool({
         `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
       );
     }
-    const paragraphs = splitParagraphs(chapter.content);
-    const ctxSize = params.context_paragraphs ?? 1;
-    const queryLower = params.query.toLowerCase();
-    const matches: { paragraph: number; snippet: string }[] = [];
-    for (let i = 0; i < paragraphs.length && matches.length < 10; i++) {
-      if (paragraphs[i].toLowerCase().includes(queryLower)) {
-        const from = Math.max(0, i - ctxSize);
-        const to = Math.min(paragraphs.length - 1, i + ctxSize);
-        const snippet = paragraphs.slice(from, to + 1).join("\n\n");
-        matches.push({ paragraph: i + 1, snippet });
-      }
-    }
+    const result = await searchChapterParagraphsKeyword(
+      params.id as ChapterId,
+      params.query,
+      {
+        contextParagraphs: params.context_paragraphs ?? 1,
+        maxResults: 10,
+      },
+    );
     return ok(
-      `Found ${matches.length} matches for "${params.query}" in "${chapter.title}"`,
+      `Found ${result.matches.length} matches for "${params.query}" in "${chapter.title}"`,
       {
         id: chapter.id,
         title: chapter.title,
-        matches,
-        totalMatches: matches.length,
+        matches: result.matches,
+        totalMatches: result.matches.length,
       },
     );
   },

@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type {
-  ChapterId,
-  Comment,
-  CommentId,
-  ProjectId,
-} from "@/db/schemas";
+import type { ChapterId, Comment, CommentId, ProjectId } from "@/db/schemas";
 import { reconcileComment } from "./reconcile";
 
 const ts = "2024-01-01T00:00:00.000Z";

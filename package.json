@@ -41,6 +41,7 @@
     "lucide-react": "^0.576.0",
     "marked": "^17.0.3",
     "next": "16.2.3",
+    "minisearch": "^7.2.0",
     "nspell": "^2.1.5",
     "openai": "^6.25.0",
     "pdfmake": "^0.3.6",

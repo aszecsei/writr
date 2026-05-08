@@ -5,7 +5,7 @@ import type {
   PaginatedSearchResults,
   SearchableEntityType,
 } from "@/lib/search";
-import { searchProjectPaginated } from "@/lib/search";
+import { searchProjectKeywordPaginated } from "@/lib/search/keyword/search";
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -26,7 +26,7 @@ export function useSearchPage(
           totalPages: 0,
         } as PaginatedSearchResults;
       }
-      return searchProjectPaginated(
+      return searchProjectKeywordPaginated(
         projectId,
         query,
         page,

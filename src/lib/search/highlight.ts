@@ -1,10 +1,6 @@
 const SNIPPET_CONTEXT_CHARS = 50;
 const MAX_SNIPPET_LENGTH = 120;
 
-export function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export function extractSnippet(text: string, query: string): string {
   if (!text || !query) return "";
 
@@ -69,47 +65,4 @@ export function splitByMatch(text: string, query: string): HighlightPart[] {
   }
 
   return parts;
-}
-
-export function textContainsQuery(
-  text: string | string[] | undefined,
-  query: string,
-): boolean {
-  if (!text || !query) return false;
-
-  const lowerQuery = query.toLowerCase();
-
-  if (Array.isArray(text)) {
-    return text.some((t) => t.toLowerCase().includes(lowerQuery));
-  }
-
-  return text.toLowerCase().includes(lowerQuery);
-}
-
-export function getFirstMatchingField(
-  entity: Record<string, unknown>,
-  fields: string[],
-  query: string,
-): { field: string; value: string } | null {
-  const lowerQuery = query.toLowerCase();
-
-  for (const field of fields) {
-    const value = entity[field];
-
-    if (typeof value === "string" && value.toLowerCase().includes(lowerQuery)) {
-      return { field, value };
-    }
-
-    if (Array.isArray(value)) {
-      const matchingItem = value.find(
-        (item) =>
-          typeof item === "string" && item.toLowerCase().includes(lowerQuery),
-      );
-      if (matchingItem) {
-        return { field, value: matchingItem };
-      }
-    }
-  }
-
-  return null;
 }

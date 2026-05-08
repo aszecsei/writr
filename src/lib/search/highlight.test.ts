@@ -1,29 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  escapeRegExp,
-  extractSnippet,
-  getFirstMatchingField,
-  splitByMatch,
-  textContainsQuery,
-} from "./highlight";
-
-describe("escapeRegExp", () => {
-  it("escapes special regex characters", () => {
-    expect(escapeRegExp("hello.world")).toBe("hello\\.world");
-    expect(escapeRegExp("a*b+c?")).toBe("a\\*b\\+c\\?");
-    expect(escapeRegExp("(test)")).toBe("\\(test\\)");
-    expect(escapeRegExp("[abc]")).toBe("\\[abc\\]");
-    expect(escapeRegExp("a{1,2}")).toBe("a\\{1,2\\}");
-    expect(escapeRegExp("a|b")).toBe("a\\|b");
-    expect(escapeRegExp("^start$")).toBe("\\^start\\$");
-    expect(escapeRegExp("back\\slash")).toBe("back\\\\slash");
-  });
-
-  it("leaves normal text unchanged", () => {
-    expect(escapeRegExp("hello world")).toBe("hello world");
-    expect(escapeRegExp("test123")).toBe("test123");
-  });
-});
+import { extractSnippet, splitByMatch } from "./highlight";
 
 describe("extractSnippet", () => {
   it("returns empty string for empty text or query", () => {
@@ -131,70 +107,5 @@ describe("splitByMatch", () => {
       { text: "a", isMatch: true },
       { text: "a", isMatch: true },
     ]);
-  });
-});
-
-describe("textContainsQuery", () => {
-  it("returns false for empty text or query", () => {
-    expect(textContainsQuery("", "test")).toBe(false);
-    expect(textContainsQuery("hello", "")).toBe(false);
-    expect(textContainsQuery(undefined, "test")).toBe(false);
-  });
-
-  it("finds match in string", () => {
-    expect(textContainsQuery("hello world", "world")).toBe(true);
-    expect(textContainsQuery("hello world", "xyz")).toBe(false);
-  });
-
-  it("is case-insensitive", () => {
-    expect(textContainsQuery("Hello World", "HELLO")).toBe(true);
-    expect(textContainsQuery("HELLO WORLD", "hello")).toBe(true);
-  });
-
-  it("finds match in array of strings", () => {
-    expect(textContainsQuery(["foo", "bar", "baz"], "bar")).toBe(true);
-    expect(textContainsQuery(["foo", "bar", "baz"], "xyz")).toBe(false);
-  });
-
-  it("is case-insensitive for arrays", () => {
-    expect(textContainsQuery(["Foo", "Bar"], "foo")).toBe(true);
-  });
-});
-
-describe("getFirstMatchingField", () => {
-  it("returns null when no fields match", () => {
-    const entity = { title: "hello", content: "world" };
-    const result = getFirstMatchingField(entity, ["title", "content"], "xyz");
-    expect(result).toBeNull();
-  });
-
-  it("returns first matching string field", () => {
-    const entity = { title: "hello", content: "world" };
-    const result = getFirstMatchingField(entity, ["title", "content"], "hello");
-    expect(result).toEqual({ field: "title", value: "hello" });
-  });
-
-  it("checks fields in order", () => {
-    const entity = { title: "test", content: "test" };
-    const result = getFirstMatchingField(entity, ["title", "content"], "test");
-    expect(result?.field).toBe("title");
-  });
-
-  it("finds match in array field", () => {
-    const entity = { name: "Alice", aliases: ["Al", "Ally"] };
-    const result = getFirstMatchingField(entity, ["name", "aliases"], "ally");
-    expect(result).toEqual({ field: "aliases", value: "Ally" });
-  });
-
-  it("is case-insensitive", () => {
-    const entity = { title: "Hello World" };
-    const result = getFirstMatchingField(entity, ["title"], "HELLO");
-    expect(result).toEqual({ field: "title", value: "Hello World" });
-  });
-
-  it("skips non-string/non-array fields", () => {
-    const entity = { title: "test", count: 42 };
-    const result = getFirstMatchingField(entity, ["count", "title"], "test");
-    expect(result?.field).toBe("title");
   });
 });

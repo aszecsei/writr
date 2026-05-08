@@ -353,7 +353,8 @@ export function CharacterDetailBody({
                 <select
                   value=""
                   onChange={(e) => {
-                    if (e.target.value) addLinkedCharacterId(e.target.value as CharacterId);
+                    if (e.target.value)
+                      addLinkedCharacterId(e.target.value as CharacterId);
                   }}
                   className={`${inputClass} mt-2`}
                 >
@@ -396,7 +397,8 @@ export function CharacterDetailBody({
                 <select
                   value=""
                   onChange={(e) => {
-                    if (e.target.value) addLinkedLocationId(e.target.value as LocationId);
+                    if (e.target.value)
+                      addLinkedLocationId(e.target.value as LocationId);
                   }}
                   className={`${inputClass} mt-2`}
                 >

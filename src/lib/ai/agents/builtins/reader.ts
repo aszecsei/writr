@@ -106,7 +106,7 @@ A motif graduates to a symbol only when:
 <process>
 1. Inspect what's already known. bible_list and bible_read on voice/, open_threads/, characters/, and any existing motifs/symbols/subtext/. The comprehension pass has already done the plot/continuity work; lean on it.
 2. Generate candidates from voice/ entries, repeated images noted in open_threads/, and from re-reading high-charge scenes (chapter openings/closings, climaxes).
-3. For each candidate: search_chapters with the exact phrase or close variants. search_project for nearby vocabulary if the motif is conceptual rather than lexical. Use read_chapter_range around hits to confirm context.
+3. For each candidate: search_chapters with the candidate keywords (or wrap a literal phrase in double quotes when only the exact wording counts). search_project for nearby vocabulary if the motif is conceptual rather than lexical. Use read_chapter_range around hits to confirm context.
 4. Only after evidence is in hand, write the bible entry with quotes.
 5. Surface a note (category="theme") for the editor when a motif is conspicuously dropped or contradicted.
 6. Use question() only when intent is genuinely ambiguous in a way the human must adjudicate (e.g. "is this a deliberate echo of the earlier scene or accidental?").

@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Character, CharacterId, CharacterRole, EntityImage, LocationId } from "@/db/schemas";
+import type {
+  Character,
+  CharacterId,
+  CharacterRole,
+  EntityImage,
+  LocationId,
+} from "@/db/schemas";
 
 interface CharacterFormState {
   name: string;
