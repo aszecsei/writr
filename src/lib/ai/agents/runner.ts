@@ -10,13 +10,12 @@ import type {
   AiMessage,
   AiResponse,
   AiStreamChunk,
-  AiToolCall,
   AiUsage,
   FinishReason,
 } from "../types";
 import { applyDefinitionOverride } from "./applyDefinitionOverride";
 import type { PipelineEventEmitter } from "./pipeline/events";
-import { withTokenAccounting } from "./pipeline/tokenAccounting";
+import { makePipelineHistoryAccessor } from "./pipeline/historyAccessor";
 import {
   executeAgentTool,
   getAgentToolDefinition,
@@ -25,16 +24,11 @@ import {
 import type {
   Agent,
   ResolvedAgentModel,
-  RunAgentCallbacks,
   RunAgentOptions,
   RunAgentResult,
 } from "./types";
 
 const DEFAULT_MAX_ITERATIONS = 16;
-
-function generateId(): string {
-  return crypto.randomUUID();
-}
 
 /**
  * Resolve which provider, model, API key, and reasoning effort an agent should
@@ -86,80 +80,21 @@ function toEntry(payload: ToolCallPayload): ToolCallEntry {
 }
 
 /**
- * Append the assistant turn (with any tool calls) and matching tool-result
- * messages to the working history so the next iteration sees them.
- */
-function extendHistoryWithIteration(
-  history: AiMessage[],
-  assistantContent: string,
-  entries: ToolCallEntry[],
-): AiMessage[] {
-  const next: AiMessage[] = [...history];
-  const toolCalls: AiToolCall[] = entries.map((e) => ({
-    id: e.id,
-    name: e.toolName,
-    arguments: e.input,
-  }));
-
-  next.push({
-    role: "assistant",
-    content: assistantContent,
-    ...(toolCalls.length > 0 ? { toolCalls } : {}),
-  });
-
-  for (const entry of entries) {
-    if (
-      entry.status !== "executed" &&
-      entry.status !== "denied" &&
-      entry.status !== "error"
-    ) {
-      continue;
-    }
-    const content =
-      entry.status === "denied"
-        ? JSON.stringify({ success: false, message: "Denied by user" })
-        : JSON.stringify(
-            entry.result ?? { success: false, message: "No result" },
-          );
-    next.push({
-      role: "tool",
-      content,
-      toolCallId: entry.id,
-    });
-  }
-
-  return next;
-}
-
-/**
  * Headless agent runner. Executes the streaming → tool-call → loop pattern
- * previously inlined in `AiPanel.generateAiResponse`. The pipeline orchestrator
- * calls this programmatically (auto-approving tool calls); AiPanel calls it
- * with a UI-driven `approveToolCall` handler.
+ * across iterations, dispatching every state change through the supplied
+ * `history: ChatHistoryAccessor`. The accessor owns the canonical chat
+ * history — the runner doesn't keep a parallel copy. Both the chat panel and
+ * the pipeline orchestrator inject their own implementation.
  */
 export async function runAgent(
   options: RunAgentOptions,
 ): Promise<RunAgentResult> {
-  const {
-    agent,
-    userInput,
-    history: initialHistory = [],
-    model,
-    stream = true,
-    signal,
-    onIterationStart,
-    onChunk,
-    onIterationEnd,
-    onToolCallsCollected,
-    approveToolCall,
-    onToolCallUpdate,
-  } = options;
+  const { agent, model, history, stream = true, signal } = options;
 
   const toolDefinitions: ToolDefinitionForModel[] | undefined =
     getToolDefinitionsForAgent(agent);
 
   const allToolCalls: ToolCallEntry[] = [];
-  let workingHistory = initialHistory;
   let iteration = 0;
   const maxIterations = agent.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 
@@ -176,24 +111,18 @@ export async function runAgent(
 
     iteration += 1;
     const isFirstIteration = iteration === 1;
-    const messageId = generateId();
 
     const iterationMessages = agent.buildMessages({
-      history: workingHistory,
-      userInput,
-      skipUserPrompt: !isFirstIteration,
+      history: history.getMessages(),
     });
 
-    onIterationStart?.({
-      messageId,
+    const assistantId = history.startAssistantTurn({
       iteration,
       capturedPrompt: isFirstIteration ? iterationMessages : undefined,
     });
 
     const startTime = Date.now();
 
-    // Pre-built messages bypass the legacy task-tool flow in client.ts —
-    // agents own their own prompt assembly via `agent.buildMessages`.
     const requestBody = {
       apiKey: model.apiKey,
       model: model.model,
@@ -224,12 +153,14 @@ export async function runAgent(
     });
 
     if (!response.ok) {
+      history.removeAssistantTurn(assistantId);
       const error = await response.json().catch(() => ({}));
       throw new Error(error.details ?? error.error ?? "AI request failed");
     }
 
     if (stream) {
       if (!response.body) {
+        history.removeAssistantTurn(assistantId);
         throw new Error("No response body for streaming request");
       }
 
@@ -262,7 +193,7 @@ export async function runAgent(
             continue;
           }
 
-          // `stop` is terminal accounting and skips the onChunk forward.
+          // `stop` is terminal accounting and skips the accessor forward.
           if (chunk.type === "stop") {
             finishReason = chunk.finishReason;
             if (chunk.usage) iterationUsage = chunk.usage;
@@ -278,12 +209,13 @@ export async function runAgent(
             })
             .with({ type: "reasoning" }, (c) => {
               assistantReasoning = (assistantReasoning ?? "") + c.text;
+              history.appendChunk(assistantId, chunk as AiStreamChunk);
             })
             .with({ type: "content" }, (c) => {
               assistantContent += c.text;
+              history.appendChunk(assistantId, chunk as AiStreamChunk);
             })
             .exhaustive();
-          onChunk?.({ messageId, chunk });
         }
       }
     } else {
@@ -292,6 +224,20 @@ export async function runAgent(
       assistantReasoning = data.reasoning;
       finishReason = data.finishReason;
       iterationUsage = data.usage;
+      // Replay the non-streamed content as a single chunk so the accessor's
+      // streaming-aware view (chat panel) can render it the same way.
+      if (data.content) {
+        history.appendChunk(assistantId, {
+          type: "content",
+          text: data.content,
+        });
+      }
+      if (data.reasoning) {
+        history.appendChunk(assistantId, {
+          type: "reasoning",
+          text: data.reasoning,
+        });
+      }
       if (data.toolCalls) {
         for (const tc of data.toolCalls) {
           collectedToolCalls.push({
@@ -308,111 +254,166 @@ export async function runAgent(
     lastReasoning = assistantReasoning;
     lastFinishReason = finishReason;
 
-    // Skip the lifecycle callback when aborted — AiPanel uses the absence of
-    // durationMs/finishReason on a message to detect incomplete iterations and
-    // remove them in handleCancel.
     if (signal?.aborted) {
+      // Abort during streaming — drop the in-progress assistant turn so the
+      // UI doesn't show a half-rendered message. The accessor's
+      // `removeAssistantTurn` is responsible for cleanup of any pending tool
+      // messages it created (this iteration created none yet).
+      history.removeAssistantTurn(assistantId);
       aborted = true;
       break;
     }
 
-    onIterationEnd?.({
-      messageId,
-      iteration,
-      content: assistantContent,
-      reasoning: assistantReasoning,
-      finishReason,
+    const hasToolCalls =
+      finishReason === "tool_use" && collectedToolCalls.length > 0;
+
+    history.finalizeAssistantTurn(assistantId, {
       durationMs,
+      finishReason,
       usage: iterationUsage,
+      ...(hasToolCalls
+        ? {
+            toolCallRefs: collectedToolCalls.map((tc) => ({
+              id: tc.id,
+              name: tc.name,
+              arguments: tc.input,
+            })),
+          }
+        : {}),
     });
 
-    // No tool calls — this iteration finished the run.
-    if (finishReason !== "tool_use" || collectedToolCalls.length === 0) {
-      workingHistory = extendHistoryWithIteration(
-        workingHistory,
-        assistantContent,
-        [],
-      );
+    if (!hasToolCalls) {
       break;
     }
 
-    // Process tool calls sequentially. Each `onToolCallUpdate` callback
-    // receives a freshly-cloned entry so React state mutations don't race
-    // with reference identity checks.
+    // Dispatch the full batch of pending tool calls in one accessor call.
+    // The accessor maps each entry to a stable tool-message id; the runner
+    // uses the parallel id list to drive subsequent approval/execution
+    // updates.
     const entries = collectedToolCalls.map(toEntry);
-    onToolCallsCollected?.({ messageId, iteration, entries });
+    const toolMessageIds = history.appendPendingToolMessages(
+      assistantId,
+      entries,
+    );
 
-    for (let i = 0; i < entries.length; i++) {
-      if (signal?.aborted) {
-        aborted = true;
-        break;
-      }
-
-      const current = entries[i];
-      const def = getAgentToolDefinition(current.toolName);
-
-      if (!def) {
-        const next: ToolCallEntry = {
-          ...current,
-          status: "error",
-          result: {
-            success: false,
-            message: `Unknown tool: ${current.toolName}`,
-          },
-        };
-        entries[i] = next;
-        onToolCallUpdate?.({ messageId, iteration, entry: next });
-        continue;
-      }
-
-      let working = current;
-      if (def.requiresApproval) {
-        const approved = approveToolCall
-          ? await approveToolCall(working)
-          : true;
+    try {
+      for (let i = 0; i < entries.length; i++) {
         if (signal?.aborted) {
           aborted = true;
           break;
         }
-        if (!approved) {
-          const denied: ToolCallEntry = { ...working, status: "denied" };
-          entries[i] = denied;
-          onToolCallUpdate?.({ messageId, iteration, entry: denied });
+
+        const current = entries[i];
+        const toolMsgId = toolMessageIds[i];
+        const def = getAgentToolDefinition(current.toolName);
+
+        if (!def) {
+          const next: ToolCallEntry = {
+            ...current,
+            status: "error",
+            result: {
+              success: false,
+              message: `Unknown tool: ${current.toolName}`,
+            },
+          };
+          entries[i] = next;
+          history.updateToolMessage(toolMsgId, {
+            status: next.status,
+            result: next.result,
+          });
           continue;
         }
-        working = { ...working, status: "approved" };
-        entries[i] = working;
-        onToolCallUpdate?.({ messageId, iteration, entry: working });
-      }
 
-      const result = await executeAgentTool(
-        agent,
-        working.toolName,
-        working.input,
-      );
-      const final: ToolCallEntry = {
-        ...working,
-        status: result.success ? "executed" : "error",
-        result,
-      };
-      entries[i] = final;
-      onToolCallUpdate?.({ messageId, iteration, entry: final });
+        let working = current;
+        if (def.requiresApproval) {
+          const approved = history.approveToolCall
+            ? await history.approveToolCall(toolMsgId)
+            : true;
+          if (signal?.aborted) {
+            aborted = true;
+            break;
+          }
+          if (!approved) {
+            const denied: ToolCallEntry = { ...working, status: "denied" };
+            entries[i] = denied;
+            history.updateToolMessage(toolMsgId, { status: "denied" });
+            continue;
+          }
+          working = { ...working, status: "approved" };
+          entries[i] = working;
+          history.updateToolMessage(toolMsgId, { status: "approved" });
+        }
+
+        try {
+          const result = await executeAgentTool(
+            agent,
+            working.toolName,
+            working.input,
+          );
+          const final: ToolCallEntry = {
+            ...working,
+            status: result.success ? "executed" : "error",
+            result,
+          };
+          entries[i] = final;
+          history.updateToolMessage(toolMsgId, {
+            status: final.status,
+            result: final.result,
+          });
+        } catch (err) {
+          // Tool implementations are expected to return ToolResult, never
+          // throw. If one does, mark this entry terminal so the wire format
+          // stays internally consistent, then rethrow so callers see the
+          // original failure.
+          const message = err instanceof Error ? err.message : String(err);
+          const errored: ToolCallEntry = {
+            ...working,
+            status: "error",
+            result: { success: false, message },
+          };
+          entries[i] = errored;
+          history.updateToolMessage(toolMsgId, {
+            status: errored.status,
+            result: errored.result,
+          });
+          throw err;
+        }
+      }
+    } finally {
+      // Whatever happened (clean exit, abort, or rethrown exception), every
+      // dispatched tool entry must end at a terminal status — otherwise its
+      // tool message stays non-terminal in the chat history, gets dropped
+      // by toAiMessages, and orphans the matching tool_use id on the next
+      // request.
+      for (let k = 0; k < entries.length; k++) {
+        const status = entries[k].status;
+        if (
+          status === "executed" ||
+          status === "denied" ||
+          status === "error"
+        ) {
+          continue;
+        }
+        const cleaned: ToolCallEntry = {
+          ...entries[k],
+          status: "denied",
+          result: { success: false, message: "Aborted by user" },
+        };
+        entries[k] = cleaned;
+        history.updateToolMessage(toolMessageIds[k], {
+          status: cleaned.status,
+          result: cleaned.result,
+        });
+      }
     }
 
     allToolCalls.push(...entries);
-
-    workingHistory = extendHistoryWithIteration(
-      workingHistory,
-      assistantContent,
-      entries,
-    );
 
     if (aborted) break;
   }
 
   return {
     iterations: iteration,
-    history: workingHistory,
     content: lastContent,
     reasoning: lastReasoning,
     finishReason: lastFinishReason,
@@ -445,14 +446,20 @@ export interface InvokeAgentForRunOptions {
  *  - resolves the model from current AppSettings
  *  - throws on missing API key (callers' `withRunErrorCapture` writes
  *    status=error; this helper deliberately does not duplicate that write)
- *  - stamps every callback with `{ runId, origin: { agentKind, agentId } }`
- *    and forwards as a `PipelineEvent` through `onEvent`
- *  - tracks token usage via `withTokenAccounting`
+ *  - implements `ChatHistoryAccessor` over an in-memory buffer that emits
+ *    `agent-*` PipelineEvents (mirroring the legacy callback events) and
+ *    accumulates token usage onto the AgentRun row
  */
 export async function invokeAgentForRun(
   options: InvokeAgentForRunOptions,
-): Promise<RunAgentResult> {
-  const { runId, agent, history = [], signal, onEvent } = options;
+): Promise<RunAgentResult & { history: AiMessage[] }> {
+  const {
+    runId,
+    agent,
+    history: initialHistory = [],
+    signal,
+    onEvent,
+  } = options;
 
   await applyDefinitionOverride(agent);
 
@@ -462,28 +469,20 @@ export async function invokeAgentForRun(
     throw new Error(`No API key configured for provider '${model.provider}'`);
   }
 
-  const origin = { agentKind: agent.kind, agentId: agent.id };
-  const baseCallbacks: RunAgentCallbacks = {
-    onIterationStart: (info) =>
-      onEvent?.({ type: "agent-iteration-start", runId, origin, info }),
-    onIterationEnd: (info) =>
-      onEvent?.({ type: "agent-iteration-end", runId, origin, info }),
-    onChunk: ({ messageId, chunk }) =>
-      onEvent?.({ type: "agent-chunk", runId, origin, messageId, chunk }),
-    onToolCallsCollected: (info) =>
-      onEvent?.({ type: "agent-tool-calls", runId, origin, info }),
-    onToolCallUpdate: (info) =>
-      onEvent?.({ type: "agent-tool-update", runId, origin, info }),
-  };
-  const callbacks = withTokenAccounting(runId, baseCallbacks);
+  const accessor = makePipelineHistoryAccessor({
+    runId,
+    origin: { agentKind: agent.kind, agentId: agent.id },
+    initialHistory,
+    onEvent,
+  });
 
-  return runAgent({
+  const result = await runAgent({
     agent,
-    userInput: undefined,
-    history,
     model,
+    history: accessor,
     stream: settings.streamResponses,
     signal,
-    ...callbacks,
   });
+
+  return { ...result, history: accessor.getMessages() };
 }

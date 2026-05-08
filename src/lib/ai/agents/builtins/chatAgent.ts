@@ -14,8 +14,6 @@ export interface MakeChatAgentInput {
   /** Pre-task user instructions injected into the Nth-last user message. */
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
-  /** Optional image attachments. */
-  images?: { url: string }[];
   /** Stream setting passthrough; not used at agent construction. */
   systemPromptSuffix?: string;
 }
@@ -60,7 +58,6 @@ export function makeChatAgent(input: MakeChatAgentInput): Agent {
       customSystemPrompt: input.customSystemPrompt,
       postChatInstructions: input.postChatInstructions,
       postChatInstructionsDepth: input.postChatInstructionsDepth,
-      images: input.images,
     }),
     agentContext: {
       projectId,

@@ -6,7 +6,8 @@ import type {
   ReasoningEffort,
 } from "@/db/schemas";
 import type { ToolCallEntry, ToolExecutionContext } from "../tool-calling";
-import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
+import type { AiMessage, AiUsage, FinishReason } from "../types";
+import type { ChatHistoryAccessor } from "./accessor";
 
 /**
  * "Manual" represents the synthesized agent that backs the AiPanel chat — its
@@ -16,15 +17,14 @@ import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
 export type AnyAgentKind = AgentKind | "manual" | "custom";
 
 /**
- * Function that produces the message array for one iteration of the agent
- * loop. The runner calls this on every iteration. `skipUserPrompt` is set on
- * iteration 2+ because the user message is already in `history`.
+ * Function that produces the messages for one iteration of the agent loop.
+ * The runner calls this on every iteration. `history` is the full canonical
+ * conversation in wire format — user messages, assistant turns (with their
+ * `toolCalls` ref arrays), and `role: "tool"` result rows — already
+ * containing whatever the user said. The function wraps it with system +
+ * context preamble and (optionally) an assistant prefill.
  */
-export type BuildMessagesFn = (params: {
-  history: AiMessage[];
-  userInput?: string;
-  skipUserPrompt?: boolean;
-}) => AiMessage[];
+export type BuildMessagesFn = (params: { history: AiMessage[] }) => AiMessage[];
 
 /**
  * A first-class agent: a typed configuration of model + prompt + tool subset
@@ -76,6 +76,11 @@ export interface ResolvedAgentModel {
   reasoningEffort?: ReasoningEffort;
 }
 
+/**
+ * Lifecycle event payloads emitted by the pipeline path's accessor (and
+ * consumed by `agentActivityStore` and `pipeline/events.ts`). The chat panel
+ * doesn't emit these — it drives the UI directly via `setMessages`.
+ */
 export interface IterationStartInfo {
   messageId: string;
   iteration: number;
@@ -110,53 +115,24 @@ export interface ToolCallUpdateInfo {
   entry: ToolCallEntry;
 }
 
-export interface RunAgentCallbacks {
-  /** Fires when a new model iteration begins. */
-  onIterationStart?: (info: IterationStartInfo) => void;
-  /** Fires for each streaming chunk (content / reasoning / tool_use). */
-  onChunk?: (info: { messageId: string; chunk: AiStreamChunk }) => void;
-  /** Fires after a model iteration completes (post-stream or non-stream). */
-  onIterationEnd?: (info: IterationEndInfo) => void;
-  /** Fires once tool calls are extracted from the assistant turn. */
-  onToolCallsCollected?: (info: ToolCallsCollectedInfo) => void;
-  /**
-   * Resolver for tool calls whose tool definition has `requiresApproval: true`.
-   * Pipeline agents auto-approve (writes go to staging tables); the AiPanel
-   * shows an Approve/Deny UI and resolves with the user's choice.
-   */
-  approveToolCall?: (entry: ToolCallEntry) => Promise<boolean>;
-  /** Fires after each tool call is approved/denied/executed. */
-  onToolCallUpdate?: (info: ToolCallUpdateInfo) => void;
-}
-
-export interface RunAgentOptions extends RunAgentCallbacks {
+export interface RunAgentOptions {
   agent: Agent;
-  /** User input for the first iteration. Omit for "continue from history". */
-  userInput?: string;
-  /** Prior conversation history (excluding the first iteration's user input). */
-  history?: AiMessage[];
   /** Resolved model + key + provider for this run. */
   model: ResolvedAgentModel;
+  /**
+   * Canonical chat history accessor. Replaces the prior callback bag plus
+   * the runner's internal `workingHistory`. The chat panel and the pipeline
+   * each provide their own implementation.
+   */
+  history: ChatHistoryAccessor;
   /** Whether to stream the response. Defaults to true. */
   stream?: boolean;
   /** Abort signal for the entire run. */
   signal?: AbortSignal;
-  /**
-   * Optional prompt-assembly knobs forwarded to the API request. Most agents
-   * leave these undefined; the manual agent forwards user-configured values.
-   */
-  postChatInstructions?: string;
-  postChatInstructionsDepth?: number;
-  assistantPrefill?: string;
-  customSystemPrompt?: string | null;
-  /** Image attachments for the user prompt. */
-  images?: { url: string }[];
 }
 
 export interface RunAgentResult {
   iterations: number;
-  /** Updated history including all assistant + tool turns produced this run. */
-  history: AiMessage[];
   /** Final assistant content (last turn). */
   content: string;
   reasoning?: string;

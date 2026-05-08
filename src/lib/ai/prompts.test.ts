@@ -53,7 +53,7 @@ function getFirstUserText(messages: AiMessage[]): string {
 
 describe("buildMessages", () => {
   it("places the agent system prompt inside a <task> block", () => {
-    const msgs = buildMessages("Write a sonnet", "go", emptyContext());
+    const msgs = buildMessages("Write a sonnet", emptyContext());
     const sys = getSystemText(msgs);
     expect(sys).toContain("<task>");
     expect(sys).toContain("Write a sonnet");
@@ -61,7 +61,7 @@ describe("buildMessages", () => {
   });
 
   it("includes the project title in the bible context", () => {
-    const msgs = buildMessages("agent prompt", "user msg", emptyContext());
+    const msgs = buildMessages("agent prompt", emptyContext());
     const text = getFirstUserText(msgs);
     expect(text).toContain('<novel title="Test Novel"');
   });
@@ -69,7 +69,6 @@ describe("buildMessages", () => {
   it("uses <screenplay> root tag for screenplay projects", () => {
     const msgs = buildMessages(
       "agent prompt",
-      "user msg",
       emptyContext({ projectMode: "screenplay" }),
     );
     expect(getFirstUserText(msgs)).toContain('<screenplay title="Test Novel"');
@@ -78,15 +77,15 @@ describe("buildMessages", () => {
   it("injects the active chapter as a separate user message when set", () => {
     const msgs = buildMessages(
       "agent prompt",
-      "user msg",
       emptyContext({
         currentChapterTitle: "Chapter 1",
         currentChapterContent: "Once upon a time...",
       }),
     );
     const userMessages = msgs.filter((m) => m.role === "user");
-    // [0] = bible context, [1] = chapter, [2] = user prompt
-    expect(userMessages.length).toBeGreaterThanOrEqual(3);
+    // [0] = bible context, [1] = chapter (no synthetic user prompt anymore —
+    // user messages come in via `history` already wire-formatted).
+    expect(userMessages.length).toBeGreaterThanOrEqual(2);
     const chapterMsg = userMessages[1];
     const text =
       typeof chapterMsg.content === "string"
@@ -96,25 +95,28 @@ describe("buildMessages", () => {
     expect(text).toContain("Once upon a time...");
   });
 
-  it("wraps selected text in a <selected-text> block in the final user message", () => {
-    const msgs = buildMessages(
-      "agent prompt",
-      "rewrite this please",
-      emptyContext({ selectedText: "the quick brown fox" }),
-    );
-    const userMessages = msgs.filter((m) => m.role === "user");
-    const last = userMessages[userMessages.length - 1];
+  it("appends history messages verbatim (user content already wire-formatted)", () => {
+    const history: AiMessage[] = [
+      {
+        role: "user",
+        content:
+          "<selected-text>\nfox\n</selected-text>\n\nrewrite this please",
+      },
+    ];
+    const msgs = buildMessages("agent prompt", emptyContext(), history);
+    const last = msgs[msgs.length - 1];
+    expect(last.role).toBe("user");
     const text =
       typeof last.content === "string"
         ? last.content
         : (last.content as TextContentPart[]).map((p) => p.text).join("");
     expect(text).toContain("<selected-text>");
-    expect(text).toContain("the quick brown fox");
+    expect(text).toContain("fox");
     expect(text).toContain("rewrite this please");
   });
 
   it("appends an assistant prefill at the end when provided", () => {
-    const msgs = buildMessages("agent prompt", "user msg", emptyContext(), [], {
+    const msgs = buildMessages("agent prompt", emptyContext(), [], {
       assistantPrefill: "Here's my response:",
     });
     const last = msgs[msgs.length - 1];
@@ -123,7 +125,7 @@ describe("buildMessages", () => {
   });
 
   it("respects customSystemPrompt as the preamble", () => {
-    const msgs = buildMessages("agent prompt", "user msg", emptyContext(), [], {
+    const msgs = buildMessages("agent prompt", emptyContext(), [], {
       customSystemPrompt: "You are a strict editor.",
     });
     const sys = getSystemText(msgs);
@@ -131,7 +133,7 @@ describe("buildMessages", () => {
   });
 
   it("emits a tool-calling-instructions block when enableToolCalling is on", () => {
-    const msgs = buildMessages("agent prompt", "user msg", emptyContext(), [], {
+    const msgs = buildMessages("agent prompt", emptyContext(), [], {
       enableToolCalling: true,
     });
     expect(getSystemText(msgs)).toContain("<tool-calling-instructions>");
@@ -140,7 +142,6 @@ describe("buildMessages", () => {
   it("uses the minimal agentic context when tool calling is enabled", () => {
     const msgs = buildMessages(
       "agent prompt",
-      "user msg",
       emptyContext({ projectDescription: "An epic." }),
       [],
       { enableToolCalling: true },
@@ -152,13 +153,9 @@ describe("buildMessages", () => {
   it("uses the same minimal context when tool calling is disabled (no full bible dump)", () => {
     const msgs = buildMessages(
       "agent prompt",
-      "user msg",
       emptyContext({ projectDescription: "An epic." }),
     );
     const text = getFirstUserText(msgs);
-    // Top-level project details still ship, but the legacy full bible
-    // sections (characters, locations, timeline, worldbuilding, outline
-    // grid, relationships) are no longer dumped upfront.
     expect(text).toContain("<description>An epic.</description>");
     expect(text).not.toContain("<characters>");
     expect(text).not.toContain("<locations>");
@@ -171,7 +168,6 @@ describe("buildMessages", () => {
   it("emits a chapter table-of-contents in the project context", () => {
     const msgs = buildMessages(
       "agent prompt",
-      "user msg",
       emptyContext({
         chapters: [
           makeChapter({
@@ -199,22 +195,26 @@ describe("buildMessages", () => {
     expect(text).toContain('wordCount="1234"');
   });
 
-  it("does NOT inject the user prompt when skipUserPrompt is set", () => {
-    const msgs = buildMessages(
-      "agent prompt",
-      "should not appear",
-      emptyContext(),
-      [],
-      { skipUserPrompt: true },
-    );
-    const userMessages = msgs.filter((m) => m.role === "user");
-    for (const m of userMessages) {
-      const text =
-        typeof m.content === "string"
-          ? m.content
-          : (m.content as TextContentPart[]).map((p) => p.text).join("");
-      expect(text).not.toContain("should not appear");
-    }
+  it("injects post-chat instructions into the Nth-last history user message", () => {
+    const history: AiMessage[] = [
+      { role: "user", content: "first user turn" },
+      { role: "assistant", content: "ack" },
+      { role: "user", content: "second user turn" },
+    ];
+    const msgs = buildMessages("agent prompt", emptyContext(), history, {
+      postChatInstructions: "Respond in JSON.",
+      postChatInstructionsDepth: 1,
+    });
+    // Depth 1 = the most recent non-synthetic user message.
+    const lastUser = [...msgs].reverse().find((m) => m.role === "user");
+    const text =
+      typeof lastUser?.content === "string"
+        ? lastUser.content
+        : ((lastUser?.content as TextContentPart[]) ?? [])
+            .map((p) => p.text)
+            .join("");
+    expect(text).toContain("Respond in JSON.");
+    expect(text).toContain("second user turn");
   });
 });
 

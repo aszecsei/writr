@@ -1,107 +1,19 @@
-import { buildMessages } from "./prompts";
-import type {
-  AiContext,
-  AiMessage,
-  AiResponse,
-  AiSettings,
-  AiStreamChunk,
-} from "./types";
+import type { AiResponse, AiSettings } from "./types";
 
-function buildRequestBody(
-  agentSystemPrompt: string,
-  userPrompt: string,
-  context: AiContext,
-  settings: AiSettings,
-  stream: boolean,
-  history: AiMessage[] = [],
-) {
-  const body: Record<string, unknown> = {
-    apiKey: settings.apiKey,
-    model: settings.model,
-    provider: settings.provider,
-    messages: buildMessages(agentSystemPrompt, userPrompt, context, history, {
-      postChatInstructions: settings.postChatInstructions,
-      postChatInstructionsDepth: settings.postChatInstructionsDepth,
-      assistantPrefill: settings.assistantPrefill,
-      customSystemPrompt: settings.customSystemPrompt,
-      images: settings.images,
-      enableToolCalling: !!settings.toolDefinitions?.length,
-      skipUserPrompt: settings.skipUserPrompt,
-    }),
-    temperature: 0.7,
-    max_tokens: 24 * 1024,
-    stream,
-  };
-
-  if (settings.reasoningEffort && settings.reasoningEffort !== "none") {
-    body.reasoning = { effort: settings.reasoningEffort };
-  }
-
-  if (settings.toolDefinitions?.length) {
-    body.tools = settings.toolDefinitions;
-  }
-
-  return body;
-}
-
-async function fetchAi(body: Record<string, unknown>, signal?: AbortSignal) {
-  const response = await fetch("/api/ai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    // Surface upstream provider context (OpenRouter wraps the real cause in
-    // `error.metadata` — without it, "Provider returned error" is opaque).
-    const upstreamMessage =
-      typeof error.upstream?.metadata === "object" && error.upstream.metadata
-        ? ((error.upstream.metadata as { raw?: string; reason?: string }).raw ??
-          (error.upstream.metadata as { reason?: string }).reason)
-        : undefined;
-    const message =
-      upstreamMessage ??
-      error.upstream?.message ??
-      error.details ??
-      error.error ??
-      "AI request failed";
-    throw new Error(message);
-  }
-
-  return response;
-}
-
-export async function callAi(
-  agentSystemPrompt: string,
-  userPrompt: string,
-  context: AiContext,
-  settings: AiSettings,
-  history: AiMessage[] = [],
-  signal?: AbortSignal,
-): Promise<AiResponse> {
-  const response = await fetchAi(
-    buildRequestBody(
-      agentSystemPrompt,
-      userPrompt,
-      context,
-      settings,
-      false,
-      history,
-    ),
-    signal,
-  );
-  return await response.json();
-}
-
+/**
+ * One-shot helper for non-conversational image-description prompts. Used by
+ * the bible's image-attachment dialog to auto-generate alt text. Bypasses
+ * the agent runner entirely — no project context, no tools, no streaming.
+ */
 export async function describeImage(
   imageUrl: string,
   settings: Pick<AiSettings, "apiKey" | "model" | "provider">,
   signal?: AbortSignal,
 ): Promise<string> {
-  const response = await fetchAi(
-    {
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
       apiKey: settings.apiKey,
       model: settings.model,
       provider: settings.provider,
@@ -119,64 +31,26 @@ export async function describeImage(
       temperature: 0.3,
       max_tokens: 256,
       stream: false,
-    },
+    }),
     signal,
-  );
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    const upstreamMessage =
+      typeof error.upstream?.metadata === "object" && error.upstream.metadata
+        ? ((error.upstream.metadata as { raw?: string; reason?: string }).raw ??
+          (error.upstream.metadata as { reason?: string }).reason)
+        : undefined;
+    const message =
+      upstreamMessage ??
+      error.upstream?.message ??
+      error.details ??
+      error.error ??
+      "AI request failed";
+    throw new Error(message);
+  }
+
   const data: AiResponse = await response.json();
   return data.content;
-}
-
-export async function* streamAi(
-  agentSystemPrompt: string,
-  userPrompt: string,
-  context: AiContext,
-  settings: AiSettings,
-  history: AiMessage[] = [],
-  signal?: AbortSignal,
-): AsyncGenerator<AiStreamChunk> {
-  const response = await fetchAi(
-    buildRequestBody(
-      agentSystemPrompt,
-      userPrompt,
-      context,
-      settings,
-      true,
-      history,
-    ),
-    signal,
-  );
-
-  if (!response.body) {
-    throw new Error("No response body for streaming request");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    if (signal?.aborted) break;
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data: ")) continue;
-
-      const json = trimmed.slice(6);
-      if (json === "[DONE]") return;
-
-      try {
-        yield JSON.parse(json) as AiStreamChunk;
-      } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[AI Stream] Skipping malformed chunk:", json, error);
-        }
-      }
-    }
-  }
 }

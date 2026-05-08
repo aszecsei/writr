@@ -13,7 +13,6 @@ export interface ChatAgentBuildMessagesArgs {
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
-  images?: { url: string }[];
 }
 
 /**
@@ -21,20 +20,20 @@ export interface ChatAgentBuildMessagesArgs {
  * Wraps `prompts.ts/buildMessages` so chat agents share the same prompt
  * assembly as the legacy task-tool flow once did — full bible context,
  * <chapter> injection when an active chapter is set, post-chat instructions,
- * etc. — but reads its system content from the agent definition row.
+ * etc. — but reads its system content from the agent definition row. The
+ * user message (with `<selected-text>` and image attachments) arrives in
+ * `history` already wire-formatted via `toAiMessages`.
  */
 export function makeChatAgentBuildMessages(
   args: ChatAgentBuildMessagesArgs,
 ): BuildMessagesFn {
-  return ({ history, userInput, skipUserPrompt }) =>
-    buildMessages(args.systemPrompt, userInput ?? "", args.context, history, {
+  return ({ history }) =>
+    buildMessages(args.systemPrompt, args.context, history, {
       postChatInstructions: args.postChatInstructions,
       postChatInstructionsDepth: args.postChatInstructionsDepth,
       assistantPrefill: args.assistantPrefill,
       customSystemPrompt: args.customSystemPrompt,
-      images: args.images,
       enableToolCalling: args.enableToolCalling ?? false,
-      skipUserPrompt,
     });
 }
 
@@ -46,6 +45,8 @@ interface AgentBuildMessagesArgs {
   /**
    * Optional priming messages inserted between context and history (e.g. a
    * pass-summary user message + assistant ack on Reader iteration 2+).
+   * Pipeline agents that want a "go" prompt place it here instead of using a
+   * separate userInput parameter.
    */
   initialMessages?: AiMessage[];
   /** Whether to mark the last history message with cache_control. */
@@ -62,15 +63,12 @@ interface AgentBuildMessagesArgs {
 export function makeAgentBuildMessages(
   args: AgentBuildMessagesArgs,
 ): BuildMessagesFn {
-  return ({ history, userInput, skipUserPrompt }) =>
-    assembleAgentMessages(args, history, userInput, skipUserPrompt);
+  return ({ history }) => assembleAgentMessages(args, history);
 }
 
 function assembleAgentMessages(
   args: AgentBuildMessagesArgs,
   history: AiMessage[],
-  userInput: string | undefined,
-  skipUserPrompt: boolean | undefined,
 ): AiMessage[] {
   // The Anthropic API caps total cache_control breakpoints per request at 4.
   // We currently use four: (1) system prompt, (2) project context user
@@ -122,10 +120,6 @@ function assembleAgentMessages(
       ...(msg.toolCalls ? { toolCalls: msg.toolCalls } : {}),
       ...(msg.toolCallId ? { toolCallId: msg.toolCallId } : {}),
     });
-  }
-
-  if (!skipUserPrompt && userInput !== undefined && userInput.length > 0) {
-    messages.push({ role: "user", content: userInput });
   }
 
   if (args.assistantPrefill) {

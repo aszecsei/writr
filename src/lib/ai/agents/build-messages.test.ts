@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { AiContext, AiMessage } from "../types";
-import { makeAgentBuildMessages } from "./build-messages";
+import {
+  makeAgentBuildMessages,
+  makeChatAgentBuildMessages,
+} from "./build-messages";
 
 function emptyContext(overrides?: Partial<AiContext>): AiContext {
   return {
@@ -35,11 +38,7 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
         enableToolCalling: true,
       });
 
-      const messages = build({
-        history: [],
-        userInput: undefined,
-        skipUserPrompt: undefined,
-      });
+      const messages = build({ history: [] });
 
       // Anthropic via OpenRouter rejects messages that end with role:"assistant".
       expect(messages[messages.length - 1].role).not.toBe("assistant");
@@ -53,7 +52,7 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
       expect(lastText).toBe("briefing");
     });
 
-    it("strips a trailing assistant message from history when no userInput", () => {
+    it("strips a trailing assistant message from history", () => {
       const build = makeAgentBuildMessages({
         systemPrompt: "sys",
         context: emptyContext(),
@@ -65,8 +64,6 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
           { role: "user", content: "kickoff" },
           { role: "assistant", content: "I think the answer is foo" },
         ],
-        userInput: undefined,
-        skipUserPrompt: undefined,
       });
 
       expect(messages[messages.length - 1].role).not.toBe("assistant");
@@ -81,42 +78,12 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
       });
 
       const messages = build({
-        history: [],
-        userInput: "go",
-        skipUserPrompt: undefined,
+        history: [{ role: "user", content: "go" }],
       });
 
       const last = messages[messages.length - 1];
       expect(last.role).toBe("assistant");
       expect(last.content).toBe("{");
-    });
-
-    it("places the userInput after initialMessages so the array ends with user", () => {
-      const initialMessages: AiMessage[] = [
-        { role: "user", content: "briefing" },
-        { role: "assistant", content: "Understood." },
-      ];
-      const build = makeAgentBuildMessages({
-        systemPrompt: "sys",
-        context: emptyContext(),
-        initialMessages,
-        enableToolCalling: true,
-      });
-
-      const messages = build({
-        history: [],
-        userInput: "now begin",
-        skipUserPrompt: undefined,
-      });
-
-      const last = messages[messages.length - 1];
-      expect(last.role).toBe("user");
-      expect(last.content).toBe("now begin");
-      // The priming assistant ack should still be present (not at the tail).
-      const hasUnderstood = messages.some(
-        (m) => m.role === "assistant" && m.content === "Understood.",
-      );
-      expect(hasUnderstood).toBe(true);
     });
 
     it("emits the system prompt as a content-parts array with cache_control", () => {
@@ -126,11 +93,7 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
         enableToolCalling: true,
       });
 
-      const messages = build({
-        history: [],
-        userInput: undefined,
-        skipUserPrompt: undefined,
-      });
+      const messages = build({ history: [] });
 
       const system = messages[0];
       expect(system.role).toBe("system");
@@ -143,22 +106,50 @@ describe("assembleAgentMessages (via makeAgentBuildMessages)", () => {
       ]);
     });
 
-    it("emits a final user message when called with empty initialMessages and no userInput", () => {
+    it("emits a user message at the tail when called with empty initialMessages and empty history", () => {
       const build = makeAgentBuildMessages({
         systemPrompt: "sys",
         context: emptyContext(),
         enableToolCalling: true,
       });
 
-      const messages = build({
-        history: [],
-        userInput: undefined,
-        skipUserPrompt: undefined,
-      });
+      const messages = build({ history: [] });
 
       // After removing the unconditional "Understood." ack, the cacheable
       // project-context user message is the tail.
       expect(messages[messages.length - 1].role).toBe("user");
     });
+  });
+});
+
+describe("makeChatAgentBuildMessages", () => {
+  it("forwards history through prompts.ts/buildMessages", () => {
+    const build = makeChatAgentBuildMessages({
+      systemPrompt: "chat-sys",
+      context: emptyContext(),
+    });
+
+    const messages = build({
+      history: [{ role: "user", content: "hello" }],
+    });
+
+    expect(messages[messages.length - 1].role).toBe("user");
+    expect(messages[messages.length - 1].content).toBe("hello");
+  });
+
+  it("appends an assistantPrefill at the end when configured", () => {
+    const build = makeChatAgentBuildMessages({
+      systemPrompt: "chat-sys",
+      context: emptyContext(),
+      assistantPrefill: "{",
+    });
+
+    const messages = build({
+      history: [{ role: "user", content: "go" }],
+    });
+
+    const last = messages[messages.length - 1];
+    expect(last.role).toBe("assistant");
+    expect(last.content).toBe("{");
   });
 });

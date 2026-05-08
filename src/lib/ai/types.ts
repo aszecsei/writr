@@ -104,18 +104,13 @@ export type AiStreamChunk =
     }
   | { type: "stop"; finishReason: FinishReason; usage?: AiUsage };
 
+/**
+ * Minimal settings shape consumed by `client.ts/describeImage` (the only
+ * client-side call that doesn't go through the agent runner). All other
+ * call paths use `ResolvedAgentModel` from `agents/types.ts`.
+ */
 export interface AiSettings {
   apiKey: string;
   model: string;
   provider: AiProvider;
-  reasoningEffort?: ReasoningEffort;
-  postChatInstructions?: string;
-  postChatInstructionsDepth?: number;
-  assistantPrefill?: string;
-  customSystemPrompt?: string | null;
-  /** Pre-resolved system prompt for the agent. Required for chat-mode calls. */
-  agentSystemPrompt?: string;
-  images?: { url: string }[];
-  toolDefinitions?: import("./tool-calling").ToolDefinitionForModel[];
-  skipUserPrompt?: boolean;
 }

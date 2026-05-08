@@ -50,18 +50,12 @@ export function buildAgenticContext(context: AiContext): string {
   return xml;
 }
 
-interface ImageAttachment {
-  url: string;
-}
-
-interface BuildMessagesOptions {
+export interface BuildMessagesOptions {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
   assistantPrefill?: string;
   customSystemPrompt?: string | null;
-  images?: ImageAttachment[];
   enableToolCalling?: boolean;
-  skipUserPrompt?: boolean;
 }
 
 /**
@@ -74,15 +68,14 @@ interface BuildMessagesOptions {
  *   1. Minimal project context (top-level details + style guide + TOC)
  *   2. Optional <chapter>...</chapter> block for the active chapter
  *   3. Conversation history (with cache_control on the last entry in agentic mode)
- *   4. The user's prompt (with selected text and image attachments)
- *   5. Optional assistant prefill
+ *   4. Optional assistant prefill
  *
- * Replaces the old tool-id-driven `buildMessages(tool, ...)` — agents now
- * carry their own prompts so there's no need to resolve from a tool id.
+ * The user's prompt arrives in `history` already wire-formatted — the chat
+ * panel converts the canonical `ChatMessage[]` (which carries selectedText
+ * and image attachments separately) via `toAiMessages` before calling.
  */
 export function buildMessages(
   agentSystemPrompt: string,
-  userPrompt: string,
   context: AiContext,
   history: AiMessage[] = [],
   options?: BuildMessagesOptions,
@@ -187,40 +180,6 @@ export function buildMessages(
       ...(msg.toolCalls ? { toolCalls: msg.toolCalls } : {}),
       ...(msg.toolCallId ? { toolCallId: msg.toolCallId } : {}),
     });
-  }
-
-  if (!options?.skipUserPrompt) {
-    const imageAttachments = options?.images;
-    if (context.selectedText) {
-      const text = `<selected-text>\n${context.selectedText}\n</selected-text>\n\n${userPrompt}`;
-      if (imageAttachments && imageAttachments.length > 0) {
-        messages.push({
-          role: "user",
-          content: [
-            { type: "text", text },
-            ...imageAttachments.map((img) => ({
-              type: "image_url" as const,
-              image_url: { url: img.url },
-            })),
-          ],
-        });
-      } else {
-        messages.push({ role: "user", content: text });
-      }
-    } else if (imageAttachments && imageAttachments.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: userPrompt },
-          ...imageAttachments.map((img) => ({
-            type: "image_url" as const,
-            image_url: { url: img.url },
-          })),
-        ],
-      });
-    } else {
-      messages.push({ role: "user", content: userPrompt });
-    }
   }
 
   // Inject post-chat instructions into the Nth-last user message

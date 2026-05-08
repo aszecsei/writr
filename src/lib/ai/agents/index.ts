@@ -1,3 +1,10 @@
+export type {
+  AccessorMessageId,
+  AccessorToolCallRef,
+  AssistantTurnFinalizeInfo,
+  ChatHistoryAccessor,
+  ToolMessagePatch,
+} from "./accessor";
 export { applyDefinitionOverride } from "./applyDefinitionOverride";
 export {
   makeAgentBuildMessages,
@@ -17,7 +24,6 @@ export type {
   IterationEndInfo,
   IterationStartInfo,
   ResolvedAgentModel,
-  RunAgentCallbacks,
   RunAgentOptions,
   RunAgentResult,
   ToolCallsCollectedInfo,
