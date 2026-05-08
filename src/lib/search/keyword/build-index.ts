@@ -1,4 +1,5 @@
 import MiniSearch from "minisearch";
+import { match } from "ts-pattern";
 import { db } from "@/db/database";
 import type { ChapterId } from "@/db/schemas";
 import { splitParagraphs } from "@/lib/ai/tool-calling/tools/helpers";
@@ -71,76 +72,76 @@ async function loadEntityDocs(
   projectId: string,
   entityType: SearchableEntityType,
 ): Promise<IndexedDoc[]> {
-  switch (entityType) {
-    case "chapter": {
+  return match(entityType)
+    .with("chapter", async (t) => {
       const chapters = await db.chapters.where({ projectId }).toArray();
       return chapters.map((c) =>
         entityToDoc({
           entity: c as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "title",
         }),
       );
-    }
-    case "character": {
+    })
+    .with("character", async (t) => {
       const characters = await db.characters.where({ projectId }).toArray();
       return characters.map((c) =>
         entityToDoc({
           entity: c as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "name",
           subtitleField: "role",
         }),
       );
-    }
-    case "location": {
+    })
+    .with("location", async (t) => {
       const locations = await db.locations.where({ projectId }).toArray();
       return locations.map((l) =>
         entityToDoc({
           entity: l as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "name",
         }),
       );
-    }
-    case "timelineEvent": {
+    })
+    .with("timelineEvent", async (t) => {
       const events = await db.timelineEvents.where({ projectId }).toArray();
       return events.map((e) =>
         entityToDoc({
           entity: e as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "title",
         }),
       );
-    }
-    case "styleGuideEntry": {
+    })
+    .with("styleGuideEntry", async (t) => {
       const entries = await db.styleGuideEntries.where({ projectId }).toArray();
       return entries.map((e) =>
         entityToDoc({
           entity: e as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "title",
           subtitleField: "category",
         }),
       );
-    }
-    case "worldbuildingDoc": {
+    })
+    .with("worldbuildingDoc", async (t) => {
       const docs = await db.worldbuildingDocs.where({ projectId }).toArray();
       return docs.map((d) =>
         entityToDoc({
           entity: d as unknown as Record<string, unknown> & { id: string },
-          entityType,
+          entityType: t,
           projectId,
           titleField: "title",
         }),
       );
-    }
-    case "outlineCell": {
+    })
+    .with("outlineCell", async () => {
       // Outline cells have no native title — display title is composed from
       // the parent row label and column title, requiring joins.
       const [cells, rows, columns] = await Promise.all([
@@ -167,8 +168,8 @@ async function loadEntityDocs(
         });
       }
       return out;
-    }
-  }
+    })
+    .exhaustive();
 }
 
 export async function buildProjectIndex(

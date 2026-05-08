@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import type { ExportOptions } from "../types";
 import type { Exporter } from "../visitor";
 import { DocxExporter } from "./docx-exporter";
@@ -8,14 +9,10 @@ export { exportHtml, HtmlExporter, nodesToHtml } from "./html-exporter";
 export { PdfExporter } from "./pdf-exporter";
 
 export function createExporter(options: ExportOptions): Exporter {
-  switch (options.format) {
-    case "docx":
-      return new DocxExporter();
-    case "pdf":
-      return new PdfExporter();
-    default:
-      throw new Error(
-        `No visitor-based exporter for format: ${options.format}`,
-      );
-  }
+  return match(options.format)
+    .with("docx", (): Exporter => new DocxExporter())
+    .with("pdf", (): Exporter => new PdfExporter())
+    .otherwise((format) => {
+      throw new Error(`No visitor-based exporter for format: ${format}`);
+    });
 }

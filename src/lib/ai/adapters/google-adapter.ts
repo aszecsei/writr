@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { match, P } from "ts-pattern";
 import type {
   AiMessage,
   AiToolCall,
@@ -13,17 +14,12 @@ interface GoogleAdapterConfig {
 }
 
 function normalizeFinishReason(raw: string | null | undefined): FinishReason {
-  switch (raw) {
-    case "STOP":
-      return "stop";
-    case "MAX_TOKENS":
-      return "length";
-    case "SAFETY":
-    case "BLOCKLIST":
-      return "content_filter";
-    default:
-      return raw ? "unknown" : "stop";
-  }
+  return match(raw)
+    .with("STOP", (): FinishReason => "stop")
+    .with("MAX_TOKENS", (): FinishReason => "length")
+    .with(P.union("SAFETY", "BLOCKLIST"), (): FinishReason => "content_filter")
+    .with(P.union(null, undefined, ""), (): FinishReason => "stop")
+    .otherwise((): FinishReason => "unknown");
 }
 
 interface GooglePart {

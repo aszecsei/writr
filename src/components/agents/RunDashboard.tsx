@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { match } from "ts-pattern";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import {
   isTerminalStatus,
@@ -95,34 +96,34 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
     // slate to write into if this attempt also fails.
     await updateAgentRunStatus(runId, phase, null);
     try {
-      switch (phase) {
-        case "reading":
-          await startReaderPhase({
+      // applying-tier / verifying-tier are not safely resumable; the
+      // Retry button is hidden for those phases (see render gate below).
+      await match(phase)
+        .with("reading", () =>
+          startReaderPhase({
             runId,
             projectId,
             buildContext,
             onEvent: createActivityEmitter(),
-          });
-          break;
-        case "planning":
-          await startPlanTier({
+          }),
+        )
+        .with("planning", () =>
+          startPlanTier({
             runId,
             projectId,
             tier: Math.max(1, run.currentTier),
             buildContext,
-          });
-          break;
-        case "executing-tier":
-          await startExecuteTier({
+          }),
+        )
+        .with("executing-tier", () =>
+          startExecuteTier({
             runId,
             projectId,
             tier: Math.max(1, run.currentTier),
             buildContext,
-          });
-          break;
-        // applying-tier / verifying-tier are not safely resumable; the
-        // Retry button is hidden for those phases (see render gate below).
-      }
+          }),
+        )
+        .otherwise(() => Promise.resolve());
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Failed to retry");
     }

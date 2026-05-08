@@ -10,18 +10,13 @@ interface OpenAiAdapterConfig {
 }
 
 function normalizeFinishReason(raw: string | null | undefined): FinishReason {
-  switch (raw) {
-    case "stop":
-      return "stop";
-    case "length":
-      return "length";
-    case "content_filter":
-      return "content_filter";
-    case "tool_calls":
-      return "tool_use";
-    default:
-      return raw ? "unknown" : "stop";
-  }
+  return match(raw)
+    .with("stop", (): FinishReason => "stop")
+    .with("length", (): FinishReason => "length")
+    .with("content_filter", (): FinishReason => "content_filter")
+    .with("tool_calls", (): FinishReason => "tool_use")
+    .with(P.union(null, undefined, ""), (): FinishReason => "stop")
+    .otherwise((): FinishReason => "unknown");
 }
 
 function isAnthropicModel(model: string): boolean {

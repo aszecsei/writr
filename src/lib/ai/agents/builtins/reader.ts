@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import type {
   AgentRunId,
   Chapter,
@@ -289,14 +290,11 @@ export interface MakeReaderAgentInput {
  *    entries and surfaces resolutions via `propose_answer`.
  */
 export function makeReaderAgent(input: MakeReaderAgentInput): Agent {
-  switch (input.mode) {
-    case "comprehension":
-      return makeComprehensionAgent(input);
-    case "thematic":
-      return makeThematicAgent(input);
-    case "self-answer":
-      return makeSelfAnswerAgent(input);
-  }
+  return match(input.mode)
+    .with("comprehension", () => makeComprehensionAgent(input))
+    .with("thematic", () => makeThematicAgent(input))
+    .with("self-answer", () => makeSelfAnswerAgent(input))
+    .exhaustive();
 }
 
 function makeComprehensionAgent(input: MakeReaderAgentInput): Agent {

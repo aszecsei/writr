@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import type { AiMessage } from "@/lib/ai/types";
 import type {
   AssistantChatMessage,
@@ -83,19 +84,18 @@ function toolToAiMessage(m: ToolChatMessage): AiMessage | null {
 export function toAiMessages(history: readonly ChatMessage[]): AiMessage[] {
   const out: AiMessage[] = [];
   for (const m of history) {
-    switch (m.role) {
-      case "user":
-        out.push(userToAiMessage(m));
-        break;
-      case "assistant":
-        out.push(assistantToAiMessage(m));
-        break;
-      case "tool": {
-        const wire = toolToAiMessage(m);
+    match(m)
+      .with({ role: "user" }, (msg) => {
+        out.push(userToAiMessage(msg));
+      })
+      .with({ role: "assistant" }, (msg) => {
+        out.push(assistantToAiMessage(msg));
+      })
+      .with({ role: "tool" }, (msg) => {
+        const wire = toolToAiMessage(msg);
         if (wire) out.push(wire);
-        break;
-      }
-    }
+      })
+      .exhaustive();
   }
   return repairOrphanToolCalls(out);
 }

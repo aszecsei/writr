@@ -1,4 +1,5 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { match } from "ts-pattern";
 
 /**
  * Serialize a ProseMirror document (with screenplay node types) back to Fountain plain text.
@@ -9,9 +10,8 @@ export function serializeFountain(doc: ProseMirrorNode): string {
   doc.forEach((node, _offset, index) => {
     const text = node.textContent;
 
-    switch (node.type.name) {
-      case "sceneHeading": {
-        // Blank line before scene heading (unless first element)
+    match(node.type.name)
+      .with("sceneHeading", () => {
         if (index > 0) lines.push("");
         const sceneNumber = node.attrs.sceneNumber as string | undefined;
         if (sceneNumber) {
@@ -19,61 +19,41 @@ export function serializeFountain(doc: ProseMirrorNode): string {
         } else {
           lines.push(text);
         }
-        break;
-      }
-
-      case "action": {
-        // Blank line before action (unless first element)
+      })
+      .with("action", () => {
         if (index > 0) lines.push("");
         lines.push(text);
-        break;
-      }
-
-      case "character": {
-        // Blank line before character name
+      })
+      .with("character", () => {
         if (index > 0) lines.push("");
         lines.push(text.toUpperCase());
-        break;
-      }
-
-      case "dialogue": {
+      })
+      .with("dialogue", () => {
         // Dialogue follows character directly (no blank line)
         lines.push(text);
-        break;
-      }
-
-      case "parenthetical": {
+      })
+      .with("parenthetical", () => {
         // Parenthetical follows character/dialogue directly
         const wrapped = text.startsWith("(") ? text : `(${text})`;
         lines.push(wrapped);
-        break;
-      }
-
-      case "transition": {
+      })
+      .with("transition", () => {
         if (index > 0) lines.push("");
         lines.push(text.toUpperCase());
-        break;
-      }
-
-      case "centered": {
+      })
+      .with("centered", () => {
         if (index > 0) lines.push("");
         lines.push(`> ${text} <`);
-        break;
-      }
-
-      case "screenplayPageBreak": {
+      })
+      .with("screenplayPageBreak", () => {
         if (index > 0) lines.push("");
         lines.push("===");
-        break;
-      }
-
-      default: {
+      })
+      .otherwise(() => {
         // Fallback: treat as action
         if (index > 0) lines.push("");
         lines.push(text);
-        break;
-      }
-    }
+      });
   });
 
   return lines.join("\n");

@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import { countAgentNotesSince } from "@/db/operations/agentNotes";
 import {
   countAgentQuestionsOpen,
@@ -159,10 +160,9 @@ export async function runReaderLoop(
 
     onEvent?.({ type: "reader-pass-start", runId, passNumber, mode });
 
-    let passResult: PassOutcome;
-    switch (mode) {
-      case "comprehension":
-        passResult = await runComprehensionPass(
+    const passResult: PassOutcome = await match(mode)
+      .with("comprehension", () =>
+        runComprehensionPass(
           runId,
           projectId,
           passNumber,
@@ -171,10 +171,10 @@ export async function runReaderLoop(
           signal,
           onEvent,
           buildContext,
-        );
-        break;
-      case "thematic":
-        passResult = await runThematicPass(
+        ),
+      )
+      .with("thematic", () =>
+        runThematicPass(
           runId,
           projectId,
           passNumber,
@@ -182,10 +182,10 @@ export async function runReaderLoop(
           signal,
           onEvent,
           buildContext,
-        );
-        break;
-      case "self-answer":
-        passResult = await runSelfAnswerPass(
+        ),
+      )
+      .with("self-answer", () =>
+        runSelfAnswerPass(
           runId,
           projectId,
           passNumber,
@@ -193,9 +193,9 @@ export async function runReaderLoop(
           signal,
           onEvent,
           buildContext,
-        );
-        break;
-    }
+        ),
+      )
+      .exhaustive();
 
     if (passResult === "aborted") {
       exitReason = "aborted";

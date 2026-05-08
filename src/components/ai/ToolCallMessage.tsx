@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, Check, CircleDashed, Loader2, X } from "lucide-react";
+import { match, P } from "ts-pattern";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 
 const MAX_VALUE_LENGTH = 200;
@@ -12,37 +13,32 @@ function truncate(value: unknown): string {
 }
 
 function StatusBadge({ status }: { status: ToolCallEntry["status"] }) {
-  switch (status) {
-    case "pending":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300">
-          <CircleDashed size={10} />
-          Pending
-        </span>
-      );
-    case "approved":
-    case "executed":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
-          <Check size={10} />
-          {status === "approved" ? "Approved" : "Executed"}
-        </span>
-      );
-    case "denied":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-          <X size={10} />
-          Denied
-        </span>
-      );
-    case "error":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-          <AlertCircle size={10} />
-          Error
-        </span>
-      );
-  }
+  return match(status)
+    .with("pending", () => (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+        <CircleDashed size={10} />
+        Pending
+      </span>
+    ))
+    .with(P.union("approved", "executed"), (s) => (
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
+        <Check size={10} />
+        {s === "approved" ? "Approved" : "Executed"}
+      </span>
+    ))
+    .with("denied", () => (
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+        <X size={10} />
+        Denied
+      </span>
+    ))
+    .with("error", () => (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+        <AlertCircle size={10} />
+        Error
+      </span>
+    ))
+    .exhaustive();
 }
 
 interface ToolCallMessageProps {

@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { match } from "ts-pattern";
 import { useSearch } from "@/hooks/ui/useSearch";
 import { useProjectStore } from "@/store/projectStore";
 import { SearchDropdown } from "./SearchDropdown";
@@ -53,31 +54,31 @@ export function SearchBar() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (!isOpen) return;
 
-    switch (e.key) {
-      case "ArrowDown":
+    match(e.key)
+      .with("ArrowDown", () => {
         e.preventDefault();
         setSelectedIndex((prev) =>
           prev < flatResults.length - 1 ? prev + 1 : prev,
         );
-        break;
-      case "ArrowUp":
+      })
+      .with("ArrowUp", () => {
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case "Enter":
+      })
+      .with("Enter", () => {
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < flatResults.length) {
           navigateToResult(selectedIndex);
         } else {
           navigateToSearchPage();
         }
-        break;
-      case "Escape":
+      })
+      .with("Escape", () => {
         e.preventDefault();
         handleClose();
         inputRef.current?.blur();
-        break;
-    }
+      })
+      .otherwise(() => {});
   }
 
   useEffect(() => {

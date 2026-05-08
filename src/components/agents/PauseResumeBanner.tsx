@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { match, P } from "ts-pattern";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/form-styles";
 import {
   isTerminalStatus,
@@ -55,37 +56,36 @@ export function PauseResumeBanner({ run, projectId }: PauseResumeBannerProps) {
     setError(null);
     setBusy(true);
     try {
-      switch (run.status) {
-        case "reading":
-          await startReaderPhase({ runId: run.id, projectId, buildContext });
-          break;
-        case "planning":
-          await startPlanTier({
+      await match(run.status)
+        .with("reading", () =>
+          startReaderPhase({ runId: run.id, projectId, buildContext }),
+        )
+        .with("planning", () =>
+          startPlanTier({
             runId: run.id,
             projectId,
             tier: Math.max(1, run.currentTier),
             buildContext,
-          });
-          break;
-        case "executing-tier":
-          await startExecuteTier({
+          }),
+        )
+        .with("executing-tier", () =>
+          startExecuteTier({
             runId: run.id,
             projectId,
             tier: Math.max(1, run.currentTier),
             buildContext,
-          });
-          break;
-        case "applying-tier":
-        case "verifying-tier":
+          }),
+        )
+        .with(P.union("applying-tier", "verifying-tier"), (status) =>
           // Apply/verify aren't safely resumable — mark cancelled and ask
           // the user to revert via the Snapshots tab if needed.
-          await updateAgentRunStatus(
+          updateAgentRunStatus(
             run.id,
             "error",
-            `Interrupted during ${run.status}. Review chapters and consider reverting from the Snapshots tab.`,
-          );
-          break;
-      }
+            `Interrupted during ${status}. Review chapters and consider reverting from the Snapshots tab.`,
+          ),
+        )
+        .otherwise(() => Promise.resolve());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resume");
     } finally {

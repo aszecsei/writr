@@ -1,4 +1,5 @@
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import { match } from "ts-pattern";
 import type { FountainElement } from "@/lib/fountain";
 import { parseFountain } from "@/lib/fountain";
 import type { ExportContent, ExportOptions } from "./types";
@@ -19,71 +20,72 @@ const PAREN_LEFT = 108; // ~1.5" from left
 const PAREN_RIGHT = 144; // ~2" from right
 
 function elementsToContent(elements: FountainElement[]): Content[] {
-  const result: Content[] = [];
-
-  for (const el of elements) {
-    switch (el.type) {
-      case "scene_heading":
-        result.push({
-          text: el.text.toUpperCase(),
-          bold: true,
-          margin: [0, 12, 0, 6],
-        } as Content);
-        break;
-
-      case "action":
-        result.push({
-          text: el.text,
-          margin: [0, 6, 0, 0],
-        } as Content);
-        break;
-
-      case "character":
-        result.push({
-          text: el.text.toUpperCase(),
-          margin: [CHARACTER_INDENT, 6, 0, 0],
-        } as Content);
-        break;
-
-      case "dialogue":
-        result.push({
-          text: el.text,
-          margin: [DIALOGUE_LEFT, 0, DIALOGUE_RIGHT, 0],
-        } as Content);
-        break;
-
-      case "parenthetical": {
-        const text = el.text.startsWith("(") ? el.text : `(${el.text})`;
-        result.push({
+  return elements.map((el) =>
+    match(el)
+      .with(
+        { type: "scene_heading" },
+        (e): Content =>
+          ({
+            text: e.text.toUpperCase(),
+            bold: true,
+            margin: [0, 12, 0, 6],
+          }) as Content,
+      )
+      .with(
+        { type: "action" },
+        (e): Content =>
+          ({
+            text: e.text,
+            margin: [0, 6, 0, 0],
+          }) as Content,
+      )
+      .with(
+        { type: "character" },
+        (e): Content =>
+          ({
+            text: e.text.toUpperCase(),
+            margin: [CHARACTER_INDENT, 6, 0, 0],
+          }) as Content,
+      )
+      .with(
+        { type: "dialogue" },
+        (e): Content =>
+          ({
+            text: e.text,
+            margin: [DIALOGUE_LEFT, 0, DIALOGUE_RIGHT, 0],
+          }) as Content,
+      )
+      .with({ type: "parenthetical" }, (e): Content => {
+        const text = e.text.startsWith("(") ? e.text : `(${e.text})`;
+        return {
           text,
           margin: [PAREN_LEFT, 0, PAREN_RIGHT, 0],
-        } as Content);
-        break;
-      }
-
-      case "transition":
-        result.push({
-          text: el.text.toUpperCase(),
-          alignment: "right",
-          margin: [0, 6, 0, 0],
-        } as Content);
-        break;
-
-      case "centered":
-        result.push({
-          text: el.text,
-          alignment: "center",
-          margin: [0, 6, 0, 0],
-        } as Content);
-        break;
-
-      case "page_break":
-        result.push({ text: "", pageBreak: "before" } as Content);
-        break;
-    }
-  }
-
-  return result;
+        } as Content;
+      })
+      .with(
+        { type: "transition" },
+        (e): Content =>
+          ({
+            text: e.text.toUpperCase(),
+            alignment: "right",
+            margin: [0, 6, 0, 0],
+          }) as Content,
+      )
+      .with(
+        { type: "centered" },
+        (e): Content =>
+          ({
+            text: e.text,
+            alignment: "center",
+            margin: [0, 6, 0, 0],
+          }) as Content,
+      )
+      .with(
+        { type: "page_break" },
+        (): Content => ({ text: "", pageBreak: "before" }) as Content,
+      )
+      .exhaustive(),
+  );
 }
 
 export async function exportScreenplayPdf(

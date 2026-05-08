@@ -3,6 +3,7 @@
 
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { match } from "ts-pattern";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -490,37 +491,27 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     const nodes = markdownToInsertContent(newContent);
     const docEnd = editor.state.doc.content.size;
 
-    let range: { from: number; to: number } | null = null;
-    switch (kind) {
-      case "full_chapter":
-        range = { from: 0, to: docEnd };
-        break;
-      case "append":
-        range = { from: docEnd, to: docEnd };
-        break;
-      case "replace": {
-        if (!anchorText) break;
-        const found = findReplaceRangeInDoc(
+    const range = match(kind)
+      .returnType<{ from: number; to: number } | null>()
+      .with("full_chapter", () => ({ from: 0, to: docEnd }))
+      .with("append", () => ({ from: docEnd, to: docEnd }))
+      .with("replace", () => {
+        if (!anchorText) return null;
+        return findReplaceRangeInDoc(
           editor,
           prefix ?? "",
           anchorText,
           suffix ?? "",
         );
-        if (found) range = found;
-        break;
-      }
-      case "insert_at": {
-        if (!anchorText) {
-          range = { from: docEnd, to: docEnd };
-          break;
-        }
+      })
+      .with("insert_at", () => {
+        if (!anchorText) return { from: docEnd, to: docEnd };
         const found = findTextRange(editor, anchorText);
         // Insert after the anchor (matches the tool's "sits before" contract:
         // newContent appears immediately after anchorText).
-        if (found) range = { from: found.to, to: found.to };
-        break;
-      }
-    }
+        return found ? { from: found.to, to: found.to } : null;
+      })
+      .exhaustive();
 
     if (!range) {
       console.warn(
