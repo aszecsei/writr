@@ -57,20 +57,30 @@ function getWordCount(storage: unknown): number {
   ).characterCount.words();
 }
 
-// Split a markdown string into PM paragraph nodes. Used by both the
-// requestInsertAtCursor path (Spark inserts) and the requestStagedEdit path
-// (propose_edit applies). Inline marks like **bold** / *italic* will not be
-// preserved — for full-fidelity round-tripping we'd need to invoke the
-// markdown parser, but the LLM-generated inserts in practice are plain prose.
-function markdownToParagraphNodes(markdown: string) {
-  return markdown
+// Convert a markdown string into TipTap-compatible insertion content. Used
+// by both the requestInsertAtCursor path (Spark inserts) and the
+// requestStagedEdit path (propose_edit applies).
+//
+// Single-paragraph input returns inline text nodes so the splice stays
+// inside the surrounding paragraph — wrapping inline content in a block
+// paragraph splits the host paragraph in two, producing phantom \n\n on
+// each side when the chapter round-trips to markdown. Multi-paragraph
+// input returns block paragraph nodes; the splice deliberately splits the
+// host paragraph, which is the intended outcome for multi-paragraph
+// replacements. Inline marks (**bold** / *italic*) are not preserved — the
+// LLM-generated inserts in practice are plain prose.
+function markdownToInsertContent(markdown: string) {
+  const paragraphs = markdown
     .split(/\n{2,}/)
     .map((p) => p.trim())
-    .filter((p) => p.length > 0)
-    .map((text) => ({
-      type: "paragraph",
-      content: [{ type: "text", text }],
-    }));
+    .filter((p) => p.length > 0);
+  if (paragraphs.length <= 1) {
+    return paragraphs.map((text) => ({ type: "text", text }));
+  }
+  return paragraphs.map((text) => ({
+    type: "paragraph",
+    content: [{ type: "text", text }],
+  }));
 }
 
 // Find the first contiguous text-node match for `needle` in the editor's doc
@@ -448,7 +458,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   useEffect(() => {
     if (!pendingInsertion || !editor || editor.isDestroyed) return;
     const { markdown, replaceRange } = pendingInsertion;
-    const nodes = markdownToParagraphNodes(markdown);
+    const nodes = markdownToInsertContent(markdown);
 
     const chain = editor.chain().focus();
     if (replaceRange) {
@@ -477,7 +487,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     if (pendingStagedEdit.chapterId !== chapterId) return;
 
     const { kind, anchorText, prefix, suffix, newContent } = pendingStagedEdit;
-    const nodes = markdownToParagraphNodes(newContent);
+    const nodes = markdownToInsertContent(newContent);
     const docEnd = editor.state.doc.content.size;
 
     let range: { from: number; to: number } | null = null;
