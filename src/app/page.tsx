@@ -36,16 +36,19 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+      <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/70 dark:border-neutral-800/80 dark:bg-neutral-900/80 dark:supports-[backdrop-filter]:bg-neutral-900/70">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <h1
+            className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
+            style={{ fontFamily: "var(--font-literata), Georgia, serif" }}
+          >
             writr
           </h1>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => openModal({ id: "app-settings" })}
-              className="flex items-center justify-center rounded-md p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+              className="flex items-center justify-center rounded-md p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
               aria-label="App Settings"
             >
               <Settings size={18} />
@@ -53,7 +56,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => openModal({ id: "create-project" })}
-              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
             >
               <Plus size={16} />
               New Project
@@ -61,13 +64,30 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-10">
         {projects === undefined ? (
           <div className="flex justify-center py-24">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
           </div>
         ) : (
-          <ProjectGrid projects={projects} onContextMenu={handleContextMenu} />
+          <>
+            {projects.length > 0 && (
+              <div className="mb-5 flex items-baseline justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
+                  Projects
+                </h2>
+                <span className="text-xs tabular-nums text-neutral-400 dark:text-neutral-500">
+                  {projects.length}{" "}
+                  {projects.length === 1 ? "project" : "projects"}
+                </span>
+              </div>
+            )}
+            <ProjectGrid
+              projects={projects}
+              onContextMenu={handleContextMenu}
+              onCreateProject={() => openModal({ id: "create-project" })}
+            />
+          </>
         )}
       </main>
 
