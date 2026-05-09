@@ -30,6 +30,24 @@ function now(): string {
   return new Date().toISOString();
 }
 
+async function compactRowOrders(projectId: ProjectId): Promise<void> {
+  const rows = await db.outlineGridRows.where({ projectId }).sortBy("order");
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].order !== i) {
+      await db.outlineGridRows.update(rows[i].id, { order: i });
+    }
+  }
+}
+
+async function compactChapterOrders(projectId: ProjectId): Promise<void> {
+  const chapters = await db.chapters.where({ projectId }).sortBy("order");
+  for (let i = 0; i < chapters.length; i++) {
+    if (chapters[i].order !== i) {
+      await db.chapters.update(chapters[i].id, { order: i });
+    }
+  }
+}
+
 // ─── Link/Unlink Operations ─────────────────────────────────────────────
 
 /**
@@ -255,9 +273,15 @@ export async function syncDeleteChapter(
       db.chapterSnapshots,
     ],
     async () => {
+      const chapter = await db.chapters.get(chapterId);
+      if (!chapter) return;
+      const { projectId } = chapter;
+
       const row = await db.outlineGridRows
         .where({ linkedChapterId: chapterId })
         .first();
+
+      const cascadedRow = !!(row && cascade);
 
       if (row) {
         if (cascade) {
@@ -266,10 +290,9 @@ export async function syncDeleteChapter(
           await db.outlineGridRows.delete(row.id);
         } else {
           // Unlink row, preserving chapter title as label
-          const chapter = await db.chapters.get(chapterId);
           await db.outlineGridRows.update(row.id, {
             linkedChapterId: null,
-            label: chapter?.title ?? "",
+            label: chapter.title,
             updatedAt: now(),
           });
         }
@@ -278,6 +301,9 @@ export async function syncDeleteChapter(
       await db.comments.where({ chapterId }).delete();
       await db.chapterSnapshots.where({ chapterId }).delete();
       await db.chapters.delete(chapterId);
+
+      await compactChapterOrders(projectId);
+      if (cascadedRow) await compactRowOrders(projectId);
     },
   );
 }
@@ -302,17 +328,23 @@ export async function syncDeleteOutlineRow(
     async () => {
       const row = await db.outlineGridRows.get(rowId);
       if (!row) return;
+      const { projectId } = row;
+      const cascadedChapter = !!(row.linkedChapterId && cascade);
 
-      if (row.linkedChapterId && cascade) {
-        await db.comments.where({ chapterId: row.linkedChapterId }).delete();
+      if (cascadedChapter) {
+        const linkedChapterId = row.linkedChapterId as ChapterId;
+        await db.comments.where({ chapterId: linkedChapterId }).delete();
         await db.chapterSnapshots
-          .where({ chapterId: row.linkedChapterId })
+          .where({ chapterId: linkedChapterId })
           .delete();
-        await db.chapters.delete(row.linkedChapterId);
+        await db.chapters.delete(linkedChapterId);
       }
 
       await db.outlineGridCells.where({ rowId }).delete();
       await db.outlineGridRows.delete(rowId);
+
+      await compactRowOrders(projectId);
+      if (cascadedChapter) await compactChapterOrders(projectId);
     },
   );
 }

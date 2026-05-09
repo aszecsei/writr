@@ -152,8 +152,18 @@ export async function deleteOutlineGridRow(
     "rw",
     [db.outlineGridRows, db.outlineGridCells],
     async () => {
+      const row = await db.outlineGridRows.get(id);
+      if (!row) return;
       await db.outlineGridCells.where({ rowId: id }).delete();
       await db.outlineGridRows.delete(id);
+      const remaining = await db.outlineGridRows
+        .where({ projectId: row.projectId })
+        .sortBy("order");
+      for (let i = 0; i < remaining.length; i++) {
+        if (remaining[i].order !== i) {
+          await db.outlineGridRows.update(remaining[i].id, { order: i });
+        }
+      }
     },
   );
 }

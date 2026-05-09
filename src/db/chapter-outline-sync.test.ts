@@ -400,6 +400,66 @@ describe("syncDeleteChapter", () => {
       .toArray();
     expect(snapshots).toHaveLength(0);
   });
+
+  it("compacts chapter orders after deleting middle chapter (cascade=false)", async () => {
+    const project = await createProject({ title: "P" });
+    const chapters = [];
+    for (let i = 0; i < 5; i++) {
+      chapters.push(
+        await createChapter({ projectId: project.id, title: `Ch${i + 1}` }),
+      );
+    }
+
+    await syncDeleteChapter(chapters[2].id, false);
+
+    const remaining = await getChaptersByProject(project.id);
+    expect(remaining).toHaveLength(4);
+    expect(remaining.map((c) => c.order)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("compacts both chapter and row orders after deleting middle linked chapter (cascade=true)", async () => {
+    const project = await createProject({ title: "P" });
+    const chapters = [];
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+      const ch = await createChapter({
+        projectId: project.id,
+        title: `Ch${i + 1}`,
+      });
+      chapters.push(ch);
+      rows.push(
+        await createOutlineGridRow({
+          projectId: project.id,
+          linkedChapterId: ch.id,
+        }),
+      );
+    }
+
+    await syncDeleteChapter(chapters[2].id, true);
+
+    const remainingChapters = await getChaptersByProject(project.id);
+    expect(remainingChapters).toHaveLength(4);
+    expect(remainingChapters.map((c) => c.order)).toEqual([0, 1, 2, 3]);
+
+    const remainingRows = await getOutlineGridRowsByProject(project.id);
+    expect(remainingRows).toHaveLength(4);
+    expect(remainingRows.map((r) => r.order)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("leaves orders unchanged when deleting the last chapter", async () => {
+    const project = await createProject({ title: "P" });
+    const chapters = [];
+    for (let i = 0; i < 3; i++) {
+      chapters.push(
+        await createChapter({ projectId: project.id, title: `Ch${i + 1}` }),
+      );
+    }
+
+    await syncDeleteChapter(chapters[2].id, false);
+
+    const remaining = await getChaptersByProject(project.id);
+    expect(remaining.map((c) => c.order)).toEqual([0, 1]);
+  });
 });
 
 describe("syncDeleteOutlineRow", () => {
@@ -492,6 +552,72 @@ describe("syncDeleteOutlineRow", () => {
       .where({ chapterId: chapter.id })
       .toArray();
     expect(snapshots).toHaveLength(0);
+  });
+
+  it("compacts row orders after deleting middle row (cascade=false)", async () => {
+    const project = await createProject({ title: "P" });
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+      rows.push(
+        await createOutlineGridRow({
+          projectId: project.id,
+          label: `R${i + 1}`,
+        }),
+      );
+    }
+
+    await syncDeleteOutlineRow(rows[2].id, false);
+
+    const remaining = await getOutlineGridRowsByProject(project.id);
+    expect(remaining).toHaveLength(4);
+    expect(remaining.map((r) => r.order)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("compacts both row and chapter orders after deleting middle linked row (cascade=true)", async () => {
+    const project = await createProject({ title: "P" });
+    const chapters = [];
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+      const ch = await createChapter({
+        projectId: project.id,
+        title: `Ch${i + 1}`,
+      });
+      chapters.push(ch);
+      rows.push(
+        await createOutlineGridRow({
+          projectId: project.id,
+          linkedChapterId: ch.id,
+        }),
+      );
+    }
+
+    await syncDeleteOutlineRow(rows[2].id, true);
+
+    const remainingRows = await getOutlineGridRowsByProject(project.id);
+    expect(remainingRows).toHaveLength(4);
+    expect(remainingRows.map((r) => r.order)).toEqual([0, 1, 2, 3]);
+
+    const remainingChapters = await getChaptersByProject(project.id);
+    expect(remainingChapters).toHaveLength(4);
+    expect(remainingChapters.map((c) => c.order)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("leaves orders unchanged when deleting the last row", async () => {
+    const project = await createProject({ title: "P" });
+    const rows = [];
+    for (let i = 0; i < 3; i++) {
+      rows.push(
+        await createOutlineGridRow({
+          projectId: project.id,
+          label: `R${i + 1}`,
+        }),
+      );
+    }
+
+    await syncDeleteOutlineRow(rows[2].id, false);
+
+    const remaining = await getOutlineGridRowsByProject(project.id);
+    expect(remaining.map((r) => r.order)).toEqual([0, 1]);
   });
 });
 

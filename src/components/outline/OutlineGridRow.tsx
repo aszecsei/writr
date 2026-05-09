@@ -75,7 +75,7 @@ export function OutlineGridRow({
         <div className="flex items-center gap-1">
           <DragHandle ref={handleRef} />
           <span className="w-6 shrink-0 text-center text-xs text-neutral-400 dark:text-neutral-500">
-            {row.order + 1}
+            {index + 1}
           </span>
           {isEditingLabel ? (
             <input

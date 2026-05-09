@@ -146,17 +146,19 @@ async function loadEntityDocs(
       // the parent row label and column title, requiring joins.
       const [cells, rows, columns] = await Promise.all([
         db.outlineGridCells.where({ projectId }).toArray(),
-        db.outlineGridRows.where({ projectId }).toArray(),
+        db.outlineGridRows.where({ projectId }).sortBy("order"),
         db.outlineGridColumns.where({ projectId }).toArray(),
       ]);
       const rowMap = new Map(rows.map((r) => [r.id, r]));
+      const rowIndexMap = new Map(rows.map((r, i) => [r.id, i]));
       const columnMap = new Map(columns.map((c) => [c.id, c]));
       const out: IndexedDoc[] = [];
       for (const cell of cells) {
         const row = rowMap.get(cell.rowId);
         const column = columnMap.get(cell.columnId);
         if (!row || !column) continue;
-        const rowLabel = row.label || `Row ${row.order + 1}`;
+        const rowLabel =
+          row.label || `Row ${(rowIndexMap.get(row.id) ?? 0) + 1}`;
         out.push({
           docId: makeDocId("outlineCell", cell.id),
           entityId: cell.id,
