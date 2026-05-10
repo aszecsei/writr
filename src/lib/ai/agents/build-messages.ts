@@ -109,9 +109,18 @@ function assembleAgentMessages(
     const msg = history[i];
     const isLast = i === history.length - 1;
 
+    // Normalize ALL history content to ContentPart[] form when tool-calling
+    // is enabled, so the wire shape stays byte-stable across iterations. Then
+    // mark only the last message's last text part with cache_control. If we
+    // only wrapped on `isLast`, the previously-trailing message would flip
+    // from array form (iter N) to string form (iter N+1), busting Anthropic's
+    // prefix-byte match between iterations.
     let content = msg.content;
-    if (args.enableToolCalling && isLast && history.length > 0) {
-      content = withTrailingCacheControl(content);
+    if (args.enableToolCalling) {
+      content = toContentParts(content);
+      if (isLast && history.length > 0) {
+        content = withTrailingCacheControl(content);
+      }
     }
 
     messages.push({
@@ -141,24 +150,30 @@ function assembleAgentMessages(
   return messages;
 }
 
-function withTrailingCacheControl(
-  content: string | ContentPart[],
-): string | ContentPart[] {
+/**
+ * Normalize a message content to ContentPart[] form. Wraps a bare string into
+ * a single text block; passes a content array through unchanged (a fresh copy
+ * so callers can mutate without aliasing).
+ */
+function toContentParts(content: string | ContentPart[]): ContentPart[] {
   if (typeof content === "string") {
-    return [
-      {
-        type: "text",
-        text: content,
-        cache_control: { type: "ephemeral" },
-      },
-    ];
+    return [{ type: "text", text: content }];
   }
-  const parts = [...content];
-  for (let j = parts.length - 1; j >= 0; j--) {
-    if (parts[j].type === "text") {
-      parts[j] = { ...parts[j], cache_control: { type: "ephemeral" } };
+  return [...content];
+}
+
+/**
+ * Mark the last text part of a content array with `cache_control` — the
+ * breakpoint Anthropic uses to anchor the conversation-prefix cache across
+ * tool-calling iterations.
+ */
+function withTrailingCacheControl(parts: ContentPart[]): ContentPart[] {
+  const out = [...parts];
+  for (let j = out.length - 1; j >= 0; j--) {
+    if (out[j].type === "text") {
+      out[j] = { ...out[j], cache_control: { type: "ephemeral" } };
       break;
     }
   }
-  return parts;
+  return out;
 }

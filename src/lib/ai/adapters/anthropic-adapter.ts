@@ -133,24 +133,16 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         content: msg.content,
       });
     } else {
-      const hasImages = msg.content.some((p) => p.type === "image_url");
-      const hasCacheControl = msg.content.some(
-        (p) => p.type === "text" && p.cache_control,
-      );
-      if (hasImages || hasCacheControl) {
-        nonSystemMessages.push({
-          role: msg.role as "user" | "assistant",
-          content: toAnthropicContent(msg.content),
-        });
-      } else {
-        const text = msg.content
-          .map((p) => (p.type === "text" ? p.text : ""))
-          .join("");
-        nonSystemMessages.push({
-          role: msg.role as "user" | "assistant",
-          content: text,
-        });
-      }
+      // Always preserve content-array shape. Previously this branch joined
+      // the parts back into a string when nothing carried cache_control or
+      // an image, but that flipped the wire shape between tool-calling
+      // iterations: a previously-trailing message would arrive as array form
+      // (with cache_control) on iter N and as string form (no cache_control)
+      // on iter N+1, busting Anthropic's prefix-byte cache match.
+      nonSystemMessages.push({
+        role: msg.role as "user" | "assistant",
+        content: toAnthropicContent(msg.content),
+      });
     }
   }
 

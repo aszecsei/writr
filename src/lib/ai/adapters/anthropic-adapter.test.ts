@@ -347,7 +347,12 @@ describe("createAnthropicAdapter", () => {
       expect(createCall.tools[2].cache_control).toEqual({ type: "ephemeral" });
     });
 
-    it("flattens plain-text content parts without images or cache_control", async () => {
+    it("preserves plain-text content-part arrays even without images or cache_control", async () => {
+      // Wire shape must stay stable across tool-calling iterations: previously
+      // this branch joined text parts back into a string when nothing carried
+      // cache_control or an image, but that flipped a previously-trailing
+      // message from array form (iter N) to string form (iter N+1), busting
+      // Anthropic's prefix-byte cache match between iterations.
       mockCreate.mockResolvedValueOnce({
         content: [{ type: "text", text: "ok" }],
         model: "claude-sonnet-4-5-20250929",
@@ -368,8 +373,10 @@ describe("createAnthropicAdapter", () => {
       await adapter.complete("sk-ant-test", { ...baseParams, messages });
 
       const createCall = mockCreate.mock.calls[0][0];
-      // Should be flattened to a plain string
-      expect(createCall.messages[0].content).toBe("Part 1 Part 2");
+      expect(createCall.messages[0].content).toEqual([
+        { type: "text", text: "Part 1 " },
+        { type: "text", text: "Part 2" },
+      ]);
     });
   });
 

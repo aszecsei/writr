@@ -104,17 +104,24 @@ function toolCallsToOpenAI(
  * For non-Anthropic models, strips `cache_control` from content parts —
  * OpenAI-compatible APIs don't support it and the SDK types may reject it.
  *
- * For Anthropic models routed through OpenRouter, preserves `cache_control`
- * on text content parts. OpenRouter accepts the Anthropic-style breakpoint
- * markers on text parts within message content arrays (and on tool messages
- * and assistant-with-tool-calls messages). Without this, the trailing
- * cache_control set by `withTrailingCacheControl()` is silently dropped on
- * every tool-calling iteration, defeating prompt caching.
+ * For Anthropic models routed through OpenRouter, sends history-bound message
+ * content (user, tool, assistant-with-tool-calls) as a content-block ARRAY
+ * regardless of whether `cache_control` is currently attached. The wire shape
+ * must be byte-stable across tool-calling iterations — Anthropic's prompt
+ * cache is a prefix-byte match, so a previously-trailing message that flips
+ * from array form (iter N, with cache_control) to string form (iter N+1, no
+ * cache_control) silently busts the cache. Always-array preserves the prefix.
+ * `cache_control` itself is a directive and not part of the cache key, so
+ * adding/removing the marker between iterations is safe — but the surrounding
+ * structure must stay identical.
  *
- * The `as unknown as` casts are unavoidable on the cache_control branches:
- * the OpenAI SDK types model `tool` content as `string` and reject extra
- * fields on text parts, while OpenRouter's Anthropic route accepts both —
- * the cast lives here so callers don't have to think about it.
+ * System messages stay as bare strings: the chat flow never marks the system
+ * message with cache_control, so its shape is already stable.
+ *
+ * The `as unknown as` casts are unavoidable: the OpenAI SDK types model `tool`
+ * content as `string` and reject extra fields on text parts, while OpenRouter's
+ * Anthropic route accepts the richer shapes — the cast lives here so callers
+ * don't have to think about it.
  */
 function toOpenAIMessage(
   msg: AiMessage,
@@ -123,11 +130,15 @@ function toOpenAIMessage(
   return match(msg)
     .with({ role: "tool" }, (m): OpenAI.ChatCompletionMessageParam => {
       const { text, cacheControl } = extractTextContent(m.content);
-      if (isAnthropic && cacheControl) {
+      if (isAnthropic) {
+        // Always array-form for Anthropic so wire shape stays stable across
+        // iterations. cache_control is added only when present.
+        const part: Record<string, unknown> = { type: "text", text };
+        if (cacheControl) part.cache_control = cacheControl;
         return {
           role: "tool",
           tool_call_id: m.toolCallId ?? "",
-          content: [{ type: "text", text, cache_control: cacheControl }],
+          content: [part],
         } as unknown as OpenAI.ChatCompletionMessageParam;
       }
       return {
@@ -142,10 +153,17 @@ function toOpenAIMessage(
       (m) => m.toolCalls.length > 0,
       (m): OpenAI.ChatCompletionMessageParam => {
         const { text, cacheControl } = extractTextContent(m.content);
-        if (isAnthropic && cacheControl) {
+        if (isAnthropic) {
+          // Always array-form for Anthropic. Empty `text` is allowed — the
+          // assistant message can be tool_calls only, with no preamble — but
+          // an empty text part is odd shape, so omit `content` in that case
+          // to match how Anthropic's SDK natively serializes a tool-call-only
+          // turn (content: null).
+          const part: Record<string, unknown> = { type: "text", text };
+          if (cacheControl) part.cache_control = cacheControl;
           return {
             role: "assistant",
-            content: [{ type: "text", text, cache_control: cacheControl }],
+            content: text ? [part] : null,
             tool_calls: toolCallsToOpenAI(m.toolCalls),
           } as unknown as OpenAI.ChatCompletionMessageParam;
         }
@@ -157,19 +175,50 @@ function toOpenAIMessage(
       },
     )
     .otherwise((m): OpenAI.ChatCompletionMessageParam => {
-      if (typeof m.content === "string") {
-        return {
-          role: m.role as "system" | "user" | "assistant",
-          content: m.content,
-        };
+      // System messages stay as plain strings — the chat flow never marks the
+      // system message with cache_control, so its shape is already stable.
+      // Wrapping system in a content array would change the wire shape and
+      // could itself bust caching for any deployment that previously cached
+      // against the string form.
+      if (m.role === "system") {
+        if (typeof m.content === "string") {
+          return { role: "system", content: m.content };
+        }
+        // Array-form system message (rare): pass parts through verbatim for
+        // Anthropic, strip cache_control for non-Anthropic.
+        if (isAnthropic) {
+          return {
+            role: "system",
+            content: m.content,
+          } as unknown as OpenAI.ChatCompletionMessageParam;
+        }
+        // System messages only allow text parts; drop any image parts that
+        // somehow ended up here (the chat flow never emits them).
+        const parts: OpenAI.ChatCompletionContentPartText[] = m.content
+          .filter((p): p is typeof p & { type: "text" } => p.type === "text")
+          .map((p) => ({ type: "text" as const, text: p.text }));
+        return { role: "system", content: parts };
       }
+
+      // User / assistant-without-tool-calls messages.
       if (isAnthropic) {
-        // Pass parts through verbatim — cache_control on text parts is
-        // preserved for OpenRouter to forward to Anthropic's backend.
+        // Always array-form for Anthropic so wire shape stays stable across
+        // iterations, even when a previously-trailing message no longer
+        // carries cache_control.
+        const parts: ContentPartLike[] =
+          typeof m.content === "string"
+            ? [{ type: "text", text: m.content }]
+            : (m.content as ContentPartLike[]);
         return {
           role: m.role,
-          content: m.content,
+          content: parts,
         } as unknown as OpenAI.ChatCompletionMessageParam;
+      }
+      if (typeof m.content === "string") {
+        return {
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        };
       }
       const parts: OpenAI.ChatCompletionContentPart[] = m.content.map((part) =>
         part.type === "text"
@@ -185,6 +234,13 @@ function toOpenAIMessage(
       } as OpenAI.ChatCompletionMessageParam;
     });
 }
+
+// Local alias so we can pass ContentPart-shaped values through to OpenRouter
+// without forcing them through the OpenAI SDK's stricter ChatCompletionContent-
+// Part union. Anthropic accepts the richer shape (cache_control, etc.).
+type ContentPartLike =
+  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
+  | { type: "image_url"; image_url: { url: string } };
 
 function convertMessages(
   messages: AiMessage[],

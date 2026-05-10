@@ -257,9 +257,13 @@ describe("createOpenAiAdapter", () => {
       ]);
     });
 
-    it("sends tool messages as plain string when no cache_control attached (Anthropic route)", async () => {
-      // Without cache_control, fall back to the simpler string form so we
-      // don't pay the array-content overhead on every tool message.
+    it("sends tool messages as content arrays even without cache_control (Anthropic route)", async () => {
+      // Wire shape must stay stable across tool-calling iterations: a tool
+      // result that was the trailing message on iter N (with cache_control,
+      // sent as array) and is no longer trailing on iter N+1 (no cache_control)
+      // must still serialize as an array, not flip back to a string. The
+      // string flip would change the prefix bytes Anthropic uses to look up
+      // the prompt cache, busting the cache between iterations.
       mockCreate.mockResolvedValueOnce({
         choices: [
           {
@@ -291,7 +295,9 @@ describe("createOpenAiAdapter", () => {
 
       const createCall = mockCreate.mock.calls[0][0];
       const toolMsg = createCall.messages[1];
-      expect(toolMsg.content).toBe('{"success":true,"chapters":["one"]}');
+      expect(toolMsg.content).toEqual([
+        { type: "text", text: '{"success":true,"chapters":["one"]}' },
+      ]);
     });
 
     it("attaches cache_control to last tool entry only for Anthropic models", async () => {

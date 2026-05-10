@@ -1,6 +1,6 @@
 import type { Chapter } from "@/db/schemas";
 import { serializeStyleGuideEntry } from "./serialize";
-import type { AiContext, AiMessage } from "./types";
+import type { AiContext, AiMessage, ContentPart } from "./types";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
 
@@ -150,27 +150,17 @@ export function buildMessages(
     const msg = history[i];
     const isLast = i === history.length - 1;
 
-    // In agentic mode, mark the last history message with cache_control so
-    // the entire conversation prefix is cached across tool-calling iterations.
+    // In agentic mode, normalize ALL history content to ContentPart[] form so
+    // the wire shape stays byte-stable across tool-calling iterations, then
+    // mark the last message's last text part with cache_control. If we only
+    // wrapped on `isLast`, the previously-trailing message would flip from
+    // array form (iter N) to string form (iter N+1), invalidating Anthropic's
+    // prefix-byte match and busting the cache between iterations.
     let content = msg.content;
-    if (enableToolCalling && isLast && history.length > 0) {
-      if (typeof content === "string") {
-        content = [
-          {
-            type: "text" as const,
-            text: content,
-            cache_control: { type: "ephemeral" as const },
-          },
-        ];
-      } else if (Array.isArray(content)) {
-        const parts = [...content];
-        for (let j = parts.length - 1; j >= 0; j--) {
-          if (parts[j].type === "text") {
-            parts[j] = { ...parts[j], cache_control: { type: "ephemeral" } };
-            break;
-          }
-        }
-        content = parts;
+    if (enableToolCalling) {
+      content = toContentParts(content);
+      if (isLast && history.length > 0) {
+        content = withTrailingCacheControl(content);
       }
     }
 
@@ -201,6 +191,11 @@ export function buildMessages(
     if (userIndices.length > 0) {
       const targetIdx = userIndices[Math.max(0, userIndices.length - depth)];
       const msg = messages[targetIdx];
+      // Append as a separate text part when the content is already an array,
+      // otherwise inline into the string. The branches must produce identical
+      // output for identical inputs across iterations — when enableToolCalling
+      // normalizes history to ContentPart[], we always hit the array branch,
+      // which keeps the post-injection bytes stable iteration to iteration.
       if (typeof msg.content === "string") {
         messages[targetIdx] = {
           ...msg,
@@ -223,4 +218,33 @@ export function buildMessages(
   }
 
   return messages;
+}
+
+/**
+ * Normalize a message content to ContentPart[] form. Wraps a bare string into
+ * a single text block; passes a content array through unchanged (a fresh copy
+ * so callers can mutate without aliasing). Used to keep the wire shape of
+ * history messages byte-stable across tool-calling iterations.
+ */
+function toContentParts(content: string | ContentPart[]): ContentPart[] {
+  if (typeof content === "string") {
+    return [{ type: "text", text: content }];
+  }
+  return [...content];
+}
+
+/**
+ * Mark the last text part of a content array with `cache_control`. The marker
+ * is the cache breakpoint Anthropic uses to anchor the conversation-prefix
+ * cache across tool-calling iterations.
+ */
+function withTrailingCacheControl(parts: ContentPart[]): ContentPart[] {
+  const out = [...parts];
+  for (let j = out.length - 1; j >= 0; j--) {
+    if (out[j].type === "text") {
+      out[j] = { ...out[j], cache_control: { type: "ephemeral" } };
+      break;
+    }
+  }
+  return out;
 }

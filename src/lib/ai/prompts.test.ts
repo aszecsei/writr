@@ -195,6 +195,68 @@ describe("buildMessages", () => {
     expect(text).toContain('wordCount="1234"');
   });
 
+  it("keeps history wire shape byte-stable across tool-calling iterations", () => {
+    // Regression: the previously-trailing message must NOT flip from array
+    // form (with cache_control) on iter N to string form (no cache_control)
+    // on iter N+1 — Anthropic's prompt cache is a prefix-byte match, so a
+    // shape flip silently invalidates the conversation-prefix cache between
+    // tool-calling iterations.
+    const userQ1: AiMessage = { role: "user", content: "what's in chapter 3?" };
+    const iter1 = buildMessages("agent prompt", emptyContext(), [userQ1], {
+      enableToolCalling: true,
+    });
+
+    // Iter 2 simulates one tool round: assistant emitted a tool_use, harness
+    // appended the assistant turn + the tool result.
+    const iter2History: AiMessage[] = [
+      userQ1,
+      {
+        role: "assistant",
+        content: "",
+        toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
+      },
+      {
+        role: "tool",
+        toolCallId: "call_1",
+        content: '{"success":true,"chapters":["one"]}',
+      },
+    ];
+    const iter2 = buildMessages("agent prompt", emptyContext(), iter2History, {
+      enableToolCalling: true,
+    });
+
+    // Find userQ1 in both iterations. Its pure content bytes (text only,
+    // ignoring the cache_control directive) must match — that's what
+    // Anthropic hashes for the cache key.
+    const findUserQ1 = (msgs: AiMessage[]): AiMessage | undefined =>
+      msgs.find(
+        (m) =>
+          m.role === "user" &&
+          (typeof m.content === "string"
+            ? m.content === userQ1.content
+            : m.content.some(
+                (p) => p.type === "text" && p.text === userQ1.content,
+              )),
+      );
+    const u1 = findUserQ1(iter1);
+    const u2 = findUserQ1(iter2);
+    if (!u1 || !u2) throw new Error("user_q1 not found in iter messages");
+
+    // Both iterations must serialize userQ1 with the same structural shape.
+    // Specifically: array form. Iter 1 has cache_control on the last text
+    // part, iter 2 does not — that's expected (the marker moves to the new
+    // trailing message). The shape itself must not flip.
+    expect(Array.isArray(u1.content)).toBe(true);
+    expect(Array.isArray(u2.content)).toBe(true);
+
+    // Stripping cache_control, the bytes must match.
+    const stripCacheControl = (parts: TextContentPart[]) =>
+      parts.map((p) => ({ type: p.type, text: p.text }));
+    expect(stripCacheControl(u1.content as TextContentPart[])).toEqual(
+      stripCacheControl(u2.content as TextContentPart[]),
+    );
+  });
+
   it("injects post-chat instructions into the Nth-last history user message", () => {
     const history: AiMessage[] = [
       { role: "user", content: "first user turn" },
