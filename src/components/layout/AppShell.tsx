@@ -21,6 +21,7 @@ import {
   SprintHistoryDialog,
   SprintWidget,
 } from "@/components/sprint";
+import { TtsPlayerBar } from "@/components/tts/TtsPlayerBar";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useFocusModeShortcuts } from "@/hooks/ui/useFocusModeShortcuts";
 import { isCollabEnabled } from "@/lib/collab/config";
@@ -131,6 +132,7 @@ export function AppShell({ children }: AppShellProps) {
           </>
         )}
       </Group>
+      <TtsPlayerBar />
       <AppSettingsDialog />
       <AgentsManager />
       <AgentEditor />

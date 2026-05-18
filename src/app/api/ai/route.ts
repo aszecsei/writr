@@ -43,7 +43,8 @@ const ToolDefinitionSchema = z.object({
   parameters: ToolParametersSchema,
 });
 
-const AiRequestSchema = z.object({
+const ChatRequestSchema = z.object({
+  action: z.literal("chat"),
   apiKey: z.string().min(1),
   model: z.string().min(1),
   provider: AiProviderEnum.default("openrouter"),
@@ -65,6 +66,23 @@ const AiRequestSchema = z.object({
     .optional(),
   tools: z.array(ToolDefinitionSchema).optional(),
 });
+
+const TtsRequestSchema = z.object({
+  action: z.literal("tts"),
+  apiKey: z.string().min(1),
+  provider: AiProviderEnum,
+  model: z.string().min(1),
+  voice: z.string().min(1),
+  // Hard cap to keep individual requests well within OpenRouter's input
+  // limits. The client chunker should keep these to ~4000.
+  text: z.string().min(1).max(8000),
+  format: z.enum(["mp3", "wav"]).optional(),
+});
+
+const AiRequestSchema = z.discriminatedUnion("action", [
+  ChatRequestSchema,
+  TtsRequestSchema,
+]);
 
 const encoder = new TextEncoder();
 
@@ -115,6 +133,12 @@ function errorResponse(provider: string, error: unknown) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
+  // Zod's discriminated union doesn't support defaults on the discriminator,
+  // so default to "chat" here. Older callers (no `action` field) keep working
+  // with no client-side changes.
+  if (body && typeof body === "object" && body.action == null) {
+    body.action = "chat";
+  }
   const parsed = AiRequestSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -122,6 +146,36 @@ export async function POST(request: NextRequest) {
       { error: "Invalid request", details: z.prettifyError(parsed.error) },
       { status: 400 },
     );
+  }
+
+  if (parsed.data.action === "tts") {
+    const { apiKey, provider, model, voice, text, format } = parsed.data;
+    const { adapter } = PROVIDERS[provider];
+    if (!adapter.tts) {
+      return NextResponse.json(
+        {
+          error: "TTS not supported",
+          details: `Provider "${provider}" does not support text-to-speech.`,
+        },
+        { status: 400 },
+      );
+    }
+    try {
+      const result = await adapter.tts(
+        apiKey,
+        { model, voice, text, format },
+        request.signal,
+      );
+      return new NextResponse(result.audio, {
+        headers: {
+          "Content-Type": result.audio.type || "audio/mpeg",
+          "Cache-Control": "no-store",
+        },
+      });
+    } catch (error) {
+      logUpstreamError(provider, error);
+      return errorResponse(provider, error);
+    }
   }
 
   const {

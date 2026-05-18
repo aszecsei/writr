@@ -2,7 +2,12 @@ import OpenAI from "openai";
 import { match, P } from "ts-pattern";
 import type { AiMessage, AiToolCall, FinishReason } from "../types";
 import { extractTextContent, generateToolUseId } from "./helpers";
-import type { CompletionParams, ProviderAdapter } from "./types";
+import type {
+  CompletionParams,
+  ProviderAdapter,
+  TtsParams,
+  TtsResult,
+} from "./types";
 
 interface OpenAiAdapterConfig {
   baseURL: string;
@@ -303,7 +308,52 @@ export function createOpenAiAdapter(
     };
   }
 
+  async function tts(
+    apiKey: string,
+    params: TtsParams,
+    signal?: AbortSignal,
+  ): Promise<TtsResult> {
+    const format = params.format ?? "mp3";
+    const url = `${config.baseURL.replace(/\/+$/, "")}/audio/speech`;
+    const response = await fetch(url, {
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        ...(config.defaultHeaders ?? {}),
+      },
+      body: JSON.stringify({
+        model: params.model,
+        input: params.text,
+        voice: params.voice,
+        response_format: format,
+      }),
+    });
+
+    if (!response.ok) {
+      // Bubble the upstream body up so the route handler can include details.
+      const text = await response.text().catch(() => "");
+      const error = new Error(
+        `TTS request failed (status ${response.status}): ${text || response.statusText}`,
+      ) as Error & { status?: number; error?: unknown };
+      error.status = response.status;
+      try {
+        error.error = JSON.parse(text);
+      } catch {
+        // body wasn't JSON — leave error.error undefined
+      }
+      throw error;
+    }
+
+    // /audio/speech returns raw audio bytes, not a JSON envelope.
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const mime = format === "wav" ? "audio/wav" : "audio/mpeg";
+    return { audio: new Blob([bytes], { type: mime }) };
+  }
+
   return {
+    tts,
     async complete(apiKey, params, signal) {
       const client = createClient(apiKey);
 

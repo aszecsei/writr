@@ -553,6 +553,29 @@ export const AppSettingsSchema = z.object({
     google: "gemini-2.5-flash",
     vertex: "gemini-2.5-flash",
   }),
+  /**
+   * Per-provider TTS model. Empty string hides the Read Aloud button.
+   * Only OpenRouter is wired in the UI today; other entries exist solely
+   * so the record stays a Record<AiProvider, string>.
+   */
+  providerTtsModels: z.record(AiProviderEnum, z.string()).default({
+    openrouter: "",
+    anthropic: "",
+    openai: "",
+    grok: "",
+    zai: "",
+    google: "",
+    vertex: "",
+  }),
+  providerTtsVoices: z.record(AiProviderEnum, z.string()).default({
+    openrouter: "",
+    anthropic: "",
+    openai: "",
+    grok: "",
+    zai: "",
+    google: "",
+    vertex: "",
+  }),
   theme: z.enum(["light", "dark", "system"]).default("system"),
   primaryColor: PrimaryColorEnum.default("blue"),
   neutralColor: NeutralColorEnum.default("zinc"),

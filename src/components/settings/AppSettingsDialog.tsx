@@ -27,7 +27,11 @@ import type {
   UiDensity,
 } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
-import { getDefaultProviderModels } from "@/lib/ai/providers";
+import {
+  getDefaultProviderModels,
+  getDefaultProviderTtsModels,
+  getDefaultProviderTtsVoices,
+} from "@/lib/ai/providers";
 import type { Backup } from "@/lib/backup";
 import {
   applyEditorWidth,
@@ -86,6 +90,12 @@ export function AppSettingsDialog() {
   const [providerModels, setProviderModels] = useState<
     Record<AiProvider, string>
   >(getDefaultProviderModels);
+  const [providerTtsModels, setProviderTtsModels] = useState<
+    Record<AiProvider, string>
+  >(getDefaultProviderTtsModels);
+  const [providerTtsVoices, setProviderTtsVoices] = useState<
+    Record<AiProvider, string>
+  >(getDefaultProviderTtsVoices);
   const [debugMode, setDebugMode] = useState(false);
   const [streamResponses, setStreamResponses] = useState(true);
   const [reasoningEffort, setReasoningEffort] =
@@ -134,6 +144,8 @@ export function AppSettingsDialog() {
       setAiProvider(settings.aiProvider);
       setProviderApiKeys(settings.providerApiKeys);
       setProviderModels(settings.providerModels);
+      setProviderTtsModels(settings.providerTtsModels);
+      setProviderTtsVoices(settings.providerTtsVoices);
       setDebugMode(settings.debugMode);
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
@@ -196,6 +208,10 @@ export function AppSettingsDialog() {
         JSON.stringify(settings.providerApiKeys) ||
       JSON.stringify(providerModels) !==
         JSON.stringify(settings.providerModels) ||
+      JSON.stringify(providerTtsModels) !==
+        JSON.stringify(settings.providerTtsModels) ||
+      JSON.stringify(providerTtsVoices) !==
+        JSON.stringify(settings.providerTtsVoices) ||
       debugMode !== settings.debugMode ||
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
@@ -220,6 +236,8 @@ export function AppSettingsDialog() {
       aiProvider,
       providerApiKeys,
       providerModels,
+      providerTtsModels,
+      providerTtsVoices,
       debugMode,
       streamResponses,
       reasoningEffort,
@@ -294,6 +312,8 @@ export function AppSettingsDialog() {
               aiProvider={aiProvider}
               providerApiKeys={providerApiKeys}
               providerModels={providerModels}
+              providerTtsModels={providerTtsModels}
+              providerTtsVoices={providerTtsVoices}
               streamResponses={streamResponses}
               reasoningEffort={reasoningEffort}
               debugMode={debugMode}
@@ -305,6 +325,12 @@ export function AppSettingsDialog() {
               }
               onProviderModelChange={(provider, model) =>
                 setProviderModels((prev) => ({ ...prev, [provider]: model }))
+              }
+              onProviderTtsModelChange={(provider, model) =>
+                setProviderTtsModels((prev) => ({ ...prev, [provider]: model }))
+              }
+              onProviderTtsVoiceChange={(provider, voice) =>
+                setProviderTtsVoices((prev) => ({ ...prev, [provider]: voice }))
               }
               onStreamResponsesChange={setStreamResponses}
               onReasoningEffortChange={setReasoningEffort}

@@ -10,15 +10,18 @@ import {
   PanelRight,
   ScanSearch,
   SpellCheck,
+  Volume2,
 } from "lucide-react";
 import { useCallback } from "react";
 import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { extractReadAloudText } from "@/lib/tts/extract";
 import { useCommentStore } from "@/store/commentStore";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
+import { useTtsStore } from "@/store/ttsStore";
 import { useUiStore } from "@/store/uiStore";
 import { AlignmentDropdown } from "./AlignmentDropdown";
 import { CopyMenu } from "./CopyMenu";
@@ -52,6 +55,46 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const openScanner = useSpellcheckStore((s) => s.openScanner);
 
   const chapter = useChapter(activeDocumentId);
+
+  const ttsState = useTtsStore((s) => s.state);
+  const ttsChapterId = useTtsStore((s) => s.chapterId);
+  const startReadAloud = useTtsStore((s) => s.startReadAloud);
+
+  const ttsModel = settings?.providerTtsModels?.openrouter ?? "";
+  const ttsVoice = settings?.providerTtsVoices?.openrouter ?? "";
+  const ttsApiKey = settings?.providerApiKeys?.openrouter ?? "";
+  const canReadAloud =
+    !!settings?.enableAiFeatures &&
+    settings.aiProvider === "openrouter" &&
+    ttsModel.trim().length > 0 &&
+    ttsVoice.trim().length > 0 &&
+    ttsApiKey.trim().length > 0;
+
+  const readAloudLoading =
+    ttsState === "loading" && ttsChapterId === activeDocumentId;
+
+  const handleReadAloud = useCallback(() => {
+    if (!editor || !activeDocumentId || !chapter) return;
+    const text = extractReadAloudText(editor);
+    if (!text.trim()) return;
+    void startReadAloud({
+      chapterId: activeDocumentId,
+      chapterTitle: chapter.title || "Untitled chapter",
+      text,
+      apiKey: ttsApiKey,
+      provider: "openrouter",
+      model: ttsModel,
+      voice: ttsVoice,
+    });
+  }, [
+    editor,
+    activeDocumentId,
+    chapter,
+    ttsApiKey,
+    ttsModel,
+    ttsVoice,
+    startReadAloud,
+  ]);
 
   // Open spellcheck scanner with current misspellings
   const handleOpenScanner = useCallback(() => {
@@ -236,6 +279,23 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           <ShareSessionButton />
           <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
           <TextToolsMenu editor={editor} />
+          {canReadAloud && (
+            <button
+              type="button"
+              title={
+                hasSelection ? "Read selection aloud" : "Read chapter aloud"
+              }
+              onClick={handleReadAloud}
+              disabled={readAloudLoading}
+              className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+                readAloudLoading
+                  ? "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
+                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              }`}
+            >
+              <Volume2 size={16} />
+            </button>
+          )}
           <button
             type="button"
             title="Preview Card (Ctrl+Shift+P)"

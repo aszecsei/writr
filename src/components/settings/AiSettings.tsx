@@ -30,6 +30,8 @@ interface AiSettingsProps {
   aiProvider: AiProvider;
   providerApiKeys: Record<AiProvider, string>;
   providerModels: Record<AiProvider, string>;
+  providerTtsModels: Record<AiProvider, string>;
+  providerTtsVoices: Record<AiProvider, string>;
   streamResponses: boolean;
   reasoningEffort: ReasoningEffort;
   debugMode: boolean;
@@ -38,6 +40,8 @@ interface AiSettingsProps {
   onAiProviderChange: (provider: AiProvider) => void;
   onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
   onProviderModelChange: (provider: AiProvider, model: string) => void;
+  onProviderTtsModelChange: (provider: AiProvider, model: string) => void;
+  onProviderTtsVoiceChange: (provider: AiProvider, voice: string) => void;
   onStreamResponsesChange: (enabled: boolean) => void;
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
@@ -91,6 +95,8 @@ export function AiSettings({
   aiProvider,
   providerApiKeys,
   providerModels,
+  providerTtsModels,
+  providerTtsVoices,
   streamResponses,
   reasoningEffort,
   debugMode,
@@ -99,6 +105,8 @@ export function AiSettings({
   onAiProviderChange,
   onProviderApiKeyChange,
   onProviderModelChange,
+  onProviderTtsModelChange,
+  onProviderTtsVoiceChange,
   onStreamResponsesChange,
   onReasoningEffortChange,
   onDebugModeChange,
@@ -169,6 +177,43 @@ export function AiSettings({
                 placeholder={providerConfig.defaultModel}
               />
             </label>
+            {aiProvider === "openrouter" && (
+              <>
+                <label className={labelClass}>
+                  TTS Model
+                  <input
+                    type="text"
+                    value={providerTtsModels[aiProvider]}
+                    onChange={(e) =>
+                      onProviderTtsModelChange(aiProvider, e.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="e.g. openai/gpt-4o-mini-tts"
+                  />
+                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    Optional. Leave blank to hide the Read Aloud button. Use a
+                    TTS-capable model ID from OpenRouter.
+                  </span>
+                </label>
+                <label className={labelClass}>
+                  TTS Voice
+                  <input
+                    type="text"
+                    value={providerTtsVoices[aiProvider]}
+                    onChange={(e) =>
+                      onProviderTtsVoiceChange(aiProvider, e.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="e.g. alloy"
+                  />
+                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    Required for Read Aloud. Voice name as accepted by the
+                    selected TTS model (e.g. alloy, echo, fable, onyx, nova,
+                    shimmer).
+                  </span>
+                </label>
+              </>
+            )}
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
