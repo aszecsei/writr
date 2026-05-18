@@ -44,7 +44,7 @@ describe("visitNode", () => {
     const node: DocNode = {
       type: "heading",
       level: 1,
-      spans: [{ text: "Title", styles: [] }],
+      spans: [{ type: "text", text: "Title", styles: [] }],
     };
     visitNode(node, visitor);
     expect(visitor.visitHeading).toHaveBeenCalledWith(node);
@@ -54,7 +54,7 @@ describe("visitNode", () => {
     const visitor = createMockVisitor();
     const node: DocNode = {
       type: "paragraph",
-      spans: [{ text: "Text", styles: [] }],
+      spans: [{ type: "text", text: "Text", styles: [] }],
     };
     visitNode(node, visitor);
     expect(visitor.visitParagraph).toHaveBeenCalledWith(node);
@@ -107,8 +107,15 @@ describe("visitNodes", () => {
   it("visits all nodes in order", () => {
     const visitor = createMockVisitor();
     const nodes: DocNode[] = [
-      { type: "heading", level: 1, spans: [{ text: "H", styles: [] }] },
-      { type: "paragraph", spans: [{ text: "P", styles: [] }] },
+      {
+        type: "heading",
+        level: 1,
+        spans: [{ type: "text", text: "H", styles: [] }],
+      },
+      {
+        type: "paragraph",
+        spans: [{ type: "text", text: "P", styles: [] }],
+      },
       { type: "hr" },
     ];
     visitNodes(nodes, visitor);

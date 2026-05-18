@@ -1,4 +1,5 @@
-import type { DocNode, TextSpan } from "../markdown-to-nodes";
+import { match } from "ts-pattern";
+import type { DocNode, InlineSpan } from "../markdown-to-nodes";
 import { markdownToNodes } from "../markdown-to-nodes";
 import type { ExportContent, ExportOptions } from "../types";
 import {
@@ -22,30 +23,35 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function spansToHtml(spans: TextSpan[]): string {
+function spansToHtml(spans: InlineSpan[]): string {
   return spans
-    .map((span) => {
-      let html = escapeHtml(span.text);
+    .map((span) =>
+      match(span)
+        .with({ type: "lineBreak" }, () => "<br/>")
+        .with({ type: "text" }, (textSpan) => {
+          let html = escapeHtml(textSpan.text);
 
-      if (span.styles.includes("strikethrough")) {
-        html = `<s>${html}</s>`;
-      }
-      if (span.styles.includes("code")) {
-        html = `<code>${html}</code>`;
-      }
-      if (span.styles.includes("italic")) {
-        html = `<em>${html}</em>`;
-      }
-      if (span.styles.includes("bold")) {
-        html = `<strong>${html}</strong>`;
-      }
+          if (textSpan.styles.includes("strikethrough")) {
+            html = `<s>${html}</s>`;
+          }
+          if (textSpan.styles.includes("code")) {
+            html = `<code>${html}</code>`;
+          }
+          if (textSpan.styles.includes("italic")) {
+            html = `<em>${html}</em>`;
+          }
+          if (textSpan.styles.includes("bold")) {
+            html = `<strong>${html}</strong>`;
+          }
 
-      if (span.ruby) {
-        html = `<ruby>${html}<rt>${escapeHtml(span.ruby)}</rt></ruby>`;
-      }
+          if (textSpan.ruby) {
+            html = `<ruby>${html}<rt>${escapeHtml(textSpan.ruby)}</rt></ruby>`;
+          }
 
-      return html;
-    })
+          return html;
+        })
+        .exhaustive(),
+    )
     .join("");
 }
 

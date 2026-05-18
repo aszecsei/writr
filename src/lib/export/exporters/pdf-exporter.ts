@@ -3,7 +3,8 @@ import type {
   ContentText,
   TDocumentDefinitions,
 } from "pdfmake/interfaces";
-import type { TextAlignment, TextSpan } from "../markdown-to-nodes";
+import { match } from "ts-pattern";
+import type { InlineSpan, TextAlignment, TextSpan } from "../markdown-to-nodes";
 import { HR_TEXT, imagePlaceholder } from "../shared";
 import type {
   BlockquoteNode,
@@ -33,7 +34,7 @@ function mapAlignment(alignment?: TextAlignment): PdfAlignment | undefined {
   return alignment as PdfAlignment | undefined;
 }
 
-function spanToPdfParts(s: TextSpan): Array<{
+type PdfTextPart = {
   text: string;
   bold?: boolean;
   italics?: boolean;
@@ -41,7 +42,9 @@ function spanToPdfParts(s: TextSpan): Array<{
   font?: string;
   fontSize?: number;
   color?: string;
-}> {
+};
+
+function spanToPdfParts(s: TextSpan): PdfTextPart[] {
   const base = {
     bold: s.styles.includes("bold") || undefined,
     italics: s.styles.includes("italic") || undefined,
@@ -61,22 +64,29 @@ function spanToPdfParts(s: TextSpan): Array<{
   return [{ text: s.text, ...base }];
 }
 
-function spansToPdfText(spans: TextSpan[]): ContentText {
+function inlineSpanToPdfParts(span: InlineSpan): PdfTextPart[] {
+  return match(span)
+    .with({ type: "lineBreak" }, () => [{ text: "\n" }])
+    .with({ type: "text" }, (textSpan) => spanToPdfParts(textSpan))
+    .exhaustive();
+}
+
+function spansToPdfText(spans: InlineSpan[]): ContentText {
   if (spans.length === 0) return { text: "" };
-  if (spans.length === 1 && !spans[0].ruby) {
-    const s = spans[0];
+  const onlySpan = spans[0];
+  if (spans.length === 1 && onlySpan.type === "text" && !onlySpan.ruby) {
     return {
-      text: s.text,
-      bold: s.styles.includes("bold") || undefined,
-      italics: s.styles.includes("italic") || undefined,
-      decoration: s.styles.includes("strikethrough")
+      text: onlySpan.text,
+      bold: onlySpan.styles.includes("bold") || undefined,
+      italics: onlySpan.styles.includes("italic") || undefined,
+      decoration: onlySpan.styles.includes("strikethrough")
         ? "lineThrough"
         : undefined,
-      font: s.styles.includes("code") ? "Courier" : undefined,
+      font: onlySpan.styles.includes("code") ? "Courier" : undefined,
     };
   }
   return {
-    text: spans.flatMap((s) => spanToPdfParts(s)),
+    text: spans.flatMap((s) => inlineSpanToPdfParts(s)),
   };
 }
 

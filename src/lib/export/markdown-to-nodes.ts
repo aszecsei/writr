@@ -5,23 +5,35 @@ export type InlineStyle = "bold" | "italic" | "code" | "strikethrough";
 export type TextAlignment = "left" | "center" | "right" | "justify";
 
 export interface TextSpan {
+  type: "text";
   text: string;
   styles: InlineStyle[];
   /** Ruby annotation text (for CJK reading guides) */
   ruby?: string;
 }
 
+export interface LineBreakSpan {
+  type: "lineBreak";
+}
+
+/**
+ * Inline content within a paragraph or heading. `lineBreak` is a hard
+ * line break (shift+enter in the editor; `\\\n` in markdown) — distinct
+ * from a literal newline embedded in `text`, which carries no semantics.
+ */
+export type InlineSpan = TextSpan | LineBreakSpan;
+
 export type DocNode =
   | {
       type: "heading";
       level: 1 | 2 | 3 | 4 | 5 | 6;
-      spans: TextSpan[];
+      spans: InlineSpan[];
       alignment?: TextAlignment;
       indent?: number;
     }
   | {
       type: "paragraph";
-      spans: TextSpan[];
+      spans: InlineSpan[];
       alignment?: TextAlignment;
       indent?: number;
     }
@@ -32,12 +44,16 @@ export type DocNode =
   | { type: "image"; src: string; alt?: string }
   | { type: "pageBreak" };
 
+function textSpan(text: string, styles: InlineStyle[]): TextSpan {
+  return { type: "text", text, styles };
+}
+
 function parseInlineTokens(
   tokens: Token[] | undefined,
   parentStyles: InlineStyle[] = [],
-): TextSpan[] {
+): InlineSpan[] {
   if (!tokens) return [];
-  const spans: TextSpan[] = [];
+  const spans: InlineSpan[] = [];
 
   for (const token of tokens) {
     match(token as Token)
@@ -46,7 +62,7 @@ function parseInlineTokens(
         if (textToken.tokens) {
           spans.push(...parseInlineTokens(textToken.tokens, parentStyles));
         } else {
-          spans.push({ text: textToken.text, styles: [...parentStyles] });
+          spans.push(textSpan(textToken.text, [...parentStyles]));
         }
       })
       .with({ type: "strong" }, (t) => {
@@ -72,14 +88,14 @@ function parseInlineTokens(
       })
       .with({ type: "codespan" }, (t) => {
         const codeToken = t as Tokens.Codespan;
-        spans.push({ text: codeToken.text, styles: [...parentStyles, "code"] });
+        spans.push(textSpan(codeToken.text, [...parentStyles, "code"]));
       })
       .with({ type: "br" }, () => {
-        spans.push({ text: "\n", styles: [] });
+        spans.push({ type: "lineBreak" });
       })
       .with({ type: "escape" }, (t) => {
         const escapeToken = t as Tokens.Escape;
-        spans.push({ text: escapeToken.text, styles: [...parentStyles] });
+        spans.push(textSpan(escapeToken.text, [...parentStyles]));
       })
       .with({ type: "link" }, (t) => {
         const linkToken = t as Tokens.Link;
@@ -87,10 +103,11 @@ function parseInlineTokens(
       })
       .with({ type: "image" }, (t) => {
         const imageToken = t as Tokens.Image;
-        spans.push({
-          text: imageToken.text || imageToken.title || "[image]",
-          styles: [...parentStyles],
-        });
+        spans.push(
+          textSpan(imageToken.text || imageToken.title || "[image]", [
+            ...parentStyles,
+          ]),
+        );
       })
       .with({ type: "html" }, (t) => {
         const htmlToken = t as Tokens.HTML;
@@ -100,6 +117,7 @@ function parseInlineTokens(
         );
         if (rubyMatch) {
           spans.push({
+            type: "text",
             text: rubyMatch[1],
             styles: [...parentStyles],
             ruby: rubyMatch[2],
@@ -108,13 +126,13 @@ function parseInlineTokens(
           // For other inline HTML, extract text content
           const textContent = htmlToken.raw.replace(/<[^>]+>/g, "");
           if (textContent.trim()) {
-            spans.push({ text: textContent, styles: [...parentStyles] });
+            spans.push(textSpan(textContent, [...parentStyles]));
           }
         }
       })
       .otherwise(() => {
         if ("text" in token && typeof token.text === "string") {
-          spans.push({ text: token.text, styles: [...parentStyles] });
+          spans.push(textSpan(token.text, [...parentStyles]));
         }
       });
   }
@@ -162,7 +180,7 @@ function parseHtmlHeading(
   return {
     type: "heading",
     level,
-    spans: [{ text: content, styles: [] }],
+    spans: [textSpan(content, [])],
     alignment,
     indent,
   };
@@ -178,7 +196,7 @@ function parseHtmlParagraph(
   const content = pMatch[1].replace(/<[^>]+>/g, "");
   return {
     type: "paragraph",
-    spans: [{ text: content, styles: [] }],
+    spans: [textSpan(content, [])],
     alignment,
     indent,
   };
@@ -254,7 +272,7 @@ function walkTokens(tokens: Token[]): DocNode[] {
         if (textContent) {
           nodes.push({
             type: "paragraph",
-            spans: [{ text: textContent, styles: [] }],
+            spans: [textSpan(textContent, [])],
           });
         }
       })
@@ -265,7 +283,7 @@ function walkTokens(tokens: Token[]): DocNode[] {
         if ("text" in token && typeof token.text === "string") {
           nodes.push({
             type: "paragraph",
-            spans: [{ text: token.text, styles: [] }],
+            spans: [textSpan(token.text, [])],
           });
         }
       });

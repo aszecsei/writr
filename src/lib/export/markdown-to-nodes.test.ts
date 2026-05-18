@@ -110,25 +110,29 @@ describe("markdownToNodes", () => {
     it("parses bold text", () => {
       const nodes = markdownToNodes("**bold**");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "bold", styles: ["bold"] }]);
+      expect(spans).toEqual([{ type: "text", text: "bold", styles: ["bold"] }]);
     });
 
     it("parses italic text", () => {
       const nodes = markdownToNodes("*italic*");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "italic", styles: ["italic"] }]);
+      expect(spans).toEqual([
+        { type: "text", text: "italic", styles: ["italic"] },
+      ]);
     });
 
     it("parses inline code", () => {
       const nodes = markdownToNodes("`code`");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "code", styles: ["code"] }]);
+      expect(spans).toEqual([{ type: "text", text: "code", styles: ["code"] }]);
     });
 
     it("parses strikethrough", () => {
       const nodes = markdownToNodes("~~struck~~");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "struck", styles: ["strikethrough"] }]);
+      expect(spans).toEqual([
+        { type: "text", text: "struck", styles: ["strikethrough"] },
+      ]);
     });
 
     it("parses bold inside italic", () => {
@@ -146,48 +150,65 @@ describe("markdownToNodes", () => {
     it("parses code inside bold", () => {
       const nodes = markdownToNodes("**`code`**");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "code", styles: ["bold", "code"] }]);
+      expect(spans).toEqual([
+        { type: "text", text: "code", styles: ["bold", "code"] },
+      ]);
     });
 
     it("parses triple-nested bold italic (***text***)", () => {
       const nodes = markdownToNodes("***bold italic***");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
       expect(spans).toHaveLength(1);
-      expect(spans[0].text).toBe("bold italic");
-      expect(spans[0].styles).toContain("bold");
-      expect(spans[0].styles).toContain("italic");
+      const span = spans[0];
+      if (span.type !== "text") throw new Error("expected text span");
+      expect(span.text).toBe("bold italic");
+      expect(span.styles).toContain("bold");
+      expect(span.styles).toContain("italic");
     });
 
     it("extracts text from links", () => {
       const nodes = markdownToNodes("[click here](https://example.com)");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans).toEqual([{ text: "click here", styles: [] }]);
+      expect(spans).toEqual([{ type: "text", text: "click here", styles: [] }]);
     });
 
     it("extracts alt text from images", () => {
       const nodes = markdownToNodes("![alt text](image.png)");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans[0].text).toBe("alt text");
+      const span = spans[0];
+      if (span.type !== "text") throw new Error("expected text span");
+      expect(span.text).toBe("alt text");
     });
 
     it("uses [image] fallback when no alt text", () => {
       const nodes = markdownToNodes("![](image.png)");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      expect(spans[0].text).toBe("[image]");
+      const span = spans[0];
+      if (span.type !== "text") throw new Error("expected text span");
+      expect(span.text).toBe("[image]");
     });
 
     it("parses escape sequences", () => {
       const nodes = markdownToNodes("\\*not italic\\*");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      const text = spans.map((s) => s.text).join("");
+      const text = spans.map((s) => (s.type === "text" ? s.text : "")).join("");
       expect(text).toBe("*not italic*");
     });
 
-    it("parses line breaks", () => {
+    it("parses two-space hard breaks as lineBreak spans", () => {
       const nodes = markdownToNodes("line one  \nline two");
       const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
-      const brSpan = spans.find((s) => s.text === "\n");
-      expect(brSpan).toBeDefined();
+      expect(spans).toEqual([
+        { type: "text", text: "line one", styles: [] },
+        { type: "lineBreak" },
+        { type: "text", text: "line two", styles: [] },
+      ]);
+    });
+
+    it("parses backslash hard breaks (tiptap-markdown form) as lineBreak spans", () => {
+      const nodes = markdownToNodes("line one\\\nline two");
+      const spans = (nodes[0] as Extract<DocNode, { type: "paragraph" }>).spans;
+      expect(spans.some((s) => s.type === "lineBreak")).toBe(true);
     });
   });
 });

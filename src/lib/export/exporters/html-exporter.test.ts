@@ -9,7 +9,10 @@ describe("nodesToHtml", () => {
   describe("block-level elements", () => {
     it("converts a paragraph", () => {
       const nodes: DocNode[] = [
-        { type: "paragraph", spans: [{ text: "Hello world", styles: [] }] },
+        {
+          type: "paragraph",
+          spans: [{ type: "text", text: "Hello world", styles: [] }],
+        },
       ];
       expect(nodesToHtml(nodes)).toBe("<p>Hello world</p>");
     });
@@ -20,7 +23,7 @@ describe("nodesToHtml", () => {
           {
             type: "heading",
             level: level as 1 | 2 | 3 | 4 | 5 | 6,
-            spans: [{ text: `Heading ${level}`, styles: [] }],
+            spans: [{ type: "text", text: `Heading ${level}`, styles: [] }],
           },
         ];
         expect(nodesToHtml(nodes)).toBe(
@@ -49,7 +52,10 @@ describe("nodesToHtml", () => {
         {
           type: "blockquote",
           children: [
-            { type: "paragraph", spans: [{ text: "quoted text", styles: [] }] },
+            {
+              type: "paragraph",
+              spans: [{ type: "text", text: "quoted text", styles: [] }],
+            },
           ],
         },
       ];
@@ -64,8 +70,18 @@ describe("nodesToHtml", () => {
           type: "list",
           ordered: false,
           items: [
-            [{ type: "paragraph", spans: [{ text: "one", styles: [] }] }],
-            [{ type: "paragraph", spans: [{ text: "two", styles: [] }] }],
+            [
+              {
+                type: "paragraph",
+                spans: [{ type: "text", text: "one", styles: [] }],
+              },
+            ],
+            [
+              {
+                type: "paragraph",
+                spans: [{ type: "text", text: "two", styles: [] }],
+              },
+            ],
           ],
         },
       ];
@@ -80,8 +96,18 @@ describe("nodesToHtml", () => {
           type: "list",
           ordered: true,
           items: [
-            [{ type: "paragraph", spans: [{ text: "first", styles: [] }] }],
-            [{ type: "paragraph", spans: [{ text: "second", styles: [] }] }],
+            [
+              {
+                type: "paragraph",
+                spans: [{ type: "text", text: "first", styles: [] }],
+              },
+            ],
+            [
+              {
+                type: "paragraph",
+                spans: [{ type: "text", text: "second", styles: [] }],
+              },
+            ],
           ],
         },
       ];
@@ -94,21 +120,30 @@ describe("nodesToHtml", () => {
   describe("inline styles", () => {
     it("converts bold text", () => {
       const nodes: DocNode[] = [
-        { type: "paragraph", spans: [{ text: "bold", styles: ["bold"] }] },
+        {
+          type: "paragraph",
+          spans: [{ type: "text", text: "bold", styles: ["bold"] }],
+        },
       ];
       expect(nodesToHtml(nodes)).toBe("<p><strong>bold</strong></p>");
     });
 
     it("converts italic text", () => {
       const nodes: DocNode[] = [
-        { type: "paragraph", spans: [{ text: "italic", styles: ["italic"] }] },
+        {
+          type: "paragraph",
+          spans: [{ type: "text", text: "italic", styles: ["italic"] }],
+        },
       ];
       expect(nodesToHtml(nodes)).toBe("<p><em>italic</em></p>");
     });
 
     it("converts inline code", () => {
       const nodes: DocNode[] = [
-        { type: "paragraph", spans: [{ text: "code", styles: ["code"] }] },
+        {
+          type: "paragraph",
+          spans: [{ type: "text", text: "code", styles: ["code"] }],
+        },
       ];
       expect(nodesToHtml(nodes)).toBe("<p><code>code</code></p>");
     });
@@ -117,7 +152,7 @@ describe("nodesToHtml", () => {
       const nodes: DocNode[] = [
         {
           type: "paragraph",
-          spans: [{ text: "struck", styles: ["strikethrough"] }],
+          spans: [{ type: "text", text: "struck", styles: ["strikethrough"] }],
         },
       ];
       expect(nodesToHtml(nodes)).toBe("<p><s>struck</s></p>");
@@ -127,7 +162,7 @@ describe("nodesToHtml", () => {
       const nodes: DocNode[] = [
         {
           type: "paragraph",
-          spans: [{ text: "both", styles: ["bold", "italic"] }],
+          spans: [{ type: "text", text: "both", styles: ["bold", "italic"] }],
         },
       ];
       expect(nodesToHtml(nodes)).toBe("<p><strong><em>both</em></strong></p>");
@@ -138,15 +173,47 @@ describe("nodesToHtml", () => {
         {
           type: "paragraph",
           spans: [
-            { text: "plain ", styles: [] },
-            { text: "bold", styles: ["bold"] },
-            { text: " plain", styles: [] },
+            { type: "text", text: "plain ", styles: [] },
+            { type: "text", text: "bold", styles: ["bold"] },
+            { type: "text", text: " plain", styles: [] },
           ],
         },
       ];
       expect(nodesToHtml(nodes)).toBe(
         "<p>plain <strong>bold</strong> plain</p>",
       );
+    });
+
+    it("renders a lineBreak span as <br/>", () => {
+      const nodes: DocNode[] = [
+        {
+          type: "paragraph",
+          spans: [
+            { type: "text", text: "line one", styles: [] },
+            { type: "lineBreak" },
+            { type: "text", text: "line two", styles: [] },
+          ],
+        },
+      ];
+      expect(nodesToHtml(nodes)).toBe("<p>line one<br/>line two</p>");
+    });
+
+    it("renders an end-to-end markdown hard break as <br/>", () => {
+      const html = exportHtml(
+        {
+          projectTitle: "p",
+          chapters: [{ title: "c", content: "line one  \nline two" }],
+        },
+        {
+          format: "markdown",
+          scope: "chapter",
+          projectId: PROJECT_ID,
+          includeTitlePage: false,
+          includeChapterHeadings: false,
+          pageBreaksBetweenChapters: false,
+        },
+      );
+      expect(html).toBe("<p>line one<br/>line two</p>");
     });
   });
 
@@ -155,7 +222,13 @@ describe("nodesToHtml", () => {
       const nodes: DocNode[] = [
         {
           type: "paragraph",
-          spans: [{ text: '<script>alert("xss")</script>', styles: [] }],
+          spans: [
+            {
+              type: "text",
+              text: '<script>alert("xss")</script>',
+              styles: [],
+            },
+          ],
         },
       ];
       expect(nodesToHtml(nodes)).toBe(
@@ -167,7 +240,7 @@ describe("nodesToHtml", () => {
       const nodes: DocNode[] = [
         {
           type: "paragraph",
-          spans: [{ text: "Tom & Jerry", styles: [] }],
+          spans: [{ type: "text", text: "Tom & Jerry", styles: [] }],
         },
       ];
       expect(nodesToHtml(nodes)).toBe("<p>Tom &amp; Jerry</p>");

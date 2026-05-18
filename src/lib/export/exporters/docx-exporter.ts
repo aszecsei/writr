@@ -10,7 +10,8 @@ import {
   Paragraph,
   TextRun,
 } from "docx";
-import type { TextAlignment, TextSpan } from "../markdown-to-nodes";
+import { match } from "ts-pattern";
+import type { InlineSpan, TextAlignment, TextSpan } from "../markdown-to-nodes";
 import { HR_TEXT, imagePlaceholder } from "../shared";
 import type {
   BlockquoteNode,
@@ -63,19 +64,28 @@ function spanToRunOptions(span: TextSpan) {
   };
 }
 
-function spansToRuns(spans: TextSpan[]): TextRun[] {
+function spansToRuns(spans: InlineSpan[]): TextRun[] {
   const runs: TextRun[] = [];
   for (const span of spans) {
-    runs.push(new TextRun({ text: span.text, ...spanToRunOptions(span) }));
-    if (span.ruby) {
-      runs.push(
-        new TextRun({
-          text: ` (${span.ruby})`,
-          size: 16,
-          color: "666666",
-        }),
-      );
-    }
+    match(span)
+      .with({ type: "lineBreak" }, () => {
+        runs.push(new TextRun({ break: 1 }));
+      })
+      .with({ type: "text" }, (textSpan) => {
+        runs.push(
+          new TextRun({ text: textSpan.text, ...spanToRunOptions(textSpan) }),
+        );
+        if (textSpan.ruby) {
+          runs.push(
+            new TextRun({
+              text: ` (${textSpan.ruby})`,
+              size: 16,
+              color: "666666",
+            }),
+          );
+        }
+      })
+      .exhaustive();
   }
   return runs;
 }
