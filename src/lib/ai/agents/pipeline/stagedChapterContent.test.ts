@@ -106,6 +106,41 @@ describe("applyEditsToContent", () => {
     expect(skipped).toEqual([]);
   });
 
+  it("resolves a replace anchor whose quotes differ from the chapter's", () => {
+    // Chapter stores curly quotes (TipTap Typography output); LLM emitted
+    // straight quotes in its tool call. Match must still locate the anchor
+    // and splice using the chapter's original character positions.
+    const content = "She said “hello” and waved.";
+    const edit = makeEdit({
+      id: "e1" as ProposedEditId,
+      kind: "replace",
+      anchorText: 'said "hello"',
+      newContent: 'whispered "hi"',
+    });
+    const {
+      content: out,
+      applied,
+      skipped,
+    } = applyEditsToContent(content, [edit]);
+    expect(out).toBe('She whispered "hi" and waved.');
+    expect(applied).toEqual(["e1"]);
+    expect(skipped).toEqual([]);
+  });
+
+  it("resolves an insert_at anchor whose apostrophe differs from the chapter's", () => {
+    const content = "Don’t do that.";
+    const edit = makeEdit({
+      id: "e1" as ProposedEditId,
+      kind: "insert_at",
+      anchorText: "Don't",
+      fromOffset: undefined,
+      newContent: " really",
+    });
+    const { content: out, applied } = applyEditsToContent(content, [edit]);
+    expect(out).toBe(" reallyDon’t do that.");
+    expect(applied).toEqual(["e1"]);
+  });
+
   it("applies append + replace together correctly", () => {
     const content = "first sentence.";
     const replaceEdit = makeEdit({

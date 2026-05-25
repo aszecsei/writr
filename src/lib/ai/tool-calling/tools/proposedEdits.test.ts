@@ -208,6 +208,48 @@ describe("propose_edit (pipeline mode — workUnitId in context)", () => {
     expect(await db.proposedEdits.count()).toBe(0);
   });
 
+  it("stages a replace edit when the chapter uses smart quotes but the LLM used straight ones", async () => {
+    const chapter = await seedChapter("She said “hello” and waved.");
+    const wu = await seedWorkUnit(chapter.id);
+
+    const result = await executeTool(
+      "propose_edit",
+      {
+        chapterId: chapter.id,
+        kind: "replace",
+        anchorText: 'said "hello"',
+        newContent: 'whispered "hi"',
+      },
+      { projectId, runId, workUnitId: wu.id },
+    );
+
+    expect(result.success).toBe(true);
+    const persisted = await db.proposedEdits.toArray();
+    expect(persisted).toHaveLength(1);
+  });
+
+  it("rejects as non-unique when normalized anchor collides across quote forms", async () => {
+    // Documents the consequence of normalization: a chapter that mixes
+    // straight and curly forms of the same span will see both as the same
+    // anchor post-normalize. The fix is to widen prefix/suffix.
+    const chapter = await seedChapter('Say "hi" then Say “hi”.');
+    const wu = await seedWorkUnit(chapter.id);
+
+    const result = await executeTool(
+      "propose_edit",
+      {
+        chapterId: chapter.id,
+        kind: "replace",
+        anchorText: 'Say "hi"',
+        newContent: "Wave",
+      },
+      { projectId, runId, workUnitId: wu.id },
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/not unique/i);
+  });
+
   it("rejects when the chapter belongs to a different project", async () => {
     const chapter = await seedChapter("text");
     const wu = await seedWorkUnit(chapter.id);
@@ -322,6 +364,24 @@ describe("propose_edit (chat mode — no workUnitId)", () => {
     expect(result.success).toBe(false);
     expect(result.message).toMatch(/not unique/i);
     expect(result.message).toMatch(/2/);
+  });
+
+  it("reports anchorFound:true in chat mode when quote form differs", async () => {
+    const chapter = await seedChapter("She said “hello” and waved.");
+
+    const result = await executeTool(
+      "propose_edit",
+      {
+        chapterId: chapter.id,
+        kind: "replace",
+        anchorText: 'said "hello"',
+        newContent: 'whispered "hi"',
+      },
+      { projectId },
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data?.anchorFound).toBe(true);
   });
 
   it("returns the whole chapter as originalText for full_chapter", async () => {

@@ -20,6 +20,7 @@ import {
   parseFountain,
   serializeFountain,
 } from "@/lib/fountain";
+import { normalizedIndexOf } from "@/lib/punctuation-match";
 import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -147,7 +148,7 @@ function findReplaceRangeInDoc(
   if (!anchorText) return null;
   const combined = prefix + anchorText + suffix;
   const { flat, entries } = buildFlatDocText(editor);
-  const idx = flat.indexOf(combined);
+  const idx = normalizedIndexOf(flat, combined);
   if (idx < 0) return null;
 
   const flatFrom = idx + prefix.length;

@@ -7,6 +7,10 @@ import type {
   ProposedEdit,
   ProposedEditId,
 } from "@/db/schemas";
+import {
+  normalizedIndexOf,
+  normalizePunctuation,
+} from "@/lib/punctuation-match";
 
 /**
  * Apply a list of proposed edits to a chapter content string. Locates each
@@ -96,12 +100,14 @@ export function locateProposedEdit(
           e.fromOffset,
           e.fromOffset + e.anchorText.length,
         );
-        if (slice === e.anchorText) {
+        if (
+          normalizePunctuation(slice) === normalizePunctuation(e.anchorText)
+        ) {
           return { from: e.fromOffset, to: e.fromOffset };
         }
       }
       if (e.anchorText) {
-        const idx = content.indexOf(e.anchorText);
+        const idx = normalizedIndexOf(content, e.anchorText);
         if (idx >= 0) return { from: idx, to: idx };
       }
       return null;
@@ -110,7 +116,7 @@ export function locateProposedEdit(
       // Uniqueness was the proposal-time guarantee; the chapter has likely
       // shifted by apply time, so first match is the best we can do.
       const combined = (e.prefix ?? "") + e.anchorText + (e.suffix ?? "");
-      const idx = content.indexOf(combined);
+      const idx = normalizedIndexOf(content, combined);
       if (idx < 0) return null;
       const from = idx + (e.prefix ?? "").length;
       return { from, to: from + e.anchorText.length };

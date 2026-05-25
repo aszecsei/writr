@@ -4,6 +4,10 @@ import { getChapter } from "@/db/operations/chapters";
 import { createProposedEdit } from "@/db/operations/proposedEdits";
 import { getWorkUnit } from "@/db/operations/workUnits";
 import type { ChapterId } from "@/db/schemas";
+import {
+  countNormalizedOccurrences,
+  normalizedIncludes,
+} from "@/lib/punctuation-match";
 import { defineTool } from "../types";
 import { fail, ok } from "./helpers";
 
@@ -94,10 +98,10 @@ export const proposeEditTool = defineTool({
       }
       const combined =
         (params.prefix ?? "") + params.anchorText + (params.suffix ?? "");
-      const matches = countOccurrences(chapter.content, combined);
+      const matches = countNormalizedOccurrences(chapter.content, combined);
       if (matches === 0) {
         return fail(
-          "replace anchor not found in chapter — verify the prefix/anchorText/suffix you quoted matches the chapter verbatim (no added or normalized whitespace)",
+          "replace anchor not found in chapter — verify the prefix/anchorText/suffix you quoted matches the chapter verbatim (no added or normalized whitespace; curly vs straight quotes are tolerated)",
         );
       }
       if (matches > 1) {
@@ -158,14 +162,16 @@ export const proposeEditTool = defineTool({
     const anchorFound = match(params)
       .with({ kind: P.union("append", "full_chapter") }, () => true)
       .with({ kind: "replace" }, (p) =>
-        chapter.content.includes(
+        normalizedIncludes(
+          chapter.content,
           (p.prefix ?? "") + (p.anchorText ?? "") + (p.suffix ?? ""),
         ),
       )
       .with(
         { kind: "insert_at" },
         (p) =>
-          p.anchorText !== undefined && chapter.content.includes(p.anchorText),
+          p.anchorText !== undefined &&
+          normalizedIncludes(chapter.content, p.anchorText),
       )
       .exhaustive();
 
@@ -195,16 +201,4 @@ function resolveOriginalText(args: {
     .with({ kind: "replace" }, (a) => a.anchorText ?? "")
     .with({ kind: P.union("insert_at", "append") }, () => "")
     .exhaustive();
-}
-
-function countOccurrences(haystack: string, needle: string): number {
-  if (needle.length === 0) return 0;
-  let count = 0;
-  let from = 0;
-  for (;;) {
-    const idx = haystack.indexOf(needle, from);
-    if (idx < 0) return count;
-    count++;
-    from = idx + needle.length;
-  }
 }
