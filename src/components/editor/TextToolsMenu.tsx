@@ -1,9 +1,10 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
-import { Check, Type } from "lucide-react";
+import { Check, Pilcrow, Type } from "lucide-react";
 import { useRef, useState } from "react";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import { findLineBreakPairs } from "@/lib/normalize-line-breaks";
 import { convertToSmartQuotes } from "@/lib/smart-quotes";
 
 interface TextToolsMenuProps {
@@ -40,6 +41,30 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
     setMenuOpen(false);
   }
 
+  function handleNormalizeLineBreaks() {
+    if (!editor) return;
+
+    const pairs = findLineBreakPairs(editor.state.doc);
+    if (pairs.length === 0) {
+      setMenuOpen(false);
+      return;
+    }
+
+    // Apply all pair-splits in a single transaction (single undo step).
+    // Process in reverse so earlier positions are unaffected by later edits.
+    const tr = editor.state.tr;
+    for (let i = pairs.length - 1; i >= 0; i--) {
+      const { from, to } = pairs[i];
+      tr.delete(from, to);
+      tr.split(from);
+    }
+    editor.view.dispatch(tr);
+
+    setApplied(true);
+    setTimeout(() => setApplied(false), 2000);
+    setMenuOpen(false);
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -63,6 +88,14 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
           >
             <Type size={14} />
             Smart Quotes
+          </button>
+          <button
+            type="button"
+            onClick={handleNormalizeLineBreaks}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          >
+            <Pilcrow size={14} />
+            Normalize Line Breaks
           </button>
         </div>
       )}
