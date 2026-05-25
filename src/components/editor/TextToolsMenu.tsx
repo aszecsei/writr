@@ -32,7 +32,11 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
     const tr = editor.state.tr;
     for (let i = replacements.length - 1; i >= 0; i--) {
       const r = replacements[i];
-      tr.replaceWith(r.from, r.to, editor.state.schema.text(r.replacement));
+      tr.replaceWith(
+        r.from,
+        r.to,
+        editor.state.schema.text(r.replacement, r.marks),
+      );
     }
     editor.view.dispatch(tr);
 

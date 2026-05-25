@@ -19,6 +19,12 @@ const schema = new Schema({
     code: {
       parseDOM: [{ tag: "code" }],
     },
+    em: {
+      parseDOM: [{ tag: "em" }],
+    },
+    strong: {
+      parseDOM: [{ tag: "strong" }],
+    },
   },
 });
 
@@ -38,6 +44,26 @@ function makeCodeParagraph(text: string) {
   return schema.node("paragraph", null, [
     schema.text(text, [schema.mark("code")]),
   ]);
+}
+
+function makeMarkedParagraph(text: string, ...markNames: string[]) {
+  const marks = markNames.map((name) => schema.mark(name));
+  return schema.node("paragraph", null, [schema.text(text, marks)]);
+}
+
+function makeMixedParagraph(
+  ...segments: Array<{ text: string; marks?: string[] }>
+) {
+  return schema.node(
+    "paragraph",
+    null,
+    segments.map(({ text, marks = [] }) =>
+      schema.text(
+        text,
+        marks.map((name) => schema.mark(name)),
+      ),
+    ),
+  );
 }
 
 describe("convertToSmartQuotes", () => {
@@ -140,5 +166,56 @@ describe("convertToSmartQuotes", () => {
     expect(result[1].replacement).toBe("\u201D");
     expect(result[2].replacement).toBe("\u201C");
     expect(result[3].replacement).toBe("\u201D");
+  });
+
+  it("captures no marks for unformatted text", () => {
+    const doc = makeDoc(makeParagraph('"hello"'));
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(2);
+    for (const r of result) {
+      expect(r.marks).toEqual([]);
+    }
+  });
+
+  it("captures marks when quotes are inside an italic span", () => {
+    const doc = makeDoc(makeMarkedParagraph('"hello"', "em"));
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(2);
+    for (const r of result) {
+      expect(r.marks).toHaveLength(1);
+      expect(r.marks[0].type.name).toBe("em");
+    }
+  });
+
+  it("captures multiple marks for nested formatting", () => {
+    const doc = makeDoc(makeMarkedParagraph('"hi"', "em", "strong"));
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(2);
+    for (const r of result) {
+      const names = r.marks.map((m) => m.type.name).sort();
+      expect(names).toEqual(["em", "strong"]);
+    }
+  });
+
+  it("captures the correct marks per segment in mixed-mark paragraphs", () => {
+    // `*"hi"* and "bye"` \u2014 first pair italic, second pair plain
+    const doc = makeDoc(
+      makeMixedParagraph(
+        { text: '"hi"', marks: ["em"] },
+        { text: ' and "bye"' },
+      ),
+    );
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(4);
+    // First pair: inside the italic segment
+    expect(result[0].marks.map((m) => m.type.name)).toEqual(["em"]);
+    expect(result[1].marks.map((m) => m.type.name)).toEqual(["em"]);
+    // Second pair: in the unmarked segment
+    expect(result[2].marks).toEqual([]);
+    expect(result[3].marks).toEqual([]);
   });
 });

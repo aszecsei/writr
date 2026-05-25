@@ -1,9 +1,11 @@
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import type { Mark, Node as ProseMirrorNode } from "@tiptap/pm/model";
 
-interface Replacement {
+export interface Replacement {
   from: number;
   to: number;
   replacement: string;
+  /** Marks active on the source text node, so the replacement preserves formatting. */
+  marks: readonly Mark[];
 }
 
 /**
@@ -31,6 +33,8 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
     // node's start in the document.
     const basePos = pos;
 
+    const marks = node.marks;
+
     for (let i = 0; i < text.length; i++) {
       const ch = text[i];
       const prevChar = i > 0 ? text[i - 1] : "";
@@ -44,6 +48,7 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
             from: absPos,
             to: absPos + 1,
             replacement: "\u201C",
+            marks,
           });
         } else {
           // Right double quote
@@ -51,6 +56,7 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
             from: absPos,
             to: absPos + 1,
             replacement: "\u201D",
+            marks,
           });
         }
       } else if (ch === "'") {
@@ -60,6 +66,7 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
             from: absPos,
             to: absPos + 1,
             replacement: "\u2019",
+            marks,
           });
         } else if (isOpeningContext(prevChar, i === 0)) {
           // Left single quote
@@ -67,6 +74,7 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
             from: absPos,
             to: absPos + 1,
             replacement: "\u2018",
+            marks,
           });
         } else {
           // Right single quote / apostrophe
@@ -74,6 +82,7 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
             from: absPos,
             to: absPos + 1,
             replacement: "\u2019",
+            marks,
           });
         }
       }
