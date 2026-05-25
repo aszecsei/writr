@@ -14,6 +14,12 @@ const schema = new Schema({
       parseDOM: [{ tag: "pre" }],
     },
     text: { group: "inline" },
+    hardBreak: {
+      group: "inline",
+      inline: true,
+      selectable: false,
+      parseDOM: [{ tag: "br" }],
+    },
   },
   marks: {
     code: {
@@ -217,5 +223,74 @@ describe("convertToSmartQuotes", () => {
     // Second pair: in the unmarked segment
     expect(result[2].marks).toEqual([]);
     expect(result[3].marks).toEqual([]);
+  });
+
+  it("classifies the closing quote after an italic span as closing", () => {
+    // `"*Uso!*" She slapped the glass.` \u2014 the second `"` sits at the
+    // start of a fresh (unmarked) text node, but its preceding character (`!`
+    // from the italic span) must still drive the classification.
+    const doc = makeDoc(
+      makeMixedParagraph(
+        { text: '"' },
+        { text: "Uso!", marks: ["em"] },
+        { text: '" She slapped the glass.' },
+      ),
+    );
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].replacement).toBe("\u201c"); // opening "
+    expect(result[1].replacement).toBe("\u201d"); // closing " (was wrongly opening)
+    // Sanity-check positions: " at start of paragraph content, " right after `Uso!`.
+    expect(result[0].from).toBe(1);
+    expect(result[1].from).toBe(6);
+  });
+
+  it("classifies a closing quote after an italic word as closing", () => {
+    // `"*hello*" world` \u2014 simpler variant of the above, no trailing
+    // punctuation inside the italic span.
+    const doc = makeDoc(
+      makeMixedParagraph(
+        { text: '"' },
+        { text: "hello", marks: ["em"] },
+        { text: '" world' },
+      ),
+    );
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].replacement).toBe("\u201c");
+    expect(result[1].replacement).toBe("\u201d");
+  });
+
+  it("recognises a contraction apostrophe across a mark boundary", () => {
+    // `*don*'t` \u2014 italic `don` followed by plain `'t`. The apostrophe is
+    // at index 0 of the second text node; without prevChar threading we'd
+    // misclassify it as opening-context (prev=""). With threading, prev=`n`
+    // and next=`t`, so it's a contraction.
+    const doc = makeDoc(
+      makeMixedParagraph({ text: "don", marks: ["em"] }, { text: "'t" }),
+    );
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].replacement).toBe("\u2019"); // contraction apostrophe
+  });
+
+  it("resets quote context after a hard break", () => {
+    // Paragraph: `hello"<br>"world"` \u2014 the `"` immediately after the
+    // hardBreak should open, not close (the line break is whitespace-like).
+    const paragraph = schema.node("paragraph", null, [
+      schema.text('hello"'),
+      schema.node("hardBreak"),
+      schema.text('"world"'),
+    ]);
+    const doc = makeDoc(paragraph);
+    const result = convertToSmartQuotes(doc);
+
+    expect(result).toHaveLength(3);
+    expect(result[0].replacement).toBe("\u201d"); // closing after `hello`
+    expect(result[1].replacement).toBe("\u201c"); // opening after hardBreak
+    expect(result[2].replacement).toBe("\u201d"); // closing after `world`
   });
 });

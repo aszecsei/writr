@@ -14,86 +14,104 @@ export interface Replacement {
  *
  * Skips code blocks and inline code marks.
  * Already-smart quotes are left untouched.
+ *
+ * Quote classification (opening vs. closing) is driven by the preceding
+ * character within the same block, threaded across text-node boundaries so
+ * that mark splits (e.g. `"*italic*"`) don't reset the context. Block
+ * boundaries and non-text inline nodes (hardBreak, image, …) do reset it.
  */
 export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
   const replacements: Replacement[] = [];
+  let prevChar = "";
 
   doc.descendants((node, pos) => {
     // Skip code blocks entirely
-    if (node.type.name === "codeBlock") return false;
+    if (node.type.name === "codeBlock") {
+      prevChar = "";
+      return false;
+    }
 
-    if (!node.isText || !node.text) return;
+    // Entering a new block — the previous block's trailing punctuation must
+    // not bleed into this one (e.g. ending one paragraph on `."` shouldn't
+    // make the next paragraph's opening `"` look like a closing quote).
+    if (node.isBlock) {
+      prevChar = "";
+      return;
+    }
 
-    // Skip text with code mark
-    if (node.marks.some((m) => m.type.name === "code")) return;
+    // Non-text inline node (hardBreak, image, mention, …) — treat as a
+    // context break: the character after a line break should be free to open.
+    if (!node.isText || !node.text) {
+      prevChar = "";
+      return;
+    }
+
+    // Skip text with inline code mark; don't let code chars leak as context.
+    if (node.marks.some((m) => m.type.name === "code")) {
+      prevChar = "";
+      return;
+    }
 
     const text = node.text;
-    // pos is the position before the node; text starts at pos itself for text nodes
-    // within their parent. Actually, for descendants, pos is the offset of the
-    // node's start in the document.
-    const basePos = pos;
-
     const marks = node.marks;
 
     for (let i = 0; i < text.length; i++) {
       const ch = text[i];
-      const prevChar = i > 0 ? text[i - 1] : "";
-      const nextChar = i < text.length - 1 ? text[i + 1] : "";
-      const absPos = basePos + i;
+      const prev = i > 0 ? text[i - 1] : prevChar;
+      const next = i < text.length - 1 ? text[i + 1] : "";
+      const absPos = pos + i;
 
       if (ch === '"') {
-        // Left double quote: after whitespace, start of text, or opening punctuation
-        if (isOpeningContext(prevChar, i === 0)) {
+        if (isOpeningContext(prev)) {
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "\u201C",
+            replacement: "“",
             marks,
           });
         } else {
-          // Right double quote
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "\u201D",
+            replacement: "”",
             marks,
           });
         }
       } else if (ch === "'") {
-        // Apostrophe: between word characters (e.g. don't, it's)
-        if (isWordChar(prevChar) && isWordChar(nextChar)) {
+        // Apostrophe inside a word (don't, it's)
+        if (isWordChar(prev) && isWordChar(next)) {
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "\u2019",
+            replacement: "’",
             marks,
           });
-        } else if (isOpeningContext(prevChar, i === 0)) {
-          // Left single quote
+        } else if (isOpeningContext(prev)) {
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "\u2018",
+            replacement: "‘",
             marks,
           });
         } else {
-          // Right single quote / apostrophe
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "\u2019",
+            replacement: "’",
             marks,
           });
         }
       }
     }
+
+    prevChar = text[text.length - 1];
   });
 
   return replacements;
 }
 
-function isOpeningContext(prevChar: string, isStart: boolean): boolean {
-  if (isStart || prevChar === "") return true;
+function isOpeningContext(prevChar: string): boolean {
+  if (prevChar === "") return true;
   // Whitespace or opening punctuation
   return /[\s([{]/.test(prevChar);
 }
