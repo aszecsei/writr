@@ -977,6 +977,15 @@ export class WritrDatabase extends Dexie {
         }),
     );
 
+    // v35: add `parentCommentId` to the comments store for threaded replies.
+    // No upgrade function — missing fields default to undefined in Dexie and
+    // the Zod schema's `.default(null)` normalizes them on read. New index on
+    // parentCommentId so replies can be fetched per-root in one query.
+    this.version(35).stores({
+      comments:
+        "id, projectId, chapterId, [chapterId+fromOffset], status, parentCommentId",
+    });
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(

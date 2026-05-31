@@ -53,8 +53,7 @@ export function applyEditsToContent(
   let working = content;
   const applied: ProposedEditId[] = [];
   for (const { edit, range } of located) {
-    working =
-      working.slice(0, range.from) + edit.newContent + working.slice(range.to);
+    working = spliceEdit(working, range, edit.newContent);
     applied.push(edit.id);
   }
   // Preserve the order in which edits were located (i.e. input order minus
@@ -70,16 +69,45 @@ export interface ResolvedRange {
 }
 
 /**
+ * The locating fields shared by a persisted `ProposedEdit` (pipeline) and a
+ * `PendingStagedEdit` (chat-mode Apply). `locateProposedEdit` reads only these,
+ * so both shapes are accepted via structural assignability — keeping a single
+ * source of truth for where an edit lands. `ProposedEdit` is a superset and is
+ * passed directly; the chat consumer passes its store object.
+ */
+export interface EditLocator {
+  kind: "replace" | "insert_at" | "append" | "full_chapter";
+  anchorText?: string;
+  prefix?: string;
+  suffix?: string;
+  fromOffset?: number;
+}
+
+/**
+ * Splice `newContent` into `content` over a resolved range. Shared by the
+ * pipeline apply (`applyEditsToContent`) and the chat-mode Apply consumer so
+ * the splice arithmetic lives in one place.
+ */
+export function spliceEdit(
+  content: string,
+  range: ResolvedRange,
+  newContent: string,
+): string {
+  return content.slice(0, range.from) + newContent + content.slice(range.to);
+}
+
+/**
  * Resolve a proposed edit's range against the given chapter content.
  * Returns null if the locator can't be matched (anchor drift, missing anchor).
  *
- * Used both by `applyEditsToContent` (apply path) and by `EditDiffCard` (UI
- * preview). For `insert_at`, prefers the recorded offset when it still
- * matches the anchor and falls back to indexOf otherwise.
+ * Used by `applyEditsToContent` (pipeline apply), the chat-mode Apply consumer
+ * in `ChapterEditor`, and `EditDiffCard` (UI preview). For `insert_at`, prefers
+ * the recorded offset when it still matches the anchor and falls back to
+ * indexOf otherwise.
  */
 export function locateProposedEdit(
   content: string,
-  edit: ProposedEdit,
+  edit: EditLocator,
 ): ResolvedRange | null {
   return match(edit)
     .with({ kind: "full_chapter" }, () => ({ from: 0, to: content.length }))
@@ -113,6 +141,7 @@ export function locateProposedEdit(
       return null;
     })
     .with({ kind: "replace" }, (e): ResolvedRange | null => {
+      if (!e.anchorText) return null;
       // Uniqueness was the proposal-time guarantee; the chapter has likely
       // shifted by apply time, so first match is the best we can do.
       const combined = (e.prefix ?? "") + e.anchorText + (e.suffix ?? "");

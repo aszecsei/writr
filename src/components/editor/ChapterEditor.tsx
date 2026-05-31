@@ -1,9 +1,8 @@
 "use no memo";
 "use client";
 
-import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { match } from "ts-pattern";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -14,13 +13,16 @@ import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
 import { useEditorKeyboardShortcuts } from "@/hooks/editor/useEditorKeyboardShortcuts";
 import { useEditorSpellcheck } from "@/hooks/editor/useEditorSpellcheck";
 import { useFocusMode } from "@/hooks/editor/useFocusMode";
+import {
+  locateProposedEdit,
+  spliceEdit,
+} from "@/lib/ai/agents/pipeline/stagedChapterContent";
 import { getEditorFont } from "@/lib/fonts";
 import {
   fountainToProseMirror,
   parseFountain,
   serializeFountain,
 } from "@/lib/fountain";
-import { normalizedIndexOf } from "@/lib/punctuation-match";
 import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -59,6 +61,14 @@ function getWordCount(storage: unknown): number {
   ).characterCount.words();
 }
 
+// Word count for a serialized chapter string (markdown or fountain). Used when
+// persisting a staged-edit splice, where the editor's live characterCount isn't
+// available for the post-splice content (it's reseeded asynchronously). The
+// next real editor save recomputes the authoritative count.
+function countContentWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 // Convert a markdown string into TipTap-compatible insertion content. Used
 // by both the requestInsertAtCursor path (Spark inserts) and the
 // requestStagedEdit path (propose_edit applies).
@@ -85,92 +95,6 @@ function markdownToInsertContent(markdown: string) {
   }));
 }
 
-// Find the first contiguous text-node match for `needle` in the editor's doc
-// and return its PM range. Returns null when the anchor spans a formatting
-// boundary or has been edited away. Used by the staged-edit consumer to map
-// LLM-supplied anchorText to ProseMirror positions.
-function findTextRange(
-  editor: Editor,
-  needle: string,
-): { from: number; to: number } | null {
-  if (!needle) return null;
-  let result: { from: number; to: number } | null = null;
-  editor.state.doc.descendants((node, pos) => {
-    if (result) return false;
-    if (!node.isText || !node.text) return;
-    const idx = node.text.indexOf(needle);
-    if (idx >= 0) {
-      result = { from: pos + idx, to: pos + idx + needle.length };
-      return false;
-    }
-  });
-  return result;
-}
-
-// Flatten the doc to a markdown-shaped string (text nodes joined with \n\n
-// between blocks, matching the markdown the LLM sees in tool calls), and
-// return per-text-node entries that map flat-string offsets back to PM
-// positions. Used by the `replace` staged-edit applier so prefix/suffix can
-// span paragraph boundaries even though the splice target (anchorText) must
-// stay within a single text node.
-interface DocTextEntry {
-  flatStart: number;
-  flatEnd: number;
-  pmStart: number;
-}
-
-function buildFlatDocText(editor: Editor): {
-  flat: string;
-  entries: DocTextEntry[];
-} {
-  const entries: DocTextEntry[] = [];
-  let flat = "";
-  editor.state.doc.descendants((node, pos) => {
-    if (node.isText && node.text) {
-      const flatStart = flat.length;
-      flat += node.text;
-      entries.push({ flatStart, flatEnd: flat.length, pmStart: pos });
-      return false;
-    }
-    if (node.isBlock && flat.length > 0 && !flat.endsWith("\n\n")) {
-      flat += "\n\n";
-    }
-  });
-  return { flat, entries };
-}
-
-function findReplaceRangeInDoc(
-  editor: Editor,
-  prefix: string,
-  anchorText: string,
-  suffix: string,
-): { from: number; to: number } | null {
-  if (!anchorText) return null;
-  const combined = prefix + anchorText + suffix;
-  const { flat, entries } = buildFlatDocText(editor);
-  const idx = normalizedIndexOf(flat, combined);
-  if (idx < 0) return null;
-
-  const flatFrom = idx + prefix.length;
-  const flatTo = flatFrom + anchorText.length;
-
-  // anchorText itself must lie within a single text node — a clean PM splice
-  // across block boundaries would need merge logic we don't have. Skip
-  // (anchor not located) when the LLM picks an anchor crossing \n\n.
-  const fromEntry = entries.find(
-    (e) => flatFrom >= e.flatStart && flatFrom <= e.flatEnd,
-  );
-  const toEntry = entries.find(
-    (e) => flatTo >= e.flatStart && flatTo <= e.flatEnd,
-  );
-  if (!fromEntry || !toEntry || fromEntry !== toEntry) return null;
-
-  return {
-    from: fromEntry.pmStart + (flatFrom - fromEntry.flatStart),
-    to: toEntry.pmStart + (flatTo - toEntry.flatStart),
-  };
-}
-
 interface ChapterEditorProps {
   chapterId: ChapterId;
 }
@@ -182,9 +106,14 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setActiveDocument = useEditorStore((s) => s.setActiveDocument);
   const clearActiveDocument = useEditorStore((s) => s.clearActiveDocument);
   const markDirty = useEditorStore((s) => s.markDirty);
+  const markSaved = useEditorStore((s) => s.markSaved);
+  const bumpContentVersion = useEditorStore((s) => s.bumpContentVersion);
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const setSelection = useEditorStore((s) => s.setSelection);
   const clearSelection = useEditorStore((s) => s.clearSelection);
+  const reportStagedEditResult = useEditorStore(
+    (s) => s.reportStagedEditResult,
+  );
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
@@ -476,10 +405,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     clearPendingInsertion();
   }, [pendingInsertion, editor, clearPendingInsertion]);
 
-  // AI-driven staged edits: the AiPanel posts an anchorText-located edit when
-  // the user clicks Apply on a propose_edit diff card. We resolve the anchor
-  // against the live PM doc here (the panel doesn't have editor access) and
-  // apply per kind. Bail silently if the chapter has changed under us.
+  // AI-driven staged edits: the AiPanel posts an edit when the user clicks
+  // Apply on a propose_edit diff card. The panel has no editor access, so we
+  // resolve and apply here. Resolution runs against the chapter's serialized
+  // STRING (the same representation propose_edit validated its anchor against)
+  // via the shared `locateProposedEdit` — not the flattened PM doc, which
+  // strips markdown and silently dropped any anchor touching formatting. We
+  // splice the string, persist, then `bumpContentVersion` to reseed the editor
+  // (re-parsing fountain when needed) and re-anchor comments through the normal
+  // reconcile path. The originating card observes the outcome via
+  // `reportStagedEditResult`.
   const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
   const clearPendingStagedEdit = useEditorStore(
     (s) => s.clearPendingStagedEdit,
@@ -487,44 +422,45 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   useEffect(() => {
     if (!pendingStagedEdit || !editor || editor.isDestroyed) return;
     if (pendingStagedEdit.chapterId !== chapterId) return;
+    const edit = pendingStagedEdit;
 
-    const { kind, anchorText, prefix, suffix, newContent } = pendingStagedEdit;
-    const nodes = markdownToInsertContent(newContent);
-    const docEnd = editor.state.doc.content.size;
-
-    const range = match(kind)
-      .returnType<{ from: number; to: number } | null>()
-      .with("full_chapter", () => ({ from: 0, to: docEnd }))
-      .with("append", () => ({ from: docEnd, to: docEnd }))
-      .with("replace", () => {
-        if (!anchorText) return null;
-        return findReplaceRangeInDoc(
-          editor,
-          prefix ?? "",
-          anchorText,
-          suffix ?? "",
-        );
-      })
-      .with("insert_at", () => {
-        if (!anchorText) return { from: docEnd, to: docEnd };
-        const found = findTextRange(editor, anchorText);
-        // Insert after the anchor (matches the tool's "sits before" contract:
-        // newContent appears immediately after anchorText).
-        return found ? { from: found.to, to: found.to } : null;
-      })
-      .exhaustive();
+    const content = isScreenplay
+      ? serializeFountain(editor.state.doc)
+      : getMarkdown(editor.storage);
+    const range = locateProposedEdit(content, edit);
 
     if (!range) {
       console.warn(
-        `[propose_edit] anchorText not located in chapter — staged ${kind} edit dropped`,
+        `[propose_edit] anchorText not located in chapter — staged ${edit.kind} edit dropped`,
       );
+      reportStagedEditResult(edit.editId, "failed");
       clearPendingStagedEdit();
       return;
     }
 
-    editor.chain().focus().insertContentAt(range, nodes).run();
+    const next = spliceEdit(content, range, edit.newContent);
     clearPendingStagedEdit();
-  }, [pendingStagedEdit, editor, chapterId, clearPendingStagedEdit]);
+    // Cancel any pending autosave before persisting. A debounced autosave armed
+    // by recent typing would read the editor doc — which still holds the
+    // pre-splice content until the async reseed below — and clobber our write.
+    // Marking saved clears that timer; our apply never re-dirties the doc, so no
+    // new autosave starts before the reseed.
+    markSaved();
+    void (async () => {
+      await updateChapterContent(chapterId, next, countContentWords(next));
+      bumpContentVersion();
+      reportStagedEditResult(edit.editId, "applied");
+    })();
+  }, [
+    pendingStagedEdit,
+    editor,
+    chapterId,
+    isScreenplay,
+    reportStagedEditResult,
+    clearPendingStagedEdit,
+    markSaved,
+    bumpContentVersion,
+  ]);
 
   // Keyboard shortcuts (Ctrl+Shift+P for preview card)
   useEditorKeyboardShortcuts(

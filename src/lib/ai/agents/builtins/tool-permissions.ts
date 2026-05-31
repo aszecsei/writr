@@ -132,6 +132,36 @@ export const EDITOR_CHAT_TOOLS: readonly string[] = [
   "propose_edit",
 ];
 
+// ─── Beta Reader ─────────────────────────────────────────────────────
+
+/**
+ * Beta Reader panel: full read surface so personas can ground their
+ * reactions in surrounding chapters and bible, plus the comment-creation
+ * tools. Comments are written directly to Dexie (auto-execute, no approval
+ * gate) — the user reviews them in the editor margin afterwards.
+ */
+export const BETA_READER_TOOLS: readonly string[] = [
+  ...CHAT_READS_BASE,
+  "add_comment",
+  "reply_to_comment",
+];
+
+// ─── Outline Architect ───────────────────────────────────────────────
+
+/**
+ * Outline Architect: full read surface (it reads the existing outline via
+ * `get:outline` and grounds beats in the bible/chapters) plus the four
+ * grid-management tools. All four mutate the outline grid and require
+ * approval; the agent stays inside the grid and has no chapter-mutating tools.
+ */
+export const OUTLINE_ARCHITECT_TOOLS: readonly string[] = [
+  ...CHAT_READS_BASE,
+  "manage_outline_columns",
+  "manage_outline_rows",
+  "write_outline_cell",
+  "set_outline_cell_color",
+];
+
 // ─── Chat / Brainstorm / Character Dialogue ──────────────────────────
 
 /**

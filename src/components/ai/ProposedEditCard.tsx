@@ -2,7 +2,7 @@
 
 import { diffWordsWithSpace } from "diff";
 import { AlertTriangle, Check, ChevronDown, ChevronUp, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { ChapterId } from "@/db/schemas";
 import { useEditorStore } from "@/store/editorStore";
 
@@ -37,24 +37,41 @@ interface Props {
   payload: ProposedEditChatPayload;
 }
 
+type CardStatus = "pending" | "applying" | "applied" | "discarded" | "failed";
+
 export function ProposedEditCard({ payload }: Props) {
   const requestStagedEdit = useEditorStore((s) => s.requestStagedEdit);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
-  const [status, setStatus] = useState<"pending" | "applied" | "discarded">(
-    "pending",
-  );
+  // Correlation id so the asynchronous apply (run in ChapterEditor) can report
+  // success/failure back to this specific card. Stable across re-renders.
+  const editId = useId();
+  const stagedResult = useEditorStore((s) => s.stagedEditResults[editId]);
+  const clearStagedEditResult = useEditorStore((s) => s.clearStagedEditResult);
+  const [status, setStatus] = useState<CardStatus>("pending");
   // Default-collapsed for full_chapter so the transcript doesn't drown in a
   // wall of prose. Granular kinds expand by default.
   const [expanded, setExpanded] = useState(payload.kind !== "full_chapter");
 
+  // The consumer locates the anchor against the live document at apply time;
+  // resolve the reported outcome into the card's status, then clear it.
+  useEffect(() => {
+    if (!stagedResult) return;
+    setStatus(stagedResult === "applied" ? "applied" : "failed");
+    clearStagedEditResult(editId);
+  }, [stagedResult, editId, clearStagedEditResult]);
+
   const chapterMatches =
     activeDocumentType === "chapter" && activeDocumentId === payload.chapterId;
+  // Allow apply from the initial pending state and after a failed attempt
+  // (Retry) — both require the anchor to be present and the chapter active.
   const canApply =
-    status === "pending" && payload.anchorFound && chapterMatches;
+    (status === "pending" || status === "failed") &&
+    payload.anchorFound &&
+    chapterMatches;
 
   const disabledReason = useMemo(() => {
-    if (status !== "pending") return null;
+    if (status !== "pending" && status !== "failed") return null;
     if (!payload.anchorFound) return "Anchor text not found in chapter.";
     if (!chapterMatches)
       return "Switch back to this chapter to apply this edit.";
@@ -62,7 +79,9 @@ export function ProposedEditCard({ payload }: Props) {
   }, [status, payload.anchorFound, chapterMatches]);
 
   function handleApply() {
+    setStatus("applying");
     requestStagedEdit({
+      editId,
       chapterId: payload.chapterId,
       kind: payload.kind,
       anchorText: payload.anchorText,
@@ -70,7 +89,6 @@ export function ProposedEditCard({ payload }: Props) {
       suffix: payload.suffix,
       newContent: payload.newContent,
     });
-    setStatus("applied");
   }
 
   function handleDiscard() {
@@ -130,21 +148,38 @@ export function ProposedEditCard({ payload }: Props) {
         </div>
       )}
 
-      {status === "pending" && (
+      {status === "failed" && !disabledReason && (
+        <div className="flex items-start gap-1.5 border-t border-red-200 bg-red-50 px-3 py-1.5 text-[11px] text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+          <span>
+            Couldn't apply this edit — the chapter changed since it was
+            proposed. Adjust the chapter to match, then retry.
+          </span>
+        </div>
+      )}
+
+      {(status === "pending" ||
+        status === "applying" ||
+        status === "failed") && (
         <div className="flex gap-2 border-t border-neutral-200 px-3 py-1.5 dark:border-neutral-700">
           <button
             type="button"
             onClick={handleApply}
-            disabled={!canApply}
+            disabled={status === "applying" || !canApply}
             className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-green-700 dark:hover:bg-green-600"
           >
             <Check size={12} />
-            Apply
+            {status === "applying"
+              ? "Applying…"
+              : status === "failed"
+                ? "Retry"
+                : "Apply"}
           </button>
           <button
             type="button"
             onClick={handleDiscard}
-            className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700"
+            disabled={status === "applying"}
+            className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700"
           >
             <X size={12} />
             Discard
@@ -155,17 +190,21 @@ export function ProposedEditCard({ payload }: Props) {
   );
 }
 
-function StatusChip({
-  status,
-}: {
-  status: "pending" | "applied" | "discarded";
-}) {
-  if (status === "pending") return null;
+function StatusChip({ status }: { status: CardStatus }) {
+  if (status === "pending" || status === "applying") return null;
   if (status === "applied") {
     return (
       <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900 dark:text-green-300">
         <Check size={10} />
         Applied
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+        <AlertTriangle size={10} />
+        Failed
       </span>
     );
   }

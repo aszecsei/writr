@@ -1,6 +1,7 @@
+import { Schema } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 import type { ChapterId, Comment, CommentId, ProjectId } from "@/db/schemas";
-import { reconcileComment } from "./reconcile";
+import { findAnchorPositionInDoc, reconcileComment } from "./reconcile";
 
 const ts = "2024-01-01T00:00:00.000Z";
 
@@ -16,10 +17,30 @@ function makeComment(overrides: Partial<Comment>): Comment {
     anchorText: "",
     status: "active",
     resolvedAt: null,
+    parentCommentId: null,
     createdAt: ts,
     updatedAt: ts,
     ...overrides,
   };
+}
+
+// Minimal PM schema for the doc-aware reconcile tests.
+const schema = new Schema({
+  nodes: {
+    doc: { content: "block+" },
+    paragraph: { content: "inline*", group: "block" },
+    text: { group: "inline" },
+  },
+});
+
+function makePmDoc(...paragraphs: string[]) {
+  return schema.node(
+    "doc",
+    null,
+    paragraphs.map((p) =>
+      schema.node("paragraph", null, p ? [schema.text(p)] : []),
+    ),
+  );
 }
 
 describe("reconcileComment", () => {
@@ -198,5 +219,113 @@ describe("reconcileComment", () => {
         confidence: "fuzzy",
       });
     });
+  });
+
+  // ─── Doc-aware reconciliation ──────────────────────────────────────
+
+  describe("with editor doc (doc-aware)", () => {
+    it("rewrites placeholder offsets to true PM positions", () => {
+      // The AI `add_comment` tool writes 1 / 1+len as placeholders. With
+      // the live PM doc supplied, reconcile locates the anchor and returns
+      // the corrected positions.
+      const doc = makePmDoc("First paragraph.", "Second paragraph here.");
+      // The "S" in "Second" sits in the second paragraph. PM positions:
+      // 1=doc start, 2..17 = first paragraph chars (16 chars + node open),
+      // wait — let's just rely on findAnchorPositionInDoc to compute it
+      // and check the relationship rather than hardcoding magic numbers.
+      const located = findAnchorPositionInDoc(doc, "Second paragraph");
+      expect(located).not.toBeNull();
+      if (!located) return;
+
+      const comment = makeComment({
+        fromOffset: 1,
+        toOffset: 1 + "Second paragraph".length,
+        anchorText: "Second paragraph",
+      });
+      const result = reconcileComment(comment, doc.textContent, doc);
+      expect(result).toEqual({
+        found: true,
+        newFrom: located.from,
+        newTo: located.to,
+        confidence: "fuzzy",
+      });
+    });
+
+    it("returns exact (no rewrite) when stored position already matches", () => {
+      const doc = makePmDoc("Hello world.");
+      const located = findAnchorPositionInDoc(doc, "world");
+      expect(located).not.toBeNull();
+      if (!located) return;
+
+      const comment = makeComment({
+        fromOffset: located.from,
+        toOffset: located.to,
+        anchorText: "world",
+      });
+      const result = reconcileComment(comment, doc.textContent, doc);
+      expect(result).toEqual({ found: true, confidence: "exact" });
+    });
+
+    it("tolerates curly vs straight quotes when locating in the doc", () => {
+      // Doc has curly quotes; stored anchor has straight ones (LLM emission).
+      const doc = makePmDoc("She said “hello” softly.");
+      const comment = makeComment({
+        fromOffset: 1,
+        toOffset: 1 + 'said "hello"'.length,
+        anchorText: 'said "hello"',
+      });
+      const result = reconcileComment(comment, doc.textContent, doc);
+      expect(result.found).toBe(true);
+      expect(result.newFrom).toBeDefined();
+      expect(result.newTo).toBeDefined();
+    });
+
+    it("falls back to plain-text path when the anchor isn't in the doc", () => {
+      const doc = makePmDoc("Hello world.");
+      const comment = makeComment({
+        fromOffset: 1,
+        toOffset: 8,
+        anchorText: "missing entirely",
+      });
+      // Doc-aware path can't find it; the plain-text path also fails.
+      const result = reconcileComment(comment, doc.textContent, doc);
+      expect(result.found).toBe(false);
+    });
+  });
+});
+
+describe("findAnchorPositionInDoc", () => {
+  it("returns null for an empty anchor", () => {
+    const doc = makePmDoc("Hello");
+    expect(findAnchorPositionInDoc(doc, "")).toBeNull();
+  });
+
+  it("returns null when the anchor isn't present", () => {
+    const doc = makePmDoc("Hello world.");
+    expect(findAnchorPositionInDoc(doc, "nope")).toBeNull();
+  });
+
+  it("finds an anchor inside a single text node", () => {
+    const doc = makePmDoc("Hello world.");
+    const located = findAnchorPositionInDoc(doc, "world");
+    expect(located).not.toBeNull();
+    if (!located) return;
+    // The slice `[from, to)` in the PM doc should equal the anchor.
+    expect(doc.textBetween(located.from, located.to)).toBe("world");
+  });
+
+  it("finds an anchor in the second paragraph", () => {
+    const doc = makePmDoc("First.", "Second match here.");
+    const located = findAnchorPositionInDoc(doc, "match");
+    expect(located).not.toBeNull();
+    if (!located) return;
+    expect(doc.textBetween(located.from, located.to)).toBe("match");
+  });
+
+  it("does not match across block boundaries", () => {
+    // The string "First.Second" would match if we concatenated text nodes
+    // across blocks; we intentionally don't.
+    const doc = makePmDoc("First.", "Second.");
+    expect(findAnchorPositionInDoc(doc, "First.Second")).toBeNull();
   });
 });

@@ -84,6 +84,7 @@ function makeComment(
     anchorText: "",
     status: "active",
     resolvedAt: null,
+    parentCommentId: null,
     createdAt: ts,
     updatedAt: ts,
     ...overrides,

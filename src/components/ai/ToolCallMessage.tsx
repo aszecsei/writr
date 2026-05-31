@@ -2,9 +2,44 @@
 
 import { AlertCircle, Check, CircleDashed, Loader2, X } from "lucide-react";
 import { match, P } from "ts-pattern";
+import {
+  BETA_READER_PERSONA_ATTRIBUTION,
+  type BetaReaderPersonaId,
+} from "@/lib/ai/agents/builtins/betaReader";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 
 const MAX_VALUE_LENGTH = 200;
+
+const PERSONA_IDS = new Set<string>(
+  Object.keys(BETA_READER_PERSONA_ATTRIBUTION),
+);
+
+function getPersonaFromInput(
+  input: Record<string, unknown>,
+): BetaReaderPersonaId | null {
+  const p = input.persona;
+  if (typeof p !== "string" || !PERSONA_IDS.has(p)) return null;
+  return p as BetaReaderPersonaId;
+}
+
+function PersonaBadge({ persona }: { persona: BetaReaderPersonaId }) {
+  const attr = BETA_READER_PERSONA_ATTRIBUTION[persona];
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+      style={{
+        backgroundColor: `${attr.authorColor}22`,
+        color: attr.authorColor,
+      }}
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: attr.authorColor }}
+      />
+      {attr.name}
+    </span>
+  );
+}
 
 function truncate(value: unknown): string {
   const str = typeof value === "string" ? value : JSON.stringify(value);
@@ -54,9 +89,13 @@ export function ToolCallMessage({
   onDeny,
   loading,
 }: ToolCallMessageProps) {
+  // Hide the persona field from the parameter list — it's redundant with
+  // the badge in the header, and the comment body is what the user wants
+  // to scan.
   const paramEntries = Object.entries(entry.input).filter(
-    ([key]) => key !== "id",
+    ([key]) => key !== "id" && key !== "persona",
   );
+  const persona = getPersonaFromInput(entry.input);
 
   return (
     <div className="my-2 rounded-md border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800/50">
@@ -65,6 +104,7 @@ export function ToolCallMessage({
         <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {entry.displayName}
         </span>
+        {persona && <PersonaBadge persona={persona} />}
         <StatusBadge status={entry.status} />
         {loading && (
           <Loader2 size={12} className="animate-spin text-neutral-400" />

@@ -1,7 +1,7 @@
 /**
- * Bundled defaults for the ten built-in agents:
- *   - 7 user-facing chat agents (spark, scene, reader, editor,
- *     character-dialogue, brainstorm, chat)
+ * Bundled defaults for the built-in agents:
+ *   - user-facing chat agents (spark, scene, reader, editor,
+ *     character-dialogue, brainstorm, chat, beta-reader, outline-architect)
  *   - 2 pipeline-internal agents (orchestrator, verifier)
  *
  * The Reader and Editor pipeline factories (`builtins/reader.ts`,
@@ -13,14 +13,18 @@
  */
 
 import type { AgentKind } from "@/db/schemas";
+import { BETA_READER_PANEL_PROMPT } from "./betaReader";
 import { EDITOR_CHAT_PROMPT } from "./editor";
+import { OUTLINE_ARCHITECT_PROMPT } from "./outlineArchitect";
 import { READER_CHAT_PROMPT } from "./reader";
 import {
+  BETA_READER_TOOLS,
   BRAINSTORM_TOOLS,
   CHARACTER_DIALOGUE_TOOLS,
   CHAT_READS_BASE,
   CHAT_TOOLS,
   EDITOR_CHAT_TOOLS,
+  OUTLINE_ARCHITECT_TOOLS,
   READER_CHAT_TOOLS,
 } from "./tool-permissions";
 
@@ -34,8 +38,17 @@ import {
  *   - "review": standard chat; intended for one-shot review questions.
  *   - "edit": standard chat; can stage edits via propose_edit when allowed.
  *   - "chat": standard chat; freeform conversation.
+ *   - "panel": single agent run with structured XML output; the AiPanel
+ *     parses persona blocks and renders each as a labeled section. Used
+ *     by the Beta Reader.
  */
-export type AgentBehavior = "spark" | "scene" | "review" | "edit" | "chat";
+export type AgentBehavior =
+  | "spark"
+  | "scene"
+  | "review"
+  | "edit"
+  | "chat"
+  | "panel";
 
 export interface BuiltinAgentDefault {
   /** Display name shown in the dropdown and Manage Agents list. */
@@ -188,6 +201,24 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     behavior: "chat",
     exposed: true,
   },
+  "beta-reader": {
+    name: "Beta Reader",
+    description:
+      "Three reader personas (Maya, Anton, Joan) respond to the chapter; each leaves attributed comments and can reply to each other in the editor margin.",
+    systemPrompt: BETA_READER_PANEL_PROMPT,
+    allowedToolIds: [...BETA_READER_TOOLS],
+    behavior: "panel",
+    exposed: true,
+  },
+  "outline-architect": {
+    name: "Outline Architect",
+    description:
+      "Build and revise the outline grid through conversation — braided action+emotion beats, structured with the ten-of-tens technique.",
+    systemPrompt: OUTLINE_ARCHITECT_PROMPT,
+    allowedToolIds: [...OUTLINE_ARCHITECT_TOOLS],
+    behavior: "chat",
+    exposed: true,
+  },
   orchestrator: {
     name: "Orchestrator",
     description:
@@ -225,6 +256,8 @@ export const CHAT_AGENT_ORDER: ReadonlyArray<Exclude<AgentKind, "user">> = [
   "character-dialogue",
   "brainstorm",
   "chat",
+  "beta-reader",
+  "outline-architect",
 ];
 
 /** Spark response delimiter. Mirrored in SparkOptions parser. */

@@ -18,8 +18,8 @@ const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 29 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(29);
+  it("exports 35 tool definitions", () => {
+    expect(getToolDefinitionsForModel()).toHaveLength(35);
   });
 
   it("has unique tool IDs", () => {
@@ -771,6 +771,10 @@ describe("requiresApproval", () => {
       "update_timeline_event",
       "create_chapter",
       "update_chapter",
+      "manage_outline_columns",
+      "manage_outline_rows",
+      "write_outline_cell",
+      "set_outline_cell_color",
     ];
     for (const id of writeTools) {
       expect(AI_TOOL_MAP.get(id)?.requiresApproval).toBe(true);

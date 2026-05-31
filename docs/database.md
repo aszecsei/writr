@@ -28,7 +28,7 @@ Zod is the single source of truth for every entity. The schema file exports both
 
 ## Database (`src/db/database.ts`)
 
-Dexie subclass with table definitions, compound indexes, and **33 migration versions**. Singleton `db` export. When you add or change an entity:
+Dexie subclass with table definitions, compound indexes, and **35 migration versions**. Singleton `db` export. v35 adds `parentCommentId` (indexed) to the `comments` store for threaded replies. When you add or change an entity:
 
 1. Update the Zod schema in `schemas.ts`.
 2. Add or update the Dexie table in `database.ts` and bump to a new `this.version(...).stores({...})` block.

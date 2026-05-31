@@ -34,6 +34,7 @@ builtins/                Prebuilt agent templates
   voice.ts               Voice / style coach
   screenplay.ts          Screenplay-mode coach
   orchestrator.ts        Coordinator that delegates to other agents
+  betaReader.ts          Beta Reader panel: Maya / Anton / Joan personas + XML prompt
   defaults.ts            Default agent definitions
   tool-permissions.ts    Per-agent tool permission maps
 
@@ -57,6 +58,17 @@ pipeline/                Multi-stage execution machinery
 - **`src/components/agents/`** — Run dashboard, plan view, work-unit cards, edit approval panels, verification panel, snapshots panel, reader-bible view, pause/resume banner, raise-budget dialog.
 - **`src/components/settings/AgentEditor.tsx`** + **`AgentsManager.tsx`** — Manage `AgentDefinition` rows.
 - **`agentActivityStore`** (`src/store/agentActivityStore.ts`) — Live streaming UI state per active run.
+
+## Beta Reader panel
+
+A single-pass chat agent (`kind: "beta-reader"`, `behavior: "panel"`) that role-plays three reader personas — **Maya** (emotional reactions), **Anton** (craft observation), **Joan** (skeptical pushback). The system prompt is XML-structured: each `<persona id="X">` block reads as a self-contained agent brief, and the model emits its response in `<maya>`, `<anton>`, `<joan>` blocks parsed by `BetaReaderPanelMessage` into labeled sections.
+
+Two auto-execute tools back the panel:
+
+- **`add_comment`** — drops a selection comment using the same `prefix + anchorText + suffix` snippet methodology and uniqueness contract as `propose_edit`. The model passes `persona`; the tool stamps `author` / `authorColor` / `color` from `BETA_READER_PERSONA_ATTRIBUTION` (single source of truth in `builtins/betaReader.ts`).
+- **`reply_to_comment`** — adds a reply to an existing root comment; inherits position from the parent. Replies-of-replies are rejected to keep threads flat.
+
+Forward-compat seam: `extractPersonaPrompts(BETA_READER_PANEL_PROMPT)` parses the three persona blocks out of the panel prompt, so a future per-persona conversion can seed three standalone agents without rewriting the briefs.
 
 ## Conventions
 

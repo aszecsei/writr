@@ -156,6 +156,18 @@ export function serializeRelationship(
   return `<relationship source="${sourceName}" target="${targetName}" type="${label}" />`;
 }
 
+/**
+ * A short, reorder-stable alias for an outline row/column/cell — the last six
+ * hex digits of the entity UUID. Emitted by `serializeOutlineGrid` as the `id`
+ * attribute and accepted by the outline-management tools as a reference, so the
+ * model can target a specific row/column without echoing a full 36-char UUID.
+ * Stable across reorders (unlike a positional index) and collision-safe within
+ * a single project's grid (~hundreds of nodes).
+ */
+export function shortOutlineId(id: string): string {
+  return id.replaceAll("-", "").slice(-6);
+}
+
 export function serializeOutlineGrid(
   columns: OutlineGridColumn[],
   rows: OutlineGridRow[],
@@ -172,9 +184,12 @@ export function serializeOutlineGrid(
 
   const lines: string[] = [];
 
+  // `id` is the short alias the outline-management tools accept to target an
+  // entity; the cell tag keeps the column TITLE for readability since other
+  // (read-only) agents share this serialization.
   lines.push("<columns>");
   for (const col of sortedColumns) {
-    lines.push(`<column>${col.title}</column>`);
+    lines.push(`<column id="${shortOutlineId(col.id)}">${col.title}</column>`);
   }
   lines.push("</columns>");
 
@@ -186,7 +201,9 @@ export function serializeOutlineGrid(
     const label = chapterName || row.label || "Untitled";
     const chapterAttr = chapterName ? ` chapter="${chapterName}"` : "";
 
-    lines.push(`<row label="${label}"${chapterAttr}>`);
+    lines.push(
+      `<row id="${shortOutlineId(row.id)}" label="${label}"${chapterAttr}>`,
+    );
     for (const col of sortedColumns) {
       const cell = cellMap.get(`${row.id}:${col.id}`);
       if (cell?.content) {

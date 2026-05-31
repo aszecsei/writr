@@ -36,6 +36,14 @@ interface MakeAiPanelAccessorOptions {
     capturedRange: { from: number; to: number } | null;
   };
   /**
+   * Panel behavior overlay (Beta Reader). When `isPanel` is true,
+   * `finalizeAssistantTurn` marks the assistant message so MessageList
+   * routes its content through BetaReaderPanelMessage.
+   */
+  panel?: {
+    isPanel: boolean;
+  };
+  /**
    * Approval gate for tools that require human confirmation. The chat panel
    * resolves the returned promise via Approve/Deny click handlers.
    */
@@ -69,7 +77,7 @@ interface PendingToolMessage {
 export function makeAiPanelAccessor(
   opts: MakeAiPanelAccessorOptions,
 ): ChatHistoryAccessor {
-  const { messagesRef, setMessages, spark, awaitToolApproval } = opts;
+  const { messagesRef, setMessages, spark, panel, awaitToolApproval } = opts;
 
   // Seed the buffer from the chat history that exists at run start. This
   // includes prior turns the user has exchanged, repaired for any orphan
@@ -219,6 +227,9 @@ export function makeAiPanelAccessor(
             sparkCapturedRange: spark?.isSpark
               ? spark.capturedRange
               : m.sparkCapturedRange,
+            // Panel overlay: only applies if the active agent is a panel
+            // behavior agent (Beta Reader).
+            panelOutput: panel?.isPanel ? true : m.panelOutput,
           };
           return finalized;
         }),

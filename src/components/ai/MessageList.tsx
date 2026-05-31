@@ -16,6 +16,7 @@ import { useState } from "react";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { ImageLightbox } from "../bible/ImageLightbox";
+import { BetaReaderPanelMessage } from "./BetaReaderPanelMessage";
 import type {
   AssistantChatMessage,
   ChatMessage,
@@ -409,6 +410,8 @@ export function MessageList({
                   content={msg.content}
                   capturedRange={msg.sparkCapturedRange ?? null}
                 />
+              ) : msg.panelOutput ? (
+                <BetaReaderPanelMessage content={msg.content} />
               ) : (
                 <MarkdownMessage content={msg.content} />
               )}

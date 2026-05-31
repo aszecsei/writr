@@ -217,6 +217,7 @@ export function AiPanel() {
 
     const behavior = getAgentBehavior(definition.kind);
     const isSpark = behavior === "spark";
+    const isPanel = behavior === "panel";
 
     const agent: Agent = makeChatAgent({
       definition,
@@ -241,6 +242,7 @@ export function AiPanel() {
       messagesRef,
       setMessages,
       spark: { isSpark, capturedRange },
+      panel: { isPanel },
       awaitToolApproval,
     });
 

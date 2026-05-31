@@ -48,3 +48,5 @@ Located in `src/components/editor/extensions/`.
 ## Comments data model
 
 Comments are stored in Dexie with `fromOffset`/`toOffset` (1-indexed ProseMirror positions). The `Comments` extension maps those positions through doc changes via `Mapping`. Point comments (`from === to`) render as markers; selection comments (`from < to`) render as highlights. Reconciliation utilities live in `src/lib/comments/`.
+
+Comments support **flat threading**: each row carries `parentCommentId: CommentId | null`. Roots have `parentCommentId === null` and own the position/anchor; replies inherit the parent's position fields at creation and stay in sync via `updateCommentPositions` (the editor batch-sync skips replies, then propagates the root's mapped position to any replies in the same transaction). `CommentMargin` filters to roots and renders a reply-count badge; `CommentPopover` renders the root + replies as a thread with an inline reply composer. The `reply_to_comment` AI tool and human "Reply" UI both call `CommentsAdapter.create({ ..., parentCommentId })`. Replies-of-replies are rejected at the tool boundary — only one level of nesting is supported.

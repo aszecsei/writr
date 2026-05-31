@@ -39,6 +39,7 @@ Tools (`tool-calling/tools/`):
 - `notes.ts` — agent notes (work-unit annotations).
 - `workUnits.ts` — work-unit assignment & status updates.
 - `proposedEdits.ts` — propose, list, and resolve edits to chapter prose.
+- `comments.ts` — `add_comment` / `reply_to_comment` for Beta Reader (auto-execute, persona-attributed inline editor comments).
 - `verification.ts` — record verification findings.
 - `search.ts` — project-wide full-text search.
 - `helpers.ts` — shared validation/formatting.

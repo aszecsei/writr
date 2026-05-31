@@ -41,6 +41,7 @@ export class DexieCommentsAdapter implements CommentsAdapter {
       color: input.color,
       author: input.author,
       authorColor: input.authorColor,
+      parentCommentId: input.parentCommentId ?? null,
     });
     return created.id;
   }

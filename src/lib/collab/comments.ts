@@ -85,6 +85,8 @@ const FIELD = {
   updatedAt: "updatedAt",
   author: "author",
   authorColor: "authorColor",
+  /** null = root comment; non-null = reply attached to that root id. */
+  parentCommentId: "parentCommentId",
 } as const;
 
 type CommentEntry = Y.Map<unknown>;
@@ -168,6 +170,12 @@ function entryToComment(
   const color =
     (readEntryOptionalString(entry, FIELD.color) as CommentColor) ?? "yellow";
 
+  const parentCommentIdRaw = entry.get(FIELD.parentCommentId);
+  const parentCommentId =
+    typeof parentCommentIdRaw === "string"
+      ? (parentCommentIdRaw as CommentId)
+      : null;
+
   const draft: Comment = {
     id: id as CommentId,
     projectId: readEntryString(entry, FIELD.projectId) as ProjectId,
@@ -181,6 +189,7 @@ function entryToComment(
     resolvedAt: readEntryNullableString(entry, FIELD.resolvedAt),
     author: readEntryOptionalString(entry, FIELD.author),
     authorColor: readEntryOptionalString(entry, FIELD.authorColor),
+    parentCommentId,
     createdAt: readEntryOptionalString(entry, FIELD.createdAt) ?? nowIso(),
     updatedAt: readEntryOptionalString(entry, FIELD.updatedAt) ?? nowIso(),
   };
@@ -323,6 +332,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
       [FIELD.updatedAt]: ts,
       [FIELD.author]: input.author ?? this.opts.author,
       [FIELD.authorColor]: input.authorColor ?? this.opts.authorColor,
+      [FIELD.parentCommentId]: input.parentCommentId ?? null,
     };
     this.opts.commentsDoc.transact(() => {
       this.writeEntry(id, fields);
@@ -437,6 +447,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
       [FIELD.updatedAt]: c.updatedAt,
       [FIELD.author]: c.author,
       [FIELD.authorColor]: c.authorColor,
+      [FIELD.parentCommentId]: c.parentCommentId,
     };
   }
 

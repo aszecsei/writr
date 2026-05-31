@@ -2,7 +2,7 @@
 
 import type { Editor } from "@tiptap/react";
 import { Check, MessageSquare, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Comment, CommentColor, CommentId } from "@/db/schemas";
 import type { CommentsAdapter } from "@/lib/comments/adapter";
 import { useCommentStore } from "@/store/commentStore";
@@ -25,6 +25,7 @@ interface CommentPosition {
   id: CommentId;
   top: number;
   comment: Comment;
+  replyCount: number;
 }
 
 export function CommentMargin({
@@ -38,6 +39,22 @@ export function CommentMargin({
   const clearSelection = useCommentStore((s) => s.clearSelection);
   const selectedId = useCommentStore((s) => s.selectedId);
 
+  // Only roots show up in the margin; replies render inside the popover
+  // thread for their root. Compute reply counts per root so each card can
+  // surface a badge.
+  const { roots, replyCountByRoot } = useMemo(() => {
+    const rootList: Comment[] = [];
+    const counts = new Map<CommentId, number>();
+    for (const c of comments) {
+      if (c.parentCommentId === null) {
+        rootList.push(c);
+      } else {
+        counts.set(c.parentCommentId, (counts.get(c.parentCommentId) ?? 0) + 1);
+      }
+    }
+    return { roots: rootList, replyCountByRoot: counts };
+  }, [comments]);
+
   const calculatePositions = useCallback(() => {
     if (!editor || editor.isDestroyed) {
       setPositions([]);
@@ -48,12 +65,17 @@ export function CommentMargin({
     const newPositions: CommentPosition[] = [];
     const positionMap = getCommentPositions(view.state);
 
-    for (const comment of comments) {
+    for (const comment of roots) {
       if (comment.status === "resolved") continue;
 
       const top = calculateCommentTop(view, comment, positionMap);
       if (top !== null) {
-        newPositions.push({ id: comment.id, top, comment });
+        newPositions.push({
+          id: comment.id,
+          top,
+          comment,
+          replyCount: replyCountByRoot.get(comment.id) ?? 0,
+        });
       }
     }
 
@@ -69,7 +91,7 @@ export function CommentMargin({
     }
 
     setPositions(newPositions);
-  }, [editor, comments, expanded]);
+  }, [editor, roots, replyCountByRoot, expanded]);
 
   useEffect(() => {
     calculatePositions();
@@ -118,6 +140,7 @@ export function CommentMargin({
             onSelect={() => selectComment(pos.id)}
             onDeselect={clearSelection}
             adapter={adapter}
+            replyCount={pos.replyCount}
           />
         ))}
       </div>
@@ -142,12 +165,22 @@ export function CommentMargin({
           onClick={() => selectComment(pos.id)}
           className={`pointer-events-auto absolute flex items-center justify-center transition-transform hover:scale-110 h-4 w-5 rounded border-l-2 bg-neutral-100 dark:bg-neutral-800 ${CARD_BORDER_COLOR[pos.comment.color]} ${selectedId === pos.id ? "ring-2 ring-neutral-900 dark:ring-white" : ""}`}
           style={{ top: pos.top - 8 }}
-          title="Comment"
+          title={
+            pos.replyCount > 0
+              ? `Comment with ${pos.replyCount} ${pos.replyCount === 1 ? "reply" : "replies"}`
+              : "Comment"
+          }
         >
-          <MessageSquare
-            size={10}
-            className="text-neutral-500 dark:text-neutral-400"
-          />
+          {pos.replyCount > 0 ? (
+            <span className="text-[9px] font-medium leading-none text-neutral-600 dark:text-neutral-300">
+              {pos.replyCount + 1}
+            </span>
+          ) : (
+            <MessageSquare
+              size={10}
+              className="text-neutral-500 dark:text-neutral-400"
+            />
+          )}
         </button>
       ))}
     </div>
@@ -162,12 +195,14 @@ function ExpandedCard({
   onSelect,
   onDeselect,
   adapter,
+  replyCount,
 }: {
   commentPosition: CommentPosition;
   isSelected: boolean;
   onSelect: () => void;
   onDeselect: () => void;
   adapter: CommentsAdapter;
+  replyCount: number;
 }) {
   const { comment, top } = commentPosition;
   const [editContent, setEditContent] = useState(comment.content);
@@ -329,6 +364,14 @@ function ExpandedCard({
           <p className="text-xs italic text-neutral-400 dark:text-neutral-500">
             Empty comment
           </p>
+        )}
+        {replyCount > 0 && (
+          <div className="mt-1 flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+            <MessageSquare size={10} />
+            <span>
+              {replyCount} {replyCount === 1 ? "reply" : "replies"}
+            </span>
+          </div>
         )}
       </div>
     </button>

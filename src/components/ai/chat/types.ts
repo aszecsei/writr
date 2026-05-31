@@ -48,6 +48,12 @@ export interface AssistantChatMessage {
   capturedPrompt?: AiMessage[];
   sparkOptions?: boolean;
   sparkCapturedRange?: { from: number; to: number } | null;
+  /**
+   * Set when this turn came from a `behavior === "panel"` agent (Beta Reader).
+   * Drives MessageList to route content through BetaReaderPanelMessage, which
+   * parses `<maya>` / `<anton>` / `<joan>` XML blocks into labeled sections.
+   */
+  panelOutput?: boolean;
   createdAt: string;
 }
 

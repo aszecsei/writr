@@ -43,6 +43,12 @@ export interface PendingInsertion {
  * the editor consumer, which has access to the live TipTap doc.
  */
 export interface PendingStagedEdit {
+  /**
+   * Correlation id so the dispatching card can observe the apply outcome via
+   * `stagedEditResults[editId]` — the consumer runs asynchronously in
+   * ChapterEditor, so the card can't learn success/failure from the call site.
+   */
+  editId: string;
   /** Safety check: edit applies only when this matches activeDocumentId. */
   chapterId: ChapterId;
   kind: "replace" | "insert_at" | "append" | "full_chapter";
@@ -71,6 +77,12 @@ interface EditorState {
   contentVersion: number;
   pendingInsertion: PendingInsertion | null;
   pendingStagedEdit: PendingStagedEdit | null;
+  /**
+   * Outcome of each dispatched staged edit, keyed by `editId`. The consumer
+   * (ChapterEditor) writes here after attempting the apply; the originating
+   * ProposedEditCard reads it to show Applied / Failed, then clears it.
+   */
+  stagedEditResults: Record<string, "applied" | "failed">;
 
   setActiveDocument: (id: ActiveDocumentId, type: DocumentType) => void;
   clearActiveDocument: () => void;
@@ -86,6 +98,11 @@ interface EditorState {
   clearPendingInsertion: () => void;
   requestStagedEdit: (edit: PendingStagedEdit) => void;
   clearPendingStagedEdit: () => void;
+  reportStagedEditResult: (
+    editId: string,
+    result: "applied" | "failed",
+  ) => void;
+  clearStagedEditResult: (editId: string) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -101,6 +118,7 @@ export const useEditorStore = create<EditorState>()(
     contentVersion: 0,
     pendingInsertion: null,
     pendingStagedEdit: null,
+    stagedEditResults: {},
 
     setActiveDocument: (id, type) =>
       set((s) => {
@@ -184,6 +202,16 @@ export const useEditorStore = create<EditorState>()(
     clearPendingStagedEdit: () =>
       set((s) => {
         s.pendingStagedEdit = null;
+      }),
+
+    reportStagedEditResult: (editId, result) =>
+      set((s) => {
+        s.stagedEditResults[editId] = result;
+      }),
+
+    clearStagedEditResult: (editId) =>
+      set((s) => {
+        delete s.stagedEditResults[editId];
       }),
   })),
 );

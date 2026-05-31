@@ -425,6 +425,8 @@ export const AgentKindEnum = z.enum([
   "character-dialogue",
   "brainstorm",
   "chat",
+  "beta-reader",
+  "outline-architect",
   // Pipeline-internal (not user-selectable from chat).
   "orchestrator",
   "verifier",
@@ -450,6 +452,8 @@ export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
   "character-dialogue",
   "brainstorm",
   "chat",
+  "beta-reader",
+  "outline-architect",
   "user",
 ]);
 
@@ -711,6 +715,12 @@ export const CommentSchema = z.object({
   // Display name + caret color of the author at creation time.
   author: z.string().optional(),
   authorColor: z.string().optional(),
+  // Threading. null = root comment; non-null = reply attached to that root.
+  // Replies are flat: a reply's own parentCommentId always points at a root,
+  // never at another reply. Replies inherit their position (fromOffset /
+  // toOffset / anchorText) from the root at creation time and stay in sync
+  // when the root moves.
+  parentCommentId: CommentIdSchema.nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

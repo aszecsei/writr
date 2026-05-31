@@ -8,6 +8,11 @@ import type {
 /**
  * Input for creating a new comment. Both solo and collab modes share this
  * shape; chapter / project scoping is bound to the adapter at construction.
+ *
+ * For replies, pass `parentCommentId` along with the parent's position
+ * fields — replies inherit position from their root and `updateCommentPositions`
+ * keeps them in sync when the root moves. Replies must be flat (a reply's
+ * parent must itself be a root, not another reply).
  */
 export interface CommentInput {
   fromOffset: number;
@@ -17,6 +22,7 @@ export interface CommentInput {
   color?: CommentColor;
   author?: string;
   authorColor?: string;
+  parentCommentId?: CommentId | null;
 }
 
 export interface CommentPatch {

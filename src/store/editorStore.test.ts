@@ -20,6 +20,8 @@ describe("editorStore", () => {
       selectedText: null,
       selectedRange: null,
       contentVersion: 0,
+      pendingStagedEdit: null,
+      stagedEditResults: {},
     });
   });
 
@@ -150,5 +152,48 @@ describe("editorStore", () => {
     expect(getState().contentVersion).toBe(1);
     getState().bumpContentVersion();
     expect(getState().contentVersion).toBe(2);
+  });
+
+  // ─── Staged edits (propose_edit Apply) ──────────────────────────────
+
+  it("requestStagedEdit stores the edit including its correlation editId", () => {
+    getState().requestStagedEdit({
+      editId: "edit-1",
+      chapterId: DOC_1,
+      kind: "replace",
+      anchorText: "old",
+      newContent: "new",
+    });
+    const pending = getState().pendingStagedEdit;
+    expect(pending?.editId).toBe("edit-1");
+    expect(pending?.chapterId).toBe("doc-1");
+    expect(pending?.newContent).toBe("new");
+  });
+
+  it("clearPendingStagedEdit removes the pending edit", () => {
+    getState().requestStagedEdit({
+      editId: "edit-1",
+      chapterId: DOC_1,
+      kind: "append",
+      newContent: "x",
+    });
+    getState().clearPendingStagedEdit();
+    expect(getState().pendingStagedEdit).toBeNull();
+  });
+
+  it("reportStagedEditResult records the outcome keyed by editId", () => {
+    getState().reportStagedEditResult("edit-1", "applied");
+    getState().reportStagedEditResult("edit-2", "failed");
+    expect(getState().stagedEditResults).toEqual({
+      "edit-1": "applied",
+      "edit-2": "failed",
+    });
+  });
+
+  it("clearStagedEditResult removes only the given editId", () => {
+    getState().reportStagedEditResult("edit-1", "applied");
+    getState().reportStagedEditResult("edit-2", "failed");
+    getState().clearStagedEditResult("edit-1");
+    expect(getState().stagedEditResults).toEqual({ "edit-2": "failed" });
   });
 });

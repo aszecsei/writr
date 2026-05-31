@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectId } from "@/db/schemas";
+import { OUTLINE_ARCHITECT_TOOLS } from "./builtins/tool-permissions";
 import { executeAgentTool, getToolDefinitionsForAgent } from "./tool-filter";
 import type { Agent } from "./types";
 
@@ -110,5 +111,24 @@ describe("executeAgentTool — list/get scoping", () => {
     });
     expect(r.success).toBe(false);
     expect(r.message).toContain("not permitted");
+  });
+});
+
+describe("getToolDefinitionsForAgent — outline architect", () => {
+  it("surfaces the four outline-management tools and keeps get available", () => {
+    const defs = getToolDefinitionsForAgent(
+      makeAgent([...OUTLINE_ARCHITECT_TOOLS]),
+    );
+    const ids = defs?.map((d) => d.id) ?? [];
+    expect(ids).toContain("manage_outline_columns");
+    expect(ids).toContain("manage_outline_rows");
+    expect(ids).toContain("write_outline_cell");
+    expect(ids).toContain("set_outline_cell_color");
+    // Reads still flow through the consolidated `get`; get:outline is in base.
+    expect(ids).toContain("get");
+    const get = defs?.find((d) => d.id === "get");
+    expect(
+      get?.parameters.properties.requests?.items?.properties?.category?.enum,
+    ).toContain("outline");
   });
 });

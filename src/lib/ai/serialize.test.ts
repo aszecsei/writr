@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { CharacterId, ProjectId, WorldbuildingDocId } from "@/db/schemas";
+import type {
+  ChapterId,
+  CharacterId,
+  ProjectId,
+  WorldbuildingDocId,
+} from "@/db/schemas";
 import {
   makeCharacter,
   makeLocation,
+  makeOutlineGridCell,
+  makeOutlineGridColumn,
+  makeOutlineGridRow,
   makeRelationship,
   makeTimelineEvent,
   makeWorldbuildingDoc,
@@ -10,9 +18,11 @@ import {
 import {
   serializeCharacter,
   serializeLocation,
+  serializeOutlineGrid,
   serializeRelationship,
   serializeTimelineEvent,
   serializeWorldbuildingTree,
+  shortOutlineId,
 } from "./serialize";
 
 const pid = "00000000-0000-4000-8000-000000000001" as ProjectId;
@@ -414,5 +424,48 @@ describe("serializeRelationship", () => {
       type: "sibling",
     });
     expect(serializeRelationship(r, charMap)).toBe("");
+  });
+});
+
+describe("serializeOutlineGrid", () => {
+  it("emits short ids on columns and rows; cells keep the column title", () => {
+    const col = makeOutlineGridColumn({ projectId: pid, title: "Beat" });
+    const row = makeOutlineGridRow({ projectId: pid, label: "Opening" });
+    const cell = makeOutlineGridCell({
+      projectId: pid,
+      rowId: row.id,
+      columnId: col.id,
+      content: "He runs, terrified he is already too late.",
+    });
+    const xml = serializeOutlineGrid([col], [row], [cell], new Map());
+
+    expect(xml).toContain(
+      `<column id="${shortOutlineId(col.id)}">Beat</column>`,
+    );
+    expect(xml).toContain(
+      `<row id="${shortOutlineId(row.id)}" label="Opening">`,
+    );
+    // Cells reference the column by readable title, not by id.
+    expect(xml).toContain(
+      '<cell column="Beat">He runs, terrified he is already too late.</cell>',
+    );
+  });
+
+  it("emits the chapter attribute for a chapter-linked row", () => {
+    const chapterId = "00000000-0000-4000-8000-00000000c0de" as ChapterId;
+    const row = makeOutlineGridRow({
+      projectId: pid,
+      linkedChapterId: chapterId,
+      label: "",
+    });
+    const xml = serializeOutlineGrid(
+      [],
+      [row],
+      [],
+      new Map([[chapterId, "Chapter One"]]),
+    );
+
+    expect(xml).toContain('chapter="Chapter One"');
+    expect(xml).toContain('label="Chapter One"');
   });
 });

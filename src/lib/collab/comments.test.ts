@@ -235,6 +235,7 @@ describe("YjsCommentsAdapter", () => {
       anchorText: "abc",
       status: "active" as const,
       resolvedAt: null,
+      parentCommentId: null,
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     };
@@ -296,6 +297,7 @@ describe("YjsCommentsAdapter", () => {
       anchorText: "world",
       status: "active" as const,
       resolvedAt: null,
+      parentCommentId: null,
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     };
@@ -322,6 +324,7 @@ describe("YjsCommentsAdapter", () => {
         anchorText: "",
         status: "active",
         resolvedAt: null,
+        parentCommentId: null,
         createdAt: "2024-01-01T00:00:00.000Z",
         updatedAt: "2024-01-01T00:00:00.000Z",
       },

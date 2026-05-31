@@ -9,6 +9,7 @@ import {
   updateChapterTool,
 } from "./tools/chapters";
 import { createCharacterTool, updateCharacterTool } from "./tools/characters";
+import { addCommentTool, replyToCommentTool } from "./tools/comments";
 import { fail, formatZodError } from "./tools/helpers";
 import { createLocationTool, updateLocationTool } from "./tools/locations";
 import {
@@ -18,6 +19,12 @@ import {
   proposeAnswerTool,
   questionTool,
 } from "./tools/notes";
+import {
+  manageOutlineColumnsTool,
+  manageOutlineRowsTool,
+  setOutlineCellColorTool,
+  writeOutlineCellTool,
+} from "./tools/outline";
 import { proposeEditTool } from "./tools/proposedEdits";
 import { getTool, listTool } from "./tools/registry";
 import { searchProjectTool } from "./tools/search";
@@ -75,6 +82,14 @@ export const AI_TOOLS: AiToolDefinition[] = [
   proposeEditTool,
   // Pipeline verifier
   reportVerificationTool,
+  // Beta Reader: inline editor comments + threaded replies
+  addCommentTool,
+  replyToCommentTool,
+  // Outline Architect: grid management
+  manageOutlineColumnsTool,
+  manageOutlineRowsTool,
+  writeOutlineCellTool,
+  setOutlineCellColorTool,
 ];
 
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(

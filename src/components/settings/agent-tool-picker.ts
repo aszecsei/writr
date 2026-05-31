@@ -162,6 +162,15 @@ export const MUTATIONS_GROUPS: ToolPickerGroup[] = [
     rows: [mutationRow("create_chapter"), mutationRow("update_chapter")],
   },
   {
+    heading: "Outline grid",
+    rows: [
+      mutationRow("manage_outline_columns"),
+      mutationRow("manage_outline_rows"),
+      mutationRow("write_outline_cell"),
+      mutationRow("set_outline_cell_color"),
+    ],
+  },
+  {
     heading: "Edits",
     rows: [mutationRow("propose_edit")],
   },
