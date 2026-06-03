@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
-import { createExtensions } from "./index";
+import { createExtensions, createScreenplayExtensions } from "./index";
 
-function names(extensions: ReturnType<typeof createExtensions>): string[] {
+function names(
+  extensions:
+    | ReturnType<typeof createExtensions>
+    | ReturnType<typeof createScreenplayExtensions>,
+): string[] {
   return extensions.map((ext) => ext.name);
 }
 
@@ -17,6 +21,22 @@ describe("createExtensions: defaults", () => {
     expect(ns).toContain("spellcheck");
     expect(ns).not.toContain("collaboration");
     expect(ns).not.toContain("collaborationCaret");
+  });
+
+  it("uses the builtin Selection extension plus the slim SelectionReporter", () => {
+    const ns = names(createExtensions());
+    expect(ns).toContain("selection");
+    expect(ns).toContain("selectionReporter");
+    expect(ns).not.toContain("selectionPreserver");
+  });
+});
+
+describe("createScreenplayExtensions: defaults", () => {
+  it("uses the builtin Selection extension plus the slim SelectionReporter", () => {
+    const ns = names(createScreenplayExtensions());
+    expect(ns).toContain("selection");
+    expect(ns).toContain("selectionReporter");
+    expect(ns).not.toContain("selectionPreserver");
   });
 });
 

@@ -5,13 +5,12 @@ import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import Document from "@tiptap/extension-document";
 import Image from "@tiptap/extension-image";
 import Italic from "@tiptap/extension-italic";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
-import { UndoRedo } from "@tiptap/extensions";
+import { Selection, UndoRedo } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "tiptap-markdown";
 import type { Awareness } from "y-protocols/awareness";
@@ -20,9 +19,10 @@ import type { Comment } from "@/db/schemas";
 import type { SpellcheckService } from "@/lib/spellcheck";
 import { Comments } from "./Comments";
 import { Indent } from "./Indent";
+import { MarkdownBlockquote } from "./MarkdownBlockquote";
 import { Ruby } from "./Ruby";
 import { SearchAndReplace } from "./SearchAndReplace";
-import { SelectionPreserver } from "./SelectionPreserver";
+import { SelectionReporter } from "./SelectionReporter";
 import { Spellcheck } from "./Spellcheck";
 import {
   Action,
@@ -86,6 +86,15 @@ export function createExtensions(options?: ExtensionOptions) {
   const collab = options?.collab;
   const starterKitConfig: Parameters<typeof StarterKit.configure>[0] = {
     heading: { levels: [1, 2, 3] },
+    // Replaced by MarkdownBlockquote, which fixes emphasis serialization
+    // inside multi-paragraph blockquotes (see MarkdownBlockquote.ts).
+    blockquote: false,
+    // StarterKit v3 bundles Link and Underline; configure Link here rather
+    // than re-adding it standalone (which triggers duplicate-extension warnings).
+    link: {
+      openOnClick: false,
+      autolink: true,
+    },
   };
   if (collab) {
     // Suppress StarterKit's history so it doesn't fight Yjs.
@@ -97,11 +106,6 @@ export function createExtensions(options?: ExtensionOptions) {
       placeholder: "Start writing...",
     }),
     CharacterCount,
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      autolink: true,
-    }),
     Image.configure({
       inline: false,
       allowBase64: false,
@@ -111,6 +115,7 @@ export function createExtensions(options?: ExtensionOptions) {
       alignments: ["left", "center", "right", "justify"],
       defaultAlignment: "left",
     }),
+    MarkdownBlockquote,
     Indent,
     Ruby,
     Typography,
@@ -132,7 +137,8 @@ export function createExtensions(options?: ExtensionOptions) {
       ignoredWordsRef: options?.ignoredWordsRef,
       onContextMenu: options?.onSpellcheckContextMenu,
     }),
-    SelectionPreserver.configure({
+    Selection,
+    SelectionReporter.configure({
       onSelectionChange: options?.onSelectionChange,
       onSelectionClear: options?.onSelectionClear,
     }),
@@ -206,7 +212,8 @@ export function createScreenplayExtensions(options?: ExtensionOptions) {
       ignoredWordsRef: options?.ignoredWordsRef,
       onContextMenu: options?.onSpellcheckContextMenu,
     }),
-    SelectionPreserver.configure({
+    Selection,
+    SelectionReporter.configure({
       onSelectionChange: options?.onSelectionChange,
       onSelectionClear: options?.onSelectionClear,
     }),

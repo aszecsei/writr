@@ -210,11 +210,11 @@ select:disabled {
   margin: 0;
 }
 
-.selection-preserved {
+.ProseMirror .selection {
   background-color: rgba(59, 130, 246, 0.3);
   border-radius: 2px;
 }
-.dark .selection-preserved {
+.dark .ProseMirror .selection {
   background-color: rgba(96, 165, 250, 0.25);
 }
 
