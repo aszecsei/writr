@@ -29,6 +29,7 @@ export type ModalState =
   | { id: "ruby-editor"; currentAnnotation?: string }
   | { id: "dictionary-manager" }
   | { id: "version-history"; chapterId: ChapterId; projectId: ProjectId }
+  | { id: "chapter-properties"; chapterId: ChapterId }
   | { id: "agents-manager" }
   | { id: "agent-editor"; agentId?: AgentDefinitionId }
   | { id: "share-collab-session" }
@@ -122,6 +123,7 @@ export const isPreviewCardModal = createModalGuard("preview-card");
 export const isLinkEditorModal = createModalGuard("link-editor");
 export const isRubyEditorModal = createModalGuard("ruby-editor");
 export const isVersionHistoryModal = createModalGuard("version-history");
+export const isChapterPropertiesModal = createModalGuard("chapter-properties");
 export const isCollabApproveJoinModal = createModalGuard("collab-approve-join");
 export const isCollabManageParticipantsModal = createModalGuard(
   "collab-manage-participants",

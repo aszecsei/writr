@@ -51,6 +51,7 @@ import type {
   TimelineEventId,
   WorldbuildingDocId,
 } from "@/db/schemas";
+import { summarizeChapter } from "@/lib/ai/client";
 import { buildNameMap, serializeOutlineGrid } from "@/lib/ai/serialize";
 import { defineTool, type ToolExecutionContext } from "../types";
 import { ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
@@ -360,43 +361,21 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
             "Cannot compute summary: no API key configured for the active provider.",
         };
       }
-      const requestBody = {
-        apiKey,
-        model: settings.providerModels[settings.aiProvider],
-        provider: settings.aiProvider,
-        messages: [
-          {
-            role: "system" as const,
-            content:
-              "You produce concise (3-5 sentence) summaries of fiction chapters. Capture the key plot beats, character developments, and any setups/payoffs. No commentary — just the summary.",
-          },
-          {
-            role: "user" as const,
-            content: `<chapter title="${chapter.title}">\n${chapter.content}\n</chapter>`,
-          },
-        ],
-        temperature: 0.3,
-        max_tokens: 512,
-        stream: false,
-      };
-
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
+      let summary: string;
+      try {
+        summary = (
+          await summarizeChapter(chapter.title, chapter.content, {
+            apiKey,
+            model: settings.providerModels[settings.aiProvider],
+            provider: settings.aiProvider,
+          })
+        ).trim();
+      } catch (err) {
         return {
           data: null,
-          error:
-            err.details ??
-            err.error ??
-            `Summary request failed (${response.status})`,
+          error: err instanceof Error ? err.message : "Summary request failed",
         };
       }
-      const data = (await response.json()) as { content?: string };
-      const summary = (data.content ?? "").trim();
       if (!summary)
         return { data: null, error: "Model returned an empty summary" };
 

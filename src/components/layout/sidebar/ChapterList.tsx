@@ -7,6 +7,7 @@ import {
   Circle,
   Columns3,
   Download,
+  FileText,
   FolderOpen,
   Pencil,
   Plus,
@@ -289,6 +290,15 @@ export function ChapterList({
             }}
           >
             Export
+          </ContextMenuItem>
+          <ContextMenuItem
+            icon={FileText}
+            onClick={() => {
+              closeMenu();
+              openModal({ id: "chapter-properties", chapterId: menuChapterId });
+            }}
+          >
+            {`Edit ${getTerm(activeProjectMode, "chapter")} Summary`}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuLabel>Status</ContextMenuLabel>

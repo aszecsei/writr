@@ -8,6 +8,7 @@ import { ApproveJoinDialog } from "@/components/collab/ApproveJoinDialog";
 import { CollabBanner } from "@/components/collab/CollabBanner";
 import { ManageParticipantsDialog } from "@/components/collab/ManageParticipantsDialog";
 import { ShareDialog } from "@/components/collab/ShareDialog";
+import { ChapterPropertiesDialog } from "@/components/editor/ChapterPropertiesDialog";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
@@ -101,6 +102,7 @@ export function AppShell({ children }: AppShellProps) {
         <AgentEditor />
         <DictionaryManagerDialog />
         <VersionHistoryDialog />
+        <ChapterPropertiesDialog />
         <SprintConfigDialog />
         <SprintHistoryDialog />
       </div>
@@ -138,6 +140,7 @@ export function AppShell({ children }: AppShellProps) {
       <AgentEditor />
       <DictionaryManagerDialog />
       <VersionHistoryDialog />
+      <ChapterPropertiesDialog />
       <ExportDialog />
       <PreviewCardDialog />
       <SprintConfigDialog />
