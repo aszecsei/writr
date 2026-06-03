@@ -1,5 +1,5 @@
 import { move } from "@dnd-kit/helpers";
-import type { DragDropEvents } from "@dnd-kit/react";
+import type { DragDropEventHandlers } from "@dnd-kit/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { syncReorderOutlineRows } from "@/db/operations";
 import type { OutlineGridRow } from "@/db/schemas";
@@ -21,11 +21,11 @@ export function useOutlineGridDragDrop(rows: OutlineGridRow[] | undefined) {
     previousRows.current = localRows;
   }, [localRows]);
 
-  const onDragOver: DragDropEvents["dragover"] = useCallback((event) => {
+  const onDragOver: DragDropEventHandlers["onDragOver"] = useCallback((event) => {
     setLocalRows((items) => move(items, event));
   }, []);
 
-  const onDragEnd: DragDropEvents["dragend"] = useCallback(
+  const onDragEnd: DragDropEventHandlers["onDragEnd"] = useCallback(
     async (event) => {
       isDragging.current = false;
       if (event.canceled) {
