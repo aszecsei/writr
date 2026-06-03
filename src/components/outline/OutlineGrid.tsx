@@ -74,7 +74,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
 
   // Get current cell color for context menu
   const currentCellColor = useMemo(() => {
-    if (!contextMenu || contextMenu.target.type !== "cell" || !cellsMap) {
+    if (contextMenu?.target.type !== "cell" || !cellsMap) {
       return undefined;
     }
     const { rowId, columnId } = contextMenu.target;

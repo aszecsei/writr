@@ -73,7 +73,7 @@ export async function unlinkChapterFromRow(
   rowId: OutlineGridRowId,
 ): Promise<void> {
   const row = await db.outlineGridRows.get(rowId);
-  if (!row || !row.linkedChapterId) return;
+  if (!row?.linkedChapterId) return;
 
   const chapter = await db.chapters.get(row.linkedChapterId);
   const label = chapter?.title ?? "";

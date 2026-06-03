@@ -87,7 +87,7 @@ export function RunDashboard({ runId, projectId }: RunDashboardProps) {
   }
 
   async function handleRetry() {
-    if (!run || !run.failedFromStatus) return;
+    if (!run?.failedFromStatus) return;
     const phase = run.failedFromStatus;
     setActionError(null);
     // Restore the run to the phase that errored. updateAgentRunStatus clears

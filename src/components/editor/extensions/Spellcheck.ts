@@ -115,7 +115,7 @@ export const Spellcheck = Extension.create<SpellcheckOptions>({
       const enabled = enabledRef?.current ?? true;
       const spellchecker = spellcheckerRef?.current;
 
-      if (!enabled || !spellchecker || !spellchecker.isLoaded()) return;
+      if (!enabled || !spellchecker?.isLoaded()) return;
 
       // Update custom words on the spellchecker
       if (customWordsRef?.current) {
@@ -205,7 +205,7 @@ export const Spellcheck = Extension.create<SpellcheckOptions>({
 
               const enabled = enabledRef?.current ?? true;
               const spellchecker = spellcheckerRef?.current;
-              if (!enabled || !spellchecker || !spellchecker.isLoaded()) return;
+              if (!enabled || !spellchecker?.isLoaded()) return;
 
               // Immediate check takes priority (from SPELLCHECK_UPDATED_META)
               if (needsImmediateCheck) {

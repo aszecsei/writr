@@ -173,7 +173,7 @@ function rejectOrUpgrade(
     `http://${req.headers.host ?? "localhost"}`,
   );
   const match = /^\/room\/([a-f0-9-]{36})$/.exec(url.pathname);
-  if (!match || !match[1]) {
+  if (!match?.[1]) {
     reject(404, "Not Found");
     return;
   }

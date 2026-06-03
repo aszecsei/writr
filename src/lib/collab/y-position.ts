@@ -27,7 +27,7 @@ function getYState(editor: Editor): YState | null {
   // ySyncPluginKey state is added by the Yjs sync plugin. When the editor
   // isn't running collab, this is null and the helpers below short-circuit.
   const ystate = ySyncPluginKey.getState(state) as YState | null | undefined;
-  if (!ystate || !ystate.binding) return null;
+  if (!ystate?.binding) return null;
   return ystate;
 }
 

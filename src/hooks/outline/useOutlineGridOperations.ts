@@ -198,7 +198,7 @@ export function useOutlineGridOperations({
   // Cell color
   const handleSetColor = useCallback(
     async (color: OutlineCardColor) => {
-      if (!contextMenu || contextMenu.target.type !== "cell") return;
+      if (contextMenu?.target.type !== "cell") return;
       const { rowId, columnId } = contextMenu.target;
       await upsertOutlineGridCell({ projectId, rowId, columnId, color });
     },
@@ -208,7 +208,7 @@ export function useOutlineGridOperations({
   // Chapter linking
   const handleLinkChapter = useCallback(
     async (chapterId: ChapterId) => {
-      if (!contextMenu || contextMenu.target.type !== "row") return;
+      if (contextMenu?.target.type !== "row") return;
       const { rowId } = contextMenu.target;
       await linkChapterToRow(chapterId, rowId);
       closeContextMenu();
@@ -217,14 +217,14 @@ export function useOutlineGridOperations({
   );
 
   const handleUnlinkChapter = useCallback(async () => {
-    if (!contextMenu || contextMenu.target.type !== "row") return;
+    if (contextMenu?.target.type !== "row") return;
     const { rowId } = contextMenu.target;
     await unlinkChapterFromRow(rowId);
     closeContextMenu();
   }, [contextMenu, closeContextMenu]);
 
   const handleCreateChapter = useCallback(async () => {
-    if (!contextMenu || contextMenu.target.type !== "row") return;
+    if (contextMenu?.target.type !== "row") return;
     const { rowId } = contextMenu.target;
     await createChapterFromRow(rowId, projectId);
     closeContextMenu();

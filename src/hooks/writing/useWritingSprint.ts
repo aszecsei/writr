@@ -49,7 +49,7 @@ export function useWritingSprint() {
 
   // Timer tick effect
   useEffect(() => {
-    if (!activeSprint || activeSprint.status !== "active") {
+    if (activeSprint?.status !== "active") {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;

@@ -21,9 +21,12 @@ export function useOutlineGridDragDrop(rows: OutlineGridRow[] | undefined) {
     previousRows.current = localRows;
   }, [localRows]);
 
-  const onDragOver: DragDropEventHandlers["onDragOver"] = useCallback((event) => {
-    setLocalRows((items) => move(items, event));
-  }, []);
+  const onDragOver: DragDropEventHandlers["onDragOver"] = useCallback(
+    (event) => {
+      setLocalRows((items) => move(items, event));
+    },
+    [],
+  );
 
   const onDragEnd: DragDropEventHandlers["onDragEnd"] = useCallback(
     async (event) => {

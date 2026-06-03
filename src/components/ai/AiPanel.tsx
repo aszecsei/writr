@@ -390,7 +390,7 @@ export function AiPanel() {
     // The previous user turn must immediately precede the assistant turn
     // (after stripping any preceding tool messages).
     const prev = messages[truncateAt - 1];
-    if (!prev || prev.role !== "user") return;
+    if (prev?.role !== "user") return;
 
     setMessages(messages.slice(0, truncateAt));
     setLoading(true);
