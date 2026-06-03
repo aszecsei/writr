@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { AiProviderEnum } from "@/db/schemas";
 import type { CompletionParams } from "@/lib/ai/adapters";
+import { PROVIDER_ADAPTERS } from "@/lib/ai/provider-adapters";
 import { PROVIDERS } from "@/lib/ai/providers";
 
 const TextPartSchema = z.object({
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
 
   if (parsed.data.action === "tts") {
     const { apiKey, provider, model, voice, text, format } = parsed.data;
-    const { adapter } = PROVIDERS[provider];
+    const adapter = PROVIDER_ADAPTERS[provider];
     if (!adapter.tts) {
       return NextResponse.json(
         {
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
     tools,
   } = parsed.data;
 
-  const { adapter } = PROVIDERS[provider];
+  const adapter = PROVIDER_ADAPTERS[provider];
 
   const params: CompletionParams = {
     model,
