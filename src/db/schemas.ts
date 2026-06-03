@@ -497,6 +497,22 @@ export const AgentDefinitionSchema = z.object({
 });
 export type AgentDefinition = z.infer<typeof AgentDefinitionSchema>;
 
+// ─── Saved Prompts ──────────────────────────────────────────────────
+
+export const SavedPromptIdSchema = z.uuid().brand<"SavedPromptId">();
+export type SavedPromptId = z.infer<typeof SavedPromptIdSchema>;
+
+export const SavedPromptSchema = z.object({
+  id: SavedPromptIdSchema,
+  // null = global (available in every project); otherwise scoped to a project.
+  projectId: ProjectIdSchema.nullable().default(null),
+  title: z.string().min(1),
+  body: z.string().default(""),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type SavedPrompt = z.infer<typeof SavedPromptSchema>;
+
 // ─── App Settings (singleton) ────────────────────────────────────────
 
 export const PrimaryColorEnum = z.enum([

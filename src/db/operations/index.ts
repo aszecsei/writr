@@ -28,6 +28,7 @@ export * from "./playlist";
 export * from "./projects";
 export * from "./proposedEdits";
 export * from "./readerBible";
+export * from "./savedPrompts";
 export * from "./settings";
 export * from "./snapshotManifests";
 export * from "./snapshots";

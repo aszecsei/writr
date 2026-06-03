@@ -1,8 +1,16 @@
 "use client";
 
-import { ArrowUp, ImagePlus, Square, X } from "lucide-react";
-import type { FormEvent, KeyboardEvent } from "react";
+import { ArrowUp, BookMarked, ImagePlus, Square, X } from "lucide-react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
+import type { SavedPrompt } from "@/db/schemas";
+import { useUiStore } from "@/store/uiStore";
 
 export interface PendingImage {
   url: string;
@@ -17,6 +25,8 @@ interface PromptInputProps {
   loading: boolean;
   selectedText?: string | null;
   onClearSelection?: () => void;
+  savedPrompts: SavedPrompt[];
+  onSelectPrompt: (body: string) => void;
   pendingImages: PendingImage[];
   onAddImage: (image: PendingImage) => void;
   onRemoveImage: (index: number) => void;
@@ -31,10 +41,37 @@ export function PromptInput({
   loading,
   selectedText,
   onClearSelection,
+  savedPrompts,
+  onSelectPrompt,
   pendingImages,
   onRemoveImage,
   onOpenImagePicker,
 }: PromptInputProps) {
+  const openModal = useUiStore((s) => s.openModal);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const promptMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the saved-prompts popover on outside click or Escape.
+  useEffect(() => {
+    if (!showPrompts) return;
+    function handlePointerDown(e: MouseEvent) {
+      if (
+        promptMenuRef.current &&
+        !promptMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowPrompts(false);
+      }
+    }
+    function handleKeyDown(e: globalThis.KeyboardEvent) {
+      if (e.key === "Escape") setShowPrompts(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showPrompts]);
   return (
     <form
       onSubmit={onSubmit}
@@ -82,7 +119,55 @@ export function PromptInput({
           ))}
         </div>
       )}
-      <div className="flex gap-2">
+      <div className="flex items-end gap-2">
+        <div className="relative" ref={promptMenuRef}>
+          <button
+            type="button"
+            onClick={() => setShowPrompts((v) => !v)}
+            disabled={loading}
+            title="Saved prompts"
+            aria-haspopup="menu"
+            aria-expanded={showPrompts}
+            className="rounded-md border border-neutral-300 p-2 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+          >
+            <BookMarked size={16} />
+          </button>
+          {showPrompts && (
+            <div className="absolute bottom-full left-0 z-10 mb-1 max-h-64 w-64 overflow-y-auto rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
+              {savedPrompts.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  No saved prompts yet.
+                </p>
+              ) : (
+                savedPrompts.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectPrompt(p.body);
+                      setShowPrompts(false);
+                    }}
+                    className="block w-full truncate px-3 py-1.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                    title={p.title}
+                  >
+                    {p.title}
+                  </button>
+                ))
+              )}
+              <div className="my-1 border-t border-neutral-200 dark:border-neutral-700" />
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPrompts(false);
+                  openModal({ id: "saved-prompts" });
+                }}
+                className="block w-full px-3 py-1.5 text-left text-xs text-neutral-500 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700"
+              >
+                Manage prompts…
+              </button>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={onOpenImagePicker}

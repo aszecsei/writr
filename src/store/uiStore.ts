@@ -32,6 +32,7 @@ export type ModalState =
   | { id: "chapter-properties"; chapterId: ChapterId }
   | { id: "agents-manager" }
   | { id: "agent-editor"; agentId?: AgentDefinitionId }
+  | { id: "saved-prompts" }
   | { id: "share-collab-session" }
   | {
       id: "collab-approve-join";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Trash2 } from "lucide-react";
+import { BookMarked, Sparkles, Trash2 } from "lucide-react";
 import {
   type FormEvent,
   useCallback,
@@ -21,6 +21,7 @@ import {
 } from "@/hooks/data/useBibleEntries";
 import { useChapter, useChaptersByProject } from "@/hooks/data/useChapter";
 import { useProject } from "@/hooks/data/useProject";
+import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import {
   useOutlineGridCells,
   useOutlineGridColumns,
@@ -37,6 +38,7 @@ import { PROVIDERS } from "@/lib/ai/providers";
 import type { AiContext, AiMessage } from "@/lib/ai/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
+import { useUiStore } from "@/store/uiStore";
 import { AgentSelector } from "./AgentSelector";
 import { makeUserMessage } from "./chat/factories";
 import { makeAiPanelAccessor } from "./chat/panelAccessor";
@@ -50,6 +52,8 @@ import { PromptInspectorDialog } from "./PromptInspectorDialog";
 export function AiPanel() {
   const projectId = useProjectStore((s) => s.activeProjectId);
   const project = useProject(projectId);
+  const openModal = useUiStore((s) => s.openModal);
+  const savedPrompts = useAvailableSavedPrompts(projectId);
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
@@ -442,19 +446,29 @@ export function AiPanel() {
             <Sparkles size={14} />
             AI Assistant
           </h3>
-          {messages.length > 0 && (
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => {
-                setMessages([]);
-                setError(null);
-              }}
-              title="Clear conversation"
+              onClick={() => openModal({ id: "saved-prompts" })}
+              title="Saved prompts"
               className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
             >
-              <Trash2 size={14} />
+              <BookMarked size={14} />
             </button>
-          )}
+            {messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMessages([]);
+                  setError(null);
+                }}
+                title="Clear conversation"
+                className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
         <AgentSelector value={selectedAgentId} onChange={setSelectedAgentId} />
       </div>
@@ -487,6 +501,8 @@ export function AiPanel() {
         loading={loading}
         selectedText={selectedText}
         onClearSelection={clearSelection}
+        savedPrompts={savedPrompts ?? []}
+        onSelectPrompt={(body) => setPrompt(body)}
         pendingImages={pendingImages}
         onAddImage={(img) => setPendingImages((prev) => [...prev, img])}
         onRemoveImage={(i) =>

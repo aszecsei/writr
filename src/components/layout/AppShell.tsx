@@ -17,6 +17,7 @@ import { AgentEditor } from "@/components/settings/AgentEditor";
 import { AgentsManager } from "@/components/settings/AgentsManager";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
+import { SavedPromptsManager } from "@/components/settings/SavedPromptsManager";
 import {
   SprintConfigDialog,
   SprintHistoryDialog,
@@ -101,6 +102,7 @@ export function AppShell({ children }: AppShellProps) {
         <AgentsManager />
         <AgentEditor />
         <DictionaryManagerDialog />
+        <SavedPromptsManager />
         <VersionHistoryDialog />
         <ChapterPropertiesDialog />
         <SprintConfigDialog />
@@ -139,6 +141,7 @@ export function AppShell({ children }: AppShellProps) {
       <AgentsManager />
       <AgentEditor />
       <DictionaryManagerDialog />
+      <SavedPromptsManager />
       <VersionHistoryDialog />
       <ChapterPropertiesDialog />
       <ExportDialog />

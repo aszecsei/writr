@@ -29,6 +29,7 @@ import type {
   ProposedEdit,
   ReaderBibleLogEntry,
   ReaderBibleViewEntry,
+  SavedPrompt,
   SnapshotManifest,
   StyleGuideEntry,
   TimelineEvent,
@@ -72,6 +73,7 @@ export class WritrDatabase extends Dexie {
   chapterSummaries!: EntityTable<ChapterSummary, "id">;
   snapshotManifests!: EntityTable<SnapshotManifest, "id">;
   agents!: EntityTable<AgentDefinition, "id">;
+  savedPrompts!: EntityTable<SavedPrompt, "id">;
 
   constructor() {
     super("writr");
@@ -984,6 +986,12 @@ export class WritrDatabase extends Dexie {
     this.version(35).stores({
       comments:
         "id, projectId, chapterId, [chapterId+fromOffset], status, parentCommentId",
+    });
+
+    // v36: add savedPrompts table for the reusable prompt library. projectId
+    // is nullable (null = global), so it is indexed for scope lookups.
+    this.version(36).stores({
+      savedPrompts: "id, projectId, [projectId+updatedAt]",
     });
 
     // Seed singleton rows so liveQuery hooks never need to write

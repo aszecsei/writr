@@ -20,4 +20,8 @@ export {
 } from "./useDictionary";
 export { usePlaylistByProject, usePlaylistTrack } from "./usePlaylistEntries";
 export { useAllProjects, useProject } from "./useProject";
+export {
+  useAvailableSavedPrompts,
+  useSavedPrompt,
+} from "./useSavedPrompts";
 export { useSnapshotsByChapter } from "./useSnapshots";
