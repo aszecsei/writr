@@ -427,6 +427,7 @@ export const AgentKindEnum = z.enum([
   "chat",
   "beta-reader",
   "outline-architect",
+  "worldbuilder",
   // Pipeline-internal (not user-selectable from chat).
   "orchestrator",
   "verifier",
@@ -454,6 +455,7 @@ export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
   "chat",
   "beta-reader",
   "outline-architect",
+  "worldbuilder",
   "user",
 ]);
 

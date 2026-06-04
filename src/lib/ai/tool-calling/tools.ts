@@ -8,10 +8,18 @@ import {
   searchChapterTool,
   updateChapterTool,
 } from "./tools/chapters";
-import { createCharacterTool, updateCharacterTool } from "./tools/characters";
+import {
+  createCharacterTool,
+  deleteCharacterTool,
+  updateCharacterTool,
+} from "./tools/characters";
 import { addCommentTool, replyToCommentTool } from "./tools/comments";
 import { fail, formatZodError } from "./tools/helpers";
-import { createLocationTool, updateLocationTool } from "./tools/locations";
+import {
+  createLocationTool,
+  deleteLocationTool,
+  updateLocationTool,
+} from "./tools/locations";
 import {
   listNotesTool,
   listQuestionsTool,
@@ -30,6 +38,8 @@ import { getTool, listTool } from "./tools/registry";
 import { searchProjectTool } from "./tools/search";
 import {
   createTimelineEventTool,
+  deleteTimelineEventTool,
+  moveTimelineEventTool,
   updateTimelineEventTool,
 } from "./tools/timeline";
 import { reportVerificationTool } from "./tools/verification";
@@ -38,6 +48,12 @@ import {
   finalizeTierTool,
   updateWorkUnitTool,
 } from "./tools/workUnits";
+import {
+  createWorldbuildingDocTool,
+  deleteWorldbuildingDocTool,
+  moveWorldbuildingDocTool,
+  updateWorldbuildingDocTool,
+} from "./tools/worldbuilding";
 import type {
   AiToolDefinition,
   ToolDefinitionForModel,
@@ -52,10 +68,19 @@ export const AI_TOOLS: AiToolDefinition[] = [
   // Story bible CRUD
   createCharacterTool,
   updateCharacterTool,
+  deleteCharacterTool,
   createLocationTool,
   updateLocationTool,
+  deleteLocationTool,
   createTimelineEventTool,
   updateTimelineEventTool,
+  deleteTimelineEventTool,
+  moveTimelineEventTool,
+  // Worldbuilding CRUD + move
+  createWorldbuildingDocTool,
+  updateWorldbuildingDocTool,
+  deleteWorldbuildingDocTool,
+  moveWorldbuildingDocTool,
   // Chapter CRUD + content reads
   createChapterTool,
   updateChapterTool,

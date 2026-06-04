@@ -10,6 +10,8 @@ import {
   makeChapter,
   makeCharacter,
   makeLocation,
+  makeRelationship,
+  makeTimelineEvent,
   resetIdCounter,
 } from "@/test/helpers";
 import { AI_TOOL_MAP, executeTool, getToolDefinitionsForModel } from "./tools";
@@ -18,8 +20,8 @@ const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 35 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(35);
+  it("exports 43 tool definitions", () => {
+    expect(getToolDefinitionsForModel()).toHaveLength(43);
   });
 
   it("has unique tool IDs", () => {
@@ -60,6 +62,7 @@ describe("character tools", () => {
   beforeEach(async () => {
     resetIdCounter();
     await db.characters.clear();
+    await db.characterRelationships.clear();
   });
 
   it("create_character creates a character", async () => {
@@ -90,6 +93,38 @@ describe("character tools", () => {
 
     const updated = await db.characters.get(char.id);
     expect(updated?.role).toBe("protagonist");
+  });
+
+  it("delete_character removes the character and its relationships", async () => {
+    const alice = makeCharacter({ projectId, name: "Alice" });
+    const bob = makeCharacter({ projectId, name: "Bob" });
+    await db.characters.bulkAdd([alice, bob]);
+    await db.characterRelationships.add(
+      makeRelationship({
+        projectId,
+        sourceCharacterId: alice.id,
+        targetCharacterId: bob.id,
+        type: "sibling",
+      }),
+    );
+
+    const result = await executeTool("delete_character", { id: alice.id }, ctx);
+    expect(result.success).toBe(true);
+
+    expect(await db.characters.get(alice.id)).toBeUndefined();
+    // Bob survives; the relationship referencing Alice is gone.
+    expect(await db.characters.get(bob.id)).toBeDefined();
+    expect(await db.characterRelationships.count()).toBe(0);
+  });
+
+  it("delete_character fails for an unknown id", async () => {
+    const result = await executeTool(
+      "delete_character",
+      { id: "00000000-0000-4000-8000-deadbeefdead" },
+      ctx,
+    );
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/not found/i);
   });
 });
 
@@ -128,6 +163,25 @@ describe("location tools", () => {
     const updated = await db.locations.get(created.data?.id as LocationId);
     expect(updated?.description).toBe("A small village");
   });
+
+  it("delete_location removes the location", async () => {
+    const loc = makeLocation({ projectId, name: "The Keep" });
+    await db.locations.add(loc);
+
+    const result = await executeTool("delete_location", { id: loc.id }, ctx);
+    expect(result.success).toBe(true);
+    expect(await db.locations.get(loc.id)).toBeUndefined();
+  });
+
+  it("delete_location fails for an unknown id", async () => {
+    const result = await executeTool(
+      "delete_location",
+      { id: "00000000-0000-4000-8000-deadbeefdead" },
+      ctx,
+    );
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/not found/i);
+  });
 });
 
 describe("timeline event tools", () => {
@@ -162,6 +216,72 @@ describe("timeline event tools", () => {
       created.data?.id as TimelineEventId,
     );
     expect(updated?.description).toBe("A grand feast");
+  });
+
+  it("delete_timeline_event removes the event", async () => {
+    const event = makeTimelineEvent({ projectId, title: "The Coronation" });
+    await db.timelineEvents.add(event);
+
+    const result = await executeTool(
+      "delete_timeline_event",
+      { id: event.id },
+      ctx,
+    );
+    expect(result.success).toBe(true);
+    expect(await db.timelineEvents.get(event.id)).toBeUndefined();
+  });
+
+  it("move_timeline_event repositions an event after a target", async () => {
+    const a = makeTimelineEvent({ projectId, title: "A", order: 0 });
+    const b = makeTimelineEvent({ projectId, title: "B", order: 1 });
+    const c = makeTimelineEvent({ projectId, title: "C", order: 2 });
+    await db.timelineEvents.bulkAdd([a, b, c]);
+
+    // Move A to sit after C → order becomes B, C, A.
+    const result = await executeTool(
+      "move_timeline_event",
+      { id: a.id, targetId: c.id, position: "after" },
+      ctx,
+    );
+    expect(result.success).toBe(true);
+
+    expect((await db.timelineEvents.get(b.id))?.order).toBe(0);
+    expect((await db.timelineEvents.get(c.id))?.order).toBe(1);
+    expect((await db.timelineEvents.get(a.id))?.order).toBe(2);
+  });
+
+  it("move_timeline_event places an event before a target", async () => {
+    const a = makeTimelineEvent({ projectId, title: "A", order: 0 });
+    const b = makeTimelineEvent({ projectId, title: "B", order: 1 });
+    const c = makeTimelineEvent({ projectId, title: "C", order: 2 });
+    await db.timelineEvents.bulkAdd([a, b, c]);
+
+    // Move C before A → order becomes C, A, B.
+    await executeTool(
+      "move_timeline_event",
+      { id: c.id, targetId: a.id, position: "before" },
+      ctx,
+    );
+
+    expect((await db.timelineEvents.get(c.id))?.order).toBe(0);
+    expect((await db.timelineEvents.get(a.id))?.order).toBe(1);
+    expect((await db.timelineEvents.get(b.id))?.order).toBe(2);
+  });
+
+  it("move_timeline_event fails for an unknown target", async () => {
+    const a = makeTimelineEvent({ projectId, title: "A" });
+    await db.timelineEvents.add(a);
+    const result = await executeTool(
+      "move_timeline_event",
+      {
+        id: a.id,
+        targetId: "00000000-0000-4000-8000-deadbeefdead",
+        position: "after",
+      },
+      ctx,
+    );
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/not found/i);
   });
 });
 
@@ -765,10 +885,18 @@ describe("requiresApproval", () => {
     const writeTools = [
       "create_character",
       "update_character",
+      "delete_character",
       "create_location",
       "update_location",
+      "delete_location",
       "create_timeline_event",
       "update_timeline_event",
+      "delete_timeline_event",
+      "move_timeline_event",
+      "create_worldbuilding_doc",
+      "update_worldbuilding_doc",
+      "delete_worldbuilding_doc",
+      "move_worldbuilding_doc",
       "create_chapter",
       "update_chapter",
       "manage_outline_columns",

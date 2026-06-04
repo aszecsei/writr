@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   createCharacter,
+  deleteCharacter,
   getCharacter,
   updateCharacter,
 } from "@/db/operations/characters";
@@ -103,5 +104,33 @@ export const updateCharacterTool = defineTool({
     if (!existing) return fail(`Character not found: ${id}`);
     await updateCharacter(id as CharacterId, fields);
     return ok(`Updated character "${existing.name}"`);
+  },
+});
+
+export const deleteCharacterTool = defineTool({
+  id: "delete_character",
+  category: "character",
+  name: "Delete Character",
+  description:
+    "Delete a character from the story bible. Also removes the character's " +
+    "relationships. Use the `list` and `get` tools first to confirm the id.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Character ID" },
+    },
+    required: ["id"],
+  },
+  inputSchema: z
+    .object({
+      id: z.string().min(1),
+    })
+    .strip(),
+  requiresApproval: true,
+  async execute(params) {
+    const existing = await getCharacter(params.id as CharacterId);
+    if (!existing) return fail(`Character not found: ${params.id}`);
+    await deleteCharacter(params.id as CharacterId);
+    return ok(`Deleted character "${existing.name}"`);
   },
 });

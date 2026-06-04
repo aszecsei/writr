@@ -151,10 +151,23 @@ export const MUTATIONS_GROUPS: ToolPickerGroup[] = [
     rows: [
       mutationRow("create_character"),
       mutationRow("update_character"),
+      mutationRow("delete_character"),
       mutationRow("create_location"),
       mutationRow("update_location"),
+      mutationRow("delete_location"),
       mutationRow("create_timeline_event"),
       mutationRow("update_timeline_event"),
+      mutationRow("delete_timeline_event"),
+      mutationRow("move_timeline_event"),
+    ],
+  },
+  {
+    heading: "Worldbuilding",
+    rows: [
+      mutationRow("create_worldbuilding_doc"),
+      mutationRow("update_worldbuilding_doc"),
+      mutationRow("delete_worldbuilding_doc"),
+      mutationRow("move_worldbuilding_doc"),
     ],
   },
   {

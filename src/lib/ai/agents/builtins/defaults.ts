@@ -26,7 +26,9 @@ import {
   EDITOR_CHAT_TOOLS,
   OUTLINE_ARCHITECT_TOOLS,
   READER_CHAT_TOOLS,
+  WORLDBUILDER_TOOLS,
 } from "./tool-permissions";
+import { WORLDBUILDER_PROMPT } from "./worldbuilder";
 
 /**
  * UI behaviour hint derived from agent kind. Drives how the AiPanel renders
@@ -219,6 +221,15 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     behavior: "chat",
     exposed: true,
   },
+  worldbuilder: {
+    name: "Worldbuilder",
+    description:
+      "Build and maintain the world bible through conversation — author, revise, and organize worldbuilding docs while staying consistent with established canon.",
+    systemPrompt: WORLDBUILDER_PROMPT,
+    allowedToolIds: [...WORLDBUILDER_TOOLS],
+    behavior: "chat",
+    exposed: true,
+  },
   orchestrator: {
     name: "Orchestrator",
     description:
@@ -258,6 +269,7 @@ export const CHAT_AGENT_ORDER: ReadonlyArray<Exclude<AgentKind, "user">> = [
   "chat",
   "beta-reader",
   "outline-architect",
+  "worldbuilder",
 ];
 
 /** Spark response delimiter. Mirrored in SparkOptions parser. */

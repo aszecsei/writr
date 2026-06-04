@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   createLocation,
+  deleteLocation,
   getLocation,
   updateLocation,
 } from "@/db/operations/locations";
@@ -77,5 +78,33 @@ export const updateLocationTool = defineTool({
     if (!existing) return fail(`Location not found: ${id}`);
     await updateLocation(id as LocationId, fields);
     return ok(`Updated location "${existing.name}"`);
+  },
+});
+
+export const deleteLocationTool = defineTool({
+  id: "delete_location",
+  category: "location",
+  name: "Delete Location",
+  description:
+    "Delete a location from the story bible. Use the `list` and `get` tools " +
+    "first to confirm the id.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Location ID" },
+    },
+    required: ["id"],
+  },
+  inputSchema: z
+    .object({
+      id: z.string().min(1),
+    })
+    .strip(),
+  requiresApproval: true,
+  async execute(params) {
+    const existing = await getLocation(params.id as LocationId);
+    if (!existing) return fail(`Location not found: ${params.id}`);
+    await deleteLocation(params.id as LocationId);
+    return ok(`Deleted location "${existing.name}"`);
   },
 });

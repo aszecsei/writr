@@ -162,6 +162,23 @@ export const OUTLINE_ARCHITECT_TOOLS: readonly string[] = [
   "set_outline_cell_color",
 ];
 
+// ─── Worldbuilder ────────────────────────────────────────────────────
+
+/**
+ * Worldbuilder: full read surface (it grounds new world facts in existing
+ * characters, locations, and docs before writing) plus the four worldbuilding
+ * doc-management tools. All four mutate the world bible and require approval;
+ * the agent stays inside worldbuilding and has no chapter- or
+ * character-mutating tools.
+ */
+export const WORLDBUILDER_TOOLS: readonly string[] = [
+  ...CHAT_READS_BASE,
+  "create_worldbuilding_doc",
+  "update_worldbuilding_doc",
+  "delete_worldbuilding_doc",
+  "move_worldbuilding_doc",
+];
+
 // ─── Chat / Brainstorm / Character Dialogue ──────────────────────────
 
 /**
