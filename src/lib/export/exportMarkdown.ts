@@ -11,8 +11,14 @@ export function exportMarkdown(
   }
 
   for (const chapter of content.chapters) {
+    if (chapter.isSeparator) {
+      parts.push(`# ${chapter.title}\n`);
+      parts.push("");
+      continue;
+    }
     if (options.includeChapterHeadings) {
-      parts.push(`## ${chapter.title}\n`);
+      const level = Math.min(6, 2 + (chapter.level ?? 0));
+      parts.push(`${"#".repeat(level)} ${chapter.title}\n`);
     }
     parts.push(chapter.content);
     parts.push(""); // blank line between chapters

@@ -18,6 +18,7 @@ import {
 } from "@/hooks/outline/useOutlineGrid";
 import { useOutlineGridDragDrop } from "@/hooks/outline/useOutlineGridDragDrop";
 import { useOutlineGridOperations } from "@/hooks/outline/useOutlineGridOperations";
+import { depthMap, isManuscriptDocument } from "@/lib/binder/tree";
 import {
   type ContextMenuTarget,
   OutlineGridContextMenu,
@@ -54,23 +55,34 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     chapterTitle: string;
   } | null>(null);
 
+  // Only manuscript documents can be represented as outline rows — separators
+  // and scratchpad docs are not chapters.
+  const manuscriptChapters = useMemo(
+    () => (chapters ?? []).filter(isManuscriptDocument),
+    [chapters],
+  );
+
   // Build chapter lookup map (id -> { title, status })
   const chapterMap = useMemo(() => {
-    if (!chapters)
-      return new Map<ChapterId, { title: string; status: string }>();
     return new Map(
-      chapters.map((c) => [c.id, { title: c.title, status: c.status }]),
+      manuscriptChapters.map((c) => [
+        c.id,
+        { title: c.title, status: c.status },
+      ]),
     );
-  }, [chapters]);
+  }, [manuscriptChapters]);
+
+  // Nesting depth of each chapter, so linked rows can indent to mirror the binder.
+  const chapterDepth = useMemo(() => depthMap(chapters ?? []), [chapters]);
 
   // Get chapters not already linked to a row (for linking menu)
   const availableChapters = useMemo(() => {
-    if (!chapters || !rows) return [];
+    if (!rows) return [];
     const linkedChapterIds = new Set(
       rows.filter((r) => r.linkedChapterId).map((r) => r.linkedChapterId),
     );
-    return chapters.filter((c) => !linkedChapterIds.has(c.id));
-  }, [chapters, rows]);
+    return manuscriptChapters.filter((c) => !linkedChapterIds.has(c.id));
+  }, [manuscriptChapters, rows]);
 
   // Get current cell color for context menu
   const currentCellColor = useMemo(() => {
@@ -190,6 +202,11 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
                     row.linkedChapterId
                       ? chapterMap.get(row.linkedChapterId)?.status
                       : undefined
+                  }
+                  depth={
+                    row.linkedChapterId
+                      ? (chapterDepth.get(row.linkedChapterId) ?? 0)
+                      : 0
                   }
                   onRowLabelChange={(label) =>
                     operations.handleRowLabelChange(row.id, label)

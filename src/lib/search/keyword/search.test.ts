@@ -308,7 +308,7 @@ describe("searchChaptersKeyword", () => {
     expect(matches[0].title).toBe("A");
   });
 
-  it("respects maxReadableOrder", async () => {
+  it("respects the readable-chapter set", async () => {
     const c1 = await createChapter({ projectId, title: "First" });
     await db.chapters.update(c1.id, { content: "garden", order: 0 });
     const c2 = await createChapter({ projectId, title: "Second" });
@@ -317,7 +317,7 @@ describe("searchChaptersKeyword", () => {
     await db.chapters.update(c3.id, { content: "garden", order: 2 });
 
     const matches = await searchChaptersKeyword(projectId, "garden", {
-      maxReadableOrder: 1,
+      readableChapterIds: new Set([c1.id, c2.id]),
     });
     const titles = matches.map((m) => m.title).sort();
     expect(titles).toEqual(["First", "Second"]);

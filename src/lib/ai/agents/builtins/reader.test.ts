@@ -100,8 +100,9 @@ describe("makeReaderAgent — comprehension mode", () => {
     expect(briefing).toContain(chapter.content);
   });
 
-  it("threads maxReadableChapterOrder into the agent context for forward-only enforcement", () => {
+  it("threads readableChapterIds into the agent context for forward-only enforcement", () => {
     const chapter = makeChapter();
+    const readableChapterIds = new Set([chapter.id]);
     const agent = makeReaderAgent({
       runId,
       projectId,
@@ -110,9 +111,10 @@ describe("makeReaderAgent — comprehension mode", () => {
       chapter,
       chapterIndex: 1,
       totalChapters: 1,
+      readableChapterIds,
       context: makeContext(),
     });
-    expect(agent.agentContext.maxReadableChapterOrder).toBe(chapter.order);
+    expect(agent.agentContext.readableChapterIds).toBe(readableChapterIds);
   });
 
   it("emits a 'continuing' framing for non-first chapters in a segment", () => {

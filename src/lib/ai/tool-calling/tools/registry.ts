@@ -200,12 +200,8 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
   chapter: {
     async list(ctx) {
       const all = await getChaptersByProject(ctx.projectId);
-      const rows =
-        ctx.maxReadableChapterOrder !== undefined
-          ? all.filter(
-              (c) => c.order <= (ctx.maxReadableChapterOrder as number),
-            )
-          : all;
+      const readable = ctx.readableChapterIds;
+      const rows = readable ? all.filter((c) => readable.has(c.id)) : all;
       return {
         message: `Found ${rows.length} chapters`,
         entries: rows.map((c) => ({
@@ -220,10 +216,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
       if (!id) return { data: null, error: "chapter get requires an id" };
       const ch = await getChapter(id as ChapterId);
       if (!ch) return { data: null, error: `Chapter not found: ${id}` };
-      if (
-        ctx.maxReadableChapterOrder !== undefined &&
-        ch.order > ctx.maxReadableChapterOrder
-      ) {
+      if (ctx.readableChapterIds && !ctx.readableChapterIds.has(ch.id)) {
         return {
           data: null,
           error: `Chapter "${ch.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,

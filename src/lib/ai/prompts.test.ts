@@ -309,8 +309,8 @@ describe("buildAgenticContext", () => {
       }),
     );
     expect(xml).toContain("<table-of-contents>");
-    expect(xml).toContain('<chapter id="c1" order="0" title="Opening"');
-    expect(xml).toContain('<chapter id="c2" order="1" title="Climax"');
+    expect(xml).toContain('<chapter id="c1" order="0" depth="0" title="Opening"');
+    expect(xml).toContain('<chapter id="c2" order="1" depth="0" title="Climax"');
     expect(xml).toContain("</table-of-contents>");
   });
 

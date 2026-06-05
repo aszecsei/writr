@@ -537,11 +537,11 @@ describe("chapter content read tools", () => {
     expect(result.success).toBe(false);
   });
 
-  it("read_chapter refuses chapters past maxReadableChapterOrder", async () => {
+  it("read_chapter refuses chapters outside the readable set", async () => {
     const ch1 = makeChapter({ projectId, title: "Ch1", order: 0 });
     const ch2 = makeChapter({ projectId, title: "Ch2", order: 1 });
     await db.chapters.bulkAdd([ch1, ch2]);
-    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const boundedCtx = { ...ctx, readableChapterIds: new Set([ch1.id]) };
     const allowed = await executeTool(
       "read_chapter",
       { id: ch1.id },
@@ -557,7 +557,7 @@ describe("chapter content read tools", () => {
     expect(blocked.message).toMatch(/beyond the current reading position/);
   });
 
-  it("read_chapter_range and search_chapter respect maxReadableChapterOrder", async () => {
+  it("read_chapter_range and search_chapter respect the readable set", async () => {
     const ch1 = makeChapter({
       projectId,
       title: "Ch1",
@@ -571,7 +571,7 @@ describe("chapter content read tools", () => {
       content: "alpha\n\ngamma",
     });
     await db.chapters.bulkAdd([ch1, ch2]);
-    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const boundedCtx = { ...ctx, readableChapterIds: new Set([ch1.id]) };
     const range = await executeTool(
       "read_chapter_range",
       { id: ch2.id, start: 1 },
@@ -600,7 +600,7 @@ describe("chapter content read tools", () => {
       content: "shared term",
     });
     await db.chapters.bulkAdd([ch1, ch2]);
-    const boundedCtx = { ...ctx, maxReadableChapterOrder: 0 };
+    const boundedCtx = { ...ctx, readableChapterIds: new Set([ch1.id]) };
     const search = await executeTool(
       "search_chapters",
       { query: "shared" },
@@ -610,6 +610,36 @@ describe("chapter content read tools", () => {
     const matches = search.data?.matches as { id: string }[];
     expect(matches).toHaveLength(1);
     expect(matches[0].id).toBe(ch1.id);
+  });
+
+  it("get_chapter_structure refuses chapters outside the readable set", async () => {
+    const ch1 = makeChapter({
+      projectId,
+      title: "Ch1",
+      order: 0,
+      content: "alpha\n\nbeta",
+    });
+    const ch2 = makeChapter({
+      projectId,
+      title: "Ch2",
+      order: 1,
+      content: "gamma",
+    });
+    await db.chapters.bulkAdd([ch1, ch2]);
+    const boundedCtx = { ...ctx, readableChapterIds: new Set([ch1.id]) };
+    const allowed = await executeTool(
+      "get_chapter_structure",
+      { id: ch1.id },
+      boundedCtx,
+    );
+    expect(allowed.success).toBe(true);
+    const blocked = await executeTool(
+      "get_chapter_structure",
+      { id: ch2.id },
+      boundedCtx,
+    );
+    expect(blocked.success).toBe(false);
+    expect(blocked.message).toMatch(/beyond the current reading position/);
   });
 });
 

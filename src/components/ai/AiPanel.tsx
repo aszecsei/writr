@@ -19,7 +19,7 @@ import {
   useTimelineByProject,
   useWorldbuildingDocsByProject,
 } from "@/hooks/data/useBibleEntries";
-import { useChapter, useChaptersByProject } from "@/hooks/data/useChapter";
+import { useChapter, useManuscriptChapters } from "@/hooks/data/useChapter";
 import { useProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import {
@@ -63,7 +63,7 @@ export function AiPanel() {
   const outlineGridColumns = useOutlineGridColumns(projectId);
   const outlineGridRows = useOutlineGridRows(projectId);
   const outlineGridCells = useOutlineGridCells(projectId);
-  const chapters = useChaptersByProject(projectId);
+  const chapters = useManuscriptChapters(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
   const selectedText = useEditorStore((s) => s.selectedText);

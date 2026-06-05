@@ -196,11 +196,13 @@ export async function buildProjectIndex(
 
 export async function buildChaptersIndex(
   projectId: string,
-  maxReadableOrder?: number,
+  readableChapterIds?: ReadonlySet<string>,
 ): Promise<BuiltIndex> {
   let chapters = await db.chapters.where({ projectId }).toArray();
-  if (maxReadableOrder !== undefined) {
-    chapters = chapters.filter((c) => c.order <= maxReadableOrder);
+  // Separators are structural markers, not searchable documents.
+  chapters = chapters.filter((c) => c.kind !== "separator");
+  if (readableChapterIds) {
+    chapters = chapters.filter((c) => readableChapterIds.has(c.id));
   }
   const docs = chapters.map((c) =>
     entityToDoc({

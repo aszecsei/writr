@@ -140,15 +140,34 @@ export type Project = z.infer<typeof ProjectSchema>;
 export const ChapterStatusEnum = z.enum(["draft", "revised", "final"]);
 export type ChapterStatus = z.infer<typeof ChapterStatusEnum>;
 
+// Binder taxonomy (v37). A chapter row is either a real `document` (holds prose
+// and may nest children) or a `separator` (a label marker dividing siblings).
+export const ChapterKindEnum = z.enum(["document", "separator"]);
+export type ChapterKind = z.infer<typeof ChapterKindEnum>;
+
+// `manuscript` rows compile into the book; `scratchpad` rows are loose storage
+// that never compiles and never counts toward the manuscript word count.
+export const ChapterSectionEnum = z.enum(["manuscript", "scratchpad"]);
+export type ChapterSection = z.infer<typeof ChapterSectionEnum>;
+
 export const ChapterSchema = z.object({
   id: ChapterIdSchema,
   projectId: ProjectIdSchema,
   title: z.string().min(1),
+  // Sibling-scoped position within (projectId, section, parentChapterId).
   order: z.number().int().nonnegative(),
   content: z.string().default(""),
   synopsis: z.string().default(""),
   status: ChapterStatusEnum.default("draft"),
   wordCount: z.number().int().nonnegative().default(0),
+  // ── Binder hierarchy (v37) ──
+  parentChapterId: ChapterIdSchema.nullable().default(null),
+  section: ChapterSectionEnum.default("manuscript"),
+  kind: ChapterKindEnum.default("document"),
+  // Separator-only semantics in v1: whether the marker prints into the compiled
+  // manuscript, and whether it forces a page break before it.
+  includeInCompile: z.boolean().default(true),
+  pageBreakBefore: z.boolean().default(false),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

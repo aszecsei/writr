@@ -22,6 +22,8 @@ interface OutlineGridRowProps {
   highlightCellId?: OutlineGridCellId | null;
   chapterTitle?: string;
   chapterStatus?: string;
+  /** Nesting depth of the linked chapter, for binder-matching indentation. */
+  depth?: number;
   onRowLabelChange: (label: string) => void;
   onCellSave: (columnId: OutlineGridColumnId, content: string) => void;
   onRowContextMenu: (e: React.MouseEvent) => void;
@@ -39,6 +41,7 @@ export function OutlineGridRow({
   highlightCellId,
   chapterTitle,
   chapterStatus,
+  depth = 0,
   onRowLabelChange,
   onCellSave,
   onRowContextMenu,
@@ -74,6 +77,13 @@ export function OutlineGridRow({
       >
         <div className="flex items-center gap-1">
           <DragHandle ref={handleRef} />
+          {depth > 0 && (
+            <span
+              aria-hidden
+              className="shrink-0"
+              style={{ width: depth * 14 }}
+            />
+          )}
           <span className="w-6 shrink-0 text-center text-xs text-neutral-400 dark:text-neutral-500">
             {index + 1}
           </span>

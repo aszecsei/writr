@@ -35,13 +35,14 @@ export interface ToolExecutionContext {
    */
   agentKind?: string;
   /**
-   * Highest chapter `order` the agent is permitted to access. Used by the
+   * The set of chapter ids the agent is permitted to read. Used by the
    * comprehension reader to preserve forward-only reading: chapter-reading
-   * tools refuse to return content for chapters with `order` greater than
-   * this bound, and list/search tools filter results to `order <= bound`.
-   * Undefined means no bound (full project access).
+   * tools refuse content for chapters outside this set, and list/search tools
+   * filter results to it. The reader populates it with every manuscript chapter
+   * up to and including the current one in flattened reading order. Undefined
+   * means no bound (full project access).
    */
-  maxReadableChapterOrder?: number;
+  readableChapterIds?: ReadonlySet<string>;
   /**
    * Reader-pass number this tool call belongs to (1-based). Set when a reader
    * agent is constructed inside a multi-pass loop so per-pass tools (e.g.

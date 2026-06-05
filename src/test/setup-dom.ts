@@ -18,3 +18,14 @@ afterEach(() => {
 if (typeof document !== "undefined" && !document.elementFromPoint) {
   document.elementFromPoint = () => null;
 }
+
+// @dnd-kit/dom observes element size via ResizeObserver, which jsdom does not
+// implement. A no-op stub is enough for tests that render sortable components
+// without exercising real drag geometry.
+if (typeof globalThis !== "undefined" && !("ResizeObserver" in globalThis)) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

@@ -160,8 +160,16 @@ export function exportHtml(
   }
 
   for (const chapter of content.chapters) {
+    if (chapter.isSeparator) {
+      const style = chapter.pageBreakBefore
+        ? ' style="page-break-before: always"'
+        : "";
+      sections.push(`<h1${style}>${escapeHtml(chapter.title)}</h1>`);
+      continue;
+    }
     if (options.includeChapterHeadings) {
-      sections.push(`<h2>${escapeHtml(chapter.title)}</h2>`);
+      const level = Math.min(6, 2 + (chapter.level ?? 0));
+      sections.push(`<h${level}>${escapeHtml(chapter.title)}</h${level}>`);
     }
     const nodes = markdownToNodes(chapter.content);
     sections.push(nodesToHtml(nodes));

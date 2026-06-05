@@ -10,6 +10,7 @@ import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data/source";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useWritingStats } from "@/hooks/editor/useWritingStats";
+import { isManuscriptDocument } from "@/lib/binder/tree";
 import { formatReadingTime } from "@/lib/reading-time";
 import { getTerm } from "@/lib/terminology";
 import { useUiStore } from "@/store/uiStore";
@@ -33,7 +34,11 @@ export function ProjectOverviewBody({
 
   if (!project) return null;
 
-  const totalWords = chapters?.reduce((sum, ch) => sum + ch.wordCount, 0) ?? 0;
+  const manuscriptChapters = chapters?.filter(isManuscriptDocument) ?? [];
+  const totalWords = manuscriptChapters.reduce(
+    (sum, ch) => sum + ch.wordCount,
+    0,
+  );
   const updatedDate = new Date(project.updatedAt).toLocaleDateString();
   const progressPercent =
     project.targetWordCount > 0
@@ -89,7 +94,7 @@ export function ProjectOverviewBody({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <StatCard
             label={getTerm(project.mode, "chapters")}
-            value={chapters?.length ?? 0}
+            value={manuscriptChapters.length}
             icon={FileText}
           />
           <StatCard

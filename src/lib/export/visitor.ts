@@ -69,6 +69,16 @@ export function buildExport(
   for (let i = 0; i < content.chapters.length; i++) {
     const chapter = content.chapters[i];
 
+    // A separator is a structural heading (e.g. "Part Two"); always render its
+    // label and honor its page break, regardless of includeChapterHeadings.
+    if (chapter.isSeparator) {
+      if (chapter.pageBreakBefore && options.scope === "book") {
+        exporter.addPageBreak();
+      }
+      exporter.addChapterHeading(chapter.title);
+      continue;
+    }
+
     if (
       i > 0 &&
       options.pageBreaksBetweenChapters &&

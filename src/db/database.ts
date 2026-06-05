@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { type EntityTable, type Transaction } from "dexie";
 import {
   BUILTIN_AGENT_DEFAULTS,
   type BuiltinAgentDefault,
@@ -40,6 +40,24 @@ import type {
   WritingSprint,
 } from "./schemas";
 import { AppDictionarySchema, AppSettingsSchema } from "./schemas";
+
+/**
+ * v37 migration: backfill the binder fields onto legacy chapter rows so they
+ * survive Zod parse and render as top-level manuscript documents. Exported so
+ * the migration can be unit-tested directly against a v36→v37 upgrade.
+ */
+export async function backfillBinderFieldsV37(tx: Transaction): Promise<void> {
+  await tx
+    .table("chapters")
+    .toCollection()
+    .modify((ch: Record<string, unknown>) => {
+      if (ch.parentChapterId === undefined) ch.parentChapterId = null;
+      if (ch.section === undefined) ch.section = "manuscript";
+      if (ch.kind === undefined) ch.kind = "document";
+      if (ch.includeInCompile === undefined) ch.includeInCompile = true;
+      if (ch.pageBreakBefore === undefined) ch.pageBreakBefore = false;
+    });
+}
 
 export class WritrDatabase extends Dexie {
   projects!: EntityTable<Project, "id">;
@@ -993,6 +1011,12 @@ export class WritrDatabase extends Dexie {
     this.version(36).stores({
       savedPrompts: "id, projectId, [projectId+updatedAt]",
     });
+
+    // v37: binder hierarchy. Adds parentChapterId / section / kind /
+    // includeInCompile / pageBreakBefore to chapters. No index change — nesting
+    // is queried by JS-side filter (mirrors worldbuildingDocs). Backfill keeps
+    // legacy chapters as top-level manuscript documents.
+    this.version(37).upgrade(backfillBinderFieldsV37);
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

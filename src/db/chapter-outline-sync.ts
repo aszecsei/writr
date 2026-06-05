@@ -9,9 +9,9 @@
  *    title becomes the single source of truth for display.
  * 2. When a row is unlinked, the chapter title is copied into the row's `label`,
  *    preserving the semantic meaning without data loss.
- * 3. Reordering is bidirectional: reordering chapters moves linked rows to match
- *    (unlinked rows shift to the end), and reordering rows updates linked chapter
- *    order correspondingly.
+ * 3. Reordering rows is row-only: the binder owns chapter order under the nested
+ *    model, so reordering outline rows reorders rows alone and does not move the
+ *    linked chapters.
  * 4. Delete operations support a `cascade` flag: true deletes both sides plus
  *    dependents (cells, comments, snapshots); false unlinks and preserves the
  *    "other side" with invariant #2.
@@ -40,10 +40,22 @@ async function compactRowOrders(projectId: ProjectId): Promise<void> {
 }
 
 async function compactChapterOrders(projectId: ProjectId): Promise<void> {
-  const chapters = await db.chapters.where({ projectId }).sortBy("order");
-  for (let i = 0; i < chapters.length; i++) {
-    if (chapters[i].order !== i) {
-      await db.chapters.update(chapters[i].id, { order: i });
+  const chapters = await db.chapters.where({ projectId }).toArray();
+  // Chapter `order` is sibling-scoped under the binder, so compact within each
+  // (section, parent) group — a global 0..n renumber would flatten the tree.
+  const groups = new Map<string, typeof chapters>();
+  for (const c of chapters) {
+    const key = `${c.section ?? "manuscript"}|${c.parentChapterId ?? "root"}`;
+    const group = groups.get(key);
+    if (group) group.push(c);
+    else groups.set(key, [c]);
+  }
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.order - b.order);
+    for (let i = 0; i < group.length; i++) {
+      if (group[i].order !== i) {
+        await db.chapters.update(group[i].id, { order: i });
+      }
     }
   }
 }
@@ -173,72 +185,26 @@ export async function updateRowLabel(
 // ─── Reorder Operations ─────────────────────────────────────────────────
 
 /**
- * Reorders chapters and auto-syncs linked outline rows.
- * Linked rows are reordered to match chapter order.
- * Unlinked rows are moved to the end.
- */
-export async function syncReorderChapters(
-  orderedChapterIds: ChapterId[],
-): Promise<void> {
-  await db.transaction("rw", [db.chapters, db.outlineGridRows], async () => {
-    // Update chapter orders
-    for (let i = 0; i < orderedChapterIds.length; i++) {
-      await db.chapters.update(orderedChapterIds[i], { order: i });
-    }
-
-    // Get all outline rows and build a map of chapterId -> row
-    const allRows = await db.outlineGridRows.toArray();
-    const chapterToRow = new Map(
-      allRows
-        .filter((r) => r.linkedChapterId != null)
-        .map((r) => [r.linkedChapterId, r]),
-    );
-
-    // Reorder linked rows to match chapter order, keeping unlinked rows at the end
-    const linkedRows = orderedChapterIds
-      .map((chapterId) => chapterToRow.get(chapterId))
-      .filter((r): r is NonNullable<typeof r> => r != null);
-
-    const unlinkedRows = allRows
-      .filter((r) => r.linkedChapterId == null)
-      .sort((a, b) => a.order - b.order);
-
-    const reorderedRows = [...linkedRows, ...unlinkedRows];
-    for (let i = 0; i < reorderedRows.length; i++) {
-      await db.outlineGridRows.update(reorderedRows[i].id, { order: i });
-    }
-  });
-}
-
-/**
- * Reorders outline rows and auto-syncs linked chapters.
- * Linked chapters are reordered to match their row order.
+ * Reorders outline rows only. The binder is the source of truth for chapter
+ * order under the nested model, so reordering rows here no longer moves the
+ * linked chapters (a flat row reorder can't map cleanly onto a tree).
  */
 export async function syncReorderOutlineRows(
   orderedRowIds: OutlineGridRowId[],
 ): Promise<void> {
-  await db.transaction("rw", [db.outlineGridRows, db.chapters], async () => {
-    // Update row orders
+  await db.transaction("rw", db.outlineGridRows, async () => {
     for (let i = 0; i < orderedRowIds.length; i++) {
       await db.outlineGridRows.update(orderedRowIds[i], { order: i });
-    }
-
-    // Fetch rows to get linked chapter IDs in order
-    const rows = await db.outlineGridRows.bulkGet(orderedRowIds);
-    const linkedChapterIds = rows
-      .map((r) => r?.linkedChapterId)
-      .filter((id): id is ChapterId => id != null);
-
-    // Update linked chapter orders
-    for (let i = 0; i < linkedChapterIds.length; i++) {
-      await db.chapters.update(linkedChapterIds[i], { order: i });
     }
   });
 }
 
 /**
- * Internal helper: sync chapter order based on row order.
- * Used after creating/linking a chapter.
+ * Internal helper: align linked chapters' order with the outline row order.
+ *
+ * Sibling-aware: chapter `order` is scoped to each (section, parent) group, so
+ * we assign 0..n-1 *within each group* in the relative sequence the chapters
+ * appear in the outline — a global renumber would flatten the binder tree.
  */
 async function syncChapterOrderFromRows(
   orderedRowIds: OutlineGridRowId[],
@@ -248,65 +214,24 @@ async function syncChapterOrderFromRows(
     .map((r) => r?.linkedChapterId)
     .filter((id): id is ChapterId => id != null);
 
-  for (let i = 0; i < linkedChapterIds.length; i++) {
-    await db.chapters.update(linkedChapterIds[i], { order: i });
+  const chapters = await db.chapters.bulkGet(linkedChapterIds);
+  const byId = new Map(chapters.filter((c) => c != null).map((c) => [c.id, c]));
+
+  // Next order to hand out within each sibling group, keyed by section+parent.
+  const nextOrderByGroup = new Map<string, number>();
+  for (const id of linkedChapterIds) {
+    const chapter = byId.get(id);
+    if (!chapter) continue;
+    const groupKey = `${chapter.section ?? "manuscript"}|${chapter.parentChapterId ?? "root"}`;
+    const order = nextOrderByGroup.get(groupKey) ?? 0;
+    nextOrderByGroup.set(groupKey, order + 1);
+    if (chapter.order !== order) {
+      await db.chapters.update(id, { order });
+    }
   }
 }
 
 // ─── Delete Operations ──────────────────────────────────────────────────
-
-/**
- * Deletes a chapter with optional cascade to linked outline row.
- * @param cascade If true, also deletes the linked outline row. If false, just unlinks.
- */
-export async function syncDeleteChapter(
-  chapterId: ChapterId,
-  cascade: boolean,
-): Promise<void> {
-  await db.transaction(
-    "rw",
-    [
-      db.chapters,
-      db.outlineGridRows,
-      db.outlineGridCells,
-      db.comments,
-      db.chapterSnapshots,
-    ],
-    async () => {
-      const chapter = await db.chapters.get(chapterId);
-      if (!chapter) return;
-      const { projectId } = chapter;
-
-      const row = await db.outlineGridRows
-        .where({ linkedChapterId: chapterId })
-        .first();
-
-      const cascadedRow = !!(row && cascade);
-
-      if (row) {
-        if (cascade) {
-          // Delete both chapter and row
-          await db.outlineGridCells.where({ rowId: row.id }).delete();
-          await db.outlineGridRows.delete(row.id);
-        } else {
-          // Unlink row, preserving chapter title as label
-          await db.outlineGridRows.update(row.id, {
-            linkedChapterId: null,
-            label: chapter.title,
-            updatedAt: now(),
-          });
-        }
-      }
-
-      await db.comments.where({ chapterId }).delete();
-      await db.chapterSnapshots.where({ chapterId }).delete();
-      await db.chapters.delete(chapterId);
-
-      await compactChapterOrders(projectId);
-      if (cascadedRow) await compactRowOrders(projectId);
-    },
-  );
-}
 
 /**
  * Deletes an outline row with optional cascade to linked chapter.

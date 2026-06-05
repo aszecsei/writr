@@ -122,8 +122,9 @@ export async function exportScreenplayPdf(
     );
   }
 
-  for (let i = 0; i < content.chapters.length; i++) {
-    const chapter = content.chapters[i];
+  const sequences = content.chapters.filter((c) => !c.isSeparator);
+  for (let i = 0; i < sequences.length; i++) {
+    const chapter = sequences[i];
 
     if (i > 0) {
       allContent.push({ text: "", pageBreak: "before" } as Content);

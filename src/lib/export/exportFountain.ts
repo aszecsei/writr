@@ -18,14 +18,15 @@ export function exportFountain(
     parts.push(""); // Blank line ends title page
   }
 
-  for (let i = 0; i < content.chapters.length; i++) {
+  const sequences = content.chapters.filter((c) => !c.isSeparator);
+  for (let i = 0; i < sequences.length; i++) {
     if (i > 0) {
       // Page break between sequences
       parts.push("");
       parts.push("===");
       parts.push("");
     }
-    parts.push(content.chapters[i].content);
+    parts.push(sequences[i].content);
   }
 
   const text = parts.join("\n");

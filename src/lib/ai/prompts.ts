@@ -1,4 +1,5 @@
 import type { Chapter } from "@/db/schemas";
+import { depthMap, manuscriptIndexMap } from "@/lib/binder/tree";
 import { serializeStyleGuideEntry } from "./serialize";
 import type { AiContext, AiMessage, ContentPart } from "./types";
 
@@ -10,9 +11,14 @@ function escapeAttr(value: string): string {
 
 function buildTableOfContents(chapters: readonly Chapter[]): string {
   if (chapters.length === 0) return "";
+  // `order` is the flattened manuscript position (raw chapter.order is now
+  // sibling-scoped and ambiguous under nesting); `depth` conveys hierarchy.
+  const items = [...chapters];
+  const indexOf = manuscriptIndexMap(items);
+  const depthOf = depthMap(items);
   const lines = chapters.map(
     (c) =>
-      `  <chapter id="${escapeAttr(c.id)}" order="${c.order}" title="${escapeAttr(c.title)}" status="${c.status}" wordCount="${c.wordCount}" />`,
+      `  <chapter id="${escapeAttr(c.id)}" order="${indexOf.get(c.id) ?? 0}" depth="${depthOf.get(c.id) ?? 0}" title="${escapeAttr(c.title)}" status="${c.status}" wordCount="${c.wordCount}" />`,
   );
   return `<table-of-contents>\n${lines.join("\n")}\n</table-of-contents>\n\n`;
 }

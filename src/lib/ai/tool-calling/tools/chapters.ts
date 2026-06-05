@@ -112,7 +112,7 @@ export const searchChaptersTool = defineTool({
     const matches = await searchChaptersKeyword(
       context.projectId,
       params.query,
-      { maxReadableOrder: context.maxReadableChapterOrder },
+      { readableChapterIds: context.readableChapterIds },
     );
     return ok(`Found ${matches.length} matching chapters`, { matches });
   },
@@ -138,8 +138,8 @@ export const readChapterTool = defineTool({
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
-      context.maxReadableChapterOrder !== undefined &&
-      chapter.order > context.maxReadableChapterOrder
+      context.readableChapterIds &&
+      !context.readableChapterIds.has(chapter.id)
     ) {
       return fail(
         `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
@@ -213,8 +213,8 @@ export const readChapterRangeTool = defineTool({
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
-      context.maxReadableChapterOrder !== undefined &&
-      chapter.order > context.maxReadableChapterOrder
+      context.readableChapterIds &&
+      !context.readableChapterIds.has(chapter.id)
     ) {
       return fail(
         `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
@@ -276,8 +276,8 @@ export const searchChapterTool = defineTool({
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
     if (
-      context.maxReadableChapterOrder !== undefined &&
-      chapter.order > context.maxReadableChapterOrder
+      context.readableChapterIds &&
+      !context.readableChapterIds.has(chapter.id)
     ) {
       return fail(
         `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
@@ -319,9 +319,17 @@ export const getChapterStructureTool = defineTool({
   },
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
-  async execute(params) {
+  async execute(params, context) {
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
+    if (
+      context.readableChapterIds &&
+      !context.readableChapterIds.has(chapter.id)
+    ) {
+      return fail(
+        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
+      );
+    }
     const paragraphs = splitParagraphs(chapter.content);
     const scenes: { start: number; end: number; preview: string }[] = [];
     let sceneStart = 1;

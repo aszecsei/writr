@@ -12,6 +12,7 @@ import { ChapterPropertiesDialog } from "@/components/editor/ChapterPropertiesDi
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
+import { SeparatorSettingsDialog } from "@/components/layout/sidebar/SeparatorSettingsDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
 import { AgentEditor } from "@/components/settings/AgentEditor";
 import { AgentsManager } from "@/components/settings/AgentsManager";
@@ -105,6 +106,7 @@ export function AppShell({ children }: AppShellProps) {
         <SavedPromptsManager />
         <VersionHistoryDialog />
         <ChapterPropertiesDialog />
+        <SeparatorSettingsDialog />
         <SprintConfigDialog />
         <SprintHistoryDialog />
       </div>
@@ -144,6 +146,7 @@ export function AppShell({ children }: AppShellProps) {
       <SavedPromptsManager />
       <VersionHistoryDialog />
       <ChapterPropertiesDialog />
+      <SeparatorSettingsDialog />
       <ExportDialog />
       <PreviewCardDialog />
       <SprintConfigDialog />

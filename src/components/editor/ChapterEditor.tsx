@@ -477,6 +477,19 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     );
   }
 
+  // Separators are structural markers, not editable documents. Reachable only
+  // via a stale/direct URL — the binder opens their settings dialog instead.
+  if (chapter.kind === "separator") {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <p className="max-w-sm text-center text-sm text-neutral-500 dark:text-neutral-400">
+          This is a separator, not an editable document. Use its settings in the
+          binder to change the label or compile options.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <CommentsAdapterProvider adapter={commentsAdapter}>
       <div className="flex h-full flex-col">

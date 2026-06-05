@@ -11,7 +11,7 @@ import {
   patchActiveReaderPass,
   updateAgentRunStatus,
 } from "@/db/operations/agentRuns";
-import { getChaptersByProject } from "@/db/operations/chapters";
+import { getManuscriptChaptersOrdered } from "@/db/operations/chapters";
 import { now } from "@/db/operations/helpers";
 import { countBibleLogEntriesSince } from "@/db/operations/readerBible";
 import { getAppSettings } from "@/db/operations/settings";
@@ -98,10 +98,11 @@ export async function runReaderLoop(
 
   await updateAgentRunStatus(runId, "reading");
 
-  // Resolve the chapter set once up front so `pickNextMode` can decide when
-  // comprehension is fully covered. Chapter reorders mid-run will not be
-  // reflected — accept that since runs are short.
-  const allChapters = await getChaptersByProject(projectId);
+  // Resolve the chapter set once up front, in flattened reading order, so
+  // `pickNextMode` can decide when comprehension is fully covered and each
+  // chapter's index is its manuscript position. Chapter reorders mid-run will
+  // not be reflected — accept that since runs are short.
+  const allChapters = await getManuscriptChaptersOrdered(projectId);
   const chaptersInScope = filterChapters(allChapters, chapterIdsInScope);
 
   // Seed `passNumber` from the existing run so labels stay globally unique
@@ -142,7 +143,7 @@ export async function runReaderLoop(
 
     passNumber += 1;
     passesThisInvocation += 1;
-    const { mode, startFromOrder } = next;
+    const { mode, startFromIndex } = next;
     const passStartIso = now();
     await appendReaderPass(runId, {
       passNumber,
@@ -167,7 +168,7 @@ export async function runReaderLoop(
           projectId,
           passNumber,
           chaptersInScope,
-          startFromOrder ?? 0,
+          startFromIndex ?? 0,
           signal,
           onEvent,
           buildContext,
@@ -274,10 +275,12 @@ export async function runReaderLoop(
 function pickNextMode(
   run: AgentRun,
   chaptersInScope: Chapter[],
-): { mode: ReaderMode; startFromOrder?: number } | null {
+): { mode: ReaderMode; startFromIndex?: number } | null {
   const comprehensionPasses = run.readerPasses.filter(
     (p) => p.mode === "comprehension",
   );
+  // `lastChapterOrder` records the chapter's index in the flattened reading
+  // order (0-based), which is the manuscript position.
   const lastComprehensionEnd = comprehensionPasses.reduce<number | null>(
     (acc, p) =>
       p.lastChapterOrder === null
@@ -287,20 +290,16 @@ function pickNextMode(
           : Math.max(acc, p.lastChapterOrder),
     null,
   );
-  const lastChapterOrderInScope =
-    chaptersInScope.length > 0
-      ? Math.max(...chaptersInScope.map((c) => c.order))
-      : -1;
+  const lastIndexInScope = chaptersInScope.length - 1;
 
   const allComprehensionDone =
     chaptersInScope.length === 0 ||
-    (lastComprehensionEnd !== null &&
-      lastComprehensionEnd >= lastChapterOrderInScope);
+    (lastComprehensionEnd !== null && lastComprehensionEnd >= lastIndexInScope);
 
   if (!allComprehensionDone) {
-    const startFromOrder =
+    const startFromIndex =
       lastComprehensionEnd === null ? 0 : lastComprehensionEnd + 1;
-    return { mode: "comprehension", startFromOrder };
+    return { mode: "comprehension", startFromIndex };
   }
 
   const hasThematic = run.readerPasses.some((p) => p.mode === "thematic");
@@ -327,14 +326,13 @@ async function runComprehensionPass(
   projectId: ProjectId,
   passNumber: number,
   chaptersInScope: Chapter[],
-  startFromOrder: number,
+  startFromIndex: number,
   signal: AbortSignal | undefined,
   onEvent: PipelineEventEmitter | undefined,
   buildContext: () => Promise<import("../../types").AiContext>,
 ): Promise<PassOutcome> {
-  const segmentChapters = chaptersInScope.filter(
-    (c) => c.order >= startFromOrder,
-  );
+  // chaptersInScope is in reading order, so the segment is a suffix slice.
+  const segmentChapters = chaptersInScope.slice(startFromIndex);
   if (segmentChapters.length === 0) return "completed";
 
   const totalChapters = chaptersInScope.length;
@@ -354,11 +352,14 @@ async function runComprehensionPass(
     if (budgetCheck === "exceeded") return "budget-exceeded";
 
     const chapter = segmentChapters[i];
-    // chapterIndex is the chapter's 1-based position in the full scope, not
-    // within this segment, so the agent sees a stable chapter number across
-    // soft resets.
-    const chapterIndex =
-      chaptersInScope.findIndex((c) => c.id === chapter.id) + 1;
+    // indexInScope is the chapter's 0-based manuscript position; chapterIndex is
+    // its 1-based form for display, stable across soft resets.
+    const indexInScope = startFromIndex + i;
+    const chapterIndex = indexInScope + 1;
+    // Forward-only: everything up to and including this chapter is readable.
+    const readableChapterIds = new Set(
+      chaptersInScope.slice(0, indexInScope + 1).map((c) => c.id),
+    );
 
     onEvent?.({
       type: "reader-chapter-start",
@@ -379,6 +380,7 @@ async function runComprehensionPass(
       chapter,
       chapterIndex,
       totalChapters,
+      readableChapterIds,
       context,
     });
 
@@ -409,12 +411,12 @@ async function runComprehensionPass(
     // progress chapter-by-chapter inside a long segment.
     if (!firstChapterInSegmentRecorded) {
       await patchActiveReaderPass(runId, {
-        firstChapterOrder: chapter.order,
-        lastChapterOrder: chapter.order,
+        firstChapterOrder: indexInScope,
+        lastChapterOrder: indexInScope,
       });
       firstChapterInSegmentRecorded = true;
     } else {
-      await patchActiveReaderPass(runId, { lastChapterOrder: chapter.order });
+      await patchActiveReaderPass(runId, { lastChapterOrder: indexInScope });
     }
 
     const [newBibleEntries, newNotes, newQuestions] = await Promise.all([

@@ -272,6 +272,12 @@ export interface MakeReaderAgentInput {
   chapterIndex?: number;
   /** Required for `comprehension`: total chapters in the pass-1 scope. */
   totalChapters?: number;
+  /**
+   * Required for `comprehension`: the chapters readable so far (every manuscript
+   * chapter up to and including the current one, in reading order). Enforces
+   * forward-only access in the chapter-reading tools.
+   */
+  readableChapterIds?: ReadonlySet<string>;
   /** Optional for `thematic` / `self-answer`: chapter id subset. */
   chapterIdsInScope?: ChapterId[];
 }
@@ -331,8 +337,8 @@ function makeComprehensionAgent(input: MakeReaderAgentInput): Agent {
       agentKind: "reader",
       passNumber: input.passNumber,
       // Forward-only enforcement: chapter-reading tools refuse content for
-      // chapters with `order` greater than this bound.
-      maxReadableChapterOrder: input.chapter.order,
+      // chapters outside the readable set (everything up to the current one).
+      readableChapterIds: input.readableChapterIds,
     },
     systemPrompt,
   };

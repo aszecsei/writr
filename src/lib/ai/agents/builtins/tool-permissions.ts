@@ -66,7 +66,7 @@ export const READER_CHAT_TOOLS: readonly string[] = [...CHAT_READS_BASE];
 
 /**
  * Comprehension pass: reader sees ONE inlined chapter. Read-back tools are
- * gated by `maxReadableChapterOrder` so the agent cannot peek ahead.
+ * gated by `readableChapterIds` so the agent cannot peek ahead.
  * `search_project` is excluded because the comprehension reader has no
  * access to the user's authored bible by design — the same reason
  * `list` / `get` are scoped to chapter only.

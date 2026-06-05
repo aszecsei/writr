@@ -4,9 +4,7 @@ import {
   hasLinkedChapter,
   hasLinkedRow,
   linkChapterToRow,
-  syncDeleteChapter,
   syncDeleteOutlineRow,
-  syncReorderChapters,
   syncReorderOutlineRows,
   unlinkChapterFromRow,
   updateRowLabel,
@@ -147,6 +145,44 @@ describe("createChapterFromRow", () => {
     // New chapter should be at order 1 (after ch1, before ch2)
     expect(newChapter?.order).toBe(1);
   });
+
+  it("keeps nested linked chapters in their own sibling order, not globally flattened", async () => {
+    const project = await createProject({ title: "P" });
+    const ch1 = await createChapter({ projectId: project.id, title: "Ch1" });
+    const parent = await createChapter({
+      projectId: project.id,
+      title: "Parent",
+    });
+    const child = await createChapter({
+      projectId: project.id,
+      title: "Child",
+      parentChapterId: parent.id,
+    });
+
+    await createOutlineGridRow({
+      projectId: project.id,
+      linkedChapterId: ch1.id,
+      order: 0,
+    });
+    await createOutlineGridRow({
+      projectId: project.id,
+      linkedChapterId: child.id,
+      order: 1,
+    });
+    const newRow = await createOutlineGridRow({
+      projectId: project.id,
+      label: "New",
+      order: 2,
+    });
+
+    await createChapterFromRow(newRow.id, project.id);
+
+    // The child is 2nd among linked chapters in the outline, but it stays order
+    // 0 within its parent group — a global renumber would have set it to 1.
+    const updatedChild = await db.chapters.get(child.id);
+    expect(updatedChild?.order).toBe(0);
+    expect(updatedChild?.parentChapterId).toBe(parent.id);
+  });
 });
 
 describe("updateRowLabel", () => {
@@ -186,68 +222,8 @@ describe("updateRowLabel", () => {
   });
 });
 
-describe("syncReorderChapters", () => {
-  it("reorders chapters and syncs linked outline rows", async () => {
-    const project = await createProject({ title: "P" });
-    const ch1 = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-      order: 0,
-    });
-    const ch2 = await createChapter({
-      projectId: project.id,
-      title: "Ch2",
-      order: 1,
-    });
-
-    const row1 = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: ch1.id,
-      order: 0,
-    });
-    const row2 = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: ch2.id,
-      order: 1,
-    });
-
-    // Swap chapter order
-    await syncReorderChapters([ch2.id, ch1.id]);
-
-    const chapters = await getChaptersByProject(project.id);
-    expect(chapters[0].id).toBe(ch2.id);
-    expect(chapters[1].id).toBe(ch1.id);
-
-    const rows = await getOutlineGridRowsByProject(project.id);
-    expect(rows[0].id).toBe(row2.id);
-    expect(rows[1].id).toBe(row1.id);
-  });
-
-  it("keeps unlinked rows at the end", async () => {
-    const project = await createProject({ title: "P" });
-    const ch1 = await createChapter({ projectId: project.id, title: "Ch1" });
-
-    const linkedRow = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: ch1.id,
-      order: 1,
-    });
-    const unlinkedRow = await createOutlineGridRow({
-      projectId: project.id,
-      label: "Unlinked",
-      order: 0,
-    });
-
-    await syncReorderChapters([ch1.id]);
-
-    const rows = await getOutlineGridRowsByProject(project.id);
-    expect(rows[0].id).toBe(linkedRow.id);
-    expect(rows[1].id).toBe(unlinkedRow.id);
-  });
-});
-
 describe("syncReorderOutlineRows", () => {
-  it("reorders rows and syncs linked chapters", async () => {
+  it("reorders rows without moving the linked chapters", async () => {
     const project = await createProject({ title: "P" });
     const ch1 = await createChapter({
       projectId: project.id,
@@ -278,12 +254,13 @@ describe("syncReorderOutlineRows", () => {
     expect(rows[0].id).toBe(row2.id);
     expect(rows[1].id).toBe(row1.id);
 
+    // The binder owns chapter order; rows reordering must NOT move chapters.
     const chapters = await getChaptersByProject(project.id);
-    expect(chapters[0].id).toBe(ch2.id);
-    expect(chapters[1].id).toBe(ch1.id);
+    expect(chapters[0].id).toBe(ch1.id);
+    expect(chapters[1].id).toBe(ch2.id);
   });
 
-  it("only reorders linked chapters", async () => {
+  it("reorders only the outline rows it is given", async () => {
     const project = await createProject({ title: "P" });
     const ch1 = await createChapter({ projectId: project.id, title: "Ch1" });
 
@@ -304,161 +281,9 @@ describe("syncReorderOutlineRows", () => {
     expect(rows[0].id).toBe(unlinkedRow.id);
     expect(rows[1].id).toBe(linkedRow.id);
 
-    // Chapter should now be at order 0 (only linked chapter)
+    // Chapter order is untouched by row reordering.
     const chapter = await db.chapters.get(ch1.id);
     expect(chapter?.order).toBe(0);
-  });
-});
-
-describe("syncDeleteChapter", () => {
-  it("deletes chapter and unlinks row when cascade=false", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: chapter.id,
-      label: "",
-    });
-
-    await syncDeleteChapter(chapter.id, false);
-
-    const deletedChapter = await db.chapters.get(chapter.id);
-    expect(deletedChapter).toBeUndefined();
-
-    const updatedRow = await db.outlineGridRows.get(row.id);
-    expect(updatedRow).toBeDefined();
-    expect(updatedRow?.linkedChapterId).toBeNull();
-    expect(updatedRow?.label).toBe("Ch1");
-  });
-
-  it("deletes chapter and row when cascade=true", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: chapter.id,
-    });
-
-    await syncDeleteChapter(chapter.id, true);
-
-    const deletedChapter = await db.chapters.get(chapter.id);
-    expect(deletedChapter).toBeUndefined();
-
-    const deletedRow = await db.outlineGridRows.get(row.id);
-    expect(deletedRow).toBeUndefined();
-  });
-
-  it("deletes chapter without linked row", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    await syncDeleteChapter(chapter.id, false);
-
-    const deletedChapter = await db.chapters.get(chapter.id);
-    expect(deletedChapter).toBeUndefined();
-  });
-
-  it("cascades to comments and snapshots", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 0,
-      toOffset: 10,
-    });
-    await createSnapshot({
-      projectId: project.id,
-      chapterId: chapter.id,
-      name: "v1",
-      content: "hello",
-      wordCount: 1,
-    });
-
-    await syncDeleteChapter(chapter.id, false);
-
-    const comments = await db.comments
-      .where({ chapterId: chapter.id })
-      .toArray();
-    expect(comments).toHaveLength(0);
-
-    const snapshots = await db.chapterSnapshots
-      .where({ chapterId: chapter.id })
-      .toArray();
-    expect(snapshots).toHaveLength(0);
-  });
-
-  it("compacts chapter orders after deleting middle chapter (cascade=false)", async () => {
-    const project = await createProject({ title: "P" });
-    const chapters = [];
-    for (let i = 0; i < 5; i++) {
-      chapters.push(
-        await createChapter({ projectId: project.id, title: `Ch${i + 1}` }),
-      );
-    }
-
-    await syncDeleteChapter(chapters[2].id, false);
-
-    const remaining = await getChaptersByProject(project.id);
-    expect(remaining).toHaveLength(4);
-    expect(remaining.map((c) => c.order)).toEqual([0, 1, 2, 3]);
-  });
-
-  it("compacts both chapter and row orders after deleting middle linked chapter (cascade=true)", async () => {
-    const project = await createProject({ title: "P" });
-    const chapters = [];
-    const rows = [];
-    for (let i = 0; i < 5; i++) {
-      const ch = await createChapter({
-        projectId: project.id,
-        title: `Ch${i + 1}`,
-      });
-      chapters.push(ch);
-      rows.push(
-        await createOutlineGridRow({
-          projectId: project.id,
-          linkedChapterId: ch.id,
-        }),
-      );
-    }
-
-    await syncDeleteChapter(chapters[2].id, true);
-
-    const remainingChapters = await getChaptersByProject(project.id);
-    expect(remainingChapters).toHaveLength(4);
-    expect(remainingChapters.map((c) => c.order)).toEqual([0, 1, 2, 3]);
-
-    const remainingRows = await getOutlineGridRowsByProject(project.id);
-    expect(remainingRows).toHaveLength(4);
-    expect(remainingRows.map((r) => r.order)).toEqual([0, 1, 2, 3]);
-  });
-
-  it("leaves orders unchanged when deleting the last chapter", async () => {
-    const project = await createProject({ title: "P" });
-    const chapters = [];
-    for (let i = 0; i < 3; i++) {
-      chapters.push(
-        await createChapter({ projectId: project.id, title: `Ch${i + 1}` }),
-      );
-    }
-
-    await syncDeleteChapter(chapters[2].id, false);
-
-    const remaining = await getChaptersByProject(project.id);
-    expect(remaining.map((c) => c.order)).toEqual([0, 1]);
   });
 });
 

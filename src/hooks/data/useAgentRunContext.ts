@@ -10,7 +10,7 @@ import {
   useTimelineByProject,
   useWorldbuildingDocsByProject,
 } from "@/hooks/data/useBibleEntries";
-import { useChaptersByProject } from "@/hooks/data/useChapter";
+import { useManuscriptChapters } from "@/hooks/data/useChapter";
 import { useProject } from "@/hooks/data/useProject";
 import {
   useOutlineGridCells,
@@ -37,7 +37,7 @@ export function useAgentRunContext(
   const outlineGridColumns = useOutlineGridColumns(projectId);
   const outlineGridRows = useOutlineGridRows(projectId);
   const outlineGridCells = useOutlineGridCells(projectId);
-  const chapters = useChaptersByProject(projectId);
+  const chapters = useManuscriptChapters(projectId);
 
   return useCallback(
     async () => ({

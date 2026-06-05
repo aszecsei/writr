@@ -218,10 +218,10 @@ export interface ChapterKeywordMatch {
 export async function searchChaptersKeyword(
   projectId: string,
   query: string,
-  opts: { maxReadableOrder?: number } = {},
+  opts: { readableChapterIds?: ReadonlySet<string> } = {},
 ): Promise<ChapterKeywordMatch[]> {
   if (!query.trim()) return [];
-  const built = await buildChaptersIndex(projectId, opts.maxReadableOrder);
+  const built = await buildChaptersIndex(projectId, opts.readableChapterIds);
   const scored = runQuery(built, query);
   const { phrases } = parseQuery(query);
   return scored.map((s) => {

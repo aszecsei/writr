@@ -30,6 +30,7 @@ export type ModalState =
   | { id: "dictionary-manager" }
   | { id: "version-history"; chapterId: ChapterId; projectId: ProjectId }
   | { id: "chapter-properties"; chapterId: ChapterId }
+  | { id: "separator-settings"; chapterId: ChapterId }
   | { id: "agents-manager" }
   | { id: "agent-editor"; agentId?: AgentDefinitionId }
   | { id: "saved-prompts" }
@@ -50,6 +51,12 @@ interface UiState {
   modal: ModalState;
   aiPanelOpen: boolean;
   focusModeEnabled: boolean;
+  /**
+   * Ephemeral binder collapse state, keyed by chapter id. Absent / `true` means
+   * expanded; an explicit `false` collapses that node. Not persisted — binder
+   * structure lives in Dexie, only this view state is transient.
+   */
+  collapsedChapters: Record<string, boolean>;
 
   toggleSidebar: () => void;
   setSidebarPanel: (panel: SidebarPanel) => void;
@@ -59,6 +66,8 @@ interface UiState {
   closeAiPanel: () => void;
   toggleFocusMode: () => void;
   setFocusMode: (enabled: boolean) => void;
+  toggleChapterCollapsed: (chapterId: string) => void;
+  setChapterCollapsed: (chapterId: string, collapsed: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -68,6 +77,7 @@ export const useUiStore = create<UiState>()(
     modal: { id: null },
     aiPanelOpen: false,
     focusModeEnabled: false,
+    collapsedChapters: {},
 
     toggleSidebar: () =>
       set((s) => {
@@ -108,6 +118,16 @@ export const useUiStore = create<UiState>()(
       set((s) => {
         s.focusModeEnabled = enabled;
       }),
+
+    toggleChapterCollapsed: (chapterId) =>
+      set((s) => {
+        s.collapsedChapters[chapterId] = !s.collapsedChapters[chapterId];
+      }),
+
+    setChapterCollapsed: (chapterId, collapsed) =>
+      set((s) => {
+        s.collapsedChapters[chapterId] = collapsed;
+      }),
   })),
 );
 
@@ -125,6 +145,7 @@ export const isLinkEditorModal = createModalGuard("link-editor");
 export const isRubyEditorModal = createModalGuard("ruby-editor");
 export const isVersionHistoryModal = createModalGuard("version-history");
 export const isChapterPropertiesModal = createModalGuard("chapter-properties");
+export const isSeparatorSettingsModal = createModalGuard("separator-settings");
 export const isCollabApproveJoinModal = createModalGuard("collab-approve-join");
 export const isCollabManageParticipantsModal = createModalGuard(
   "collab-manage-participants",

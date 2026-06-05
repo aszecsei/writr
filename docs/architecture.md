@@ -48,3 +48,4 @@ collab/        Standalone WebSocket relay (separate Node service)
 - **AI:** Client gathers story-bible context → builds messages → POST `/api/ai` → server proxies to the chosen provider → streamed response surfaced in the AI panel.
 - **Comments:** Stored with `fromOffset`/`toOffset` (1-indexed ProseMirror positions). The `Comments` extension maps positions through doc changes via ProseMirror `Mapping`.
 - **Collab (optional):** When `NEXT_PUBLIC_COLLAB_URL` is set, the editor swaps into a Y.js-backed `CollabProseEditor` and joins a session through the relay in `collab/`.
+- **Binder nesting (optional, UI-only):** Chapters form a tree (`parentChapterId`); existing nested data always renders and compiles. The affordances to *create* nesting (the "Add Nested" action and drag-to-nest) are gated behind `NEXT_PUBLIC_ENABLE_NESTING=true` via `isNestingEnabled()` in `src/lib/binder/config.ts`. The flag never changes stored data.
