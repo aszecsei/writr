@@ -37,6 +37,11 @@ function chapter(
     synopsis: "",
     status: "draft",
     wordCount: 0,
+    parentChapterId: null,
+    section: "manuscript",
+    kind: "document",
+    includeInCompile: true,
+    pageBreakBefore: false,
     createdAt: NOW,
     updatedAt: NOW,
   };

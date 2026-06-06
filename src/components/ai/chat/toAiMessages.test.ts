@@ -66,6 +66,31 @@ describe("toAiMessages", () => {
     expect(text).toContain("rewrite");
   });
 
+  it("adds the chapter id to the <selected-text> block when set", () => {
+    const out = toAiMessages([
+      userMsg({
+        content: "rewrite",
+        selectedText: "the quick brown fox",
+        selectedChapterId: "ch-123",
+      }),
+    ]);
+    const text = out[0].content as string;
+    expect(text).toContain('<selected-text chapter-id="ch-123">');
+  });
+
+  it("escapes a chapter id containing a quote so the attribute is not broken", () => {
+    const out = toAiMessages([
+      userMsg({
+        content: "rewrite",
+        selectedText: "fox",
+        selectedChapterId: 'a"b&c',
+      }),
+    ]);
+    const text = out[0].content as string;
+    expect(text).toContain('chapter-id="a&quot;b&amp;c"');
+    expect(text).not.toContain('chapter-id="a"b');
+  });
+
   it("composes images as a multi-part content array", () => {
     const out = toAiMessages([
       userMsg({

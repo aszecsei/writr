@@ -2,12 +2,9 @@ import type { Chapter } from "@/db/schemas";
 import { depthMap, manuscriptIndexMap } from "@/lib/binder/tree";
 import { serializeStyleGuideEntry } from "./serialize";
 import type { AiContext, AiMessage, ContentPart } from "./types";
+import { escapeAttr } from "./xml";
 
 export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
-
-function escapeAttr(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-}
 
 function buildTableOfContents(chapters: readonly Chapter[]): string {
   if (chapters.length === 0) return "";
@@ -139,12 +136,15 @@ export function buildMessages(
 
   if (context.currentChapterContent) {
     const title = context.currentChapterTitle ?? "Untitled";
+    const idAttr = context.currentChapterId
+      ? ` id="${escapeAttr(context.currentChapterId)}"`
+      : "";
     messages.push({
       role: "user",
       content: [
         {
           type: "text",
-          text: `<chapter title="${title}">\n${context.currentChapterContent}\n</chapter>`,
+          text: `<chapter${idAttr} title="${escapeAttr(title)}">\n${context.currentChapterContent}\n</chapter>`,
           cache_control: { type: "ephemeral" },
         },
       ],

@@ -19,6 +19,7 @@ import { AgentsManager } from "@/components/settings/AgentsManager";
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import { SavedPromptsManager } from "@/components/settings/SavedPromptsManager";
+import { ShortcutsHelpDialog } from "@/components/settings/ShortcutsHelpDialog";
 import {
   SprintConfigDialog,
   SprintHistoryDialog,
@@ -26,7 +27,7 @@ import {
 } from "@/components/sprint";
 import { TtsPlayerBar } from "@/components/tts/TtsPlayerBar";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
-import { useFocusModeShortcuts } from "@/hooks/ui/useFocusModeShortcuts";
+import { useShortcuts } from "@/hooks/ui/useShortcuts";
 import { isCollabEnabled } from "@/lib/collab/config";
 import { useUiStore } from "@/store/uiStore";
 import { Sidebar } from "./sidebar";
@@ -44,8 +45,9 @@ export function AppShell({ children }: AppShellProps) {
   const setFocusMode = useUiStore((s) => s.setFocusMode);
   const settings = useAppSettings();
 
-  // Register global keyboard shortcuts for focus mode
-  useFocusModeShortcuts();
+  // Register the global keyboard-shortcut dispatcher (navigation, create
+  // commands, focus mode, search, help overlay).
+  useShortcuts();
 
   // Handle browser fullscreen API
   useEffect(() => {
@@ -109,6 +111,7 @@ export function AppShell({ children }: AppShellProps) {
         <SeparatorSettingsDialog />
         <SprintConfigDialog />
         <SprintHistoryDialog />
+        <ShortcutsHelpDialog />
       </div>
     );
   }
@@ -152,6 +155,7 @@ export function AppShell({ children }: AppShellProps) {
       <SprintConfigDialog />
       <SprintHistoryDialog />
       <SprintWidget />
+      <ShortcutsHelpDialog />
       {isCollabEnabled() && <ShareDialog />}
       {isCollabEnabled() && <ApproveJoinDialog />}
       {isCollabEnabled() && <ManageParticipantsDialog />}

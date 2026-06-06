@@ -34,6 +34,7 @@ export type ModalState =
   | { id: "agents-manager" }
   | { id: "agent-editor"; agentId?: AgentDefinitionId }
   | { id: "saved-prompts" }
+  | { id: "shortcuts-help" }
   | { id: "share-collab-session" }
   | {
       id: "collab-approve-join";
@@ -52,6 +53,13 @@ interface UiState {
   aiPanelOpen: boolean;
   focusModeEnabled: boolean;
   /**
+   * Monotonic counter bumped to request focusing the global search input. The
+   * search input lives in `SearchBar`, which can't be focused declaratively
+   * from the shortcut layer, so the `Mod+K` command increments this token and
+   * SearchBar focuses itself in response.
+   */
+  searchFocusToken: number;
+  /**
    * Ephemeral binder collapse state, keyed by chapter id. Absent / `true` means
    * expanded; an explicit `false` collapses that node. Not persisted — binder
    * structure lives in Dexie, only this view state is transient.
@@ -66,6 +74,7 @@ interface UiState {
   closeAiPanel: () => void;
   toggleFocusMode: () => void;
   setFocusMode: (enabled: boolean) => void;
+  requestSearchFocus: () => void;
   toggleChapterCollapsed: (chapterId: string) => void;
   setChapterCollapsed: (chapterId: string, collapsed: boolean) => void;
 }
@@ -77,6 +86,7 @@ export const useUiStore = create<UiState>()(
     modal: { id: null },
     aiPanelOpen: false,
     focusModeEnabled: false,
+    searchFocusToken: 0,
     collapsedChapters: {},
 
     toggleSidebar: () =>
@@ -117,6 +127,11 @@ export const useUiStore = create<UiState>()(
     setFocusMode: (enabled) =>
       set((s) => {
         s.focusModeEnabled = enabled;
+      }),
+
+    requestSearchFocus: () =>
+      set((s) => {
+        s.searchFocusToken += 1;
       }),
 
     toggleChapterCollapsed: (chapterId) =>

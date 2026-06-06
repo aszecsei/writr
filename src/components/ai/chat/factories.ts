@@ -19,6 +19,7 @@ function nowIso(): string {
 export function makeUserMessage(input: {
   content: string;
   selectedText?: string;
+  selectedChapterId?: string;
   images?: ChatImage[];
 }): UserChatMessage {
   return {
@@ -26,6 +27,9 @@ export function makeUserMessage(input: {
     role: "user",
     content: input.content,
     ...(input.selectedText ? { selectedText: input.selectedText } : {}),
+    ...(input.selectedChapterId
+      ? { selectedChapterId: input.selectedChapterId }
+      : {}),
     ...(input.images && input.images.length > 0
       ? { images: input.images }
       : {}),

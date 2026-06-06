@@ -46,6 +46,11 @@ async function seedProjectAndChapters(chapterCount: number): Promise<void> {
       synopsis: "",
       status: "draft",
       wordCount: 2,
+      parentChapterId: null,
+      section: "manuscript",
+      kind: "document",
+      includeInCompile: true,
+      pageBreakBefore: false,
       createdAt: ts,
       updatedAt: ts,
     });

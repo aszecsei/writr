@@ -6,8 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { match } from "ts-pattern";
 import { useSearch } from "@/hooks/ui/useSearch";
 import { useProjectStore } from "@/store/projectStore";
+import { useUiStore } from "@/store/uiStore";
 import { SearchDropdown } from "./SearchDropdown";
-import { useSearchShortcuts } from "./useSearchShortcuts";
 
 export function SearchBar() {
   const router = useRouter();
@@ -20,7 +20,13 @@ export function SearchBar() {
 
   const { query, setQuery, results, isSearching } = useSearch(activeProjectId);
 
-  useSearchShortcuts(inputRef);
+  // The global `Mod+K` shortcut focuses the search input by bumping this token.
+  const searchFocusToken = useUiStore((s) => s.searchFocusToken);
+  useEffect(() => {
+    if (searchFocusToken === 0) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [searchFocusToken]);
 
   const flatResults = results.flatMap((group) => group.results);
 

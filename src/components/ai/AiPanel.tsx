@@ -139,6 +139,7 @@ export function AiPanel() {
       outlineGridRows: outlineGridRows ?? [],
       outlineGridCells: outlineGridCells ?? [],
       chapters: chapters ?? [],
+      currentChapterId: activeChapter?.id,
       currentChapterTitle: activeChapter?.title,
       currentChapterContent: selectedText
         ? undefined
@@ -273,6 +274,7 @@ export function AiPanel() {
     const newUserMsg = makeUserMessage({
       content: userText,
       selectedText: selectedText || undefined,
+      selectedChapterId: selectedText ? activeChapter?.id : undefined,
       images: attachedImages?.map((img) => ({ url: img.url, alt: img.alt })),
     });
     setMessages((prev) => [...prev, newUserMsg]);

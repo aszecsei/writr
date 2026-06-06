@@ -1,5 +1,6 @@
 import { match } from "ts-pattern";
 import type { AiMessage } from "@/lib/ai/types";
+import { escapeAttr } from "@/lib/ai/xml";
 import type {
   AssistantChatMessage,
   ChatMessage,
@@ -17,8 +18,11 @@ import type {
  * the canonical ChatMessage history, this is the single conversion site.
  */
 function userToAiMessage(m: UserChatMessage): AiMessage {
+  const selectionTag = m.selectedChapterId
+    ? `<selected-text chapter-id="${escapeAttr(m.selectedChapterId)}">`
+    : "<selected-text>";
   const text = m.selectedText
-    ? `<selected-text>\n${m.selectedText}\n</selected-text>\n\n${m.content}`
+    ? `${selectionTag}\n${m.selectedText}\n</selected-text>\n\n${m.content}`
     : m.content;
   const images = m.images;
   if (!images || images.length === 0) {

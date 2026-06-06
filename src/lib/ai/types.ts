@@ -62,6 +62,7 @@ export interface AiContext {
   outlineGridRows: OutlineGridRow[];
   outlineGridCells: OutlineGridCell[];
   chapters: Chapter[];
+  currentChapterId?: string;
   currentChapterTitle?: string;
   currentChapterContent?: string;
   selectedText?: string;

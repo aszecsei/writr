@@ -28,6 +28,8 @@ export interface UserChatMessage {
   content: string;
   /** Editor selection captured at submit time. Wrapped into the wire-format user message by `toAiMessages`. */
   selectedText?: string;
+  /** Id of the chapter the selection came from, surfaced on the `<selected-text>` block so the model can correlate it with the TOC. */
+  selectedChapterId?: string;
   images?: ChatImage[];
   createdAt: string;
 }

@@ -35,6 +35,11 @@ function makeChapter(): Chapter {
     synopsis: "",
     status: "draft",
     wordCount: 12,
+    parentChapterId: null,
+    section: "manuscript",
+    kind: "document",
+    includeInCompile: true,
+    pageBreakBefore: false,
     createdAt: ts,
     updatedAt: ts,
   };

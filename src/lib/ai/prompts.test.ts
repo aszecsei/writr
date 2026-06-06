@@ -32,6 +32,11 @@ function makeChapter(overrides: Partial<Chapter> & { id: ChapterId }): Chapter {
     synopsis: overrides.synopsis ?? "",
     status: overrides.status ?? "draft",
     wordCount: overrides.wordCount ?? 0,
+    parentChapterId: overrides.parentChapterId ?? null,
+    section: overrides.section ?? "manuscript",
+    kind: overrides.kind ?? "document",
+    includeInCompile: overrides.includeInCompile ?? true,
+    pageBreakBefore: overrides.pageBreakBefore ?? false,
     createdAt: overrides.createdAt ?? "2026-01-01T00:00:00Z",
     updatedAt: overrides.updatedAt ?? "2026-01-01T00:00:00Z",
   };
@@ -93,6 +98,22 @@ describe("buildMessages", () => {
         : (chapterMsg.content as TextContentPart[]).map((p) => p.text).join("");
     expect(text).toContain('<chapter title="Chapter 1">');
     expect(text).toContain("Once upon a time...");
+  });
+
+  it("includes the chapter id on the active chapter block when set", () => {
+    const msgs = buildMessages(
+      "agent prompt",
+      emptyContext({
+        currentChapterId: "ch-123",
+        currentChapterTitle: "Chapter 1",
+        currentChapterContent: "Once upon a time...",
+      }),
+    );
+    const chapterMsg = msgs.filter((m) => m.role === "user")[1];
+    const text = (chapterMsg.content as TextContentPart[])
+      .map((p) => p.text)
+      .join("");
+    expect(text).toContain('<chapter id="ch-123" title="Chapter 1">');
   });
 
   it("appends history messages verbatim (user content already wire-formatted)", () => {
@@ -309,8 +330,12 @@ describe("buildAgenticContext", () => {
       }),
     );
     expect(xml).toContain("<table-of-contents>");
-    expect(xml).toContain('<chapter id="c1" order="0" depth="0" title="Opening"');
-    expect(xml).toContain('<chapter id="c2" order="1" depth="0" title="Climax"');
+    expect(xml).toContain(
+      '<chapter id="c1" order="0" depth="0" title="Opening"',
+    );
+    expect(xml).toContain(
+      '<chapter id="c2" order="1" depth="0" title="Climax"',
+    );
     expect(xml).toContain("</table-of-contents>");
   });
 
