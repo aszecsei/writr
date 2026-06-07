@@ -246,13 +246,11 @@ select:disabled {
   background-color: var(--color-neutral-600);
 }
 
-/* Hole highlights — bracketed placeholder sections the author intends to fill */
+/* Hole highlights — bracketed placeholder sections the author intends to fill.
+   Opacity is user-configurable via --hole-highlight-opacity (see settings). */
 .hole-highlight {
-  background-color: rgba(250, 204, 21, 0.18);
+  background-color: rgb(250 204 21 / var(--hole-highlight-opacity, 0.18));
   border-radius: 2px;
-}
-.dark .hole-highlight {
-  background-color: rgba(250, 204, 21, 0.14);
 }
 
 /* Comment highlights */

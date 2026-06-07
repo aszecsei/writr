@@ -227,6 +227,7 @@ function makeAppSettings(overrides?: Partial<AppSettings>): AppSettings {
     customSystemPrompt: null,
     lastExportedAt: null,
     holeDelimiters: { open: "[", close: "]" },
+    holeHighlightOpacity: 0.18,
     updatedAt: ts,
     ...overrides,
   };

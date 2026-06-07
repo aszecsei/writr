@@ -34,6 +34,7 @@ const {
   applyNeutralColor,
   applyEditorWidth,
   applyUiDensity,
+  applyHoleHighlightOpacity,
 } = await import("./apply-theme");
 
 describe("applyPrimaryColor", () => {
@@ -142,5 +143,29 @@ describe("applyUiDensity", () => {
   it("stores density in localStorage", () => {
     applyUiDensity("comfortable");
     expect(storage.get("writr-density")).toBe("comfortable");
+  });
+});
+
+describe("applyHoleHighlightOpacity", () => {
+  beforeEach(() => {
+    styleProps.clear();
+    storage.clear();
+  });
+
+  it("sets --hole-highlight-opacity CSS variable", () => {
+    applyHoleHighlightOpacity(0.4);
+    expect(styleProps.get("--hole-highlight-opacity")).toBe("0.4");
+  });
+
+  it("stores the opacity in localStorage", () => {
+    applyHoleHighlightOpacity(0.4);
+    expect(storage.get("writr-hole-opacity")).toBe("0.4");
+  });
+
+  it("clamps values outside 0–1", () => {
+    applyHoleHighlightOpacity(1.5);
+    expect(styleProps.get("--hole-highlight-opacity")).toBe("1");
+    applyHoleHighlightOpacity(-0.3);
+    expect(styleProps.get("--hole-highlight-opacity")).toBe("0");
   });
 });

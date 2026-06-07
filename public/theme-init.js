@@ -45,4 +45,16 @@
   if (d === "compact" || d === "comfortable") {
     document.documentElement.setAttribute("data-density", d);
   }
+
+  // Restore hole highlight opacity
+  const ho = localStorage.getItem("writr-hole-opacity");
+  if (ho !== null && ho !== "") {
+    const n = Number(ho);
+    if (Number.isFinite(n)) {
+      document.documentElement.style.setProperty(
+        "--hole-highlight-opacity",
+        String(Math.min(1, Math.max(0, n))),
+      );
+    }
+  }
 })();

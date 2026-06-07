@@ -35,6 +35,7 @@ import {
 import type { Backup } from "@/lib/backup";
 import {
   applyEditorWidth,
+  applyHoleHighlightOpacity,
   applyNeutralColor,
   applyPrimaryColor,
   applyUiDensity,
@@ -74,6 +75,7 @@ export function AppSettingsDialog() {
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
   const [holeOpenDelimiter, setHoleOpenDelimiter] = useState("[");
   const [holeCloseDelimiter, setHoleCloseDelimiter] = useState("]");
+  const [holeHighlightOpacity, setHoleHighlightOpacity] = useState(0.18);
   const [goalCountdownDisplay, setGoalCountdownDisplay] =
     useState<GoalCountdownDisplay>("estimated-date");
   const [enableAiFeatures, setEnableAiFeatures] = useState(false);
@@ -143,6 +145,7 @@ export function AppSettingsDialog() {
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
       setHoleOpenDelimiter(settings.holeDelimiters.open);
       setHoleCloseDelimiter(settings.holeDelimiters.close);
+      setHoleHighlightOpacity(settings.holeHighlightOpacity);
       setGoalCountdownDisplay(settings.goalCountdownDisplay);
       setEnableAiFeatures(settings.enableAiFeatures);
       setAiProvider(settings.aiProvider);
@@ -179,6 +182,11 @@ export function AppSettingsDialog() {
     applyUiDensity(density);
   }, []);
 
+  const handleHoleHighlightOpacityChange = useCallback((opacity: number) => {
+    setHoleHighlightOpacity(opacity);
+    applyHoleHighlightOpacity(opacity);
+  }, []);
+
   // Revert live preview on cancel using the snapshot taken at dialog open
   const handleCancel = useCallback(() => {
     const saved = savedSettingsRef.current;
@@ -187,6 +195,7 @@ export function AppSettingsDialog() {
       applyNeutralColor(saved.neutralColor);
       applyEditorWidth(saved.editorWidth);
       applyUiDensity(saved.uiDensity);
+      applyHoleHighlightOpacity(saved.holeHighlightOpacity);
     }
     closeModal();
   }, [closeModal]);
@@ -207,6 +216,7 @@ export function AppSettingsDialog() {
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
       holeOpenDelimiter !== settings.holeDelimiters.open ||
       holeCloseDelimiter !== settings.holeDelimiters.close ||
+      holeHighlightOpacity !== settings.holeHighlightOpacity ||
       goalCountdownDisplay !== settings.goalCountdownDisplay ||
       enableAiFeatures !== settings.enableAiFeatures ||
       aiProvider !== settings.aiProvider ||
@@ -241,6 +251,7 @@ export function AppSettingsDialog() {
         open: holeOpenDelimiter.trim() || "[",
         close: holeCloseDelimiter.trim() || "]",
       },
+      holeHighlightOpacity,
       goalCountdownDisplay,
       enableAiFeatures,
       aiProvider,
@@ -306,6 +317,7 @@ export function AppSettingsDialog() {
             autoFocusModeOnSprint={autoFocusModeOnSprint}
             holeOpenDelimiter={holeOpenDelimiter}
             holeCloseDelimiter={holeCloseDelimiter}
+            holeHighlightOpacity={holeHighlightOpacity}
             onEditorFontChange={setEditorFont}
             onEditorFontSizeChange={setEditorFontSize}
             onAutoSaveSecondsChange={setAutoSaveSeconds}
@@ -313,6 +325,7 @@ export function AppSettingsDialog() {
             onAutoFocusModeOnSprintChange={setAutoFocusModeOnSprint}
             onHoleOpenDelimiterChange={setHoleOpenDelimiter}
             onHoleCloseDelimiterChange={setHoleCloseDelimiter}
+            onHoleHighlightOpacityChange={handleHoleHighlightOpacityChange}
             onManageDictionaries={() => openModal({ id: "dictionary-manager" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}

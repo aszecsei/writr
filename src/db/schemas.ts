@@ -654,6 +654,11 @@ export const AppSettingsSchema = z.object({
   customSystemPrompt: z.string().nullable().default(null),
   lastExportedAt: z.string().datetime().nullable().default(null),
   holeDelimiters: HoleDelimitersSchema.default({ open: "[", close: "]" }),
+  /**
+   * Background translucency of hole highlights (0–1). Low while drafting so the
+   * note recedes; high while editing so unfilled holes stand out.
+   */
+  holeHighlightOpacity: z.number().min(0).max(1).default(0.18),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

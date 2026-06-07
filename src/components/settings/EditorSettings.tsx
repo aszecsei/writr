@@ -29,6 +29,7 @@ interface EditorSettingsProps {
   autoFocusModeOnSprint: boolean;
   holeOpenDelimiter: string;
   holeCloseDelimiter: string;
+  holeHighlightOpacity: number;
   onEditorFontChange: (font: string) => void;
   onEditorFontSizeChange: (size: number) => void;
   onAutoSaveSecondsChange: (seconds: number) => void;
@@ -36,6 +37,7 @@ interface EditorSettingsProps {
   onAutoFocusModeOnSprintChange: (enabled: boolean) => void;
   onHoleOpenDelimiterChange: (value: string) => void;
   onHoleCloseDelimiterChange: (value: string) => void;
+  onHoleHighlightOpacityChange: (value: number) => void;
   onManageDictionaries?: () => void;
   inputClass: string;
   labelClass: string;
@@ -49,6 +51,7 @@ export function EditorSettings({
   autoFocusModeOnSprint,
   holeOpenDelimiter,
   holeCloseDelimiter,
+  holeHighlightOpacity,
   onEditorFontChange,
   onEditorFontSizeChange,
   onAutoSaveSecondsChange,
@@ -56,6 +59,7 @@ export function EditorSettings({
   onAutoFocusModeOnSprintChange,
   onHoleOpenDelimiterChange,
   onHoleCloseDelimiterChange,
+  onHoleHighlightOpacityChange,
   onManageDictionaries,
   inputClass,
   labelClass,
@@ -159,6 +163,40 @@ export function EditorSettings({
               />
             </label>
           </div>
+          <label className={`${labelClass} mt-4`}>
+            <span className="flex items-center justify-between">
+              <span>Highlight Translucency</span>
+              <span className="tabular-nums font-normal text-neutral-500 dark:text-neutral-400">
+                {Math.round(holeHighlightOpacity * 100)}%
+              </span>
+            </span>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.02}
+                value={holeHighlightOpacity}
+                onChange={(e) =>
+                  onHoleHighlightOpacityChange(Number(e.target.value))
+                }
+                className="flex-1"
+                aria-label="Hole highlight translucency"
+              />
+              <span
+                className="rounded px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300"
+                style={{
+                  backgroundColor: `rgb(250 204 21 / ${holeHighlightOpacity})`,
+                }}
+              >
+                [ hole ]
+              </span>
+            </div>
+            <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+              Keep it low while drafting; raise it while editing so unfilled
+              holes stand out.
+            </span>
+          </label>
         </div>
         {onManageDictionaries && (
           <button

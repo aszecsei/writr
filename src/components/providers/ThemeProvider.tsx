@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import {
   applyEditorWidth,
+  applyHoleHighlightOpacity,
   applyNeutralColor,
   applyPrimaryColor,
   applyUiDensity,
@@ -16,6 +17,7 @@ export function ThemeProvider() {
   const neutralColor = settings?.neutralColor ?? "zinc";
   const editorWidth = settings?.editorWidth ?? "medium";
   const uiDensity = settings?.uiDensity ?? "comfortable";
+  const holeHighlightOpacity = settings?.holeHighlightOpacity ?? 0.18;
 
   useEffect(() => {
     function apply(resolved: "light" | "dark") {
@@ -53,6 +55,10 @@ export function ThemeProvider() {
   useEffect(() => {
     applyUiDensity(uiDensity);
   }, [uiDensity]);
+
+  useEffect(() => {
+    applyHoleHighlightOpacity(holeHighlightOpacity);
+  }, [holeHighlightOpacity]);
 
   return null;
 }
