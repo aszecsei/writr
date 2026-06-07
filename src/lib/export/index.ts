@@ -12,6 +12,7 @@ export {
   copyChapterAo3HtmlToClipboard,
   copyChapterMarkdownToClipboard,
 } from "./clipboard";
+export { type ExportHoleScan, scanExportHoles } from "./holes-scan";
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "export";

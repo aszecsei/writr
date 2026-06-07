@@ -1,7 +1,15 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Calendar, Clock, FileText, Pencil, Target, Type } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  FileText,
+  Pencil,
+  Target,
+  TriangleAlert,
+  Type,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
@@ -11,6 +19,7 @@ import { useChaptersByProject, useProject } from "@/hooks/data/source";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useWritingStats } from "@/hooks/editor/useWritingStats";
 import { isManuscriptDocument } from "@/lib/binder/tree";
+import { countHoles, DEFAULT_HOLE_DELIMITERS } from "@/lib/holes";
 import { formatReadingTime } from "@/lib/reading-time";
 import { getTerm } from "@/lib/terminology";
 import { useUiStore } from "@/store/uiStore";
@@ -37,6 +46,11 @@ export function ProjectOverviewBody({
   const manuscriptChapters = chapters?.filter(isManuscriptDocument) ?? [];
   const totalWords = manuscriptChapters.reduce(
     (sum, ch) => sum + ch.wordCount,
+    0,
+  );
+  const holeDelimiters = appSettings?.holeDelimiters ?? DEFAULT_HOLE_DELIMITERS;
+  const totalHoles = manuscriptChapters.reduce(
+    (sum, ch) => sum + countHoles(ch.content, holeDelimiters),
     0,
   );
   const updatedDate = new Date(project.updatedAt).toLocaleDateString();
@@ -115,6 +129,14 @@ export function ProjectOverviewBody({
               progress={progressPercent}
             />
           )}
+          {totalHoles > 0 && (
+            <StatCard
+              label="Holes"
+              value={totalHoles.toLocaleString()}
+              icon={TriangleAlert}
+              tone="warning"
+            />
+          )}
           {!readOnly &&
             project.targetWordCount > 0 &&
             totalWords < project.targetWordCount &&
@@ -184,21 +206,36 @@ function StatCard({
   value,
   icon: Icon,
   progress,
+  tone = "default",
 }: {
   label: string;
   value: string | number;
   icon: LucideIcon;
   progress?: number;
+  tone?: "default" | "warning";
 }) {
+  const isWarning = tone === "warning";
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-5 transition-all duration-200 hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-900/5 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700 dark:hover:shadow-black/20">
-      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+      <div
+        className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg ${
+          isWarning
+            ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+            : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+        }`}
+      >
         <Icon size={16} />
       </div>
       <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
+      <p
+        className={`mt-1 text-2xl font-semibold tabular-nums ${
+          isWarning
+            ? "text-amber-600 dark:text-amber-400"
+            : "text-neutral-900 dark:text-neutral-100"
+        }`}
+      >
         {value}
       </p>
       {progress !== undefined && (

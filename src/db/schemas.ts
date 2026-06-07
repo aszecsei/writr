@@ -572,6 +572,16 @@ export const GoalCountdownDisplayEnum = z.enum([
 ]);
 export type GoalCountdownDisplay = z.infer<typeof GoalCountdownDisplayEnum>;
 
+/**
+ * Delimiters wrapping a "hole" — a section the author intentionally skips,
+ * usually holding a plaintext summary. See `src/lib/holes.ts`.
+ */
+export const HoleDelimitersSchema = z.object({
+  open: z.string().min(1).default("["),
+  close: z.string().min(1).default("]"),
+});
+export type HoleDelimiters = z.infer<typeof HoleDelimitersSchema>;
+
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
@@ -643,6 +653,7 @@ export const AppSettingsSchema = z.object({
   enableToolCalling: z.boolean().default(false),
   customSystemPrompt: z.string().nullable().default(null),
   lastExportedAt: z.string().datetime().nullable().default(null),
+  holeDelimiters: HoleDelimitersSchema.default({ open: "[", close: "]" }),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

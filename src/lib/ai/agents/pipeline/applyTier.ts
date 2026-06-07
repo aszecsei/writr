@@ -1,4 +1,5 @@
 import { db } from "@/db/database";
+import { getAppSettings } from "@/db/operations";
 import { listAgentNotes } from "@/db/operations/agentNotes";
 import {
   getAgentRun,
@@ -24,6 +25,7 @@ import type {
   ProposedEditId,
   SnapshotManifestId,
 } from "@/db/schemas";
+import { countWordsExcludingHoles } from "@/lib/holes";
 import { applyEditsToContent } from "./stagedChapterContent";
 
 export interface ApplyTierOptions {
@@ -113,6 +115,7 @@ export async function applyTier(
   // 3) Apply edits per chapter (reverse offset order handled in the helper).
   const appliedEditIds: ProposedEditId[] = [];
   const discardedEditIds: ProposedEditId[] = [];
+  const { holeDelimiters } = await getAppSettings();
 
   for (const [chapterId, edits] of byChapter.entries()) {
     const chapter = await getChapter(chapterId);
@@ -131,7 +134,7 @@ export async function applyTier(
       await updateChapterContent(
         chapter.id,
         nextContent,
-        countWords(nextContent),
+        countWordsExcludingHoles(nextContent, holeDelimiters),
       );
     }
   }
@@ -198,8 +201,4 @@ export async function applyTier(
     discardedEditIds,
     affectedChapterIds: [...byChapter.keys()],
   };
-}
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
 }

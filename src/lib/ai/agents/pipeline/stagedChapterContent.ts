@@ -1,4 +1,5 @@
 import { match } from "ts-pattern";
+import { getAppSettings } from "@/db/operations";
 import { getChapter } from "@/db/operations/chapters";
 import { listApprovedEditsForChapter } from "@/db/operations/proposedEdits";
 import type {
@@ -7,6 +8,7 @@ import type {
   ProposedEdit,
   ProposedEditId,
 } from "@/db/schemas";
+import { countWordsExcludingHoles } from "@/lib/holes";
 import {
   normalizedIndexOf,
   normalizePunctuation,
@@ -169,9 +171,9 @@ export async function getChapterWithStagedEdits(
     return { content: chapter.content, wordCount: chapter.wordCount };
   }
   const { content } = applyEditsToContent(chapter.content, approved);
-  return { content, wordCount: countWords(content) };
-}
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+  const { holeDelimiters } = await getAppSettings();
+  return {
+    content,
+    wordCount: countWordsExcludingHoles(content, holeDelimiters),
+  };
 }

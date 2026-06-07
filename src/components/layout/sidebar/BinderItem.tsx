@@ -1,7 +1,7 @@
 "use client";
 
 import { useSortable } from "@dnd-kit/react/sortable";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { DragHandle } from "@/components/bible/DragHandle";
 import type { ChapterId, ProjectId } from "@/db/schemas";
@@ -16,6 +16,8 @@ export interface BinderItemShared {
   projectId: ProjectId;
   pathname: string;
   subtreeTotals: Map<ChapterId, number>;
+  /** Subtree hole counts keyed by chapter id (see `subtreeHoleCounts`). */
+  subtreeHoles: Map<ChapterId, number>;
   collapsed: Record<string, boolean>;
   renamingChapterId: ChapterId | null;
   renameValue: string;
@@ -90,6 +92,7 @@ export function BinderItem({
   const own = chapter.wordCount;
   const total = shared.subtreeTotals.get(chapter.id) ?? own;
   const primary = hasChildren ? total : own;
+  const holeCount = shared.subtreeHoles.get(chapter.id) ?? 0;
 
   if (isRenaming) {
     return (
@@ -143,6 +146,17 @@ export function BinderItem({
       >
         <span className="truncate">{chapter.title}</span>
         <span className="ml-2 flex shrink-0 items-center gap-1 text-xs text-neutral-400 dark:text-neutral-500">
+          {holeCount > 0 && (
+            <span
+              role="img"
+              className="flex items-center gap-0.5 text-amber-500 dark:text-amber-400"
+              title={`${holeCount} ${holeCount === 1 ? "hole" : "holes"}`}
+              aria-label={`${holeCount} ${holeCount === 1 ? "hole" : "holes"}`}
+            >
+              <TriangleAlert size={12} />
+              {holeCount.toLocaleString()}
+            </span>
+          )}
           {hasChildren && own > 0 && (
             <span className="text-neutral-300 dark:text-neutral-600">
               ({own.toLocaleString()})

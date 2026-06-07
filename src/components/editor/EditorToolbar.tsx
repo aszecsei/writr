@@ -3,6 +3,7 @@
 import { generateHTML } from "@tiptap/core";
 import { type Editor, useEditorState } from "@tiptap/react";
 import {
+  Brackets,
   Download,
   History,
   ImagePlus,
@@ -244,6 +245,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
           </div>
         );
       })}
+      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+      <button
+        type="button"
+        title="Insert hole (Ctrl+Shift+H)"
+        onClick={() => editor.chain().focus().insertHole().run()}
+        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
+      >
+        <Brackets size={16} />
+      </button>
       {activeProjectId && activeDocumentId && (
         <>
           <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />

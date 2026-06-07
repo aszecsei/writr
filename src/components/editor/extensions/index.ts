@@ -16,8 +16,14 @@ import { Markdown } from "tiptap-markdown";
 import type { Awareness } from "y-protocols/awareness";
 import type * as Y from "yjs";
 import type { Comment } from "@/db/schemas";
+import {
+  countWordsExcludingHoles,
+  DEFAULT_HOLE_DELIMITERS,
+  type HoleDelimiters,
+} from "@/lib/holes";
 import type { SpellcheckService } from "@/lib/spellcheck";
 import { Comments } from "./Comments";
+import { Holes } from "./Holes";
 import { Indent } from "./Indent";
 import { MarkdownBlockquote } from "./MarkdownBlockquote";
 import { Ruby } from "./Ruby";
@@ -61,6 +67,7 @@ export interface CollabExtensionConfig {
 export interface ExtensionOptions {
   typewriterScrollingRef?: { current: boolean };
   commentsRef?: { current: Comment[] };
+  holeDelimitersRef?: { current: HoleDelimiters };
   spellcheckerRef?: { current: SpellcheckService | null };
   customWordsRef?: { current: Set<string> };
   spellcheckEnabledRef?: { current: boolean };
@@ -80,6 +87,29 @@ export interface ExtensionOptions {
    * UndoRedo will be disabled (Yjs ships its own history).
    */
   collab?: CollabExtensionConfig;
+}
+
+/**
+ * CharacterCount configured so its word count excludes hole content — holes are
+ * placeholder notes, not finished prose. The wordCounter receives the doc's
+ * plain text (delimiters are literal there), so stripping holes is accurate.
+ */
+function holeAwareCharacterCount(options?: ExtensionOptions) {
+  return CharacterCount.configure({
+    wordCounter: (text: string) =>
+      countWordsExcludingHoles(
+        text,
+        options?.holeDelimitersRef?.current ?? DEFAULT_HOLE_DELIMITERS,
+      ),
+  });
+}
+
+function holesExtension(options?: ExtensionOptions) {
+  return Holes.configure({
+    delimitersRef: options?.holeDelimitersRef ?? {
+      current: DEFAULT_HOLE_DELIMITERS,
+    },
+  });
 }
 
 export function createExtensions(options?: ExtensionOptions) {
@@ -105,7 +135,7 @@ export function createExtensions(options?: ExtensionOptions) {
     Placeholder.configure({
       placeholder: "Start writing...",
     }),
-    CharacterCount,
+    holeAwareCharacterCount(options),
     Image.configure({
       inline: false,
       allowBase64: false,
@@ -130,6 +160,7 @@ export function createExtensions(options?: ExtensionOptions) {
     Comments.configure({
       commentsRef: options?.commentsRef ?? { current: [] },
     }),
+    holesExtension(options),
     Spellcheck.configure({
       spellcheckerRef: options?.spellcheckerRef,
       customWordsRef: options?.customWordsRef,
@@ -198,13 +229,14 @@ export function createScreenplayExtensions(options?: ExtensionOptions) {
       placeholder: ({ node }) =>
         SCREENPLAY_PLACEHOLDERS[node.type.name] ?? "Start writing...",
     }),
-    CharacterCount,
+    holeAwareCharacterCount(options),
     TypewriterScrolling.configure({
       enabledRef: options?.typewriterScrollingRef ?? { current: false },
     }),
     Comments.configure({
       commentsRef: options?.commentsRef ?? { current: [] },
     }),
+    holesExtension(options),
     Spellcheck.configure({
       spellcheckerRef: options?.spellcheckerRef,
       customWordsRef: options?.customWordsRef,

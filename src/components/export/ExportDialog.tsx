@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
@@ -11,8 +11,10 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import {
   type ExportFormat,
+  type ExportHoleScan,
   type ExportScope,
   performExport,
+  scanExportHoles,
 } from "@/lib/export";
 import { getTerm } from "@/lib/terminology";
 import { useProjectStore } from "@/store/projectStore";
@@ -44,6 +46,9 @@ export function ExportDialog() {
   const [pageBreaks, setPageBreaks] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Holds the pre-export hole scan once confirmed unsafe; a second submit while
+  // this is set proceeds anyway. Reset whenever the export shape changes.
+  const [holeWarning, setHoleWarning] = useState<ExportHoleScan | null>(null);
 
   if (!isExportModal(modal)) return null;
 
@@ -55,7 +60,7 @@ export function ExportDialog() {
     setExporting(true);
     setError(null);
     try {
-      await performExport({
+      const exportOptions = {
         format,
         scope: effectiveScope,
         projectId,
@@ -64,7 +69,20 @@ export function ExportDialog() {
         includeChapterHeadings,
         pageBreaksBetweenChapters: pageBreaks,
         projectMode: activeProjectMode ?? "prose",
-      });
+      } as const;
+
+      // First submit: if the material contains holes and the user hasn't
+      // acknowledged yet, surface a warning and stop. A second submit proceeds.
+      if (!holeWarning) {
+        const scan = await scanExportHoles(exportOptions);
+        if (scan.total > 0) {
+          setHoleWarning(scan);
+          setExporting(false);
+          return;
+        }
+      }
+
+      await performExport(exportOptions);
       closeModal();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
@@ -94,7 +112,10 @@ export function ExportDialog() {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setFormat(opt.value)}
+                onClick={() => {
+                  setFormat(opt.value);
+                  setHoleWarning(null);
+                }}
                 className={`${RADIO_BASE} ${format === opt.value ? RADIO_ACTIVE : RADIO_INACTIVE}`}
               >
                 {opt.label}
@@ -125,7 +146,10 @@ export function ExportDialog() {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setScope(opt.value)}
+                  onClick={() => {
+                    setScope(opt.value);
+                    setHoleWarning(null);
+                  }}
                   className={`${RADIO_BASE} ${scope === opt.value ? RADIO_ACTIVE : RADIO_INACTIVE}`}
                 >
                   {opt.label}
@@ -179,6 +203,27 @@ export function ExportDialog() {
           </fieldset>
         )}
 
+        {/* Hole warning */}
+        {holeWarning && (
+          <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-300">
+            <TriangleAlert size={16} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">
+                This export contains {holeWarning.total}{" "}
+                {holeWarning.total === 1 ? "hole" : "holes"}
+                {holeWarning.chapters.length > 1
+                  ? ` across ${holeWarning.chapters.length} chapters`
+                  : ""}
+                .
+              </p>
+              <p className="mt-1 text-amber-700 dark:text-amber-400/90">
+                Holes are placeholder sections you haven't filled in yet. Export
+                anyway?
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
@@ -200,7 +245,7 @@ export function ExportDialog() {
             ) : (
               <>
                 <Download size={14} />
-                Export
+                {holeWarning ? "Export anyway" : "Export"}
               </>
             )
           }

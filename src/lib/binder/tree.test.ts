@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Chapter, ChapterId, ProjectId } from "@/db/schemas";
+import { DEFAULT_HOLE_DELIMITERS } from "@/lib/holes";
 import { makeChapter } from "@/test/helpers";
 import {
   buildTree,
@@ -11,6 +12,7 @@ import {
   getDragDepth,
   isManuscriptDocument,
   manuscriptIndexMap,
+  subtreeHoleCounts,
   subtreeIds,
   subtreeWordCounts,
   wouldCreateCycle,
@@ -284,6 +286,37 @@ describe("subtreeWordCounts", () => {
     expect(map.get("A2" as ChapterId)).toBe(25); // 20 + 5
     expect(map.get("A1" as ChapterId)).toBe(30);
     expect(map.get("A2a" as ChapterId)).toBe(5);
+  });
+});
+
+describe("subtreeHoleCounts", () => {
+  it("sums each node's own holes plus all descendants", () => {
+    const items = [
+      ch("A", { order: 0, content: "intro [one] body [two]" }),
+      ch("A1", {
+        parentChapterId: "A" as ChapterId,
+        order: 0,
+        content: "no holes here",
+      }),
+      ch("A2", {
+        parentChapterId: "A" as ChapterId,
+        order: 1,
+        content: "[three]",
+      }),
+      ch("A2a", {
+        parentChapterId: "A2" as ChapterId,
+        order: 0,
+        content: "[four] [five]",
+      }),
+    ];
+    const map = subtreeHoleCounts(
+      buildTree(items, "manuscript"),
+      DEFAULT_HOLE_DELIMITERS,
+    );
+    expect(map.get("A" as ChapterId)).toBe(5); // 2 + 0 + 1 + 2
+    expect(map.get("A2" as ChapterId)).toBe(3); // 1 + 2
+    expect(map.get("A1" as ChapterId)).toBe(0);
+    expect(map.get("A2a" as ChapterId)).toBe(2);
   });
 });
 

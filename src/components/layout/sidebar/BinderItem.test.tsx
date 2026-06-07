@@ -7,8 +7,10 @@ import {
   buildTree,
   type FlatRow,
   flattenForDnd,
+  subtreeHoleCounts,
   subtreeWordCounts,
 } from "@/lib/binder/tree";
+import { DEFAULT_HOLE_DELIMITERS } from "@/lib/holes";
 import { makeChapter } from "@/test/helpers";
 import { BinderItem, type BinderItemShared } from "./BinderItem";
 
@@ -40,12 +42,14 @@ function rowsFor(items: Chapter[]): {
   const tree = buildTree(items, "manuscript");
   const rows = flattenForDnd(tree, {});
   const totals = subtreeWordCounts(tree);
+  const holes = subtreeHoleCounts(tree, DEFAULT_HOLE_DELIMITERS);
   const shared = (
     overrides: Partial<BinderItemShared> = {},
   ): BinderItemShared => ({
     projectId,
     pathname: "/",
     subtreeTotals: totals,
+    subtreeHoles: holes,
     collapsed: {},
     renamingChapterId: null,
     renameValue: "",

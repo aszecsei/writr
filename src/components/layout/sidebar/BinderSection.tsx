@@ -32,6 +32,7 @@ import {
   updateChapter,
 } from "@/db/operations";
 import type { ChapterId, ChapterSection, ProjectId } from "@/db/schemas";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useBinderTree } from "@/hooks/data/useChapter";
 import { isNestingEnabled } from "@/lib/binder/config";
 import {
@@ -41,8 +42,10 @@ import {
   flattenForDnd,
   getBinderProjection,
   getDragDepth,
+  subtreeHoleCounts,
   subtreeWordCounts,
 } from "@/lib/binder/tree";
+import { DEFAULT_HOLE_DELIMITERS } from "@/lib/holes";
 import { useUiStore } from "@/store/uiStore";
 import {
   BinderItem,
@@ -105,6 +108,7 @@ export function BinderSection({
   const otherSection: ChapterSection =
     section === "manuscript" ? "scratchpad" : "manuscript";
   const tree = useBinderTree(projectId, section);
+  const settings = useAppSettings();
   const router = useRouter();
   const openModal = useUiStore((s) => s.openModal);
   const collapsed = useUiStore((s) => s.collapsedChapters);
@@ -112,6 +116,11 @@ export function BinderSection({
   const setCollapsed = useUiStore((s) => s.setChapterCollapsed);
 
   const subtreeTotals = useMemo(() => subtreeWordCounts(tree), [tree]);
+  const holeDelimiters = settings?.holeDelimiters ?? DEFAULT_HOLE_DELIMITERS;
+  const subtreeHoles = useMemo(
+    () => subtreeHoleCounts(tree, holeDelimiters),
+    [tree, holeDelimiters],
+  );
   const nodeIndex = useMemo(() => indexNodes(tree), [tree]);
   const canonicalRows = useMemo(
     () => flattenForDnd(tree, collapsed),
@@ -283,6 +292,7 @@ export function BinderSection({
     projectId,
     pathname,
     subtreeTotals,
+    subtreeHoles,
     collapsed,
     renamingChapterId,
     renameValue,

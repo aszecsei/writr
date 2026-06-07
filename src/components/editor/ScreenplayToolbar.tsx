@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   AlignCenter,
   ArrowRight,
+  Brackets,
   Clapperboard,
   Download,
   History,
@@ -137,6 +138,16 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
         }`}
       >
         <Redo2 size={16} />
+      </button>
+
+      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+      <button
+        type="button"
+        title="Insert hole (Ctrl+Shift+H)"
+        onClick={() => editor.chain().focus().insertHole().run()}
+        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
+      >
+        <Brackets size={16} />
       </button>
 
       {activeProjectId && activeDocumentId && (

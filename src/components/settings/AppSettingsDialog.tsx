@@ -72,6 +72,8 @@ export function AppSettingsDialog() {
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
+  const [holeOpenDelimiter, setHoleOpenDelimiter] = useState("[");
+  const [holeCloseDelimiter, setHoleCloseDelimiter] = useState("]");
   const [goalCountdownDisplay, setGoalCountdownDisplay] =
     useState<GoalCountdownDisplay>("estimated-date");
   const [enableAiFeatures, setEnableAiFeatures] = useState(false);
@@ -139,6 +141,8 @@ export function AppSettingsDialog() {
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
       setReadingSpeedWpm(settings.readingSpeedWpm);
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
+      setHoleOpenDelimiter(settings.holeDelimiters.open);
+      setHoleCloseDelimiter(settings.holeDelimiters.close);
       setGoalCountdownDisplay(settings.goalCountdownDisplay);
       setEnableAiFeatures(settings.enableAiFeatures);
       setAiProvider(settings.aiProvider);
@@ -201,6 +205,8 @@ export function AppSettingsDialog() {
       autoSaveSeconds !== Math.round(settings.autoSaveIntervalMs / 1000) ||
       readingSpeedWpm !== settings.readingSpeedWpm ||
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
+      holeOpenDelimiter !== settings.holeDelimiters.open ||
+      holeCloseDelimiter !== settings.holeDelimiters.close ||
       goalCountdownDisplay !== settings.goalCountdownDisplay ||
       enableAiFeatures !== settings.enableAiFeatures ||
       aiProvider !== settings.aiProvider ||
@@ -231,6 +237,10 @@ export function AppSettingsDialog() {
       autoSaveIntervalMs: autoSaveSeconds * 1000,
       readingSpeedWpm,
       autoFocusModeOnSprint,
+      holeDelimiters: {
+        open: holeOpenDelimiter.trim() || "[",
+        close: holeCloseDelimiter.trim() || "]",
+      },
       goalCountdownDisplay,
       enableAiFeatures,
       aiProvider,
@@ -294,11 +304,15 @@ export function AppSettingsDialog() {
             autoSaveSeconds={autoSaveSeconds}
             readingSpeedWpm={readingSpeedWpm}
             autoFocusModeOnSprint={autoFocusModeOnSprint}
+            holeOpenDelimiter={holeOpenDelimiter}
+            holeCloseDelimiter={holeCloseDelimiter}
             onEditorFontChange={setEditorFont}
             onEditorFontSizeChange={setEditorFontSize}
             onAutoSaveSecondsChange={setAutoSaveSeconds}
             onReadingSpeedWpmChange={setReadingSpeedWpm}
             onAutoFocusModeOnSprintChange={setAutoFocusModeOnSprint}
+            onHoleOpenDelimiterChange={setHoleOpenDelimiter}
+            onHoleCloseDelimiterChange={setHoleCloseDelimiter}
             onManageDictionaries={() => openModal({ id: "dictionary-manager" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}

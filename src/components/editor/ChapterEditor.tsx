@@ -23,6 +23,11 @@ import {
   parseFountain,
   serializeFountain,
 } from "@/lib/fountain";
+import {
+  countWordsExcludingHoles,
+  DEFAULT_HOLE_DELIMITERS,
+  type HoleDelimiters,
+} from "@/lib/holes";
 import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -38,6 +43,7 @@ import {
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
+import { HOLES_UPDATED_META } from "./extensions/Holes";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
 import { ScreenplayToolbar } from "./ScreenplayToolbar";
@@ -64,9 +70,10 @@ function getWordCount(storage: unknown): number {
 // Word count for a serialized chapter string (markdown or fountain). Used when
 // persisting a staged-edit splice, where the editor's live characterCount isn't
 // available for the post-splice content (it's reseeded asynchronously). The
-// next real editor save recomputes the authoritative count.
-function countContentWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+// next real editor save recomputes the authoritative count. Holes are excluded
+// to match the live CharacterCount, which is configured the same way.
+function countContentWords(text: string, delimiters: HoleDelimiters): number {
+  return countWordsExcludingHoles(text, delimiters);
 }
 
 // Convert a markdown string into TipTap-compatible insertion content. Used
@@ -142,6 +149,13 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
 
+  // Ref for hole delimiters - lets the Holes extension and CharacterCount read
+  // the latest setting without recreating the editor (a HOLES_UPDATED_META
+  // dispatch rebuilds decorations when the setting changes).
+  const holeDelimitersRef = useRef<HoleDelimiters>(DEFAULT_HOLE_DELIMITERS);
+  holeDelimitersRef.current =
+    settings?.holeDelimiters ?? DEFAULT_HOLE_DELIMITERS;
+
   // Prose readiness gate: the comments adapter resolves Y.RelativePosition
   // anchors against the editor's PM state, which is meaningful only once
   // Yjs has flushed its first sync into the editor. Until then, anchor
@@ -188,6 +202,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     const opts: Parameters<typeof createExtensions>[0] = {
       typewriterScrollingRef,
       commentsRef,
+      holeDelimitersRef,
       spellcheckerRef,
       customWordsRef,
       spellcheckEnabledRef,
@@ -315,6 +330,18 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     setWordCount(wc);
     initializedRef.current = true;
   }, [editor, chapter, setWordCount, isScreenplay, collabDoc]);
+
+  // When the hole delimiters change, rebuild hole decorations and refresh the
+  // live word count (a meta-only transaction doesn't fire onUpdate, so the
+  // footer count is updated manually here). The ref already holds the new value.
+  const holeOpen = settings?.holeDelimiters.open;
+  const holeClose = settings?.holeDelimiters.close;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: holeOpen/holeClose are the intentional triggers; the effect reads the latest values via holeDelimitersRef
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !initializedRef.current) return;
+    editor.view.dispatch(editor.state.tr.setMeta(HOLES_UPDATED_META, true));
+    setWordCount(getWordCount(editor.storage));
+  }, [editor, holeOpen, holeClose, setWordCount]);
 
   // Reset initialized flag when chapterId, contentVersion, or collab mode
   // changes — entering or leaving a session needs a fresh seed pass.
@@ -447,7 +474,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     // new autosave starts before the reseed.
     markSaved();
     void (async () => {
-      await updateChapterContent(chapterId, next, countContentWords(next));
+      await updateChapterContent(
+        chapterId,
+        next,
+        countContentWords(next, holeDelimitersRef.current),
+      );
       bumpContentVersion();
       reportStagedEditResult(edit.editId, "applied");
     })();

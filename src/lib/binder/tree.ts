@@ -1,4 +1,5 @@
 import type { Chapter, ChapterId, ChapterSection } from "@/db/schemas";
+import { countHoles, type HoleDelimiters } from "@/lib/holes";
 
 /** A chapter together with its nested children, as rendered in the binder. */
 export interface BinderNode {
@@ -253,6 +254,27 @@ export function subtreeWordCounts(nodes: BinderNode[]): Map<ChapterId, number> {
   const map = new Map<ChapterId, number>();
   const visit = (node: BinderNode): number => {
     let total = node.chapter.wordCount;
+    for (const child of node.children) total += visit(child);
+    map.set(node.chapter.id, total);
+    return total;
+  };
+  for (const node of nodes) visit(node);
+  return map;
+}
+
+/**
+ * Total hole count of each node's subtree (the node's own holes plus every
+ * descendant's). Holes are bracketed placeholder sections — see
+ * `src/lib/holes.ts`. Computed on the fly from `chapter.content` (no persisted
+ * field), mirroring `subtreeWordCounts`.
+ */
+export function subtreeHoleCounts(
+  nodes: BinderNode[],
+  delimiters: HoleDelimiters,
+): Map<ChapterId, number> {
+  const map = new Map<ChapterId, number>();
+  const visit = (node: BinderNode): number => {
+    let total = countHoles(node.chapter.content, delimiters);
     for (const child of node.children) total += visit(child);
     map.set(node.chapter.id, total);
     return total;

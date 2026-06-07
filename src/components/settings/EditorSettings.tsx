@@ -27,11 +27,15 @@ interface EditorSettingsProps {
   autoSaveSeconds: number;
   readingSpeedWpm: number;
   autoFocusModeOnSprint: boolean;
+  holeOpenDelimiter: string;
+  holeCloseDelimiter: string;
   onEditorFontChange: (font: string) => void;
   onEditorFontSizeChange: (size: number) => void;
   onAutoSaveSecondsChange: (seconds: number) => void;
   onReadingSpeedWpmChange: (wpm: number) => void;
   onAutoFocusModeOnSprintChange: (enabled: boolean) => void;
+  onHoleOpenDelimiterChange: (value: string) => void;
+  onHoleCloseDelimiterChange: (value: string) => void;
   onManageDictionaries?: () => void;
   inputClass: string;
   labelClass: string;
@@ -43,11 +47,15 @@ export function EditorSettings({
   autoSaveSeconds,
   readingSpeedWpm,
   autoFocusModeOnSprint,
+  holeOpenDelimiter,
+  holeCloseDelimiter,
   onEditorFontChange,
   onEditorFontSizeChange,
   onAutoSaveSecondsChange,
   onReadingSpeedWpmChange,
   onAutoFocusModeOnSprintChange,
+  onHoleOpenDelimiterChange,
+  onHoleCloseDelimiterChange,
   onManageDictionaries,
   inputClass,
   labelClass,
@@ -122,6 +130,36 @@ export function EditorSettings({
             — distraction-free writing
           </span>
         </label>
+        <div>
+          <span className={labelClass}>Holes</span>
+          <p className="mt-1 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+            Delimiters that mark a section you're intentionally skipping over.
+            Holes are highlighted, excluded from word counts, and flagged before
+            export.
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-4">
+            <label className={labelClass}>
+              Open Delimiter
+              <input
+                type="text"
+                value={holeOpenDelimiter}
+                onChange={(e) => onHoleOpenDelimiterChange(e.target.value)}
+                placeholder="["
+                className={inputClass}
+              />
+            </label>
+            <label className={labelClass}>
+              Close Delimiter
+              <input
+                type="text"
+                value={holeCloseDelimiter}
+                onChange={(e) => onHoleCloseDelimiterChange(e.target.value)}
+                placeholder="]"
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
         {onManageDictionaries && (
           <button
             type="button"

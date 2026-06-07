@@ -246,6 +246,15 @@ select:disabled {
   background-color: var(--color-neutral-600);
 }
 
+/* Hole highlights — bracketed placeholder sections the author intends to fill */
+.hole-highlight {
+  background-color: rgba(250, 204, 21, 0.18);
+  border-radius: 2px;
+}
+.dark .hole-highlight {
+  background-color: rgba(250, 204, 21, 0.14);
+}
+
 /* Comment highlights */
 .comment-highlight {
   border-radius: 2px;

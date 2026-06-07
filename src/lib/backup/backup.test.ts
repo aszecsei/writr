@@ -226,6 +226,7 @@ function makeAppSettings(overrides?: Partial<AppSettings>): AppSettings {
     enableToolCalling: false,
     customSystemPrompt: null,
     lastExportedAt: null,
+    holeDelimiters: { open: "[", close: "]" },
     updatedAt: ts,
     ...overrides,
   };
