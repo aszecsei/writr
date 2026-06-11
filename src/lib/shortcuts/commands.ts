@@ -136,6 +136,13 @@ const GENERAL_COMMANDS: Command[] = [
     run: () => useUiStore.getState().toggleAiPanel(),
   },
   {
+    id: "general.toggleAnalysisPanel",
+    title: "Toggle analysis panel",
+    category: "general",
+    defaultKeys: "Mod+Shift+J",
+    run: () => useUiStore.getState().toggleAnalysisPanel(),
+  },
+  {
     id: "general.shortcutsHelp",
     title: "Show keyboard shortcuts",
     category: "general",

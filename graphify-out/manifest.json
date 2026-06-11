@@ -1,0 +1,2737 @@
+{
+  "E:\\repos\\writr\\src\\app\\api\\ai\\route.ts": {
+    "mtime": 1780528114.18248,
+    "ast_hash": "8bf1931a1755628eec2a343b03d132fd",
+    "semantic_hash": "8bf1931a1755628eec2a343b03d132fd"
+  },
+  "E:\\repos\\writr\\src\\app\\layout.tsx": {
+    "mtime": 1778323898.2975993,
+    "ast_hash": "b4c698b9554651eae10c3ba28c01690b",
+    "semantic_hash": "b4c698b9554651eae10c3ba28c01690b"
+  },
+  "E:\\repos\\writr\\src\\app\\page.tsx": {
+    "mtime": 1778325602.927328,
+    "ast_hash": "0f4c12e5ba8f63b403ed6459985827bf",
+    "semantic_hash": "0f4c12e5ba8f63b403ed6459985827bf"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\agents\\[runId]\\page.tsx": {
+    "mtime": 1778194070.7102618,
+    "ast_hash": "49c850bc8d51cffab020941ee1e0906f",
+    "semantic_hash": "49c850bc8d51cffab020941ee1e0906f"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\agents\\page.tsx": {
+    "mtime": 1778194047.9775324,
+    "ast_hash": "a96f21b8d0b6ad9abc175190a2c1c3bf",
+    "semantic_hash": "a96f21b8d0b6ad9abc175190a2c1c3bf"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\characters\\[characterId]\\page.tsx": {
+    "mtime": 1778193992.4236095,
+    "ast_hash": "c76ee1ef5ed5668d9fa5e75b4d910558",
+    "semantic_hash": "c76ee1ef5ed5668d9fa5e75b4d910558"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\characters\\page.tsx": {
+    "mtime": 1778195022.3985608,
+    "ast_hash": "4bbf0222c6e13e08602c93db0695366e",
+    "semantic_hash": "4bbf0222c6e13e08602c93db0695366e"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\family-tree\\page.tsx": {
+    "mtime": 1778196477.3450398,
+    "ast_hash": "23319c0417992a0f0b7449acc309a128",
+    "semantic_hash": "23319c0417992a0f0b7449acc309a128"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\locations\\[locationId]\\page.tsx": {
+    "mtime": 1778194003.2955873,
+    "ast_hash": "f4ce6e21dfb02c1ff8ceb54442184ce5",
+    "semantic_hash": "f4ce6e21dfb02c1ff8ceb54442184ce5"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\locations\\page.tsx": {
+    "mtime": 1778194421.011206,
+    "ast_hash": "f2279ccfcc9d48ddf61a80195c1379eb",
+    "semantic_hash": "f2279ccfcc9d48ddf61a80195c1379eb"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\page.tsx": {
+    "mtime": 1771110748.0986564,
+    "ast_hash": "2d7d3e917ea35d44316f606c74d4c1cf",
+    "semantic_hash": "2d7d3e917ea35d44316f606c74d4c1cf"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\playlist\\page.tsx": {
+    "mtime": 1778196461.9084778,
+    "ast_hash": "559809c84b52a501edfa1711d51669a4",
+    "semantic_hash": "559809c84b52a501edfa1711d51669a4"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\style-guide\\page.tsx": {
+    "mtime": 1778194430.6745987,
+    "ast_hash": "4f474982f5b47aa6223a5579033f8642",
+    "semantic_hash": "4f474982f5b47aa6223a5579033f8642"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\timeline\\page.tsx": {
+    "mtime": 1778194440.603676,
+    "ast_hash": "66e3bfaaaf1398883a39782f2ab323f5",
+    "semantic_hash": "66e3bfaaaf1398883a39782f2ab323f5"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\bible\\worldbuilding\\page.tsx": {
+    "mtime": 1778195830.9184022,
+    "ast_hash": "1f23c6c9e1e43c6c76dff4481f913e73",
+    "semantic_hash": "1f23c6c9e1e43c6c76dff4481f913e73"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\chapters\\[chapterId]\\page.tsx": {
+    "mtime": 1778194461.2286642,
+    "ast_hash": "78dfdd7b97ef19b0a19138ba78db1b1d",
+    "semantic_hash": "78dfdd7b97ef19b0a19138ba78db1b1d"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\layout.tsx": {
+    "mtime": 1778194650.752023,
+    "ast_hash": "c9e0c6d0dcbb9d48c22ab8cf7d289ea1",
+    "semantic_hash": "c9e0c6d0dcbb9d48c22ab8cf7d289ea1"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\outline\\page.tsx": {
+    "mtime": 1778194090.4723084,
+    "ast_hash": "80b8c106d36fe5047aaa5629f23e7be6",
+    "semantic_hash": "80b8c106d36fe5047aaa5629f23e7be6"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\page.tsx": {
+    "mtime": 1778195011.8975778,
+    "ast_hash": "c06aeded1bc5053178e4cd7e5efb66a5",
+    "semantic_hash": "c06aeded1bc5053178e4cd7e5efb66a5"
+  },
+  "E:\\repos\\writr\\src\\app\\projects\\[projectId]\\search\\page.tsx": {
+    "mtime": 1771110543.5924835,
+    "ast_hash": "b937a1efdee312738761a246bedd184c",
+    "semantic_hash": "b937a1efdee312738761a246bedd184c"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\layout.tsx": {
+    "mtime": 1778041716.3995996,
+    "ast_hash": "2785a759be2b6e454ae21c3fe2b80db5",
+    "semantic_hash": "2785a759be2b6e454ae21c3fe2b80db5"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\page.tsx": {
+    "mtime": 1778116230.4402702,
+    "ast_hash": "ee81546e9464544945d2801a84c05eb1",
+    "semantic_hash": "ee81546e9464544945d2801a84c05eb1"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\characters\\[characterId]\\page.tsx": {
+    "mtime": 1778194014.8891356,
+    "ast_hash": "0f12013eccc456d3173a7e663c817a5c",
+    "semantic_hash": "0f12013eccc456d3173a7e663c817a5c"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\characters\\page.tsx": {
+    "mtime": 1778195033.6034467,
+    "ast_hash": "239b6f6b7a8eb82976e44c3f0b174eef",
+    "semantic_hash": "239b6f6b7a8eb82976e44c3f0b174eef"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\locations\\[locationId]\\page.tsx": {
+    "mtime": 1778194025.764927,
+    "ast_hash": "736d466d6b04daf73d8c00f3699ecc9e",
+    "semantic_hash": "736d466d6b04daf73d8c00f3699ecc9e"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\locations\\page.tsx": {
+    "mtime": 1778194036.5187907,
+    "ast_hash": "873b1c45b27e890dadd47efec6ae1f83",
+    "semantic_hash": "873b1c45b27e890dadd47efec6ae1f83"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\style-guide\\page.tsx": {
+    "mtime": 1778193960.8613286,
+    "ast_hash": "e0bd56fc7dfa09f0a66162cbc5d8c725",
+    "semantic_hash": "e0bd56fc7dfa09f0a66162cbc5d8c725"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\bible\\timeline\\page.tsx": {
+    "mtime": 1778194450.3228238,
+    "ast_hash": "c7177c3abe2a524bdd82d0435763f46c",
+    "semantic_hash": "c7177c3abe2a524bdd82d0435763f46c"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\chapters\\[chapterId]\\page.tsx": {
+    "mtime": 1778195905.6027744,
+    "ast_hash": "b9f51e42f3fb81f7d4d4f6058324463e",
+    "semantic_hash": "b9f51e42f3fb81f7d4d4f6058324463e"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\layout.tsx": {
+    "mtime": 1778116230.495791,
+    "ast_hash": "3024c88713c7f392c9b6ad5ded3a8891",
+    "semantic_hash": "3024c88713c7f392c9b6ad5ded3a8891"
+  },
+  "E:\\repos\\writr\\src\\app\\shared\\[roomUuid]\\projects\\[projectId]\\page.tsx": {
+    "mtime": 1778195045.7540495,
+    "ast_hash": "277b57926240b3a1a14de143d5ea925a",
+    "semantic_hash": "277b57926240b3a1a14de143d5ea925a"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\ActivityPanel.tsx": {
+    "mtime": 1777946455.0149145,
+    "ast_hash": "9879ca8a7aeaa4a7d1849d378d34f0d1",
+    "semantic_hash": "9879ca8a7aeaa4a7d1849d378d34f0d1"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\EditApprovalPanel.tsx": {
+    "mtime": 1778194478.4777794,
+    "ast_hash": "4978ff72fa8f662515701aac6a91f6c4",
+    "semantic_hash": "4978ff72fa8f662515701aac6a91f6c4"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\EditDiffCard.tsx": {
+    "mtime": 1778186471.5056827,
+    "ast_hash": "cf3813a9144b892eb508adb877c16734",
+    "semantic_hash": "cf3813a9144b892eb508adb877c16734"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\NotesQuestionsPanel.tsx": {
+    "mtime": 1777962043.6139748,
+    "ast_hash": "756e8fdb944c1807ae5a4e00b06a2510",
+    "semantic_hash": "756e8fdb944c1807ae5a4e00b06a2510"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\PauseResumeBanner.tsx": {
+    "mtime": 1778230134.5472078,
+    "ast_hash": "c70886c343178a8380a7992c5cdbddcf",
+    "semantic_hash": "c70886c343178a8380a7992c5cdbddcf"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\PlanView.tsx": {
+    "mtime": 1778196461.9149888,
+    "ast_hash": "c178ac85badaca8a8e8d126cab802987",
+    "semantic_hash": "c178ac85badaca8a8e8d126cab802987"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\RaiseBudgetDialog.tsx": {
+    "mtime": 1777954435.8533068,
+    "ast_hash": "f77eb7bfcad9cdfe58b7cfd2db9c220d",
+    "semantic_hash": "f77eb7bfcad9cdfe58b7cfd2db9c220d"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\ReaderBibleView.tsx": {
+    "mtime": 1777963617.1200702,
+    "ast_hash": "59bc1112554434406a2a840760e467a7",
+    "semantic_hash": "59bc1112554434406a2a840760e467a7"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\RunDashboard.tsx": {
+    "mtime": 1780528996.0148325,
+    "ast_hash": "74af4d38e7f43fa3e86f8b910cf60c69",
+    "semantic_hash": "74af4d38e7f43fa3e86f8b910cf60c69"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\SnapshotsPanel.tsx": {
+    "mtime": 1778194492.9016023,
+    "ast_hash": "31048fececd736ddb53b735ff33a41c4",
+    "semantic_hash": "31048fececd736ddb53b735ff33a41c4"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\VerificationPanel.tsx": {
+    "mtime": 1778195061.463484,
+    "ast_hash": "319296478fbaac148b81af056cde7ef9",
+    "semantic_hash": "319296478fbaac148b81af056cde7ef9"
+  },
+  "E:\\repos\\writr\\src\\components\\agents\\WorkUnitCard.tsx": {
+    "mtime": 1777944691.7819388,
+    "ast_hash": "9108deeef00aeed57fd71dfc90f987e0",
+    "semantic_hash": "9108deeef00aeed57fd71dfc90f987e0"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\AgentSelector.tsx": {
+    "mtime": 1778194927.0977745,
+    "ast_hash": "20f4fce9bc8f0250426f9739400ff3ae",
+    "semantic_hash": "20f4fce9bc8f0250426f9739400ff3ae"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\AiPanel.tsx": {
+    "mtime": 1780696710.052804,
+    "ast_hash": "c5121fa9d385549272ff1d9ea5b29ff4",
+    "semantic_hash": "c5121fa9d385549272ff1d9ea5b29ff4"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\BetaReaderPanelMessage.tsx": {
+    "mtime": 1779681011.4922848,
+    "ast_hash": "b4bfe1f369094135080d7a3bef802836",
+    "semantic_hash": "b4bfe1f369094135080d7a3bef802836"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\ImageAttachmentPicker.tsx": {
+    "mtime": 1770515167.7344406,
+    "ast_hash": "ad43c6d8d264454c9800b86c2c494fe9",
+    "semantic_hash": "ad43c6d8d264454c9800b86c2c494fe9"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\MarkdownMessage.tsx": {
+    "mtime": 1780259648.5950508,
+    "ast_hash": "4a9ebd47e1496f82288c3b465433c663",
+    "semantic_hash": "4a9ebd47e1496f82288c3b465433c663"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\MessageList.tsx": {
+    "mtime": 1780528996.0208323,
+    "ast_hash": "ce1fa768da39f62bde592326d9af57e9",
+    "semantic_hash": "ce1fa768da39f62bde592326d9af57e9"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\PromptInput.test.tsx": {
+    "mtime": 1780288503.9259937,
+    "ast_hash": "b08f86fef288c968bc87b05a6f4b5629",
+    "semantic_hash": "b08f86fef288c968bc87b05a6f4b5629"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\PromptInput.tsx": {
+    "mtime": 1780343333.8963978,
+    "ast_hash": "b41c74b984ec93442f2cdfdb2503aa72",
+    "semantic_hash": "b41c74b984ec93442f2cdfdb2503aa72"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\PromptInspectorDialog.tsx": {
+    "mtime": 1772608605.2938836,
+    "ast_hash": "e7f418e7e4245e906d33b6ee9ae96e46",
+    "semantic_hash": "e7f418e7e4245e906d33b6ee9ae96e46"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\ProposedEditCard.tsx": {
+    "mtime": 1779788281.559888,
+    "ast_hash": "54734bb1070707d9e1012725605455c6",
+    "semantic_hash": "54734bb1070707d9e1012725605455c6"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\SparkOptions.tsx": {
+    "mtime": 1777973453.3670366,
+    "ast_hash": "a7863f93dd0441d0e48e7ad20bac4111",
+    "semantic_hash": "a7863f93dd0441d0e48e7ad20bac4111"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\ToolCallMessage.tsx": {
+    "mtime": 1779680845.5305128,
+    "ast_hash": "c7bf4bea70ae8ec85ada501d27cbb1d0",
+    "semantic_hash": "c7bf4bea70ae8ec85ada501d27cbb1d0"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\factories.ts": {
+    "mtime": 1780696695.799345,
+    "ast_hash": "0f3f0668a5a8e38de3ff71585e875570",
+    "semantic_hash": "0f3f0668a5a8e38de3ff71585e875570"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\panelAccessor.test.ts": {
+    "mtime": 1778227514.6672082,
+    "ast_hash": "5ddd7e14668cff873f26b9609c3dd9b6",
+    "semantic_hash": "5ddd7e14668cff873f26b9609c3dd9b6"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\panelAccessor.ts": {
+    "mtime": 1779680712.1215951,
+    "ast_hash": "34d317a50b82e6e3fd8902b0df67d14b",
+    "semantic_hash": "34d317a50b82e6e3fd8902b0df67d14b"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\toAiMessages.test.ts": {
+    "mtime": 1780727412.0076363,
+    "ast_hash": "45f734d9b60514db37eff11247bacd15",
+    "semantic_hash": "45f734d9b60514db37eff11247bacd15"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\toAiMessages.ts": {
+    "mtime": 1780727388.437115,
+    "ast_hash": "ad93c1f27a9331179e99c65d3dde7732",
+    "semantic_hash": "ad93c1f27a9331179e99c65d3dde7732"
+  },
+  "E:\\repos\\writr\\src\\components\\ai\\chat\\types.ts": {
+    "mtime": 1780696690.1048298,
+    "ast_hash": "038c2b53004eee09c393db9fce342199",
+    "semantic_hash": "038c2b53004eee09c393db9fce342199"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\AddImageDialog.tsx": {
+    "mtime": 1771110652.0475404,
+    "ast_hash": "bdb98c31d2f4576a0d56a54fffc77d32",
+    "semantic_hash": "bdb98c31d2f4576a0d56a54fffc77d32"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\CollapsibleSection.tsx": {
+    "mtime": 1770439646.1527493,
+    "ast_hash": "3825dbde398685c4f60580b93811990e",
+    "semantic_hash": "3825dbde398685c4f60580b93811990e"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\DragHandle.tsx": {
+    "mtime": 1770439646.1637504,
+    "ast_hash": "a17885d567e08cabfc72dbb9e4a51e09",
+    "semantic_hash": "a17885d567e08cabfc72dbb9e4a51e09"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\ImageGallery.tsx": {
+    "mtime": 1778195606.8705187,
+    "ast_hash": "a4cdbd1c15befd330b8e3e046a4660aa",
+    "semantic_hash": "a4cdbd1c15befd330b8e3e046a4660aa"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\ImageLightbox.tsx": {
+    "mtime": 1770515216.1136022,
+    "ast_hash": "d63be91f6a56d71d3a80ab505a36867d",
+    "semantic_hash": "d63be91f6a56d71d3a80ab505a36867d"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\RoleBadge.tsx": {
+    "mtime": 1770439646.1647503,
+    "ast_hash": "30d0aec83bc77132efda5d090e9c5819",
+    "semantic_hash": "30d0aec83bc77132efda5d090e9c5819"
+  },
+  "E:\\repos\\writr\\src\\components\\bible\\SortableTimelineCard.tsx": {
+    "mtime": 1778195997.9964075,
+    "ast_hash": "7d7fdeb2da3822348f4f868ae043b641",
+    "semantic_hash": "7d7fdeb2da3822348f4f868ae043b641"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ApproveJoinDialog.test.tsx": {
+    "mtime": 1778191592.974703,
+    "ast_hash": "a8b434bec1299e2970bd2c2df2343484",
+    "semantic_hash": "a8b434bec1299e2970bd2c2df2343484"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ApproveJoinDialog.tsx": {
+    "mtime": 1778116230.5388174,
+    "ast_hash": "2da61ef7306f6e67de2301bd903e8d80",
+    "semantic_hash": "2da61ef7306f6e67de2301bd903e8d80"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\CollabBanner.test.tsx": {
+    "mtime": 1778116230.545818,
+    "ast_hash": "d22b0ff31852d6fe077a924532d1df25",
+    "semantic_hash": "d22b0ff31852d6fe077a924532d1df25"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\CollabBanner.tsx": {
+    "mtime": 1778116230.5558228,
+    "ast_hash": "0b7b99e48f042f9f8bb9ae1c5e78970c",
+    "semantic_hash": "0b7b99e48f042f9f8bb9ae1c5e78970c"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\CollabProseEditor.test.tsx": {
+    "mtime": 1778041716.4377077,
+    "ast_hash": "c1f30662898fc6713ef6cca71a526e54",
+    "semantic_hash": "c1f30662898fc6713ef6cca71a526e54"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\CollabProseEditor.tsx": {
+    "mtime": 1778196841.0274036,
+    "ast_hash": "ae53113373d46a7186d6189f6db04001",
+    "semantic_hash": "ae53113373d46a7186d6189f6db04001"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\DisplayNamePrompt.tsx": {
+    "mtime": 1778047998.4186547,
+    "ast_hash": "d2256ea6c68580b543badc048f08649a",
+    "semantic_hash": "d2256ea6c68580b543badc048f08649a"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\GuestSessionShell.test.tsx": {
+    "mtime": 1778116230.5658226,
+    "ast_hash": "8e415e723bd076e7dc809f7be95cfc51",
+    "semantic_hash": "8e415e723bd076e7dc809f7be95cfc51"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\GuestSessionShell.tsx": {
+    "mtime": 1778116230.575331,
+    "ast_hash": "31068ea061293bee510ebe3968058110",
+    "semantic_hash": "31068ea061293bee510ebe3968058110"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\HostMovedBanner.tsx": {
+    "mtime": 1778116230.5823326,
+    "ast_hash": "63b21f52d4c41805178ba34cb259afa4",
+    "semantic_hash": "63b21f52d4c41805178ba34cb259afa4"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\HostProjectMirror.tsx": {
+    "mtime": 1778194677.013047,
+    "ast_hash": "d228bc24b6ec824723a3dd3a97b3cefb",
+    "semantic_hash": "d228bc24b6ec824723a3dd3a97b3cefb"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ManageParticipantsDialog.test.tsx": {
+    "mtime": 1778191638.8319974,
+    "ast_hash": "b663236d21f357954f4fedef2825ebc3",
+    "semantic_hash": "b663236d21f357954f4fedef2825ebc3"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ManageParticipantsDialog.tsx": {
+    "mtime": 1778116230.6103568,
+    "ast_hash": "184b2073468f7f0935f92f64769f2637",
+    "semantic_hash": "184b2073468f7f0935f92f64769f2637"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ShareDialog.test.tsx": {
+    "mtime": 1778116230.6183567,
+    "ast_hash": "dfaa468b6bddde0d7572e07c99b8081b",
+    "semantic_hash": "dfaa468b6bddde0d7572e07c99b8081b"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ShareDialog.tsx": {
+    "mtime": 1778116230.6288726,
+    "ast_hash": "b10a5c1adc86197f562d87d0b4793c82",
+    "semantic_hash": "b10a5c1adc86197f562d87d0b4793c82"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ShareSessionButton.test.tsx": {
+    "mtime": 1778041716.4900532,
+    "ast_hash": "731933fbe3bce57bf808259e7c9604ba",
+    "semantic_hash": "731933fbe3bce57bf808259e7c9604ba"
+  },
+  "E:\\repos\\writr\\src\\components\\collab\\ShareSessionButton.tsx": {
+    "mtime": 1778041716.4995604,
+    "ast_hash": "546178f7d05f8a5bb2524d4cb7200301",
+    "semantic_hash": "546178f7d05f8a5bb2524d4cb7200301"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\CreateProjectDialog.tsx": {
+    "mtime": 1771096624.9968216,
+    "ast_hash": "87090edf06552c2ba8d564a848c3731d",
+    "semantic_hash": "87090edf06552c2ba8d564a848c3731d"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\DeleteProjectDialog.tsx": {
+    "mtime": 1771110716.0814292,
+    "ast_hash": "79c7ff3619d4de175835c53bd99ee65e",
+    "semantic_hash": "79c7ff3619d4de175835c53bd99ee65e"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\EditProjectDialog.tsx": {
+    "mtime": 1771110711.2306025,
+    "ast_hash": "2003c6fce53ef23415f2229ad1cf354f",
+    "semantic_hash": "2003c6fce53ef23415f2229ad1cf354f"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\ProjectCard.tsx": {
+    "mtime": 1778325631.3231318,
+    "ast_hash": "0c8c216d90ded013a6b2ce4791f944a8",
+    "semantic_hash": "0c8c216d90ded013a6b2ce4791f944a8"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\ProjectFormFields.tsx": {
+    "mtime": 1771098161.2355359,
+    "ast_hash": "316832c3fe2f615c86e93cff04f5cc3b",
+    "semantic_hash": "316832c3fe2f615c86e93cff04f5cc3b"
+  },
+  "E:\\repos\\writr\\src\\components\\dashboard\\ProjectGrid.tsx": {
+    "mtime": 1778325615.64959,
+    "ast_hash": "7a81393e3661b1108852928a823966f7",
+    "semantic_hash": "7a81393e3661b1108852928a823966f7"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\AlignmentDropdown.tsx": {
+    "mtime": 1770439646.1947458,
+    "ast_hash": "2d1dcd66b3331fbcf10b11493f8bfd57",
+    "semantic_hash": "2d1dcd66b3331fbcf10b11493f8bfd57"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\ChapterEditor.tsx": {
+    "mtime": 1780795457.9078012,
+    "ast_hash": "fa2b7eda00f9c4867c0190b3b42a0453",
+    "semantic_hash": "fa2b7eda00f9c4867c0190b3b42a0453"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\ChapterPropertiesDialog.test.tsx": {
+    "mtime": 1780287469.120622,
+    "ast_hash": "84dc21df43d5e3fce12cbcfd2984a77e",
+    "semantic_hash": "84dc21df43d5e3fce12cbcfd2984a77e"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\ChapterPropertiesDialog.tsx": {
+    "mtime": 1780287424.65631,
+    "ast_hash": "47ed787bd4bbab0c81b3e2ab5511ead8",
+    "semantic_hash": "47ed787bd4bbab0c81b3e2ab5511ead8"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\CopyMenu.tsx": {
+    "mtime": 1780795318.0597718,
+    "ast_hash": "26be477544c31d5f70312882b7d9db65",
+    "semantic_hash": "26be477544c31d5f70312882b7d9db65"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\EditorToolbar.tsx": {
+    "mtime": 1780794930.1486185,
+    "ast_hash": "4f734eccaac8f36993cef175460682c1",
+    "semantic_hash": "4f734eccaac8f36993cef175460682c1"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\FindReplacePanel.tsx": {
+    "mtime": 1771105016.7374723,
+    "ast_hash": "b3e99f691f542ddc6238897cf7dd0599",
+    "semantic_hash": "b3e99f691f542ddc6238897cf7dd0599"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\FocusModeOverlay.tsx": {
+    "mtime": 1770439646.2872655,
+    "ast_hash": "9fc0dd95e967005053eef9a306292162",
+    "semantic_hash": "9fc0dd95e967005053eef9a306292162"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\FontSelector.tsx": {
+    "mtime": 1771043484.915454,
+    "ast_hash": "c615c2bb07d971f62fc7b722ca5eaf65",
+    "semantic_hash": "c615c2bb07d971f62fc7b722ca5eaf65"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\FontSizeSelector.tsx": {
+    "mtime": 1771044727.5903418,
+    "ast_hash": "dc5ddd5d5a61da08b384e99b3f421921",
+    "semantic_hash": "dc5ddd5d5a61da08b384e99b3f421921"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\InsertImageDialog.tsx": {
+    "mtime": 1770439646.2982657,
+    "ast_hash": "26e7533e79b63d9581564c6a2bda7f66",
+    "semantic_hash": "26e7533e79b63d9581564c6a2bda7f66"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\LinkEditorDialog.tsx": {
+    "mtime": 1770439646.2992656,
+    "ast_hash": "5424f4e7e8e7ccbe9338e0fa43e4e255",
+    "semantic_hash": "5424f4e7e8e7ccbe9338e0fa43e4e255"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\RubyDialog.tsx": {
+    "mtime": 1770439646.301264,
+    "ast_hash": "7b2279dac4354e50a585a556d89b085a",
+    "semantic_hash": "7b2279dac4354e50a585a556d89b085a"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\ScreenplayToolbar.tsx": {
+    "mtime": 1780794944.6850517,
+    "ast_hash": "ac11e81bcf6674521b8b1d065340d440",
+    "semantic_hash": "ac11e81bcf6674521b8b1d065340d440"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\SpellcheckContextMenu.tsx": {
+    "mtime": 1778194844.321378,
+    "ast_hash": "5ff823f0ef8abbd4f522c5af0f285047",
+    "semantic_hash": "5ff823f0ef8abbd4f522c5af0f285047"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\SpellcheckScannerModal.tsx": {
+    "mtime": 1778194864.8185,
+    "ast_hash": "5f8c74d83a0ff69d6fdd8c666d800a13",
+    "semantic_hash": "5f8c74d83a0ff69d6fdd8c666d800a13"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\TextToolsMenu.tsx": {
+    "mtime": 1779673513.6649923,
+    "ast_hash": "a2d73f894a4e1a478a71c15db2d07739",
+    "semantic_hash": "a2d73f894a4e1a478a71c15db2d07739"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\VersionHistoryDialog.tsx": {
+    "mtime": 1778192884.771611,
+    "ast_hash": "d9ef7fd59205e83250288c020f3ad474",
+    "semantic_hash": "d9ef7fd59205e83250288c020f3ad474"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\CommentMargin.tsx": {
+    "mtime": 1779681011.5041726,
+    "ast_hash": "8ce08de7b45d5776346fea21f3b4b6a0",
+    "semantic_hash": "8ce08de7b45d5776346fea21f3b4b6a0"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\CommentPopover.tsx": {
+    "mtime": 1779681011.5031714,
+    "ast_hash": "e35c66df4c59c79364ad92fa08ffa832",
+    "semantic_hash": "e35c66df4c59c79364ad92fa08ffa832"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\CommentsAdapterContext.tsx": {
+    "mtime": 1778046534.2127461,
+    "ast_hash": "cf78c0f9ed4b3b5565c216bf99e72fbc",
+    "semantic_hash": "cf78c0f9ed4b3b5565c216bf99e72fbc"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\CreateCommentButton.tsx": {
+    "mtime": 1778047966.1126373,
+    "ast_hash": "842169dd0ec94fb532b72693c38d0799",
+    "semantic_hash": "842169dd0ec94fb532b72693c38d0799"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\colors.ts": {
+    "mtime": 1771104672.963715,
+    "ast_hash": "9a2e571700737500359d45e4a041a11c",
+    "semantic_hash": "9a2e571700737500359d45e4a041a11c"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\index.ts": {
+    "mtime": 1778046650.9396546,
+    "ast_hash": "bff08abac8c8400ff9fc85796fa6775d",
+    "semantic_hash": "bff08abac8c8400ff9fc85796fa6775d"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\comments\\position.ts": {
+    "mtime": 1771105487.195924,
+    "ast_hash": "3af7872b8b8c099bcb8de7bc431ea0d5",
+    "semantic_hash": "3af7872b8b8c099bcb8de7bc431ea0d5"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\Comments.ts": {
+    "mtime": 1778195625.8544102,
+    "ast_hash": "8d4f2e596763d3f2556d56a56e9c4bf0",
+    "semantic_hash": "8d4f2e596763d3f2556d56a56e9c4bf0"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\Holes.ts": {
+    "mtime": 1780795429.5105932,
+    "ast_hash": "46d7fb880406441987d7c6eefcff22de",
+    "semantic_hash": "46d7fb880406441987d7c6eefcff22de"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\Indent.ts": {
+    "mtime": 1770439646.2492654,
+    "ast_hash": "a970964959d7f09927e10e075e8c136d",
+    "semantic_hash": "a970964959d7f09927e10e075e8c136d"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\MarkdownBlockquote.test.ts": {
+    "mtime": 1780365539.2969716,
+    "ast_hash": "95c524f84bc4d6eb6b6afa5348247d10",
+    "semantic_hash": "95c524f84bc4d6eb6b6afa5348247d10"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\MarkdownBlockquote.ts": {
+    "mtime": 1780365459.0772595,
+    "ast_hash": "107b8aafa9a364d4415a1cee2d315c0e",
+    "semantic_hash": "107b8aafa9a364d4415a1cee2d315c0e"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\Ruby.ts": {
+    "mtime": 1770439646.2592642,
+    "ast_hash": "ad52acc87cc764ca36d28942510abbc4",
+    "semantic_hash": "ad52acc87cc764ca36d28942510abbc4"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\SearchAndReplace.ts": {
+    "mtime": 1770449991.9290092,
+    "ast_hash": "b28b09a36588a814f8d51069d53d3bb8",
+    "semantic_hash": "b28b09a36588a814f8d51069d53d3bb8"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\SelectionReporter.ts": {
+    "mtime": 1780527450.1808012,
+    "ast_hash": "39ff50ff4b510abf014f581ba82537d4",
+    "semantic_hash": "39ff50ff4b510abf014f581ba82537d4"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\Spellcheck.ts": {
+    "mtime": 1780528996.0528395,
+    "ast_hash": "2cc4edc95e1235a5094852ae955c6c79",
+    "semantic_hash": "2cc4edc95e1235a5094852ae955c6c79"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\TypewriterScrolling.ts": {
+    "mtime": 1770439646.2772655,
+    "ast_hash": "860186232bf5aede9024af205078632a",
+    "semantic_hash": "860186232bf5aede9024af205078632a"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\index.test.ts": {
+    "mtime": 1780527478.6347296,
+    "ast_hash": "dd6dd53a073a50e487e4685df2694ed1",
+    "semantic_hash": "dd6dd53a073a50e487e4685df2694ed1"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\index.ts": {
+    "mtime": 1780794815.2064729,
+    "ast_hash": "7983d68b6b4c78765c9da0cf5748aa5a",
+    "semantic_hash": "7983d68b6b4c78765c9da0cf5748aa5a"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Action.ts": {
+    "mtime": 1771101846.6517706,
+    "ast_hash": "ced60801eeaa0c0705bd8784530f6fde",
+    "semantic_hash": "ced60801eeaa0c0705bd8784530f6fde"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Centered.ts": {
+    "mtime": 1771097442.3367476,
+    "ast_hash": "162452d50e401bbd3911be0c5edd584b",
+    "semantic_hash": "162452d50e401bbd3911be0c5edd584b"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Character.ts": {
+    "mtime": 1771100572.4767478,
+    "ast_hash": "0bb71525ba35b53a9a1f6bd56fb76165",
+    "semantic_hash": "0bb71525ba35b53a9a1f6bd56fb76165"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Dialogue.ts": {
+    "mtime": 1771101848.4881966,
+    "ast_hash": "42e1fbbdee9d44bec5635a366bc71f78",
+    "semantic_hash": "42e1fbbdee9d44bec5635a366bc71f78"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Parenthetical.ts": {
+    "mtime": 1771097432.6636157,
+    "ast_hash": "69bf1a97458eae10b7219daf685a8b6d",
+    "semantic_hash": "69bf1a97458eae10b7219daf685a8b6d"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\SceneHeading.ts": {
+    "mtime": 1771097413.2184067,
+    "ast_hash": "87fd89565e65411e42995b414a2d272a",
+    "semantic_hash": "87fd89565e65411e42995b414a2d272a"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\ScreenplayPageBreak.ts": {
+    "mtime": 1771097446.5342836,
+    "ast_hash": "05a162a1f03cb5a50cecdd1373bb1a38",
+    "semantic_hash": "05a162a1f03cb5a50cecdd1373bb1a38"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\Transition.ts": {
+    "mtime": 1771100574.7286325,
+    "ast_hash": "7d0c05f4efc0b4c075a495d51e7d60ee",
+    "semantic_hash": "7d0c05f4efc0b4c075a495d51e7d60ee"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\extensions\\screenplay\\index.ts": {
+    "mtime": 1771097451.8807974,
+    "ast_hash": "644d2b61a31651f2a505c23c00286566",
+    "semantic_hash": "644d2b61a31651f2a505c23c00286566"
+  },
+  "E:\\repos\\writr\\src\\components\\editor\\toolbar-actions.ts": {
+    "mtime": 1770439646.3162713,
+    "ast_hash": "705418ab80be66f2e289e5bf9e317fbe",
+    "semantic_hash": "705418ab80be66f2e289e5bf9e317fbe"
+  },
+  "E:\\repos\\writr\\src\\components\\export\\ExportDialog.tsx": {
+    "mtime": 1780795272.9348114,
+    "ast_hash": "fcb3f731c8dbb319ab61917ec63f1320",
+    "semantic_hash": "fcb3f731c8dbb319ab61917ec63f1320"
+  },
+  "E:\\repos\\writr\\src\\components\\family-tree\\AddRelationshipDialog.tsx": {
+    "mtime": 1778193341.5840435,
+    "ast_hash": "38a294b307734892521bcfeb7ee932fd",
+    "semantic_hash": "38a294b307734892521bcfeb7ee932fd"
+  },
+  "E:\\repos\\writr\\src\\components\\family-tree\\CharacterNode.tsx": {
+    "mtime": 1770439646.3497798,
+    "ast_hash": "fda9a7a4ae943d3f729df35c92e7030e",
+    "semantic_hash": "fda9a7a4ae943d3f729df35c92e7030e"
+  },
+  "E:\\repos\\writr\\src\\components\\family-tree\\RelationshipEdge.tsx": {
+    "mtime": 1770439646.3537793,
+    "ast_hash": "ab79ec20fc15f0221d3e59eb01ccdec0",
+    "semantic_hash": "ab79ec20fc15f0221d3e59eb01ccdec0"
+  },
+  "E:\\repos\\writr\\src\\components\\family-tree\\RelationshipList.tsx": {
+    "mtime": 1770439646.3557804,
+    "ast_hash": "398ae3ac58e12aa1553ac99b02f3cdf9",
+    "semantic_hash": "398ae3ac58e12aa1553ac99b02f3cdf9"
+  },
+  "E:\\repos\\writr\\src\\components\\family-tree\\relationship-config.ts": {
+    "mtime": 1770439646.3517804,
+    "ast_hash": "28f61c2c628037b6c5310478d0ca4c70",
+    "semantic_hash": "28f61c2c628037b6c5310478d0ca4c70"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\AppShell.tsx": {
+    "mtime": 1780725448.2196167,
+    "ast_hash": "cb41692b726d9279fc9c30fbaac15e3b",
+    "semantic_hash": "cb41692b726d9279fc9c30fbaac15e3b"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\TopBar.tsx": {
+    "mtime": 1778323898.3286695,
+    "ast_hash": "ca625800b16fe386dd10724b15d220ed",
+    "semantic_hash": "ca625800b16fe386dd10724b15d220ed"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\AgentsNav.tsx": {
+    "mtime": 1778194721.4400237,
+    "ast_hash": "99478860546defe4193deb9ff961ef92",
+    "semantic_hash": "99478860546defe4193deb9ff961ef92"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\BibleNav.tsx": {
+    "mtime": 1778194744.0277305,
+    "ast_hash": "1978a56083f5142e4101479b253e5ffe",
+    "semantic_hash": "1978a56083f5142e4101479b253e5ffe"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\BinderItem.test.tsx": {
+    "mtime": 1780795136.4546561,
+    "ast_hash": "19a66a32e01fda2e92224f187758452b",
+    "semantic_hash": "19a66a32e01fda2e92224f187758452b"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\BinderItem.tsx": {
+    "mtime": 1780795436.4813168,
+    "ast_hash": "acf6bbe67f39c46aea1bf1c3a6899a9b",
+    "semantic_hash": "acf6bbe67f39c46aea1bf1c3a6899a9b"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\BinderSection.tsx": {
+    "mtime": 1780795114.98893,
+    "ast_hash": "77b7a44a930b208947d033520d57a1c3",
+    "semantic_hash": "77b7a44a930b208947d033520d57a1c3"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\ChapterList.test.tsx": {
+    "mtime": 1780642973.9349384,
+    "ast_hash": "324a04730d4cd23f7ec258f660374dbe",
+    "semantic_hash": "324a04730d4cd23f7ec258f660374dbe"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\ChapterList.tsx": {
+    "mtime": 1780640830.207547,
+    "ast_hash": "0f59e75299a817503aaae394850d2d01",
+    "semantic_hash": "0f59e75299a817503aaae394850d2d01"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\SeparatorSettingsDialog.test.tsx": {
+    "mtime": 1780640419.5383158,
+    "ast_hash": "2fbce56692a4f91105f47f37b8407a6c",
+    "semantic_hash": "2fbce56692a4f91105f47f37b8407a6c"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\SeparatorSettingsDialog.tsx": {
+    "mtime": 1780640363.3361726,
+    "ast_hash": "3822ce22b8e16b8ebff46d2ecfaec13e",
+    "semantic_hash": "3822ce22b8e16b8ebff46d2ecfaec13e"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\Sidebar.tsx": {
+    "mtime": 1778194701.7808392,
+    "ast_hash": "c12847d8ed3b9ce83055a4be890e89b0",
+    "semantic_hash": "c12847d8ed3b9ce83055a4be890e89b0"
+  },
+  "E:\\repos\\writr\\src\\components\\layout\\sidebar\\index.ts": {
+    "mtime": 1770439646.379782,
+    "ast_hash": "a0185ea0c7a9238567b255c2e0dd8ed6",
+    "semantic_hash": "a0185ea0c7a9238567b255c2e0dd8ed6"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGrid.tsx": {
+    "mtime": 1780645231.1311388,
+    "ast_hash": "3fab198fbc8acc9d7a6c2531b92c1ff4",
+    "semantic_hash": "3fab198fbc8acc9d7a6c2531b92c1ff4"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGridCell.tsx": {
+    "mtime": 1771110558.2503097,
+    "ast_hash": "e1db80314a3699cc0c1c4fec98414e59",
+    "semantic_hash": "e1db80314a3699cc0c1c4fec98414e59"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGridContextMenu.tsx": {
+    "mtime": 1778196461.9305005,
+    "ast_hash": "6a44930553624d3100a17b7ca3fe2401",
+    "semantic_hash": "6a44930553624d3100a17b7ca3fe2401"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGridHeader.tsx": {
+    "mtime": 1770439646.4147873,
+    "ast_hash": "c92ea9f92fd09dd762d1f66bada6eb25",
+    "semantic_hash": "c92ea9f92fd09dd762d1f66bada6eb25"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGridRow.tsx": {
+    "mtime": 1780642213.316852,
+    "ast_hash": "a74db8cd941fef257eb404985832d532",
+    "semantic_hash": "a74db8cd941fef257eb404985832d532"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineGridToolbar.tsx": {
+    "mtime": 1770439646.417784,
+    "ast_hash": "fdf1ee83b0c1908ab779ba684b4f3322",
+    "semantic_hash": "fdf1ee83b0c1908ab779ba684b4f3322"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\OutlineTemplateDialog.tsx": {
+    "mtime": 1770439646.4197886,
+    "ast_hash": "63fb3cd5f150a544bd161567e5d8cd87",
+    "semantic_hash": "63fb3cd5f150a544bd161567e5d8cd87"
+  },
+  "E:\\repos\\writr\\src\\components\\outline\\StatusBadge.tsx": {
+    "mtime": 1770439646.4217849,
+    "ast_hash": "1d3004e8bb5151d708148237068944a3",
+    "semantic_hash": "1d3004e8bb5151d708148237068944a3"
+  },
+  "E:\\repos\\writr\\src\\components\\preview-card\\PreviewCardCanvas.tsx": {
+    "mtime": 1770439646.4227853,
+    "ast_hash": "f30030c177e981e760c038ce2ed799d1",
+    "semantic_hash": "f30030c177e981e760c038ce2ed799d1"
+  },
+  "E:\\repos\\writr\\src\\components\\preview-card\\PreviewCardDialog.tsx": {
+    "mtime": 1771110679.2943316,
+    "ast_hash": "e79b00cb9f2c47bff1d0f8b1d3d685dd",
+    "semantic_hash": "e79b00cb9f2c47bff1d0f8b1d3d685dd"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\ChapterReadOnlyBody.tsx": {
+    "mtime": 1778195765.1046646,
+    "ast_hash": "38eaf843a9000e4769ff26321fc38394",
+    "semantic_hash": "38eaf843a9000e4769ff26321fc38394"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\CharacterDetailBody.tsx": {
+    "mtime": 1778212213.6557171,
+    "ast_hash": "f5145c5c12732ff021f4c17c26e2cb6e",
+    "semantic_hash": "f5145c5c12732ff021f4c17c26e2cb6e"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\CharactersPageBody.tsx": {
+    "mtime": 1778194813.9524863,
+    "ast_hash": "a2875af31ee457debaadd6c98c93723d",
+    "semantic_hash": "a2875af31ee457debaadd6c98c93723d"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\LocationDetailBody.tsx": {
+    "mtime": 1778192568.602755,
+    "ast_hash": "2407feef9978dfc65297b6e1a586f7f5",
+    "semantic_hash": "2407feef9978dfc65297b6e1a586f7f5"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\LocationsPageBody.tsx": {
+    "mtime": 1778196130.3776438,
+    "ast_hash": "35e81c8843ae5720cda2467f463d15d6",
+    "semantic_hash": "35e81c8843ae5720cda2467f463d15d6"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\ProjectOverviewBody.tsx": {
+    "mtime": 1780795172.4258702,
+    "ast_hash": "5ce1498986cf29e14f1069845c0ffda4",
+    "semantic_hash": "5ce1498986cf29e14f1069845c0ffda4"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\StyleGuidePageBody.tsx": {
+    "mtime": 1778192675.952482,
+    "ast_hash": "3309bd467c3a78859a179313c0b44503",
+    "semantic_hash": "3309bd467c3a78859a179313c0b44503"
+  },
+  "E:\\repos\\writr\\src\\components\\projects\\TimelinePageBody.tsx": {
+    "mtime": 1778192705.9603941,
+    "ast_hash": "0fd5e7875c21488907020566f7141deb",
+    "semantic_hash": "0fd5e7875c21488907020566f7141deb"
+  },
+  "E:\\repos\\writr\\src\\components\\providers\\AppProviders.tsx": {
+    "mtime": 1779080391.1924536,
+    "ast_hash": "3fa090d2e6f8a9b6495ead9578bb830b",
+    "semantic_hash": "3fa090d2e6f8a9b6495ead9578bb830b"
+  },
+  "E:\\repos\\writr\\src\\components\\providers\\ThemeProvider.tsx": {
+    "mtime": 1780797678.0436454,
+    "ast_hash": "04b99f4d71052bfa4d99c4cfea015caf",
+    "semantic_hash": "04b99f4d71052bfa4d99c4cfea015caf"
+  },
+  "E:\\repos\\writr\\src\\components\\radio\\MusicControlBar.tsx": {
+    "mtime": 1771110762.530953,
+    "ast_hash": "138a2d11fdd9d7451fad46169bf8b36a",
+    "semantic_hash": "138a2d11fdd9d7451fad46169bf8b36a"
+  },
+  "E:\\repos\\writr\\src\\components\\radio\\RadioPlayer.tsx": {
+    "mtime": 1771110759.4121125,
+    "ast_hash": "e6f345c33260efe2631befbd22f3d478",
+    "semantic_hash": "e6f345c33260efe2631befbd22f3d478"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\SearchBar.tsx": {
+    "mtime": 1780725456.3312893,
+    "ast_hash": "561bffaa08d882b452ad35f6911b611a",
+    "semantic_hash": "561bffaa08d882b452ad35f6911b611a"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\SearchDropdown.tsx": {
+    "mtime": 1770439646.433296,
+    "ast_hash": "00a51e12b62d565c5028fc138b64bc2b",
+    "semantic_hash": "00a51e12b62d565c5028fc138b64bc2b"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\SearchFilters.tsx": {
+    "mtime": 1770439646.4452963,
+    "ast_hash": "768edb9106500b19cdb3799e231396cb",
+    "semantic_hash": "768edb9106500b19cdb3799e231396cb"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\SearchPagination.tsx": {
+    "mtime": 1770439646.447296,
+    "ast_hash": "0649d4546db670b89e72b6117792ed9b",
+    "semantic_hash": "0649d4546db670b89e72b6117792ed9b"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\SearchResultItem.tsx": {
+    "mtime": 1770439646.4482982,
+    "ast_hash": "f3a60d24af42c6db42af59c7b85e83c1",
+    "semantic_hash": "f3a60d24af42c6db42af59c7b85e83c1"
+  },
+  "E:\\repos\\writr\\src\\components\\search\\index.ts": {
+    "mtime": 1780725461.1437273,
+    "ast_hash": "14f732e5a6aa50ad8700e9976cab1eba",
+    "semantic_hash": "14f732e5a6aa50ad8700e9976cab1eba"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\AgentEditor.tsx": {
+    "mtime": 1778061014.3906882,
+    "ast_hash": "6b4325a1128c76b1597cd23fd3580390",
+    "semantic_hash": "6b4325a1128c76b1597cd23fd3580390"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\AgentsManager.tsx": {
+    "mtime": 1778194976.5925884,
+    "ast_hash": "5939d02dbaeb9728b76c188afb84e13d",
+    "semantic_hash": "5939d02dbaeb9728b76c188afb84e13d"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\AiSettings.tsx": {
+    "mtime": 1779080191.6729786,
+    "ast_hash": "291b9902a3d4ff4aa8f9d9e44530653e",
+    "semantic_hash": "291b9902a3d4ff4aa8f9d9e44530653e"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\AppSettingsDialog.tsx": {
+    "mtime": 1780797765.11588,
+    "ast_hash": "947fad8438168d1057b266b1e73ec98f",
+    "semantic_hash": "947fad8438168d1057b266b1e73ec98f"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\AppearanceSettings.tsx": {
+    "mtime": 1770439927.879559,
+    "ast_hash": "caa481512d8019eec4aaae221b7d2c60",
+    "semantic_hash": "caa481512d8019eec4aaae221b7d2c60"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\BackupSettings.tsx": {
+    "mtime": 1770439646.4552963,
+    "ast_hash": "f3e117e9ffa4675e0bfaf27c44a325db",
+    "semantic_hash": "f3e117e9ffa4675e0bfaf27c44a325db"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\DictionaryManagerDialog.tsx": {
+    "mtime": 1771111127.576133,
+    "ast_hash": "3d67f7ead8e9d2eb8a84061a7e081205",
+    "semantic_hash": "3d67f7ead8e9d2eb8a84061a7e081205"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\EditorSettings.tsx": {
+    "mtime": 1780797715.8222287,
+    "ast_hash": "9ffe8162d072ace776ea66eb1bdbb402",
+    "semantic_hash": "9ffe8162d072ace776ea66eb1bdbb402"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\GeneralTabContent.tsx": {
+    "mtime": 1771110556.2506628,
+    "ast_hash": "d8ed9ab59db1ffbd7f300f9b06822c26",
+    "semantic_hash": "d8ed9ab59db1ffbd7f300f9b06822c26"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\ImportBackupDialog.tsx": {
+    "mtime": 1770439646.4612975,
+    "ast_hash": "64d700825f26e8308540e703cb63925e",
+    "semantic_hash": "64d700825f26e8308540e703cb63925e"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\SavedPromptsManager.test.tsx": {
+    "mtime": 1780218185.8743336,
+    "ast_hash": "ccd1251fac15ef7263824a1de58cae5f",
+    "semantic_hash": "ccd1251fac15ef7263824a1de58cae5f"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\SavedPromptsManager.tsx": {
+    "mtime": 1780217683.7501004,
+    "ast_hash": "9a0833d140c66b1040fee15bcaefc2fa",
+    "semantic_hash": "9a0833d140c66b1040fee15bcaefc2fa"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\ShortcutsHelpDialog.test.tsx": {
+    "mtime": 1780725582.4859905,
+    "ast_hash": "74ac519df1ae3fa18caa0e27e29496b1",
+    "semantic_hash": "74ac519df1ae3fa18caa0e27e29496b1"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\ShortcutsHelpDialog.tsx": {
+    "mtime": 1780725430.0592544,
+    "ast_hash": "28f3717dcbf6614e1c9bb3022de8edf8",
+    "semantic_hash": "28f3717dcbf6614e1c9bb3022de8edf8"
+  },
+  "E:\\repos\\writr\\src\\components\\settings\\agent-tool-picker.ts": {
+    "mtime": 1780553697.0059721,
+    "ast_hash": "0032aa7eb22622386198e04b17dad448",
+    "semantic_hash": "0032aa7eb22622386198e04b17dad448"
+  },
+  "E:\\repos\\writr\\src\\components\\sprint\\SprintConfigDialog.tsx": {
+    "mtime": 1771110537.6490183,
+    "ast_hash": "ff931c07f0f00faf45487f0fae6946d5",
+    "semantic_hash": "ff931c07f0f00faf45487f0fae6946d5"
+  },
+  "E:\\repos\\writr\\src\\components\\sprint\\SprintHistoryDialog.tsx": {
+    "mtime": 1771111127.5636044,
+    "ast_hash": "7207d0e6b788518c306fc75c08d48c33",
+    "semantic_hash": "7207d0e6b788518c306fc75c08d48c33"
+  },
+  "E:\\repos\\writr\\src\\components\\sprint\\SprintWidget.tsx": {
+    "mtime": 1771110536.5886157,
+    "ast_hash": "8d649f3b45db3fd0c99a3065dd474774",
+    "semantic_hash": "8d649f3b45db3fd0c99a3065dd474774"
+  },
+  "E:\\repos\\writr\\src\\components\\sprint\\index.ts": {
+    "mtime": 1770439646.463296,
+    "ast_hash": "8f81596caf381656d3228b09c3134394",
+    "semantic_hash": "8f81596caf381656d3228b09c3134394"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\DailyWordChart.tsx": {
+    "mtime": 1771110552.1292353,
+    "ast_hash": "1149555c210153d25828e3e1e65347ef",
+    "semantic_hash": "1149555c210153d25828e3e1e65347ef"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\StatCard.tsx": {
+    "mtime": 1770439646.4712963,
+    "ast_hash": "7292819778adac55123e10ac21ddfff2",
+    "semantic_hash": "7292819778adac55123e10ac21ddfff2"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\StreakDisplay.tsx": {
+    "mtime": 1771110555.0228853,
+    "ast_hash": "1d930f97ef3373eec867f60838d56fa8",
+    "semantic_hash": "1d930f97ef3373eec867f60838d56fa8"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\TimeOfDayChart.tsx": {
+    "mtime": 1771110554.0981896,
+    "ast_hash": "bc1762fa35270d5613f9f5d57290bcb2",
+    "semantic_hash": "bc1762fa35270d5613f9f5d57290bcb2"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\WritingStatsDashboard.tsx": {
+    "mtime": 1773216887.6733017,
+    "ast_hash": "9fe987ae4f2c6b1caf01c116ac389b50",
+    "semantic_hash": "9fe987ae4f2c6b1caf01c116ac389b50"
+  },
+  "E:\\repos\\writr\\src\\components\\stats\\index.ts": {
+    "mtime": 1770439646.4692957,
+    "ast_hash": "b8112b145523107e11b02f37032ae882",
+    "semantic_hash": "b8112b145523107e11b02f37032ae882"
+  },
+  "E:\\repos\\writr\\src\\components\\tts\\TtsAudioEngine.tsx": {
+    "mtime": 1779080534.1049607,
+    "ast_hash": "9f4a9e7c5d817194b757e14da8ae88e3",
+    "semantic_hash": "9f4a9e7c5d817194b757e14da8ae88e3"
+  },
+  "E:\\repos\\writr\\src\\components\\tts\\TtsPlayerBar.tsx": {
+    "mtime": 1779080546.9591787,
+    "ast_hash": "a96b6eb3ad8b51a1821199fe89aa1e9f",
+    "semantic_hash": "a96b6eb3ad8b51a1821199fe89aa1e9f"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\AutoResizeTextarea.tsx": {
+    "mtime": 1780343348.734092,
+    "ast_hash": "c1fb4a3b8ecc456e4235bfb6dc8ef8db",
+    "semantic_hash": "c1fb4a3b8ecc456e4235bfb6dc8ef8db"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\Badge.test.tsx": {
+    "mtime": 1778041716.606345,
+    "ast_hash": "aca6f6f55c9f5ca82aeb6e19ab661639",
+    "semantic_hash": "aca6f6f55c9f5ca82aeb6e19ab661639"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\Badge.tsx": {
+    "mtime": 1770439646.4772966,
+    "ast_hash": "44b7156be5ac58b738866bcd518160f5",
+    "semantic_hash": "44b7156be5ac58b738866bcd518160f5"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\ConfirmDialog.tsx": {
+    "mtime": 1776128857.6254287,
+    "ast_hash": "d3dad97cd0b28568410c2b3bf5b8d452",
+    "semantic_hash": "d3dad97cd0b28568410c2b3bf5b8d452"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\ContextMenu.tsx": {
+    "mtime": 1776128911.985319,
+    "ast_hash": "a797911817acf00bb7f1550eb81d457c",
+    "semantic_hash": "a797911817acf00bb7f1550eb81d457c"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\DialogFooter.test.tsx": {
+    "mtime": 1778041716.6128552,
+    "ast_hash": "69934cb556ce96f60bccdc1f2d4e8400",
+    "semantic_hash": "69934cb556ce96f60bccdc1f2d4e8400"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\DialogFooter.tsx": {
+    "mtime": 1770439646.4832964,
+    "ast_hash": "8d2663bb78d9dfcec41b4b56f7d63b73",
+    "semantic_hash": "8d2663bb78d9dfcec41b4b56f7d63b73"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\Modal.tsx": {
+    "mtime": 1777973666.0935016,
+    "ast_hash": "dabf5866d0729e0bc6f59d19dbcf5655",
+    "semantic_hash": "dabf5866d0729e0bc6f59d19dbcf5655"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\TriStateCheckbox.tsx": {
+    "mtime": 1778060918.893842,
+    "ast_hash": "cf09bfbbbc11356b4d9da7782ad88735",
+    "semantic_hash": "cf09bfbbbc11356b4d9da7782ad88735"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\button-styles.ts": {
+    "mtime": 1770439646.4782968,
+    "ast_hash": "9430dcb6ab73ed914d6a78fe57907452",
+    "semantic_hash": "9430dcb6ab73ed914d6a78fe57907452"
+  },
+  "E:\\repos\\writr\\src\\components\\ui\\form-styles.ts": {
+    "mtime": 1770439646.4842963,
+    "ast_hash": "668c7c3092318662c628b5af555984d1",
+    "semantic_hash": "668c7c3092318662c628b5af555984d1"
+  },
+  "E:\\repos\\writr\\src\\components\\worldbuilding\\CompiledView.tsx": {
+    "mtime": 1770439646.487296,
+    "ast_hash": "5aef932f1682a8444b1fa7048a84db18",
+    "semantic_hash": "5aef932f1682a8444b1fa7048a84db18"
+  },
+  "E:\\repos\\writr\\src\\components\\worldbuilding\\WorldbuildingDocDialog.tsx": {
+    "mtime": 1778193881.015403,
+    "ast_hash": "73d87fee132214d8c1459356db042464",
+    "semantic_hash": "73d87fee132214d8c1459356db042464"
+  },
+  "E:\\repos\\writr\\src\\context\\DataSourceContext.tsx": {
+    "mtime": 1778116230.7593648,
+    "ast_hash": "6904e8cb7403656d8d6d262b3f44c63b",
+    "semantic_hash": "6904e8cb7403656d8d6d262b3f44c63b"
+  },
+  "E:\\repos\\writr\\src\\db\\chapter-outline-sync.test.ts": {
+    "mtime": 1780645929.1368744,
+    "ast_hash": "0dc580fe934b43553987fc76995678d6",
+    "semantic_hash": "0dc580fe934b43553987fc76995678d6"
+  },
+  "E:\\repos\\writr\\src\\db\\chapter-outline-sync.ts": {
+    "mtime": 1780645860.145506,
+    "ast_hash": "19b187eff7e9846b7945c5e2a1794d23",
+    "semantic_hash": "19b187eff7e9846b7945c5e2a1794d23"
+  },
+  "E:\\repos\\writr\\src\\db\\database.ts": {
+    "mtime": 1780634993.7307684,
+    "ast_hash": "f32aeda29b1f93eb40c5cee33f826390",
+    "semantic_hash": "f32aeda29b1f93eb40c5cee33f826390"
+  },
+  "E:\\repos\\writr\\src\\db\\migrations.test.ts": {
+    "mtime": 1780635020.2600226,
+    "ast_hash": "74437d865ba19fffc490bb8a067f2962",
+    "semantic_hash": "74437d865ba19fffc490bb8a067f2962"
+  },
+  "E:\\repos\\writr\\src\\db\\operations.test.ts": {
+    "mtime": 1778212213.6862042,
+    "ast_hash": "5ccb9b36a1ebc32b924a8d2aacccae41",
+    "semantic_hash": "5ccb9b36a1ebc32b924a8d2aacccae41"
+  },
+  "E:\\repos\\writr\\src\\db\\operations.ts": {
+    "mtime": 1770439646.5658164,
+    "ast_hash": "31ac34b642514f20f72e683e94bcaf54",
+    "semantic_hash": "31ac34b642514f20f72e683e94bcaf54"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agentNotes.ts": {
+    "mtime": 1778196461.9420085,
+    "ast_hash": "3cf7df4209db8d33093030cf1867402d",
+    "semantic_hash": "3cf7df4209db8d33093030cf1867402d"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agentQuestions.test.ts": {
+    "mtime": 1778196477.42285,
+    "ast_hash": "a221a8fdd46efaf6bef2c8b3a7168e56",
+    "semantic_hash": "a221a8fdd46efaf6bef2c8b3a7168e56"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agentQuestions.ts": {
+    "mtime": 1778196461.9420085,
+    "ast_hash": "568764aed0a364c2390a3423b1423d85",
+    "semantic_hash": "568764aed0a364c2390a3423b1423d85"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agentRuns.test.ts": {
+    "mtime": 1778196477.4350257,
+    "ast_hash": "739bd2b64c406ef217defff142358480",
+    "semantic_hash": "739bd2b64c406ef217defff142358480"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agentRuns.ts": {
+    "mtime": 1778196461.9440143,
+    "ast_hash": "4caaf9d364b4b81aa468adb5de234dfb",
+    "semantic_hash": "4caaf9d364b4b81aa468adb5de234dfb"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\agents.ts": {
+    "mtime": 1778196461.946018,
+    "ast_hash": "42e94559e8ddbd4ebd20df66683e6c52",
+    "semantic_hash": "42e94559e8ddbd4ebd20df66683e6c52"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\chapterSummaries.ts": {
+    "mtime": 1778196461.9480228,
+    "ast_hash": "85dcee7bc61052294b40250a8e74307b",
+    "semantic_hash": "85dcee7bc61052294b40250a8e74307b"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\chapters.test.ts": {
+    "mtime": 1780645324.186877,
+    "ast_hash": "7c68fe81622a2d6502f71f9c537f2d37",
+    "semantic_hash": "7c68fe81622a2d6502f71f9c537f2d37"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\chapters.ts": {
+    "mtime": 1780645306.731379,
+    "ast_hash": "bd49267d9bd395fb1be56ae641d8a874",
+    "semantic_hash": "bd49267d9bd395fb1be56ae641d8a874"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\characters.test.ts": {
+    "mtime": 1778196477.4320252,
+    "ast_hash": "b5f6b9e3e4142088770b0ff9158fda28",
+    "semantic_hash": "b5f6b9e3e4142088770b0ff9158fda28"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\characters.ts": {
+    "mtime": 1778196461.9500225,
+    "ast_hash": "0a8a0bbe33ac9f0df2d8999a168a5833",
+    "semantic_hash": "0a8a0bbe33ac9f0df2d8999a168a5833"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\comments.ts": {
+    "mtime": 1779679740.2865503,
+    "ast_hash": "933c8647bcc824cc042e278a0724ebc6",
+    "semantic_hash": "933c8647bcc824cc042e278a0724ebc6"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\dictionary.test.ts": {
+    "mtime": 1778196477.4360275,
+    "ast_hash": "678ab7f5bc2afa2b6346f76d2f95397b",
+    "semantic_hash": "678ab7f5bc2afa2b6346f76d2f95397b"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\dictionary.ts": {
+    "mtime": 1778196461.9500225,
+    "ast_hash": "81c6629dc21d69e686908e8ea1725149",
+    "semantic_hash": "81c6629dc21d69e686908e8ea1725149"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\editPlans.ts": {
+    "mtime": 1778196461.9500225,
+    "ast_hash": "a1b10bc12cc7be3a52711f1970a310e9",
+    "semantic_hash": "a1b10bc12cc7be3a52711f1970a310e9"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\helpers.test.ts": {
+    "mtime": 1778327756.2489462,
+    "ast_hash": "3d157415cdab2e3ca8f0ece3b4eb5e47",
+    "semantic_hash": "3d157415cdab2e3ca8f0ece3b4eb5e47"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\helpers.ts": {
+    "mtime": 1778327705.5476897,
+    "ast_hash": "d3a42087e52c91a56320ee3b447b2cc7",
+    "semantic_hash": "d3a42087e52c91a56320ee3b447b2cc7"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\index.ts": {
+    "mtime": 1780645407.2213776,
+    "ast_hash": "3c35c60152183640c3ac420cd56fa109",
+    "semantic_hash": "3c35c60152183640c3ac420cd56fa109"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\locations.ts": {
+    "mtime": 1778196461.9510248,
+    "ast_hash": "54109da88fe8637f6885011cf8eb019b",
+    "semantic_hash": "54109da88fe8637f6885011cf8eb019b"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\outline.ts": {
+    "mtime": 1778327695.1995354,
+    "ast_hash": "145f5157e645d927a7eee431460e1d84",
+    "semantic_hash": "145f5157e645d927a7eee431460e1d84"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\playlist.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "69ae8f1a8081af80cb10dd8b023c8ff0",
+    "semantic_hash": "69ae8f1a8081af80cb10dd8b023c8ff0"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\projects.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "6610a0d0de31314ac65d8f7a8f9fac5d",
+    "semantic_hash": "6610a0d0de31314ac65d8f7a8f9fac5d"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\proposedEdits.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "124c99d7bbdf907aa4e420b649b5d959",
+    "semantic_hash": "124c99d7bbdf907aa4e420b649b5d959"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\readerBible.ts": {
+    "mtime": 1778196461.953023,
+    "ast_hash": "55e3006fbdde4ac06bf0a95bd505cd21",
+    "semantic_hash": "55e3006fbdde4ac06bf0a95bd505cd21"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\savedPrompts.test.ts": {
+    "mtime": 1780217699.2691114,
+    "ast_hash": "599de33c835e18da79bf16ce33521b5d",
+    "semantic_hash": "599de33c835e18da79bf16ce33521b5d"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\savedPrompts.ts": {
+    "mtime": 1780217416.470658,
+    "ast_hash": "10f1bd9c259d25b170893ade51817329",
+    "semantic_hash": "10f1bd9c259d25b170893ade51817329"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\settings.ts": {
+    "mtime": 1770509540.812181,
+    "ast_hash": "af531771272b972b478f47b0f37668f7",
+    "semantic_hash": "af531771272b972b478f47b0f37668f7"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\snapshotManifests.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "6ff5435ed20cd773054b6a8174562687",
+    "semantic_hash": "6ff5435ed20cd773054b6a8174562687"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\snapshots.test.ts": {
+    "mtime": 1778196477.4380262,
+    "ast_hash": "41d87a3d5a5a4bcfdcc16e2e0b84a233",
+    "semantic_hash": "41d87a3d5a5a4bcfdcc16e2e0b84a233"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\snapshots.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "982b5c7c2e71f3663fa47670f8fa92a9",
+    "semantic_hash": "982b5c7c2e71f3663fa47670f8fa92a9"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\sprints.ts": {
+    "mtime": 1778196461.954023,
+    "ast_hash": "dba75b0a2aa47b0d1270be6101d2a5df",
+    "semantic_hash": "dba75b0a2aa47b0d1270be6101d2a5df"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\style-guide.ts": {
+    "mtime": 1778196461.953023,
+    "ast_hash": "ceeb61a0d7ed23470f22cc9b884a194d",
+    "semantic_hash": "ceeb61a0d7ed23470f22cc9b884a194d"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\timeline.ts": {
+    "mtime": 1778196461.953023,
+    "ast_hash": "0bb9cf0fb38d801200dff2063355bc4c",
+    "semantic_hash": "0bb9cf0fb38d801200dff2063355bc4c"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\verifications.ts": {
+    "mtime": 1778196461.953023,
+    "ast_hash": "8826b83059c41174ffc8b0caa2f9b36a",
+    "semantic_hash": "8826b83059c41174ffc8b0caa2f9b36a"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\workUnits.ts": {
+    "mtime": 1778196461.953023,
+    "ast_hash": "85c4139af33a762a194e237c8750cf2c",
+    "semantic_hash": "85c4139af33a762a194e237c8750cf2c"
+  },
+  "E:\\repos\\writr\\src\\db\\operations\\worldbuilding.ts": {
+    "mtime": 1778196461.954023,
+    "ast_hash": "ee533b854fb46ad4c52d922bac77a5d7",
+    "semantic_hash": "ee533b854fb46ad4c52d922bac77a5d7"
+  },
+  "E:\\repos\\writr\\src\\db\\schemas.test.ts": {
+    "mtime": 1777962143.1143947,
+    "ast_hash": "bda7bce965af6bc13931fb7d5e706765",
+    "semantic_hash": "bda7bce965af6bc13931fb7d5e706765"
+  },
+  "E:\\repos\\writr\\src\\db\\schemas.ts": {
+    "mtime": 1780797645.6302357,
+    "ast_hash": "f985c610f7dd676cf889201c437c4d08",
+    "semantic_hash": "f985c610f7dd676cf889201c437c4d08"
+  },
+  "E:\\repos\\writr\\src\\hooks\\collab\\useCollabManager.test.tsx": {
+    "mtime": 1778116230.765365,
+    "ast_hash": "cdb2b05494a8a172650be19d2db0dac9",
+    "semantic_hash": "cdb2b05494a8a172650be19d2db0dac9"
+  },
+  "E:\\repos\\writr\\src\\hooks\\collab\\useCollabManager.ts": {
+    "mtime": 1778116230.778368,
+    "ast_hash": "89e14e8ddeb6838a5283d0d2ebac1c00",
+    "semantic_hash": "89e14e8ddeb6838a5283d0d2ebac1c00"
+  },
+  "E:\\repos\\writr\\src\\hooks\\collab\\useCommentsMeta.ts": {
+    "mtime": 1778195870.742983,
+    "ast_hash": "3fd31613aa8913e4c6dac02f3de6ef6e",
+    "semantic_hash": "3fd31613aa8913e4c6dac02f3de6ef6e"
+  },
+  "E:\\repos\\writr\\src\\hooks\\collab\\useIsReadOnly.ts": {
+    "mtime": 1778116230.7888784,
+    "ast_hash": "88df34ec2e6e80a5f359921773a3318b",
+    "semantic_hash": "88df34ec2e6e80a5f359921773a3318b"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\index.ts": {
+    "mtime": 1780217426.8770237,
+    "ast_hash": "1bddb5ffd6bfc31114782915b68945c0",
+    "semantic_hash": "1bddb5ffd6bfc31114782915b68945c0"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\source.test.tsx": {
+    "mtime": 1780696970.0014207,
+    "ast_hash": "e645bc0c3f63a6a979300c61eb6a3d65",
+    "semantic_hash": "e645bc0c3f63a6a979300c61eb6a3d65"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\source.ts": {
+    "mtime": 1778195228.3271592,
+    "ast_hash": "84fc1b34a9385c6b347526d254e3d929",
+    "semantic_hash": "84fc1b34a9385c6b347526d254e3d929"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useAgentNotes.ts": {
+    "mtime": 1777944691.962921,
+    "ast_hash": "eff01e5b63e730f80311a1e9c9dd1626",
+    "semantic_hash": "eff01e5b63e730f80311a1e9c9dd1626"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useAgentRun.ts": {
+    "mtime": 1778194545.620724,
+    "ast_hash": "c9238d5066a43138d26974a58a2044bc",
+    "semantic_hash": "c9238d5066a43138d26974a58a2044bc"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useAgentRunContext.ts": {
+    "mtime": 1780645184.4426448,
+    "ast_hash": "360d8cb881b7482a56fa573f6ae2b394",
+    "semantic_hash": "360d8cb881b7482a56fa573f6ae2b394"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useAgents.ts": {
+    "mtime": 1778194571.328001,
+    "ast_hash": "b58fb52af8b0404bbfbc1fdd54fd5077",
+    "semantic_hash": "b58fb52af8b0404bbfbc1fdd54fd5077"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useAppSettings.ts": {
+    "mtime": 1779080784.0207458,
+    "ast_hash": "120422341b4b314a6feffb70d89c1c10",
+    "semantic_hash": "120422341b4b314a6feffb70d89c1c10"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useBibleEntries.ts": {
+    "mtime": 1771110463.4215505,
+    "ast_hash": "e51407b8350b90a5795c700348a026b8",
+    "semantic_hash": "e51407b8350b90a5795c700348a026b8"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useChapter.ts": {
+    "mtime": 1780645162.1672866,
+    "ast_hash": "a5f64e3e23afdc786d52094df23a92a0",
+    "semantic_hash": "a5f64e3e23afdc786d52094df23a92a0"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useDictionary.ts": {
+    "mtime": 1770439646.6118157,
+    "ast_hash": "9da5ee1940462f541275efd3e7f9b852",
+    "semantic_hash": "9da5ee1940462f541275efd3e7f9b852"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\usePlan.ts": {
+    "mtime": 1777944691.9749491,
+    "ast_hash": "e825af726abea058987171f6588035f7",
+    "semantic_hash": "e825af726abea058987171f6588035f7"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\usePlaylistEntries.ts": {
+    "mtime": 1771110465.674271,
+    "ast_hash": "6c358500b45988611376260ca535f571",
+    "semantic_hash": "6c358500b45988611376260ca535f571"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useProject.ts": {
+    "mtime": 1778194530.395332,
+    "ast_hash": "6e7ec5f88089ef73e59abf3da9a6c84c",
+    "semantic_hash": "6e7ec5f88089ef73e59abf3da9a6c84c"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useReaderBible.ts": {
+    "mtime": 1777950522.0571923,
+    "ast_hash": "5e0f1ef246546a8daaaa8cab9dbc3adf",
+    "semantic_hash": "5e0f1ef246546a8daaaa8cab9dbc3adf"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useSavedPrompts.ts": {
+    "mtime": 1780217422.6159499,
+    "ast_hash": "ea4d848371839915ec765f6432bb85dd",
+    "semantic_hash": "ea4d848371839915ec765f6432bb85dd"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useSnapshots.ts": {
+    "mtime": 1770439646.630326,
+    "ast_hash": "300d55620e29fb6357cf9273f567a6ab",
+    "semantic_hash": "300d55620e29fb6357cf9273f567a6ab"
+  },
+  "E:\\repos\\writr\\src\\hooks\\data\\useVerifications.ts": {
+    "mtime": 1777945420.7294157,
+    "ast_hash": "2acfe1a9db4baaf2a6a4602583471d90",
+    "semantic_hash": "2acfe1a9db4baaf2a6a4602583471d90"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\index.ts": {
+    "mtime": 1771111127.581132,
+    "ast_hash": "63ad44368f4db58793547e24a8457572",
+    "semantic_hash": "63ad44368f4db58793547e24a8457572"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useAppStats.ts": {
+    "mtime": 1780640987.997418,
+    "ast_hash": "d78095403d6f14635dcd732f6f08cbd3",
+    "semantic_hash": "d78095403d6f14635dcd732f6f08cbd3"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useAutoSave.ts": {
+    "mtime": 1770439646.6018176,
+    "ast_hash": "4a0f86b6ca2fbf809e827ac53e011669",
+    "semantic_hash": "4a0f86b6ca2fbf809e827ac53e011669"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useComments.ts": {
+    "mtime": 1770439646.6088147,
+    "ast_hash": "6d425e509fdcd8292f7d833928218e5b",
+    "semantic_hash": "6d425e509fdcd8292f7d833928218e5b"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useCommentsAdapter.ts": {
+    "mtime": 1778191855.9623766,
+    "ast_hash": "7ace2691cc731082fe0b787580e01642",
+    "semantic_hash": "7ace2691cc731082fe0b787580e01642"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useEditorCommentSync.ts": {
+    "mtime": 1779685984.1649694,
+    "ast_hash": "4094079e13d414e3d9ffd879c471d221",
+    "semantic_hash": "4094079e13d414e3d9ffd879c471d221"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useEditorKeyboardShortcuts.ts": {
+    "mtime": 1771106041.2766724,
+    "ast_hash": "400b13cae07f5151ee76ef7eb36151a3",
+    "semantic_hash": "400b13cae07f5151ee76ef7eb36151a3"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useEditorSpellcheck.ts": {
+    "mtime": 1771110473.4887352,
+    "ast_hash": "33f083a54fa87aa90c5ea872d92a7859",
+    "semantic_hash": "33f083a54fa87aa90c5ea872d92a7859"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useFocusMode.ts": {
+    "mtime": 1771106050.40398,
+    "ast_hash": "118fd26fdab7916ecac481068260f6f3",
+    "semantic_hash": "118fd26fdab7916ecac481068260f6f3"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useHighlightFade.ts": {
+    "mtime": 1770439646.6158228,
+    "ast_hash": "997921e8caf17cd33a233ddeea0b1656",
+    "semantic_hash": "997921e8caf17cd33a233ddeea0b1656"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useWritingStats.test.ts": {
+    "mtime": 1778196742.9142463,
+    "ast_hash": "bed74a3ff80adc32a1e671c0b44974da",
+    "semantic_hash": "bed74a3ff80adc32a1e671c0b44974da"
+  },
+  "E:\\repos\\writr\\src\\hooks\\editor\\useWritingStats.ts": {
+    "mtime": 1773216886.7201636,
+    "ast_hash": "1866a958426023778fcb667d40162b92",
+    "semantic_hash": "1866a958426023778fcb667d40162b92"
+  },
+  "E:\\repos\\writr\\src\\hooks\\factories.ts": {
+    "mtime": 1770439646.5808148,
+    "ast_hash": "07143c6eee8cc11ffe16a9338ca69b56",
+    "semantic_hash": "07143c6eee8cc11ffe16a9338ca69b56"
+  },
+  "E:\\repos\\writr\\src\\hooks\\forms\\index.ts": {
+    "mtime": 1771110430.0400918,
+    "ast_hash": "dfbffae651e0cf59a0461efe8e6fa5f3",
+    "semantic_hash": "dfbffae651e0cf59a0461efe8e6fa5f3"
+  },
+  "E:\\repos\\writr\\src\\hooks\\forms\\useCharacterForm.ts": {
+    "mtime": 1778212213.7028542,
+    "ast_hash": "dc75bed7c6cb62ea9acd71bd80be6d53",
+    "semantic_hash": "dc75bed7c6cb62ea9acd71bd80be6d53"
+  },
+  "E:\\repos\\writr\\src\\hooks\\forms\\useInlineEdit.ts": {
+    "mtime": 1770439646.6168213,
+    "ast_hash": "36203922698e04554f326a7037af792a",
+    "semantic_hash": "36203922698e04554f326a7037af792a"
+  },
+  "E:\\repos\\writr\\src\\hooks\\forms\\useLocationForm.ts": {
+    "mtime": 1770513924.90884,
+    "ast_hash": "19a29986a690404da7e198765cb59e42",
+    "semantic_hash": "19a29986a690404da7e198765cb59e42"
+  },
+  "E:\\repos\\writr\\src\\hooks\\outline\\index.ts": {
+    "mtime": 1771111127.58765,
+    "ast_hash": "b7d40602992f9c4628616513633e4449",
+    "semantic_hash": "b7d40602992f9c4628616513633e4449"
+  },
+  "E:\\repos\\writr\\src\\hooks\\outline\\useOutlineGrid.ts": {
+    "mtime": 1771110467.9384181,
+    "ast_hash": "4db76b591a51fe7d843f0167fb01cdb0",
+    "semantic_hash": "4db76b591a51fe7d843f0167fb01cdb0"
+  },
+  "E:\\repos\\writr\\src\\hooks\\outline\\useOutlineGridDragDrop.ts": {
+    "mtime": 1780528951.331967,
+    "ast_hash": "2e08f551e3a680413c35ab6d319d7150",
+    "semantic_hash": "2e08f551e3a680413c35ab6d319d7150"
+  },
+  "E:\\repos\\writr\\src\\hooks\\outline\\useOutlineGridOperations.ts": {
+    "mtime": 1780528996.1403844,
+    "ast_hash": "14f5159949e04f498b97932c642e112d",
+    "semantic_hash": "14f5159949e04f498b97932c642e112d"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\index.ts": {
+    "mtime": 1780725463.1027603,
+    "ast_hash": "2c2bc77424c10e5db01bb6e26f28886f",
+    "semantic_hash": "2c2bc77424c10e5db01bb6e26f28886f"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\useAutoLayout.ts": {
+    "mtime": 1770439646.5858152,
+    "ast_hash": "e77e7d55959d863f3665956bb614a0f1",
+    "semantic_hash": "e77e7d55959d863f3665956bb614a0f1"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\useSearch.ts": {
+    "mtime": 1778212213.7159557,
+    "ast_hash": "ee8bf77323806855e0bb4fddd22e0b6f",
+    "semantic_hash": "ee8bf77323806855e0bb4fddd22e0b6f"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\useSearchPage.ts": {
+    "mtime": 1778212213.7274885,
+    "ast_hash": "82fb495bbae8746d426a9810c5b7af61",
+    "semantic_hash": "82fb495bbae8746d426a9810c5b7af61"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\useShortcuts.test.tsx": {
+    "mtime": 1780727403.077234,
+    "ast_hash": "2257749355f1a9955fbcd8385be0aa5c",
+    "semantic_hash": "2257749355f1a9955fbcd8385be0aa5c"
+  },
+  "E:\\repos\\writr\\src\\hooks\\ui\\useShortcuts.ts": {
+    "mtime": 1780727368.4706416,
+    "ast_hash": "d708fd5840aa506475b9886d0b2fabc2",
+    "semantic_hash": "d708fd5840aa506475b9886d0b2fabc2"
+  },
+  "E:\\repos\\writr\\src\\hooks\\useClickOutside.ts": {
+    "mtime": 1771104676.911532,
+    "ast_hash": "d849e763a38cce0f426f5c55582058ad",
+    "semantic_hash": "d849e763a38cce0f426f5c55582058ad"
+  },
+  "E:\\repos\\writr\\src\\hooks\\writing\\index.ts": {
+    "mtime": 1771111127.5961678,
+    "ast_hash": "42f44c7dec649b0c94e7df01507b3a95",
+    "semantic_hash": "42f44c7dec649b0c94e7df01507b3a95"
+  },
+  "E:\\repos\\writr\\src\\hooks\\writing\\useSprintHistory.ts": {
+    "mtime": 1770439646.6323254,
+    "ast_hash": "3446755967e46324c5ebad9a181236df",
+    "semantic_hash": "3446755967e46324c5ebad9a181236df"
+  },
+  "E:\\repos\\writr\\src\\hooks\\writing\\useWritingSprint.ts": {
+    "mtime": 1780528996.1373858,
+    "ast_hash": "0a7d04484d63551999171c7ea9b204fa",
+    "semantic_hash": "0a7d04484d63551999171c7ea9b204fa"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\anthropic-adapter.test.ts": {
+    "mtime": 1778401331.880103,
+    "ast_hash": "955ca67b55e7dad857628ac1ad5322ae",
+    "semantic_hash": "955ca67b55e7dad857628ac1ad5322ae"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\anthropic-adapter.ts": {
+    "mtime": 1778401277.2710905,
+    "ast_hash": "bc358d5777304dee04584a2b32ed16d3",
+    "semantic_hash": "bc358d5777304dee04584a2b32ed16d3"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\google-adapter.test.ts": {
+    "mtime": 1778060403.411729,
+    "ast_hash": "32f7b9211a2c86d24f7c2d5723105ca8",
+    "semantic_hash": "32f7b9211a2c86d24f7c2d5723105ca8"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\google-adapter.ts": {
+    "mtime": 1778229976.905357,
+    "ast_hash": "1d0e4c25013b1b0718ff0ae434a84c63",
+    "semantic_hash": "1d0e4c25013b1b0718ff0ae434a84c63"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\helpers.ts": {
+    "mtime": 1777951819.6224022,
+    "ast_hash": "b1f8c278f963705c921710b1afc1be7c",
+    "semantic_hash": "b1f8c278f963705c921710b1afc1be7c"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\index.ts": {
+    "mtime": 1779080080.9266057,
+    "ast_hash": "6742e0ae5120ad84b4c3fbe714ca864d",
+    "semantic_hash": "6742e0ae5120ad84b4c3fbe714ca864d"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\openai-adapter.test.ts": {
+    "mtime": 1778401323.0721037,
+    "ast_hash": "d7f87ff681354077f8211234e465104e",
+    "semantic_hash": "d7f87ff681354077f8211234e465104e"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\openai-adapter.ts": {
+    "mtime": 1779081032.3619602,
+    "ast_hash": "a0f75dbbc144f9c3b7d58ff1647662db",
+    "semantic_hash": "a0f75dbbc144f9c3b7d58ff1647662db"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\types.ts": {
+    "mtime": 1779080076.7501056,
+    "ast_hash": "fb544be575e8af1d846002c94cefba84",
+    "semantic_hash": "fb544be575e8af1d846002c94cefba84"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\accessor.ts": {
+    "mtime": 1778219259.75571,
+    "ast_hash": "4c72d6f0d8e32fa6dd03316aef36a5d4",
+    "semantic_hash": "4c72d6f0d8e32fa6dd03316aef36a5d4"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\applyDefinitionOverride.ts": {
+    "mtime": 1777972396.8644476,
+    "ast_hash": "749900e822b3072d590eef618b5b1bc7",
+    "semantic_hash": "749900e822b3072d590eef618b5b1bc7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\build-messages.test.ts": {
+    "mtime": 1778219189.7401874,
+    "ast_hash": "199e064b562dc842466c4f20ef74d8da",
+    "semantic_hash": "199e064b562dc842466c4f20ef74d8da"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\build-messages.ts": {
+    "mtime": 1778401220.2778955,
+    "ast_hash": "8d7226ffb8f323bcf26abfd6bb72a045",
+    "semantic_hash": "8d7226ffb8f323bcf26abfd6bb72a045"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\betaReader.ts": {
+    "mtime": 1779680148.229404,
+    "ast_hash": "5a1741c5a1d26da9004b4a0dcefad1b5",
+    "semantic_hash": "5a1741c5a1d26da9004b4a0dcefad1b5"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\chatAgent.ts": {
+    "mtime": 1778218893.8968263,
+    "ast_hash": "fe15240b1ee8cfad1e03ea4ca00c6567",
+    "semantic_hash": "fe15240b1ee8cfad1e03ea4ca00c6567"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\defaults.ts": {
+    "mtime": 1780539734.0596862,
+    "ast_hash": "227a9a7e921f760e9ac57d65d87ec84e",
+    "semantic_hash": "227a9a7e921f760e9ac57d65d87ec84e"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\editor.ts": {
+    "mtime": 1778193492.4687104,
+    "ast_hash": "22796d6758957c54e4fc670510dd933a",
+    "semantic_hash": "22796d6758957c54e4fc670510dd933a"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\orchestrator.ts": {
+    "mtime": 1778193501.421991,
+    "ast_hash": "3380f54673a781a527d255de560bdc68",
+    "semantic_hash": "3380f54673a781a527d255de560bdc68"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\outlineArchitect.ts": {
+    "mtime": 1779770018.365696,
+    "ast_hash": "ac5af547ee8aa049b5a23a32532203ff",
+    "semantic_hash": "ac5af547ee8aa049b5a23a32532203ff"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\reader.test.ts": {
+    "mtime": 1780696962.304528,
+    "ast_hash": "1b7c1fef63efbbd26e7f13c6961e8ad7",
+    "semantic_hash": "1b7c1fef63efbbd26e7f13c6961e8ad7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\reader.ts": {
+    "mtime": 1780641419.0168557,
+    "ast_hash": "bfdf5fb0201264d4e2d59be6fb0bb572",
+    "semantic_hash": "bfdf5fb0201264d4e2d59be6fb0bb572"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\screenplay.ts": {
+    "mtime": 1777951819.6224022,
+    "ast_hash": "c5d1ccf7f12636c5c8e845f6d4c880f3",
+    "semantic_hash": "c5d1ccf7f12636c5c8e845f6d4c880f3"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\tool-permissions.ts": {
+    "mtime": 1780641709.6852312,
+    "ast_hash": "7c5103f390cc2495ab8bbedd1ebbecca",
+    "semantic_hash": "7c5103f390cc2495ab8bbedd1ebbecca"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\verifier.ts": {
+    "mtime": 1778193510.0823605,
+    "ast_hash": "b9ccd235f224db50e52db285ba66a744",
+    "semantic_hash": "b9ccd235f224db50e52db285ba66a744"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\voice.ts": {
+    "mtime": 1777959139.1903875,
+    "ast_hash": "5f58dd9914300f074c1466df091742e1",
+    "semantic_hash": "5f58dd9914300f074c1466df091742e1"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\builtins\\worldbuilder.ts": {
+    "mtime": 1780553702.8169308,
+    "ast_hash": "bd3e8da1f59c65826934367433240e92",
+    "semantic_hash": "bd3e8da1f59c65826934367433240e92"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\index.ts": {
+    "mtime": 1778219279.9235413,
+    "ast_hash": "8c265f517b27c7bd7a9bfb1f1226fce3",
+    "semantic_hash": "8c265f517b27c7bd7a9bfb1f1226fce3"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\activityEmitter.ts": {
+    "mtime": 1778185731.6338956,
+    "ast_hash": "88b767b1e77f73cdfe9e0c70672a09f7",
+    "semantic_hash": "88b767b1e77f73cdfe9e0c70672a09f7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\applyTier.ts": {
+    "mtime": 1780795034.068112,
+    "ast_hash": "d31c454cb87c5231c65271ad2e7d53f7",
+    "semantic_hash": "d31c454cb87c5231c65271ad2e7d53f7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\driftDetect.ts": {
+    "mtime": 1778196461.9690433,
+    "ast_hash": "c9ab67576e67af124c2d835d8fe481e9",
+    "semantic_hash": "c9ab67576e67af124c2d835d8fe481e9"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\events.ts": {
+    "mtime": 1777962003.4383187,
+    "ast_hash": "2d23d2c2ceff17d168aa4cb3b3a5c755",
+    "semantic_hash": "2d23d2c2ceff17d168aa4cb3b3a5c755"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\historyAccessor.ts": {
+    "mtime": 1778219259.7602198,
+    "ast_hash": "30cbff365f408308e516b3e1c073769e",
+    "semantic_hash": "30cbff365f408308e516b3e1c073769e"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\index.ts": {
+    "mtime": 1778186527.607332,
+    "ast_hash": "43da09a377e96953aea6dc22bc4b4e4f",
+    "semantic_hash": "43da09a377e96953aea6dc22bc4b4e4f"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\readerLoop.test.ts": {
+    "mtime": 1780696965.491645,
+    "ast_hash": "e99e4e7479276b547e07b635b2b70400",
+    "semantic_hash": "e99e4e7479276b547e07b635b2b70400"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\readerLoop.ts": {
+    "mtime": 1780641719.704071,
+    "ast_hash": "6dafc718ef2d376c9c62c8355616bb6c",
+    "semantic_hash": "6dafc718ef2d376c9c62c8355616bb6c"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\revertTier.ts": {
+    "mtime": 1778196461.9720442,
+    "ast_hash": "982f6144e2278ce30f75c392e1b103aa",
+    "semantic_hash": "982f6144e2278ce30f75c392e1b103aa"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\runEngine.test.ts": {
+    "mtime": 1778194226.3011444,
+    "ast_hash": "48a54908cffad98a7ef33332718d5076",
+    "semantic_hash": "48a54908cffad98a7ef33332718d5076"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\runEngine.ts": {
+    "mtime": 1778196461.9720442,
+    "ast_hash": "d910307c062e6f56020977b91994a4c2",
+    "semantic_hash": "d910307c062e6f56020977b91994a4c2"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\stagedChapterContent.test.ts": {
+    "mtime": 1779788281.559888,
+    "ast_hash": "6b22192e77046d7d2952b31eb1d05b22",
+    "semantic_hash": "6b22192e77046d7d2952b31eb1d05b22"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\stagedChapterContent.ts": {
+    "mtime": 1780794985.722566,
+    "ast_hash": "9339d1e101fd450b7099db7649dbb46d",
+    "semantic_hash": "9339d1e101fd450b7099db7649dbb46d"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\statusLabels.ts": {
+    "mtime": 1778135113.6848497,
+    "ast_hash": "9064c48b5025d79b2ef57a6719667bc7",
+    "semantic_hash": "9064c48b5025d79b2ef57a6719667bc7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\tierRunner.ts": {
+    "mtime": 1778196461.9740436,
+    "ast_hash": "3477207e4df6d3a61c73fa966a32c1b6",
+    "semantic_hash": "3477207e4df6d3a61c73fa966a32c1b6"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\pipeline\\verifyTier.ts": {
+    "mtime": 1778196461.9730449,
+    "ast_hash": "d906cc656e6468684a402ca2cff1a0ce",
+    "semantic_hash": "d906cc656e6468684a402ca2cff1a0ce"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\runner.test.ts": {
+    "mtime": 1778219206.5325265,
+    "ast_hash": "6dc47231638a3f16bdb9f4d947b027f2",
+    "semantic_hash": "6dc47231638a3f16bdb9f4d947b027f2"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\runner.ts": {
+    "mtime": 1778221237.0654223,
+    "ast_hash": "94fb437ddb0ca878dc4fbd202307245a",
+    "semantic_hash": "94fb437ddb0ca878dc4fbd202307245a"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\tool-filter.test.ts": {
+    "mtime": 1779770258.9324844,
+    "ast_hash": "7429b8cee665355b22c1c1762b1a48f7",
+    "semantic_hash": "7429b8cee665355b22c1c1762b1a48f7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\tool-filter.ts": {
+    "mtime": 1778059045.8334675,
+    "ast_hash": "b2d82d65fc93a0631c2b9996f2dbfc61",
+    "semantic_hash": "b2d82d65fc93a0631c2b9996f2dbfc61"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\agents\\types.ts": {
+    "mtime": 1778219259.7592146,
+    "ast_hash": "acd537780fb1ec707e546f8da3ba14ea",
+    "semantic_hash": "acd537780fb1ec707e546f8da3ba14ea"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\client.test.ts": {
+    "mtime": 1780287524.6718202,
+    "ast_hash": "95741a9ce3041095e7a270cac681a5d3",
+    "semantic_hash": "95741a9ce3041095e7a270cac681a5d3"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\client.ts": {
+    "mtime": 1780287252.4338288,
+    "ast_hash": "a6c14b3200038c172b68f671241dba04",
+    "semantic_hash": "a6c14b3200038c172b68f671241dba04"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\prompts.test.ts": {
+    "mtime": 1780696959.2003324,
+    "ast_hash": "772f67ea67f2831650387734f9e97a61",
+    "semantic_hash": "772f67ea67f2831650387734f9e97a61"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\prompts.ts": {
+    "mtime": 1780727379.1585379,
+    "ast_hash": "616fcb43dea5d59d90392a24896e4178",
+    "semantic_hash": "616fcb43dea5d59d90392a24896e4178"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\provider-adapters.ts": {
+    "mtime": 1780528104.7405958,
+    "ast_hash": "74df7369bcdc2eee92bb564194de966c",
+    "semantic_hash": "74df7369bcdc2eee92bb564194de966c"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\providers.ts": {
+    "mtime": 1780528098.3641565,
+    "ast_hash": "f50c4dd12b21844f9816fffb2d218fe3",
+    "semantic_hash": "f50c4dd12b21844f9816fffb2d218fe3"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\serialize.test.ts": {
+    "mtime": 1779770313.9123473,
+    "ast_hash": "b700ed751b88eaacbd98ee2a254b369e",
+    "semantic_hash": "b700ed751b88eaacbd98ee2a254b369e"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\serialize.ts": {
+    "mtime": 1779770313.9113474,
+    "ast_hash": "f5b3ce7b4b0ea2410488c614d6c0de9f",
+    "semantic_hash": "f5b3ce7b4b0ea2410488c614d6c0de9f"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\index.ts": {
+    "mtime": 1771397340.179922,
+    "ast_hash": "0f13d976e74fcf2baf0643c6e5c21144",
+    "semantic_hash": "0f13d976e74fcf2baf0643c6e5c21144"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools.test.ts": {
+    "mtime": 1780641831.145395,
+    "ast_hash": "d95e33f40a0606a87f1a35c16d5e2bf4",
+    "semantic_hash": "d95e33f40a0606a87f1a35c16d5e2bf4"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools.ts": {
+    "mtime": 1780553684.0929062,
+    "ast_hash": "76c7bea1a511a5f196a5e5a3415222f9",
+    "semantic_hash": "76c7bea1a511a5f196a5e5a3415222f9"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\bible.ts": {
+    "mtime": 1778058024.732252,
+    "ast_hash": "cf084c19877344b7ffff788762b87353",
+    "semantic_hash": "cf084c19877344b7ffff788762b87353"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\chapters.ts": {
+    "mtime": 1780641535.1560638,
+    "ast_hash": "402723cf6d350372ed4f0914e43d2177",
+    "semantic_hash": "402723cf6d350372ed4f0914e43d2177"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\characters.ts": {
+    "mtime": 1780553277.8539035,
+    "ast_hash": "bed1efa9caf8b83888bfce3f16adfdf2",
+    "semantic_hash": "bed1efa9caf8b83888bfce3f16adfdf2"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\comments.test.ts": {
+    "mtime": 1779681562.3318975,
+    "ast_hash": "ac6b2a651ebf8fa898890bdadbae82bc",
+    "semantic_hash": "ac6b2a651ebf8fa898890bdadbae82bc"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\comments.ts": {
+    "mtime": 1779681531.6052122,
+    "ast_hash": "eef14c5c6582c6874674cd42fd01f081",
+    "semantic_hash": "eef14c5c6582c6874674cd42fd01f081"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\helpers.ts": {
+    "mtime": 1780553628.387805,
+    "ast_hash": "622ef738dc21606d3988a7b0f76a7f98",
+    "semantic_hash": "622ef738dc21606d3988a7b0f76a7f98"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\locations.ts": {
+    "mtime": 1780553292.650764,
+    "ast_hash": "013516034eaee8a32dc8c23eff19725d",
+    "semantic_hash": "013516034eaee8a32dc8c23eff19725d"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\notes.ts": {
+    "mtime": 1778192216.425676,
+    "ast_hash": "4e5029151d42c202781a4b057308eacc",
+    "semantic_hash": "4e5029151d42c202781a4b057308eacc"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\outline.test.ts": {
+    "mtime": 1779770193.060486,
+    "ast_hash": "4309f0194e9578dcf029f70d486e1f52",
+    "semantic_hash": "4309f0194e9578dcf029f70d486e1f52"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\outline.ts": {
+    "mtime": 1779770313.9123473,
+    "ast_hash": "009bebe2da12bb2be50562d98c5e26a8",
+    "semantic_hash": "009bebe2da12bb2be50562d98c5e26a8"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\proposedEdits.test.ts": {
+    "mtime": 1779254654.3684466,
+    "ast_hash": "92579b08279dd97e44aea91faec31c62",
+    "semantic_hash": "92579b08279dd97e44aea91faec31c62"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\proposedEdits.ts": {
+    "mtime": 1779254671.9253962,
+    "ast_hash": "25d3cdfee8c13001876a1542bde0b53a",
+    "semantic_hash": "25d3cdfee8c13001876a1542bde0b53a"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\registry.test.ts": {
+    "mtime": 1780641675.646713,
+    "ast_hash": "835af45e0cb39ed51ae8b9c7eb7ecffc",
+    "semantic_hash": "835af45e0cb39ed51ae8b9c7eb7ecffc"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\registry.ts": {
+    "mtime": 1780641553.4266422,
+    "ast_hash": "ea18b926a02fc80c63192d83166250c7",
+    "semantic_hash": "ea18b926a02fc80c63192d83166250c7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\search.ts": {
+    "mtime": 1778212213.766219,
+    "ast_hash": "f45cc069bc7c4dfaf660ac3ffc6cd6d7",
+    "semantic_hash": "f45cc069bc7c4dfaf660ac3ffc6cd6d7"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\timeline.ts": {
+    "mtime": 1780553650.7482388,
+    "ast_hash": "dd43e2d134646aa6160b21b341628993",
+    "semantic_hash": "dd43e2d134646aa6160b21b341628993"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\verification.ts": {
+    "mtime": 1778192370.599937,
+    "ast_hash": "ee952b5d6166605f2e75a8b78959164e",
+    "semantic_hash": "ee952b5d6166605f2e75a8b78959164e"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\workUnits.ts": {
+    "mtime": 1778196461.9790492,
+    "ast_hash": "6095a467a2e5217b36735b254e325c69",
+    "semantic_hash": "6095a467a2e5217b36735b254e325c69"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\worldbuilding.test.ts": {
+    "mtime": 1780553786.3489966,
+    "ast_hash": "6f0ed6ad6b7c359770f8415c471f15fc",
+    "semantic_hash": "6f0ed6ad6b7c359770f8415c471f15fc"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\tools\\worldbuilding.ts": {
+    "mtime": 1780553669.8624895,
+    "ast_hash": "dcf4597cb0a6b6b27c25ff816efa4f11",
+    "semantic_hash": "dcf4597cb0a6b6b27c25ff816efa4f11"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\tool-calling\\types.ts": {
+    "mtime": 1780641393.1762488,
+    "ast_hash": "13b99b6d656e870d286d7c4d0f53ce5a",
+    "semantic_hash": "13b99b6d656e870d286d7c4d0f53ce5a"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\types.ts": {
+    "mtime": 1780696675.9397178,
+    "ast_hash": "f1bd1b1524d26add1a060ed1687eb3f5",
+    "semantic_hash": "f1bd1b1524d26add1a060ed1687eb3f5"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\xml.ts": {
+    "mtime": 1780727374.054336,
+    "ast_hash": "3006f4fce33e152de48dac444ab39e73",
+    "semantic_hash": "3006f4fce33e152de48dac444ab39e73"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\backup.test.ts": {
+    "mtime": 1780797649.77056,
+    "ast_hash": "4f04b721f7ae54721c223b5d51adbce2",
+    "semantic_hash": "4f04b721f7ae54721c223b5d51adbce2"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\export.ts": {
+    "mtime": 1778196352.5314894,
+    "ast_hash": "4a4a4eb8ea1fdfa1a41ed7659db5f639",
+    "semantic_hash": "4a4a4eb8ea1fdfa1a41ed7659db5f639"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\import.ts": {
+    "mtime": 1778196461.9790492,
+    "ast_hash": "d51622ef6b1bf6bfcb85371e3f06a639",
+    "semantic_hash": "d51622ef6b1bf6bfcb85371e3f06a639"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\index.ts": {
+    "mtime": 1770439646.690325,
+    "ast_hash": "215440360d63b814c1941aaf964711b7",
+    "semantic_hash": "215440360d63b814c1941aaf964711b7"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\types.ts": {
+    "mtime": 1770439646.6983304,
+    "ast_hash": "b0c06efedfa53e9a70fc276657957061",
+    "semantic_hash": "b0c06efedfa53e9a70fc276657957061"
+  },
+  "E:\\repos\\writr\\src\\lib\\backup\\validation.ts": {
+    "mtime": 1770492535.0129478,
+    "ast_hash": "ef961cf6b8bcde3ac40da968a41cd2f2",
+    "semantic_hash": "ef961cf6b8bcde3ac40da968a41cd2f2"
+  },
+  "E:\\repos\\writr\\src\\lib\\binder\\config.test.ts": {
+    "mtime": 1780642947.5431507,
+    "ast_hash": "6045e508a16122a5e309cb2df739178c",
+    "semantic_hash": "6045e508a16122a5e309cb2df739178c"
+  },
+  "E:\\repos\\writr\\src\\lib\\binder\\config.ts": {
+    "mtime": 1780642886.530819,
+    "ast_hash": "ede5eec0223c277665639ef0cdac173d",
+    "semantic_hash": "ede5eec0223c277665639ef0cdac173d"
+  },
+  "E:\\repos\\writr\\src\\lib\\binder\\tree.test.ts": {
+    "mtime": 1780795203.4365468,
+    "ast_hash": "8022271f32424db3c6632c5761f75000",
+    "semantic_hash": "8022271f32424db3c6632c5761f75000"
+  },
+  "E:\\repos\\writr\\src\\lib\\binder\\tree.ts": {
+    "mtime": 1780795047.2793727,
+    "ast_hash": "f9e0b8abb4aeaed4ba389ad1845ff4b0",
+    "semantic_hash": "f9e0b8abb4aeaed4ba389ad1845ff4b0"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\attach.test.ts": {
+    "mtime": 1778041716.6649766,
+    "ast_hash": "4ce3af70aa0b1f54dd733eb97e64b825",
+    "semantic_hash": "4ce3af70aa0b1f54dd733eb97e64b825"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\attach.ts": {
+    "mtime": 1778116230.8168786,
+    "ast_hash": "30bbe4a165929535d51547c0fdf88704",
+    "semantic_hash": "30bbe4a165929535d51547c0fdf88704"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\client.test.ts": {
+    "mtime": 1778041716.6860027,
+    "ast_hash": "7c444282bc9f8ed208a4831e75bf374c",
+    "semantic_hash": "7c444282bc9f8ed208a4831e75bf374c"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\client.ts": {
+    "mtime": 1778116230.8248787,
+    "ast_hash": "13ceaae6a8c0eb9ce5dd518ef2af435a",
+    "semantic_hash": "13ceaae6a8c0eb9ce5dd518ef2af435a"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\comments.test.ts": {
+    "mtime": 1779681199.4627545,
+    "ast_hash": "be4ae53403d164b1e4ec36c537cb00b6",
+    "semantic_hash": "be4ae53403d164b1e4ec36c537cb00b6"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\comments.ts": {
+    "mtime": 1779679901.7803116,
+    "ast_hash": "dafcec72d10f75d931e6f75bbd78d711",
+    "semantic_hash": "dafcec72d10f75d931e6f75bbd78d711"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\config.test.ts": {
+    "mtime": 1778041716.7196672,
+    "ast_hash": "c2f9a36fdb47c8ad31b447f4df7a33d2",
+    "semantic_hash": "c2f9a36fdb47c8ad31b447f4df7a33d2"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\config.ts": {
+    "mtime": 1778041716.7329175,
+    "ast_hash": "38d2b5fe1e9fd3ca60139887dcf5e46d",
+    "semantic_hash": "38d2b5fe1e9fd3ca60139887dcf5e46d"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\crypto.test.ts": {
+    "mtime": 1778116230.845879,
+    "ast_hash": "1dd97a0ef935727ed721cb08820a7749",
+    "semantic_hash": "1dd97a0ef935727ed721cb08820a7749"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\crypto.ts": {
+    "mtime": 1778116230.857879,
+    "ast_hash": "9079968a23478938337ea351cfd593ec",
+    "semantic_hash": "9079968a23478938337ea351cfd593ec"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\handshake.test.ts": {
+    "mtime": 1778116230.869884,
+    "ast_hash": "d6eb841849fdab42108186fcf127ad5e",
+    "semantic_hash": "d6eb841849fdab42108186fcf127ad5e"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\handshake.ts": {
+    "mtime": 1778116230.8828843,
+    "ast_hash": "6c8ab9c0b30003fc0c6d44a802f65e06",
+    "semantic_hash": "6c8ab9c0b30003fc0c6d44a802f65e06"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\identity.ts": {
+    "mtime": 1778047921.6140592,
+    "ast_hash": "e4bb7551a7cbf3b1a373e18e62db446c",
+    "semantic_hash": "e4bb7551a7cbf3b1a373e18e62db446c"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\lifecycle.test.ts": {
+    "mtime": 1778116230.8923955,
+    "ast_hash": "5db9dfdf333f1f92f32bb19d8f3f168e",
+    "semantic_hash": "5db9dfdf333f1f92f32bb19d8f3f168e"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\lifecycle.ts": {
+    "mtime": 1778116230.9073954,
+    "ast_hash": "92801f901db121eafd9691e7781055e9",
+    "semantic_hash": "92801f901db121eafd9691e7781055e9"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectDoc.test.ts": {
+    "mtime": 1780635101.1475513,
+    "ast_hash": "7788f0fef2ee2b0d94f9e35be2051665",
+    "semantic_hash": "7788f0fef2ee2b0d94f9e35be2051665"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectDoc.ts": {
+    "mtime": 1778196048.8362951,
+    "ast_hash": "a44be846bc7104b2599d067ced3470d2",
+    "semantic_hash": "a44be846bc7104b2599d067ced3470d2"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectMirror.test.ts": {
+    "mtime": 1780696974.770654,
+    "ast_hash": "b6585ab8eb7f1fee66dd764d13590046",
+    "semantic_hash": "b6585ab8eb7f1fee66dd764d13590046"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectMirror.ts": {
+    "mtime": 1778196419.740031,
+    "ast_hash": "650e3f6f07c7dd86296b6ac25d6a114a",
+    "semantic_hash": "650e3f6f07c7dd86296b6ac25d6a114a"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectReader.test.ts": {
+    "mtime": 1780696978.3140104,
+    "ast_hash": "1751f3d951b31c0e394e2d676d1da973",
+    "semantic_hash": "1751f3d951b31c0e394e2d676d1da973"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\projectReader.ts": {
+    "mtime": 1778116230.9774013,
+    "ast_hash": "204312b58eaa8446bcf29e202f53397c",
+    "semantic_hash": "204312b58eaa8446bcf29e202f53397c"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\protocol.test.ts": {
+    "mtime": 1778116230.9879124,
+    "ast_hash": "fffcda474b91e3175b622a802d92c531",
+    "semantic_hash": "fffcda474b91e3175b622a802d92c531"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\protocol.ts": {
+    "mtime": 1778116230.9969125,
+    "ast_hash": "8c2a0a81eb7cba520da098b81d53df45",
+    "semantic_hash": "8c2a0a81eb7cba520da098b81d53df45"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\session.test.ts": {
+    "mtime": 1778045463.2248862,
+    "ast_hash": "fb190f286e27c5eb0b6a637485328391",
+    "semantic_hash": "fb190f286e27c5eb0b6a637485328391"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\session.ts": {
+    "mtime": 1778045412.0461702,
+    "ast_hash": "661a4a49570360a6e29d1601675ad66c",
+    "semantic_hash": "661a4a49570360a6e29d1601675ad66c"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\transport.ts": {
+    "mtime": 1778041716.8369892,
+    "ast_hash": "d422568747957dd8eb6ee7852b7b9f07",
+    "semantic_hash": "d422568747957dd8eb6ee7852b7b9f07"
+  },
+  "E:\\repos\\writr\\src\\lib\\collab\\y-position.ts": {
+    "mtime": 1780528996.1974254,
+    "ast_hash": "c599476c8432b234c44bc97589f3b3a6",
+    "semantic_hash": "c599476c8432b234c44bc97589f3b3a6"
+  },
+  "E:\\repos\\writr\\src\\lib\\comments\\adapter.ts": {
+    "mtime": 1779679838.7392893,
+    "ast_hash": "fa94bc1749c54a8b38de598fb0900915",
+    "semantic_hash": "fa94bc1749c54a8b38de598fb0900915"
+  },
+  "E:\\repos\\writr\\src\\lib\\comments\\dexie-adapter.ts": {
+    "mtime": 1779679848.735321,
+    "ast_hash": "1a9721ca589f93627e37a29d0120c293",
+    "semantic_hash": "1a9721ca589f93627e37a29d0120c293"
+  },
+  "E:\\repos\\writr\\src\\lib\\comments\\reconcile.test.ts": {
+    "mtime": 1779681638.2069397,
+    "ast_hash": "91254d9d54e7e9cb83499b5f564913e0",
+    "semantic_hash": "91254d9d54e7e9cb83499b5f564913e0"
+  },
+  "E:\\repos\\writr\\src\\lib\\comments\\reconcile.ts": {
+    "mtime": 1779681728.8709383,
+    "ast_hash": "c1157708a07bff19aaa09272fbaa4ecf",
+    "semantic_hash": "c1157708a07bff19aaa09272fbaa4ecf"
+  },
+  "E:\\repos\\writr\\src\\lib\\constants.ts": {
+    "mtime": 1770492335.2026482,
+    "ast_hash": "4130b854ce31fc7e21549c6ec9041ea3",
+    "semantic_hash": "4130b854ce31fc7e21549c6ec9041ea3"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\clipboard.ts": {
+    "mtime": 1778194171.6745892,
+    "ast_hash": "3f6a39a7c754b81c07e0035180445266",
+    "semantic_hash": "3f6a39a7c754b81c07e0035180445266"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\download.ts": {
+    "mtime": 1770439646.7073264,
+    "ast_hash": "b50ee1896372d3e5dd7236ce0c3c2e6f",
+    "semantic_hash": "b50ee1896372d3e5dd7236ce0c3c2e6f"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exportFountain.ts": {
+    "mtime": 1780640605.9397755,
+    "ast_hash": "7017a5d5634ee116d6999f412dce0b2a",
+    "semantic_hash": "7017a5d5634ee116d6999f412dce0b2a"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exportMarkdown.test.ts": {
+    "mtime": 1778196817.5885098,
+    "ast_hash": "01579c7f1e5f8cabe8410f86e0082627",
+    "semantic_hash": "01579c7f1e5f8cabe8410f86e0082627"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exportMarkdown.ts": {
+    "mtime": 1780640582.6666834,
+    "ast_hash": "ad29dbbc38b5110d68b9795367f75e11",
+    "semantic_hash": "ad29dbbc38b5110d68b9795367f75e11"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exportScreenplayPdf.ts": {
+    "mtime": 1780640613.8177865,
+    "ast_hash": "0da28c68e9bb359890bca8e18599bff9",
+    "semantic_hash": "0da28c68e9bb359890bca8e18599bff9"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exporters\\docx-exporter.ts": {
+    "mtime": 1778919133.10736,
+    "ast_hash": "da29e45335c39103772cd22e8d52ce6a",
+    "semantic_hash": "da29e45335c39103772cd22e8d52ce6a"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exporters\\html-exporter.test.ts": {
+    "mtime": 1778919133.1083605,
+    "ast_hash": "ede80886f0878013a6f1db7aace10b90",
+    "semantic_hash": "ede80886f0878013a6f1db7aace10b90"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exporters\\html-exporter.ts": {
+    "mtime": 1780640642.1195219,
+    "ast_hash": "d47985af9ef8d49ef8bfa6c12acb602f",
+    "semantic_hash": "d47985af9ef8d49ef8bfa6c12acb602f"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exporters\\index.ts": {
+    "mtime": 1778229969.089975,
+    "ast_hash": "df10e21ac2cdc89da2eb7123ae9095f1",
+    "semantic_hash": "df10e21ac2cdc89da2eb7123ae9095f1"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\exporters\\pdf-exporter.ts": {
+    "mtime": 1778919133.10936,
+    "ast_hash": "bb3168b4fedd6963d6ade05632226404",
+    "semantic_hash": "bb3168b4fedd6963d6ade05632226404"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\gather.test.ts": {
+    "mtime": 1780640716.9464269,
+    "ast_hash": "8a55407db812a2b9a02e7674e8e3e889",
+    "semantic_hash": "8a55407db812a2b9a02e7674e8e3e889"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\gather.ts": {
+    "mtime": 1780640642.1225233,
+    "ast_hash": "05f7ecbe63645494e0553a5514271aa9",
+    "semantic_hash": "05f7ecbe63645494e0553a5514271aa9"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\holes-scan.test.ts": {
+    "mtime": 1780795337.435933,
+    "ast_hash": "8ee09c68fa5a744f31d946d1a986a653",
+    "semantic_hash": "8ee09c68fa5a744f31d946d1a986a653"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\holes-scan.ts": {
+    "mtime": 1780795221.6047916,
+    "ast_hash": "c258cacf299f9c5ab672a2f4621ddac9",
+    "semantic_hash": "c258cacf299f9c5ab672a2f4621ddac9"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\index.ts": {
+    "mtime": 1780795226.9594638,
+    "ast_hash": "4bbbba0c7a872f8a2454c0f564fc6f6a",
+    "semantic_hash": "4bbbba0c7a872f8a2454c0f564fc6f6a"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\markdown-to-nodes.test.ts": {
+    "mtime": 1778919133.1128776,
+    "ast_hash": "feecc75a42d744728cd8815b7000cc5a",
+    "semantic_hash": "feecc75a42d744728cd8815b7000cc5a"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\markdown-to-nodes.ts": {
+    "mtime": 1778919078.7099733,
+    "ast_hash": "e7267a9f0ef85e9ac19f5685653ee422",
+    "semantic_hash": "e7267a9f0ef85e9ac19f5685653ee422"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\shared.ts": {
+    "mtime": 1771105909.1591487,
+    "ast_hash": "1192b8a5637812ce002ef365e42e287e",
+    "semantic_hash": "1192b8a5637812ce002ef365e42e287e"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\types.ts": {
+    "mtime": 1780640561.2339835,
+    "ast_hash": "775c4ddb399d4fbf373f5244fd063281",
+    "semantic_hash": "775c4ddb399d4fbf373f5244fd063281"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\visitor.test.ts": {
+    "mtime": 1778918971.6234152,
+    "ast_hash": "67804ab5fab59a64e3e5167e80134c9e",
+    "semantic_hash": "67804ab5fab59a64e3e5167e80134c9e"
+  },
+  "E:\\repos\\writr\\src\\lib\\export\\visitor.ts": {
+    "mtime": 1780640600.2011907,
+    "ast_hash": "709b4d478d833df80288ff0a243d9f98",
+    "semantic_hash": "709b4d478d833df80288ff0a243d9f98"
+  },
+  "E:\\repos\\writr\\src\\lib\\fonts.ts": {
+    "mtime": 1771564438.1505687,
+    "ast_hash": "ab9b210628dd7619ca14a2f75743877f",
+    "semantic_hash": "ab9b210628dd7619ca14a2f75743877f"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\fountain-to-prosemirror.test.ts": {
+    "mtime": 1771097831.8337328,
+    "ast_hash": "63f4dfb001125216a1a0a82e208d7122",
+    "semantic_hash": "63f4dfb001125216a1a0a82e208d7122"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\fountain-to-prosemirror.ts": {
+    "mtime": 1771098179.786563,
+    "ast_hash": "b6ab00945724e48c4652a29b5740cb72",
+    "semantic_hash": "b6ab00945724e48c4652a29b5740cb72"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\index.ts": {
+    "mtime": 1771098161.3220513,
+    "ast_hash": "7ef52f03ff0c961e4792331c5c66b2d4",
+    "semantic_hash": "7ef52f03ff0c961e4792331c5c66b2d4"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\parse.test.ts": {
+    "mtime": 1771097718.2909064,
+    "ast_hash": "39d3a9fa1586e62f85ddac0d4259b06e",
+    "semantic_hash": "39d3a9fa1586e62f85ddac0d4259b06e"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\parse.ts": {
+    "mtime": 1771098401.3403454,
+    "ast_hash": "312a7fa04aa3d548b8536d5c32414677",
+    "semantic_hash": "312a7fa04aa3d548b8536d5c32414677"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\serialize.ts": {
+    "mtime": 1778230023.1558628,
+    "ast_hash": "c5317ac831117ad769906eb4f481c1ac",
+    "semantic_hash": "c5317ac831117ad769906eb4f481c1ac"
+  },
+  "E:\\repos\\writr\\src\\lib\\fountain\\types.ts": {
+    "mtime": 1771097355.0493243,
+    "ast_hash": "6ae353afa4e9b618c1ffed3827c99df4",
+    "semantic_hash": "6ae353afa4e9b618c1ffed3827c99df4"
+  },
+  "E:\\repos\\writr\\src\\lib\\holes.test.ts": {
+    "mtime": 1780794611.7034948,
+    "ast_hash": "d75d49284506bc6bb57720518690bd21",
+    "semantic_hash": "d75d49284506bc6bb57720518690bd21"
+  },
+  "E:\\repos\\writr\\src\\lib\\holes.ts": {
+    "mtime": 1780795429.5687394,
+    "ast_hash": "1adcd5d74dc4d26d11451bb3f1b02204",
+    "semantic_hash": "1adcd5d74dc4d26d11451bb3f1b02204"
+  },
+  "E:\\repos\\writr\\src\\lib\\id.ts": {
+    "mtime": 1770439646.7388415,
+    "ast_hash": "1310a87737d7777d380aa4f4f3043795",
+    "semantic_hash": "1310a87737d7777d380aa4f4f3043795"
+  },
+  "E:\\repos\\writr\\src\\lib\\normalize-line-breaks.test.ts": {
+    "mtime": 1779672398.187372,
+    "ast_hash": "5447cb4a5a028de72fc3bed005ddace1",
+    "semantic_hash": "5447cb4a5a028de72fc3bed005ddace1"
+  },
+  "E:\\repos\\writr\\src\\lib\\normalize-line-breaks.ts": {
+    "mtime": 1779672322.5859523,
+    "ast_hash": "1967695e46ad8cfb352ecb2432d05646",
+    "semantic_hash": "1967695e46ad8cfb352ecb2432d05646"
+  },
+  "E:\\repos\\writr\\src\\lib\\preview-card\\generate.ts": {
+    "mtime": 1770439646.7408407,
+    "ast_hash": "2ff9aa1541260890a2a6a2802466dff1",
+    "semantic_hash": "2ff9aa1541260890a2a6a2802466dff1"
+  },
+  "E:\\repos\\writr\\src\\lib\\preview-card\\templates.ts": {
+    "mtime": 1770439646.7418404,
+    "ast_hash": "87289cb581a53e59469cf27470e36707",
+    "semantic_hash": "87289cb581a53e59469cf27470e36707"
+  },
+  "E:\\repos\\writr\\src\\lib\\preview-card\\types.ts": {
+    "mtime": 1770439646.743842,
+    "ast_hash": "d43e5c8e29921d62af2c3c03de43b64a",
+    "semantic_hash": "d43e5c8e29921d62af2c3c03de43b64a"
+  },
+  "E:\\repos\\writr\\src\\lib\\punctuation-match.test.ts": {
+    "mtime": 1779254671.9409225,
+    "ast_hash": "4e8db088ea6d9c2151c21e02c952f6cc",
+    "semantic_hash": "4e8db088ea6d9c2151c21e02c952f6cc"
+  },
+  "E:\\repos\\writr\\src\\lib\\punctuation-match.ts": {
+    "mtime": 1779254509.3536766,
+    "ast_hash": "11b80e1ceaae56c2893a01c8190603ce",
+    "semantic_hash": "11b80e1ceaae56c2893a01c8190603ce"
+  },
+  "E:\\repos\\writr\\src\\lib\\radio\\metadata.ts": {
+    "mtime": 1770439646.7448432,
+    "ast_hash": "59bf85623bfab353a8a948ac89bd7fb6",
+    "semantic_hash": "59bf85623bfab353a8a948ac89bd7fb6"
+  },
+  "E:\\repos\\writr\\src\\lib\\radio\\url-parser.ts": {
+    "mtime": 1770439646.7458422,
+    "ast_hash": "be3631eeace3efcb11771480e2c90e84",
+    "semantic_hash": "be3631eeace3efcb11771480e2c90e84"
+  },
+  "E:\\repos\\writr\\src\\lib\\reading-time.test.ts": {
+    "mtime": 1770439646.7478418,
+    "ast_hash": "c3996fbf8d6a9ba74c307fac9a98e0bd",
+    "semantic_hash": "c3996fbf8d6a9ba74c307fac9a98e0bd"
+  },
+  "E:\\repos\\writr\\src\\lib\\reading-time.ts": {
+    "mtime": 1770439646.749842,
+    "ast_hash": "86edfebf00b3d442679c9bd451029806",
+    "semantic_hash": "86edfebf00b3d442679c9bd451029806"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\entity-config.ts": {
+    "mtime": 1770439646.7518396,
+    "ast_hash": "7f15a3739aefccdd860ab0c55e2330af",
+    "semantic_hash": "7f15a3739aefccdd860ab0c55e2330af"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\highlight.test.ts": {
+    "mtime": 1778212213.795412,
+    "ast_hash": "b6851fafa868137c09c75ccbf9523b03",
+    "semantic_hash": "b6851fafa868137c09c75ccbf9523b03"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\highlight.ts": {
+    "mtime": 1778212213.8099787,
+    "ast_hash": "cbfa46a26e9f24fd4f1058680ada9e19",
+    "semantic_hash": "cbfa46a26e9f24fd4f1058680ada9e19"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\index.ts": {
+    "mtime": 1778212213.8255122,
+    "ast_hash": "8f989c87f2844d4b6fc60d7978fe92ea",
+    "semantic_hash": "8f989c87f2844d4b6fc60d7978fe92ea"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\build-index.ts": {
+    "mtime": 1780641585.3486197,
+    "ast_hash": "7bcf8d1078a5dc5d3fe79db343f6e688",
+    "semantic_hash": "7bcf8d1078a5dc5d3fe79db343f6e688"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\document.ts": {
+    "mtime": 1778212213.856122,
+    "ast_hash": "517c1feb1aab8d101ea1f91b84339a6b",
+    "semantic_hash": "517c1feb1aab8d101ea1f91b84339a6b"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\parse-query.test.ts": {
+    "mtime": 1778212213.869163,
+    "ast_hash": "7baa58f1082a90c780f6625a519c31c3",
+    "semantic_hash": "7baa58f1082a90c780f6625a519c31c3"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\parse-query.ts": {
+    "mtime": 1778212213.8801787,
+    "ast_hash": "69bf14809dc1c6532726b5687b10d517",
+    "semantic_hash": "69bf14809dc1c6532726b5687b10d517"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\search.test.ts": {
+    "mtime": 1780641699.312822,
+    "ast_hash": "8a9c46025676d2efc30e64f4b7c39033",
+    "semantic_hash": "8a9c46025676d2efc30e64f4b7c39033"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\keyword\\search.ts": {
+    "mtime": 1780641578.2656841,
+    "ast_hash": "5c639eb07a6c4e7e6846fdddf77194d0",
+    "semantic_hash": "5c639eb07a6c4e7e6846fdddf77194d0"
+  },
+  "E:\\repos\\writr\\src\\lib\\search\\types.ts": {
+    "mtime": 1770439646.7788405,
+    "ast_hash": "591021e4173ca33c133d643c3c86ead4",
+    "semantic_hash": "591021e4173ca33c133d643c3c86ead4"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\commands.test.ts": {
+    "mtime": 1780725546.832325,
+    "ast_hash": "01a957bf2282c68e93940cf35a8c0350",
+    "semantic_hash": "01a957bf2282c68e93940cf35a8c0350"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\commands.ts": {
+    "mtime": 1780727364.8375103,
+    "ast_hash": "77912818ab0a6342caa32f5d50291f08",
+    "semantic_hash": "77912818ab0a6342caa32f5d50291f08"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\index.ts": {
+    "mtime": 1780725718.4497914,
+    "ast_hash": "6aae5921ed8b789c2335d426eb1d9fc8",
+    "semantic_hash": "6aae5921ed8b789c2335d426eb1d9fc8"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\keys.test.ts": {
+    "mtime": 1780725670.0515597,
+    "ast_hash": "ab70770178261efad44b050366a8d8af",
+    "semantic_hash": "ab70770178261efad44b050366a8d8af"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\keys.ts": {
+    "mtime": 1780725674.8338153,
+    "ast_hash": "aa148574bdd0b6b88a0d535340a6ebff",
+    "semantic_hash": "aa148574bdd0b6b88a0d535340a6ebff"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\registry.test.ts": {
+    "mtime": 1780725670.0498304,
+    "ast_hash": "c7426539adcf4b196c40eeb584aec2c5",
+    "semantic_hash": "c7426539adcf4b196c40eeb584aec2c5"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\registry.ts": {
+    "mtime": 1780725670.0498304,
+    "ast_hash": "c635eb2e7f74ab3486eaa47d65195d50",
+    "semantic_hash": "c635eb2e7f74ab3486eaa47d65195d50"
+  },
+  "E:\\repos\\writr\\src\\lib\\shortcuts\\types.ts": {
+    "mtime": 1780727358.619581,
+    "ast_hash": "15913c3e98986d77decfb7457f4f1683",
+    "semantic_hash": "15913c3e98986d77decfb7457f4f1683"
+  },
+  "E:\\repos\\writr\\src\\lib\\smart-quotes.test.ts": {
+    "mtime": 1779677506.3785813,
+    "ast_hash": "ac7e04fba587771988c57857defc23d0",
+    "semantic_hash": "ac7e04fba587771988c57857defc23d0"
+  },
+  "E:\\repos\\writr\\src\\lib\\smart-quotes.ts": {
+    "mtime": 1779677436.862416,
+    "ast_hash": "9194ea0deb98f297559bc91e563494ee",
+    "semantic_hash": "9194ea0deb98f297559bc91e563494ee"
+  },
+  "E:\\repos\\writr\\src\\lib\\spellcheck\\auto-populate.ts": {
+    "mtime": 1770439646.7808416,
+    "ast_hash": "4c2700abb4dd6a67bd1f8b8cd4a93169",
+    "semantic_hash": "4c2700abb4dd6a67bd1f8b8cd4a93169"
+  },
+  "E:\\repos\\writr\\src\\lib\\spellcheck\\dictionary-cache.ts": {
+    "mtime": 1770439646.7818418,
+    "ast_hash": "a27580b7039f5fd3d1818564ad9c68c4",
+    "semantic_hash": "a27580b7039f5fd3d1818564ad9c68c4"
+  },
+  "E:\\repos\\writr\\src\\lib\\spellcheck\\index.ts": {
+    "mtime": 1770439646.7958403,
+    "ast_hash": "28f0ec98d99891f7021540f579e5db97",
+    "semantic_hash": "28f0ec98d99891f7021540f579e5db97"
+  },
+  "E:\\repos\\writr\\src\\lib\\spellcheck\\tokenizer.test.ts": {
+    "mtime": 1770439646.7978418,
+    "ast_hash": "7d79b6132eded601e8050fbd2dc9ca02",
+    "semantic_hash": "7d79b6132eded601e8050fbd2dc9ca02"
+  },
+  "E:\\repos\\writr\\src\\lib\\spellcheck\\tokenizer.ts": {
+    "mtime": 1770439646.7998424,
+    "ast_hash": "baf21a74ed7c7a02a22367f0dd64207e",
+    "semantic_hash": "baf21a74ed7c7a02a22367f0dd64207e"
+  },
+  "E:\\repos\\writr\\src\\lib\\terminology.test.ts": {
+    "mtime": 1771097735.953995,
+    "ast_hash": "a44a6043551645648213882e41632b90",
+    "semantic_hash": "a44a6043551645648213882e41632b90"
+  },
+  "E:\\repos\\writr\\src\\lib\\terminology.ts": {
+    "mtime": 1771096599.1914682,
+    "ast_hash": "8c998398a1d5508c99aed9ffa70152ef",
+    "semantic_hash": "8c998398a1d5508c99aed9ffa70152ef"
+  },
+  "E:\\repos\\writr\\src\\lib\\theme\\apply-theme.test.ts": {
+    "mtime": 1780797786.7568378,
+    "ast_hash": "088545459f9032d9dfb6a11c8008a2ce",
+    "semantic_hash": "088545459f9032d9dfb6a11c8008a2ce"
+  },
+  "E:\\repos\\writr\\src\\lib\\theme\\apply-theme.ts": {
+    "mtime": 1780797655.9157572,
+    "ast_hash": "de253e9bfeee522e615a82235ef0fc77",
+    "semantic_hash": "de253e9bfeee522e615a82235ef0fc77"
+  },
+  "E:\\repos\\writr\\src\\lib\\theme\\palettes.test.ts": {
+    "mtime": 1778323898.3758357,
+    "ast_hash": "e373ef52bc378a026ac1779d750a93d9",
+    "semantic_hash": "e373ef52bc378a026ac1779d750a93d9"
+  },
+  "E:\\repos\\writr\\src\\lib\\theme\\palettes.ts": {
+    "mtime": 1778323898.3843646,
+    "ast_hash": "2783fad74708c422972caa7ba0ae7810",
+    "semantic_hash": "2783fad74708c422972caa7ba0ae7810"
+  },
+  "E:\\repos\\writr\\src\\lib\\tts\\chunk.test.ts": {
+    "mtime": 1779080476.825833,
+    "ast_hash": "0bd175dc76120de8d564f4589e8ad6d5",
+    "semantic_hash": "0bd175dc76120de8d564f4589e8ad6d5"
+  },
+  "E:\\repos\\writr\\src\\lib\\tts\\chunk.ts": {
+    "mtime": 1779080476.8238325,
+    "ast_hash": "25a2e26c5005ac50366ec7c8f5672388",
+    "semantic_hash": "25a2e26c5005ac50366ec7c8f5672388"
+  },
+  "E:\\repos\\writr\\src\\lib\\tts\\extract.ts": {
+    "mtime": 1779080277.5641096,
+    "ast_hash": "34bfb739e3a8a34d08e6f6c89dbe8532",
+    "semantic_hash": "34bfb739e3a8a34d08e6f6c89dbe8532"
+  },
+  "E:\\repos\\writr\\src\\lib\\worldbuilding-tree.test.ts": {
+    "mtime": 1778196461.9520228,
+    "ast_hash": "87a2a752386e5faa71cc8264974bf136",
+    "semantic_hash": "87a2a752386e5faa71cc8264974bf136"
+  },
+  "E:\\repos\\writr\\src\\lib\\worldbuilding-tree.ts": {
+    "mtime": 1770439646.804842,
+    "ast_hash": "3a86b711729e84f86c69b4560aa0cbac",
+    "semantic_hash": "3a86b711729e84f86c69b4560aa0cbac"
+  },
+  "E:\\repos\\writr\\src\\pdfmake.d.ts": {
+    "mtime": 1780528951.3585265,
+    "ast_hash": "67a51580527d9bf2201972cb90f2317e",
+    "semantic_hash": "67a51580527d9bf2201972cb90f2317e"
+  },
+  "E:\\repos\\writr\\src\\store\\agentActivityStore.ts": {
+    "mtime": 1778185803.5780327,
+    "ast_hash": "292827e345ce6cca5da72b99fe609b3b",
+    "semantic_hash": "292827e345ce6cca5da72b99fe609b3b"
+  },
+  "E:\\repos\\writr\\src\\store\\collabStore.test.ts": {
+    "mtime": 1778116231.0059123,
+    "ast_hash": "a4b8ffaf82f085028b324814b899f694",
+    "semantic_hash": "a4b8ffaf82f085028b324814b899f694"
+  },
+  "E:\\repos\\writr\\src\\store\\collabStore.ts": {
+    "mtime": 1778116231.0139124,
+    "ast_hash": "2a9e3a5635f7c3ff9392bd9a7e90a4fe",
+    "semantic_hash": "2a9e3a5635f7c3ff9392bd9a7e90a4fe"
+  },
+  "E:\\repos\\writr\\src\\store\\commentStore.ts": {
+    "mtime": 1778192049.2317688,
+    "ast_hash": "be593b31a42f28768e89225331468f47",
+    "semantic_hash": "be593b31a42f28768e89225331468f47"
+  },
+  "E:\\repos\\writr\\src\\store\\editorStore.test.ts": {
+    "mtime": 1779788184.0077577,
+    "ast_hash": "dd7795afa4460b4c0d79a6970698f6c4",
+    "semantic_hash": "dd7795afa4460b4c0d79a6970698f6c4"
+  },
+  "E:\\repos\\writr\\src\\store\\editorStore.ts": {
+    "mtime": 1779787769.3014886,
+    "ast_hash": "b7632925f48a9a5083011b98a3779f97",
+    "semantic_hash": "b7632925f48a9a5083011b98a3779f97"
+  },
+  "E:\\repos\\writr\\src\\store\\findReplaceStore.ts": {
+    "mtime": 1770836650.503072,
+    "ast_hash": "9ff6cec6851d50d5c45b0e52c0021b43",
+    "semantic_hash": "9ff6cec6851d50d5c45b0e52c0021b43"
+  },
+  "E:\\repos\\writr\\src\\store\\projectStore.ts": {
+    "mtime": 1778192953.7506113,
+    "ast_hash": "67584c8d9f9bdccf55976e3038d971ff",
+    "semantic_hash": "67584c8d9f9bdccf55976e3038d971ff"
+  },
+  "E:\\repos\\writr\\src\\store\\radioStore.ts": {
+    "mtime": 1771105125.7095506,
+    "ast_hash": "ca5067be7c9777d28ed1c3bdc2554120",
+    "semantic_hash": "ca5067be7c9777d28ed1c3bdc2554120"
+  },
+  "E:\\repos\\writr\\src\\store\\sharedProjectStore.ts": {
+    "mtime": 1778116231.020916,
+    "ast_hash": "8c06fa18e732afaa0cbd1e35bb92c58a",
+    "semantic_hash": "8c06fa18e732afaa0cbd1e35bb92c58a"
+  },
+  "E:\\repos\\writr\\src\\store\\spellcheckStore.ts": {
+    "mtime": 1770439646.823848,
+    "ast_hash": "9133612a745b76091fafe030b45a6c59",
+    "semantic_hash": "9133612a745b76091fafe030b45a6c59"
+  },
+  "E:\\repos\\writr\\src\\store\\sprintStore.ts": {
+    "mtime": 1770439646.8258448,
+    "ast_hash": "88d63aba070f486945737da654a4fada",
+    "semantic_hash": "88d63aba070f486945737da654a4fada"
+  },
+  "E:\\repos\\writr\\src\\store\\ttsStore.ts": {
+    "mtime": 1779080476.7860606,
+    "ast_hash": "7a2b2bcb62b93a248d1cc825ab9f2f11",
+    "semantic_hash": "7a2b2bcb62b93a248d1cc825ab9f2f11"
+  },
+  "E:\\repos\\writr\\src\\store\\uiStore.ts": {
+    "mtime": 1780725380.931393,
+    "ast_hash": "30f28c4fb409bb8b7963521f67335c41",
+    "semantic_hash": "30f28c4fb409bb8b7963521f67335c41"
+  },
+  "E:\\repos\\writr\\src\\test\\helpers.ts": {
+    "mtime": 1780634999.2647722,
+    "ast_hash": "0e78d9d15ace5f55661c813edab85ba5",
+    "semantic_hash": "0e78d9d15ace5f55661c813edab85ba5"
+  },
+  "E:\\repos\\writr\\src\\test\\setup-dom.ts": {
+    "mtime": 1780637329.0755253,
+    "ast_hash": "ed0e79cd5143836518d1f72c419cc129",
+    "semantic_hash": "ed0e79cd5143836518d1f72c419cc129"
+  },
+  "E:\\repos\\writr\\src\\test\\setup.ts": {
+    "mtime": 1770439646.829352,
+    "ast_hash": "1004b817457d08df005db2c917966ada",
+    "semantic_hash": "1004b817457d08df005db2c917966ada"
+  },
+  "E:\\repos\\writr\\src\\lib\\ai\\adapters\\README.md": {
+    "mtime": 1771130333.5803845,
+    "ast_hash": "0468bff24612235dc1a77d3aaf9eb89e",
+    "semantic_hash": "0468bff24612235dc1a77d3aaf9eb89e"
+  }
+}

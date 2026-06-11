@@ -1,0 +1,48 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AccordionSection > renders open by default with the description 1`] = `
+<section
+  class="border-b border-neutral-200 dark:border-neutral-800"
+>
+  <button
+    aria-expanded="true"
+    class="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900"
+    type="button"
+  >
+    <span
+      class="text-[11px] font-semibold uppercase tracking-widest text-neutral-700 dark:text-neutral-300"
+    >
+      Sentence Length
+    </span>
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-minus text-neutral-400 dark:text-neutral-500"
+      fill="none"
+      height="14"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="14"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M5 12h14"
+      />
+    </svg>
+  </button>
+  <div
+    class="px-3 pb-3"
+  >
+    <p
+      class="mb-2 text-[11px] text-neutral-400 dark:text-neutral-500"
+    >
+      How it breaks down.
+    </p>
+    <p>
+      content
+    </p>
+  </div>
+</section>
+`;

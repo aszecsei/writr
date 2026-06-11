@@ -1,9 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { AiPanel } from "@/components/ai/AiPanel";
+
+// Loaded on demand: the analysis panel (and the compromise NLP library it
+// pulls in) should not weigh down the base bundle.
+const AnalysisPanel = dynamic(
+  () =>
+    import("@/components/analysis/AnalysisPanel").then((m) => m.AnalysisPanel),
+  { ssr: false },
+);
+
 import { ApproveJoinDialog } from "@/components/collab/ApproveJoinDialog";
 import { CollabBanner } from "@/components/collab/CollabBanner";
 import { ManageParticipantsDialog } from "@/components/collab/ManageParticipantsDialog";
@@ -40,6 +50,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
+  const analysisPanelOpen = useUiStore((s) => s.analysisPanelOpen);
   const closeAiPanel = useUiStore((s) => s.closeAiPanel);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const setFocusMode = useUiStore((s) => s.setFocusMode);
@@ -132,6 +143,14 @@ export function AppShell({ children }: AppShellProps) {
         <Panel id="main" minSize="30%">
           <main className="h-full overflow-y-auto">{children}</main>
         </Panel>
+        {analysisPanelOpen && (
+          <>
+            <Separator className="resize-handle" />
+            <Panel id="analysis-panel" defaultSize="25%" minSize="15%">
+              <AnalysisPanel />
+            </Panel>
+          </>
+        )}
         {aiPanelOpen && settings?.enableAiFeatures && (
           <>
             <Separator className="resize-handle" />

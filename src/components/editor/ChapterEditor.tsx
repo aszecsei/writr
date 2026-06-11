@@ -44,6 +44,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
 import { HOLES_UPDATED_META } from "./extensions/Holes";
+import { SENTENCE_LENGTH_PREVIEW_META } from "./extensions/SentenceLengthPreview";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
 import { ScreenplayToolbar } from "./ScreenplayToolbar";
@@ -122,6 +123,9 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     (s) => s.reportStagedEditResult,
   );
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
+  const sentenceLengthPreviewEnabled = useUiStore(
+    (s) => s.sentenceLengthPreviewEnabled,
+  );
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
   const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
@@ -145,6 +149,11 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for typewriter scrolling - allows dynamic toggling without recreating editor
   const typewriterScrollingRef = useRef(false);
   typewriterScrollingRef.current = focusModeEnabled;
+
+  // Ref for the sentence-length preview toggle — same dynamic-toggle pattern;
+  // a SENTENCE_LENGTH_PREVIEW_META dispatch below applies the flip.
+  const sentenceLengthPreviewRef = useRef(false);
+  sentenceLengthPreviewRef.current = sentenceLengthPreviewEnabled;
 
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
@@ -201,6 +210,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const extensions = useMemo(() => {
     const opts: Parameters<typeof createExtensions>[0] = {
       typewriterScrollingRef,
+      sentenceLengthPreviewRef,
       commentsRef,
       holeDelimitersRef,
       spellcheckerRef,
@@ -342,6 +352,16 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     editor.view.dispatch(editor.state.tr.setMeta(HOLES_UPDATED_META, true));
     setWordCount(getWordCount(editor.storage));
   }, [editor, holeOpen, holeClose, setWordCount]);
+
+  // When the preview toggle flips, rebuild (or clear) sentence-length
+  // decorations. The extension reads the new value via sentenceLengthPreviewRef.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: sentenceLengthPreviewEnabled is the intentional trigger; the effect reads the latest value via sentenceLengthPreviewRef
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(
+      editor.state.tr.setMeta(SENTENCE_LENGTH_PREVIEW_META, true),
+    );
+  }, [editor, sentenceLengthPreviewEnabled]);
 
   // Reset initialized flag when chapterId, contentVersion, or collab mode
   // changes — entering or leaving a session needs a fresh seed pass.

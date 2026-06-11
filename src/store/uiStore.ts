@@ -51,6 +51,13 @@ interface UiState {
   sidebarPanel: SidebarPanel;
   modal: ModalState;
   aiPanelOpen: boolean;
+  analysisPanelOpen: boolean;
+  /**
+   * Editor sentence-length highlighting, driven by the analysis panel's
+   * "Preview" toggle. Deliberately ephemeral — a visualization mode, not a
+   * document setting.
+   */
+  sentenceLengthPreviewEnabled: boolean;
   focusModeEnabled: boolean;
   /**
    * Monotonic counter bumped to request focusing the global search input. The
@@ -72,6 +79,9 @@ interface UiState {
   closeModal: () => void;
   toggleAiPanel: () => void;
   closeAiPanel: () => void;
+  toggleAnalysisPanel: () => void;
+  closeAnalysisPanel: () => void;
+  setSentenceLengthPreview: (enabled: boolean) => void;
   toggleFocusMode: () => void;
   setFocusMode: (enabled: boolean) => void;
   requestSearchFocus: () => void;
@@ -85,6 +95,8 @@ export const useUiStore = create<UiState>()(
     sidebarPanel: "chapters",
     modal: { id: null },
     aiPanelOpen: false,
+    analysisPanelOpen: false,
+    sentenceLengthPreviewEnabled: false,
     focusModeEnabled: false,
     searchFocusToken: 0,
     collapsedChapters: {},
@@ -117,6 +129,21 @@ export const useUiStore = create<UiState>()(
     closeAiPanel: () =>
       set((s) => {
         s.aiPanelOpen = false;
+      }),
+
+    toggleAnalysisPanel: () =>
+      set((s) => {
+        s.analysisPanelOpen = !s.analysisPanelOpen;
+      }),
+
+    closeAnalysisPanel: () =>
+      set((s) => {
+        s.analysisPanelOpen = false;
+      }),
+
+    setSentenceLengthPreview: (enabled) =>
+      set((s) => {
+        s.sentenceLengthPreviewEnabled = enabled;
       }),
 
     toggleFocusMode: () =>

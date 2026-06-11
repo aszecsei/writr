@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ToggleSwitch > renders checked with a caption 1`] = `
+<button
+  aria-checked="true"
+  class="flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+  role="switch"
+  type="button"
+>
+  <span
+    class="min-w-0"
+  >
+    <span
+      class="block text-xs font-medium text-neutral-700 dark:text-neutral-300"
+    >
+      Preview
+    </span>
+    <span
+      class="block text-[11px] text-neutral-400 dark:text-neutral-500"
+    >
+      Highlight sentences in the editor by length
+    </span>
+  </span>
+  <span
+    aria-hidden="true"
+    class="relative h-4 w-7 shrink-0 rounded-full transition-colors bg-primary-600 dark:bg-primary-500"
+  >
+    <span
+      class="absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white transition-transform translate-x-3"
+    />
+  </span>
+</button>
+`;
+
+exports[`ToggleSwitch > renders unchecked 1`] = `
+<button
+  aria-checked="false"
+  class="flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+  role="switch"
+  type="button"
+>
+  <span
+    class="min-w-0"
+  >
+    <span
+      class="block text-xs font-medium text-neutral-700 dark:text-neutral-300"
+    >
+      Preview
+    </span>
+  </span>
+  <span
+    aria-hidden="true"
+    class="relative h-4 w-7 shrink-0 rounded-full transition-colors bg-neutral-300 dark:bg-neutral-700"
+  >
+    <span
+      class="absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white transition-transform translate-x-0"
+    />
+  </span>
+</button>
+`;

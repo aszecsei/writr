@@ -253,6 +253,40 @@ select:disabled {
   border-radius: 2px;
 }
 
+/* Sentence-length preview — the analysis panel's "Preview" toggle paints each
+   sentence by its length bucket; longer sentences read darker. Mixed against
+   the themeable primary scale so custom accent colors carry through. */
+.sentence-length-short {
+  background-color: color-mix(in srgb, var(--primary-400) 14%, transparent);
+  border-radius: 2px;
+}
+.sentence-length-medium {
+  background-color: color-mix(in srgb, var(--primary-500) 24%, transparent);
+  border-radius: 2px;
+}
+.sentence-length-long {
+  background-color: color-mix(in srgb, var(--primary-600) 36%, transparent);
+  border-radius: 2px;
+}
+.sentence-length-veryLong {
+  background-color: color-mix(in srgb, var(--primary-700) 48%, transparent);
+  border-radius: 2px;
+}
+
+/* Higher mix shares for contrast against dark backgrounds. */
+.dark .sentence-length-short {
+  background-color: color-mix(in srgb, var(--primary-400) 18%, transparent);
+}
+.dark .sentence-length-medium {
+  background-color: color-mix(in srgb, var(--primary-400) 30%, transparent);
+}
+.dark .sentence-length-long {
+  background-color: color-mix(in srgb, var(--primary-500) 42%, transparent);
+}
+.dark .sentence-length-veryLong {
+  background-color: color-mix(in srgb, var(--primary-600) 54%, transparent);
+}
+
 /* Comment highlights */
 .comment-highlight {
   border-radius: 2px;

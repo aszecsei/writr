@@ -1,0 +1,281 @@
+{
+  "nodes": [
+    {
+      "id": "adapters_readme_ai_adapter_structure",
+      "label": "AI Adapter Structure",
+      "file_type": "document",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_provideradapter",
+      "label": "ProviderAdapter interface",
+      "file_type": "concept",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_types",
+      "label": "types.ts shared contract",
+      "file_type": "code",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_openai_adapter",
+      "label": "OpenAI adapter",
+      "file_type": "code",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_anthropic_adapter",
+      "label": "Anthropic adapter",
+      "file_type": "code",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_google_adapter",
+      "label": "Google adapter",
+      "file_type": "code",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_helpers",
+      "label": "helpers.ts cross-provider utilities",
+      "file_type": "code",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_airesponse",
+      "label": "AiResponse",
+      "file_type": "concept",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_aistreamchunk",
+      "label": "AiStreamChunk",
+      "file_type": "concept",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_finishreason",
+      "label": "FinishReason normalization",
+      "file_type": "concept",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_readme_refactoring_guideline",
+      "label": "Adapter Refactoring Guideline",
+      "file_type": "rationale",
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "adapters_readme_ai_adapter_structure",
+      "target": "adapters_readme_provideradapter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_types",
+      "target": "adapters_readme_provideradapter",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_openai_adapter",
+      "target": "adapters_readme_provideradapter",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_anthropic_adapter",
+      "target": "adapters_readme_provideradapter",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_google_adapter",
+      "target": "adapters_readme_provideradapter",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_openai_adapter",
+      "target": "adapters_readme_airesponse",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_openai_adapter",
+      "target": "adapters_readme_aistreamchunk",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_openai_adapter",
+      "target": "adapters_readme_finishreason",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_openai_adapter",
+      "target": "adapters_readme_helpers",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_anthropic_adapter",
+      "target": "adapters_readme_helpers",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_google_adapter",
+      "target": "adapters_readme_helpers",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_refactoring_guideline",
+      "target": "adapters_readme_provideradapter",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_refactoring_guideline",
+      "target": "adapters_readme_helpers",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_readme_types",
+      "target": "adapters_readme_helpers",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "src/lib/ai/adapters/README.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "label": "Provider adapters implement shared ProviderAdapter contract",
+      "nodes": [
+        "adapters_readme_provideradapter",
+        "adapters_readme_openai_adapter",
+        "adapters_readme_anthropic_adapter",
+        "adapters_readme_google_adapter"
+      ],
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/ai/adapters/README.md"
+    }
+  ]
+}

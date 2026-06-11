@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  BarChart3,
   Check,
   Download,
   Loader2,
@@ -22,6 +23,8 @@ export function TopBar() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const toggleAiPanel = useUiStore((s) => s.toggleAiPanel);
   const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
+  const toggleAnalysisPanel = useUiStore((s) => s.toggleAnalysisPanel);
+  const analysisPanelOpen = useUiStore((s) => s.analysisPanelOpen);
   const openModal = useUiStore((s) => s.openModal);
   const projectTitle = useProjectStore((s) => s.activeProjectTitle);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -111,6 +114,18 @@ export function TopBar() {
             </button>
           </>
         )}
+        <button
+          type="button"
+          onClick={toggleAnalysisPanel}
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+            analysisPanelOpen
+              ? "bg-primary-600 text-white dark:bg-primary-500 dark:text-white"
+              : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          }`}
+        >
+          <BarChart3 size={14} />
+          Analysis
+        </button>
         {settings?.enableAiFeatures && (
           <button
             type="button"

@@ -29,6 +29,7 @@ import { MarkdownBlockquote } from "./MarkdownBlockquote";
 import { Ruby } from "./Ruby";
 import { SearchAndReplace } from "./SearchAndReplace";
 import { SelectionReporter } from "./SelectionReporter";
+import { SentenceLengthPreview } from "./SentenceLengthPreview";
 import { Spellcheck } from "./Spellcheck";
 import {
   Action,
@@ -66,6 +67,7 @@ export interface CollabExtensionConfig {
 
 export interface ExtensionOptions {
   typewriterScrollingRef?: { current: boolean };
+  sentenceLengthPreviewRef?: { current: boolean };
   commentsRef?: { current: Comment[] };
   holeDelimitersRef?: { current: HoleDelimiters };
   spellcheckerRef?: { current: SpellcheckService | null };
@@ -157,6 +159,9 @@ export function createExtensions(options?: ExtensionOptions) {
     TypewriterScrolling.configure({
       enabledRef: options?.typewriterScrollingRef ?? { current: false },
     }),
+    SentenceLengthPreview.configure({
+      enabledRef: options?.sentenceLengthPreviewRef ?? { current: false },
+    }),
     Comments.configure({
       commentsRef: options?.commentsRef ?? { current: [] },
     }),
@@ -232,6 +237,9 @@ export function createScreenplayExtensions(options?: ExtensionOptions) {
     holeAwareCharacterCount(options),
     TypewriterScrolling.configure({
       enabledRef: options?.typewriterScrollingRef ?? { current: false },
+    }),
+    SentenceLengthPreview.configure({
+      enabledRef: options?.sentenceLengthPreviewRef ?? { current: false },
     }),
     Comments.configure({
       commentsRef: options?.commentsRef ?? { current: [] },
