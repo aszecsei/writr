@@ -1,4 +1,4 @@
-import type { AnalyzedSentence, Echo, WordCount } from "../types";
+import type { AnalyzedSentence, AnalyzedTerm, Echo, WordCount } from "../types";
 import { STOPWORDS } from "../word-lists";
 import { makeExcerpt } from "./glue";
 
@@ -10,6 +10,18 @@ const ECHO_LIMIT = 50;
 
 function isContentWord(normal: string): boolean {
   return normal.length > 2 && !STOPWORDS.has(normal) && !/\d/.test(normal);
+}
+
+/**
+ * compromise tags names by context: a surname is a ProperNoun mid-sentence but
+ * a bare Noun at sentence start, where capitalization is ambiguous. Treating a
+ * normal as a name when ANY occurrence carries one of these tags exempts the
+ * whole name, including the occurrences compromise under-tagged.
+ */
+const NAME_TAGS = ["ProperNoun", "Person", "Place", "Organization"];
+
+function isProperName(term: AnalyzedTerm): boolean {
+  return NAME_TAGS.some((tag) => term.tags.has(tag));
 }
 
 /** Top content words from a word-frequency map (works at every scope). */
@@ -30,6 +42,16 @@ export function topContentWords(
  * nouns are exempt; character and place names legitimately recur.
  */
 export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
+  // First pass: every normal flagged as a name anywhere in the chapter, so a
+  // recurring character or place is exempt even in sentences where compromise
+  // failed to tag it (e.g. at sentence start).
+  const properNames = new Set<string>();
+  for (const sentence of sentences) {
+    for (const term of sentence.terms) {
+      if (isProperName(term)) properNames.add(term.normal);
+    }
+  }
+
   const occurrences = new Map<
     string,
     { sentenceIndex: number; text: string }[]
@@ -38,7 +60,7 @@ export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
   sentences.forEach((sentence, sentenceIndex) => {
     const seenInSentence = new Set<string>();
     for (const term of sentence.terms) {
-      if (!isContentWord(term.normal) || term.tags.has("ProperNoun")) continue;
+      if (!isContentWord(term.normal) || properNames.has(term.normal)) continue;
       // Record one occurrence per sentence; same-sentence repeats still
       // count as one hit at this index, and the window check below pairs
       // them with neighbors.
@@ -71,11 +93,24 @@ export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
 
     const echoed = groups.filter((g) => g.length >= 2);
     if (echoed.length === 0) continue;
-    const allOccurrences = echoed.flat();
+    // A word may echo in several distant places; each qualifying cluster is a
+    // separate echo. Surface one row per word, representing its densest
+    // cluster — most occurrences, then tightest spacing — rather than merging
+    // clusters, which would inflate the count and span the gap between them.
+    const densest = echoed.reduce((best, group) => {
+      if (group.length !== best.length) {
+        return group.length > best.length ? group : best;
+      }
+      const span =
+        group[group.length - 1].sentenceIndex - group[0].sentenceIndex;
+      const bestSpan =
+        best[best.length - 1].sentenceIndex - best[0].sentenceIndex;
+      return span < bestSpan ? group : best;
+    });
     echoes.push({
       word,
-      count: allOccurrences.length,
-      occurrences: allOccurrences.map((hit) => ({
+      count: densest.length,
+      occurrences: densest.map((hit) => ({
         sentenceIndex: hit.sentenceIndex,
         excerpt: makeExcerpt(hit.text),
       })),
