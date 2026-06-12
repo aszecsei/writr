@@ -3,7 +3,7 @@ import type { AnalyzedTerm } from "../types";
 import { openerCategory } from "./openers";
 
 function term(normal: string, ...tags: string[]): AnalyzedTerm {
-  return { normal, tags: new Set(tags), syllables: 1 };
+  return { normal, root: normal, tags: new Set(tags), syllables: 1 };
 }
 
 describe("openerCategory", () => {

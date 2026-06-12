@@ -2,6 +2,7 @@
 
 import { AccordionSection } from "@/components/ui/AccordionSection";
 import type { DerivedMetrics } from "@/lib/text-analysis";
+import { STICKY_THRESHOLD } from "@/lib/text-analysis/metrics/glue";
 import { formatPct, StatRow } from "./shared";
 
 // Guidance thresholds, not rules: tint the number when prose drifts past
@@ -37,7 +38,7 @@ export function StyleFlagsSection({ derived }: { derived: DerivedMetrics }) {
         warn={derived.gluePct > GLUE_WARN}
       />
       <StatRow
-        label="Sticky sentences (>40% glue)"
+        label={`Sticky sentences (>${formatPct(STICKY_THRESHOLD, 0)} glue)`}
         value={formatPct(derived.stickyPct)}
         warn={derived.stickyPct > STICKY_WARN}
       />

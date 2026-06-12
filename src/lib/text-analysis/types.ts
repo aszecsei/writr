@@ -7,6 +7,13 @@ import type { ChapterId, ProjectId } from "@/db/schemas";
 export interface AnalyzedTerm {
   /** Lowercased, apostrophe-normalized form (compromise `normal`). */
   normal: string;
+  /**
+   * Lemma: verbs reduced to infinitive, plural nouns to singular (compromise
+   * `root`). Equals `normal` when compromise found no reduction. Metrics that
+   * should treat inflections as one word — echoes, glue — key on this; metrics
+   * measuring surface variety (frequency, TTR, MTLD) deliberately keep `normal`.
+   */
+  root: string;
   /** compromise tag set, e.g. "Adverb", "ProperNoun", "Passive". */
   tags: ReadonlySet<string>;
   syllables: number;

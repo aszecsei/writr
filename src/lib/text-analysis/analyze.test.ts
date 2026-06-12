@@ -14,7 +14,7 @@ function term(
   tags: string[] = [],
   syllables = 1,
 ): AnalyzedTerm {
-  return { normal, tags: new Set(tags), syllables };
+  return { normal, root: normal, tags: new Set(tags), syllables };
 }
 
 function sentence(terms: AnalyzedTerm[], paragraphIndex = 0): AnalyzedSentence {

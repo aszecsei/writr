@@ -65,6 +65,17 @@ describe("parseParagraph", () => {
     expect(sentence.terms.some((t) => t.tags.has("Passive"))).toBe(false);
   });
 
+  it("populates root with the lemma, falling back to normal when unchanged", async () => {
+    const [sentence] = await parseParagraph("She wonders about the dogs.", 0);
+    const rootOf = (normal: string) =>
+      sentence.terms.find((t) => t.normal === normal)?.root;
+    // Verb tense and noun number reduce to the lemma...
+    expect(rootOf("wonders")).toBe("wonder");
+    expect(rootOf("dogs")).toBe("dog");
+    // ...and unchanged words still carry a root equal to their normal form.
+    expect(rootOf("about")).toBe("about");
+  });
+
   it("attaches syllable counts from compromise-speech", async () => {
     const [sentence] = await parseParagraph("A beautiful understanding.", 0);
     const syllablesOf = (normal: string) =>

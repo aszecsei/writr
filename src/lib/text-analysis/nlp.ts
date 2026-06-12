@@ -10,6 +10,8 @@ import type { AnalyzedSentence, AnalyzedTerm } from "./types";
 
 interface NlpTermJson {
   normal: string;
+  // compromise sets `root` only when the lemma differs from `normal`.
+  root?: string;
   tags: string[];
   syllables?: string[];
 }
@@ -57,6 +59,9 @@ function toAnalyzedTerm(term: NlpTermJson): AnalyzedTerm | null {
   if (!term.normal) return null;
   return {
     normal: term.normal,
+    // compromise omits `root` when the lemma matches `normal`; fall back so
+    // every term always carries a usable lemma.
+    root: term.root || term.normal,
     tags: new Set(term.tags),
     syllables: term.syllables?.length || fallbackSyllableCount(term.normal),
   };
@@ -75,6 +80,9 @@ export async function parseParagraph(
   const nlp = await getNlp();
   const doc = nlp(paragraph);
   doc.compute("syllables");
+  // Populates each term's `root` (verb→infinitive, plural→singular) where
+  // compromise's tagging finds a reduction; consumed by echo + glue metrics.
+  doc.compute("root");
   const sentences = doc.json({
     terms: { tags: true, normal: true, syllables: true },
   });

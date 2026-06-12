@@ -8,7 +8,7 @@ const PROJECT_ID = "project-1" as ProjectId;
 const SCOPE: AnalysisScope = { level: "project", projectId: PROJECT_ID };
 
 function term(normal: string, tags: string[] = []): AnalyzedTerm {
-  return { normal, tags: new Set(tags), syllables: 1 };
+  return { normal, root: normal, tags: new Set(tags), syllables: 1 };
 }
 
 function sentencesFromWords(

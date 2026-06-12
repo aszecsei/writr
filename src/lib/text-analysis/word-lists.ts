@@ -316,5 +316,5 @@ const GENERIC_VERBS = [
 export const GLUE_WORDS: ReadonlySet<string> = new Set([
   ...STOPWORDS,
   ...WEAK_MODIFIERS,
-  // ...GENERIC_VERBS,
+  ...GENERIC_VERBS,
 ]);

@@ -9,7 +9,16 @@ import {
 } from "./frequency";
 
 function term(normal: string, ...tags: string[]): AnalyzedTerm {
-  return { normal, tags: new Set(tags), syllables: 1 };
+  return { normal, root: normal, tags: new Set(tags), syllables: 1 };
+}
+
+/** Term whose lemma differs from its surface form (e.g. "wonders" → "wonder"). */
+function rootedTerm(
+  normal: string,
+  root: string,
+  ...tags: string[]
+): AnalyzedTerm {
+  return { normal, root, tags: new Set(tags), syllables: 1 };
 }
 
 function sentenceOf(
@@ -64,6 +73,41 @@ describe("detectEchoes", () => {
     expect(echoes[0].word).toBe("gleaming");
     expect(echoes[0].count).toBe(2);
     expect(echoes[0].occurrences.map((o) => o.sentenceIndex)).toEqual([0, 2]);
+  });
+
+  it("collapses inflections onto the lemma so tense variants echo", () => {
+    // "I wonder ... she wonders" — different surface forms, same lemma. Keyed
+    // on the surface form these would never pair; on the root they echo.
+    const sentences = [
+      sentenceOf([term("wonder"), term("aloud")]),
+      filler(1),
+      sentenceOf([rootedTerm("wonders", "wonder", "Verb"), term("quietly")]),
+    ];
+    const echoes = detectEchoes(sentences);
+    expect(echoes).toHaveLength(1);
+    expect(echoes[0].word).toBe("wonder");
+    expect(echoes[0].count).toBe(2);
+  });
+
+  it("collapses singular and plural nouns onto the lemma", () => {
+    const sentences = [
+      sentenceOf([rootedTerm("dogs", "dog", "Noun", "Plural"), term("barked")]),
+      sentenceOf([term("dog"), term("howled")]),
+    ];
+    const echoes = detectEchoes(sentences);
+    expect(echoes).toHaveLength(1);
+    expect(echoes[0].word).toBe("dog");
+    expect(echoes[0].count).toBe(2);
+  });
+
+  it("exempts a name by its lemma even when an occurrence is rooted", () => {
+    // A name compromise mis-roots (e.g. "Rose" → "rise") stays exempt as long
+    // as the proper-noun tag pins the same lemma the membership check uses.
+    const sentences = [
+      sentenceOf([rootedTerm("rose", "rise", "ProperNoun"), term("smiled")]),
+      sentenceOf([rootedTerm("rose", "rise", "Noun"), term("waved")]),
+    ];
+    expect(detectEchoes(sentences)).toEqual([]);
   });
 
   it("does not flag repeats outside the window", () => {

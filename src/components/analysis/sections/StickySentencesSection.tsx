@@ -2,6 +2,7 @@
 
 import { AccordionSection } from "@/components/ui/AccordionSection";
 import type { StickySentence } from "@/lib/text-analysis";
+import { STICKY_THRESHOLD } from "@/lib/text-analysis/metrics/glue";
 import { ChapterOnlyHint, formatPct } from "./shared";
 
 export function StickySentencesSection({
@@ -15,7 +16,7 @@ export function StickySentencesSection({
   return (
     <AccordionSection
       title="Sticky sentences"
-      description="More than 40% glue words; consider tightening."
+      description={`More than ${formatPct(STICKY_THRESHOLD, 0)} glue words; consider tightening.`}
       defaultOpen={false}
     >
       {stickySentences === null ? (

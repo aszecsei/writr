@@ -45,10 +45,13 @@ export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
   // First pass: every normal flagged as a name anywhere in the chapter, so a
   // recurring character or place is exempt even in sentences where compromise
   // failed to tag it (e.g. at sentence start).
+  // Key echoes on the lemma so inflections read as one word ("wonder" /
+  // "wonders") and singular/plural pairs collapse. Names are exempt by their
+  // lemma too, kept consistent with the membership checks below.
   const properNames = new Set<string>();
   for (const sentence of sentences) {
     for (const term of sentence.terms) {
-      if (isProperName(term)) properNames.add(term.normal);
+      if (isProperName(term)) properNames.add(term.root);
     }
   }
 
@@ -60,15 +63,15 @@ export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
   sentences.forEach((sentence, sentenceIndex) => {
     const seenInSentence = new Set<string>();
     for (const term of sentence.terms) {
-      if (!isContentWord(term.normal) || properNames.has(term.normal)) continue;
+      if (!isContentWord(term.root) || properNames.has(term.root)) continue;
       // Record one occurrence per sentence; same-sentence repeats still
       // count as one hit at this index, and the window check below pairs
       // them with neighbors.
-      if (seenInSentence.has(term.normal)) continue;
-      seenInSentence.add(term.normal);
-      const list = occurrences.get(term.normal) ?? [];
+      if (seenInSentence.has(term.root)) continue;
+      seenInSentence.add(term.root);
+      const list = occurrences.get(term.root) ?? [];
       list.push({ sentenceIndex, text: sentence.text });
-      occurrences.set(term.normal, list);
+      occurrences.set(term.root, list);
     }
   });
 

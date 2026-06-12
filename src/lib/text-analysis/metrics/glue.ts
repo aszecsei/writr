@@ -2,7 +2,7 @@ import type { AnalyzedSentence, StickySentence } from "../types";
 import { GLUE_WORDS } from "../word-lists";
 
 /** A sentence is "sticky" above this share of glue words. */
-export const STICKY_THRESHOLD = 0.4;
+export const STICKY_THRESHOLD = 0.6;
 
 /** Very short sentences are all glue by nature; don't flag them. */
 export const STICKY_MIN_WORDS = 8;
@@ -10,7 +10,12 @@ export const STICKY_MIN_WORDS = 8;
 const EXCERPT_MAX_LENGTH = 80;
 
 export function countGlueWords(terms: AnalyzedSentence["terms"]): number {
-  return terms.filter((t) => GLUE_WORDS.has(t.normal)).length;
+  // Match on the lemma so inflected generic verbs compromise reduces
+  // ("seeming" → "seem") count without enumerating every form, but fall back
+  // to `normal` so the explicit list still catches irregulars compromise
+  // leaves unrooted. Additive: rooting never removes an existing match.
+  return terms.filter((t) => GLUE_WORDS.has(t.root) || GLUE_WORDS.has(t.normal))
+    .length;
 }
 
 export function makeExcerpt(text: string): string {

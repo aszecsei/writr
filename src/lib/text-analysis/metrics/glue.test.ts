@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { AnalyzedSentence, AnalyzedTerm } from "../types";
 import { checkSticky, countGlueWords, makeExcerpt } from "./glue";
 
-function term(normal: string): AnalyzedTerm {
-  return { normal, tags: new Set(), syllables: 1 };
+function term(normal: string, root: string = normal): AnalyzedTerm {
+  return { normal, root, tags: new Set(), syllables: 1 };
 }
 
 function sentenceOf(normals: string[], text?: string): AnalyzedSentence {
   return {
     text: text ?? normals.join(" "),
-    terms: normals.map(term),
+    terms: normals.map((n) => term(n)),
     paragraphIndex: 0,
   };
 }
@@ -18,6 +18,25 @@ describe("countGlueWords", () => {
   it("counts words present in the glue list", () => {
     const sentence = sentenceOf(["the", "dragon", "was", "in", "flames"]);
     expect(countGlueWords(sentence.terms)).toBe(3);
+  });
+
+  it("counts an inflected generic verb via its lemma without enumerating it", () => {
+    // "seeming" is not in the glue list, but its lemma "seem" is. Rooting
+    // catches it, closing gaps the hand-maintained inflection list misses.
+    const terms = [
+      term("the"),
+      term("plan"),
+      term("seeming", "seem"),
+      term("solid"),
+    ];
+    expect(countGlueWords(terms)).toBe(2); // "the" + "seeming"→"seem"
+  });
+
+  it("still counts an irregular form compromise leaves unrooted", () => {
+    // "got" stays "got" (no reduction); the explicit list catches it via the
+    // surface form, so rooting never regresses existing matches.
+    const terms = [term("she"), term("got"), term("cold")];
+    expect(countGlueWords(terms)).toBe(2); // "she" + "got"
   });
 });
 
