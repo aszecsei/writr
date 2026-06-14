@@ -12,6 +12,8 @@ import type {
   AgentRun,
   AppDictionary,
   AppSettings,
+  BrainstormIdea,
+  BrainstormSetup,
   Chapter,
   ChapterSnapshot,
   ChapterSummary,
@@ -92,6 +94,8 @@ export class WritrDatabase extends Dexie {
   snapshotManifests!: EntityTable<SnapshotManifest, "id">;
   agents!: EntityTable<AgentDefinition, "id">;
   savedPrompts!: EntityTable<SavedPrompt, "id">;
+  brainstormSetups!: EntityTable<BrainstormSetup, "id">;
+  brainstormIdeas!: EntityTable<BrainstormIdea, "id">;
 
   constructor() {
     super("writr");
@@ -1017,6 +1021,14 @@ export class WritrDatabase extends Dexie {
     // is queried by JS-side filter (mirrors worldbuildingDocs). Backfill keeps
     // legacy chapters as top-level manuscript documents.
     this.version(37).upgrade(backfillBinderFieldsV37);
+
+    // v38: brainstorm feature — global, not project-scoped. Two tables: named
+    // setups (columns + madlibs pattern) and saved rolled entries. UUID ids;
+    // no singleton seeding. setupId on ideas is indexed for per-setup lookups.
+    this.version(38).stores({
+      brainstormSetups: "id, updatedAt",
+      brainstormIdeas: "id, setupId, createdAt",
+    });
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

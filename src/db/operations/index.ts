@@ -14,6 +14,7 @@ export * from "./agentNotes";
 export * from "./agentQuestions";
 export * from "./agentRuns";
 export * from "./agents";
+export * from "./brainstorm";
 export * from "./chapterSummaries";
 export * from "./chapters";
 export * from "./characters";

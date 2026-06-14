@@ -357,6 +357,9 @@ export async function importBackup(
         db.chapterSummaries,
         db.snapshotManifests,
         db.agents,
+        db.savedPrompts,
+        db.brainstormSetups,
+        db.brainstormIdeas,
       ],
       async () => {
         // Import projects
@@ -384,6 +387,13 @@ export async function importBackup(
           }
           if (backup.appDictionary) {
             await db.appDictionary.put(backup.appDictionary);
+          }
+          // Global, non-project data (prompts + brainstorm). Keyed by UUID, so
+          // bulkPut merges by id. Absent in older backups — tolerate undefined.
+          if (backup.globals) {
+            await db.savedPrompts.bulkPut(backup.globals.savedPrompts);
+            await db.brainstormSetups.bulkPut(backup.globals.brainstormSetups);
+            await db.brainstormIdeas.bulkPut(backup.globals.brainstormIdeas);
           }
         }
       },

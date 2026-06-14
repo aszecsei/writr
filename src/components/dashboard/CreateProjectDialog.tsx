@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { Modal } from "@/components/ui/Modal";
 import { createProject } from "@/db/operations";
@@ -21,6 +21,18 @@ export function CreateProjectDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const [values, setValues] = useState<ProjectFormData>(initialValues);
+
+  // Seed the form from the modal's prefill when it transitions to open. The
+  // dialog stays mounted, so without this the previous open's edits persist.
+  const wasOpen = useRef(false);
+  const prefill = modal.id === "create-project" ? modal.prefill : undefined;
+  useEffect(() => {
+    const open = modal.id === "create-project";
+    if (open && !wasOpen.current) {
+      setValues({ ...initialValues, ...(prefill ?? {}) });
+    }
+    wasOpen.current = open;
+  }, [modal.id, prefill]);
 
   if (modal.id !== "create-project") return null;
 

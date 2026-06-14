@@ -7,7 +7,12 @@ export type SidebarPanel = "chapters" | "bible" | "agents";
 // Discriminated union for modal state - provides type safety at call sites
 export type ModalState =
   | { id: null }
-  | { id: "create-project" }
+  | {
+      id: "create-project";
+      // Optional seed values (e.g. opened from the brainstorm page with a
+      // generated idea as the description).
+      prefill?: { title?: string; description?: string };
+    }
   | { id: "edit-project"; projectId: ProjectId }
   | { id: "delete-project"; projectId: ProjectId }
   | { id: "project-settings" }

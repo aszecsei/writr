@@ -3,6 +3,8 @@ import { db } from "@/db/database";
 import type {
   AppDictionary,
   AppSettings,
+  BrainstormIdeaId,
+  BrainstormSetupId,
   ChapterId,
   ChapterSnapshot,
   ChapterSnapshotId,
@@ -13,6 +15,7 @@ import type {
   ProjectDictionary,
   ProjectDictionaryId,
   ProjectId,
+  SavedPromptId,
   WritingSession,
   WritingSessionId,
   WritingSprint,
@@ -378,6 +381,9 @@ async function clearAllTables() {
   await db.projectDictionaries.clear();
   await db.appSettings.clear();
   await db.appDictionary.clear();
+  await db.savedPrompts.clear();
+  await db.brainstormSetups.clear();
+  await db.brainstormIdeas.clear();
 }
 
 beforeEach(async () => {
@@ -1165,5 +1171,69 @@ describe("round-trip export → import", () => {
 
     const restoredDict = await db.appDictionary.get("app-dictionary");
     expect(restoredDict?.words).toEqual(["foo", "bar"]);
+  });
+
+  it("full backup round-trip preserves global prompts and brainstorm data", async () => {
+    const promptId = crypto.randomUUID() as SavedPromptId;
+    await db.savedPrompts.add({
+      id: promptId,
+      projectId: null,
+      title: "Opening line",
+      body: "Write a hook.",
+      createdAt: ts,
+      updatedAt: ts,
+    });
+    const setupId = crypto.randomUUID() as BrainstormSetupId;
+    await db.brainstormSetups.add({
+      id: setupId,
+      name: "Fantasy seeds",
+      columns: [{ name: "hero", options: ["knight", "mage"] }],
+      pattern: "A [hero] appears.",
+      createdAt: ts,
+      updatedAt: ts,
+    });
+    await db.brainstormIdeas.add({
+      id: crypto.randomUUID() as BrainstormIdeaId,
+      setupId,
+      ideaText: "A weary knight stumbles into a cursed village...",
+      createdAt: ts,
+      updatedAt: ts,
+    });
+
+    const backup = await exportFullBackup();
+    expect(backup.globals?.savedPrompts).toHaveLength(1);
+    expect(backup.globals?.brainstormSetups).toHaveLength(1);
+    expect(backup.globals?.brainstormIdeas).toHaveLength(1);
+
+    await clearAllTables();
+
+    const result = await importBackup(backup, {
+      conflictResolution: "skip",
+      restoreSettings: true,
+    });
+    expect(result.success).toBe(true);
+
+    expect(await db.savedPrompts.get(promptId)).toBeDefined();
+    const restoredSetup = await db.brainstormSetups.get(setupId);
+    expect(restoredSetup?.name).toBe("Fantasy seeds");
+    expect(restoredSetup?.columns[0].options).toEqual(["knight", "mage"]);
+    expect(await db.brainstormIdeas.count()).toBe(1);
+  });
+
+  it("imports a full backup that predates the globals section", async () => {
+    const backup: FullBackup = {
+      metadata: {
+        version: BACKUP_VERSION,
+        type: "full",
+        exportedAt: ts,
+        projectCount: 0,
+      },
+      projects: [],
+    };
+    const result = await importBackup(backup, {
+      conflictResolution: "skip",
+      restoreSettings: true,
+    });
+    expect(result.success).toBe(true);
   });
 });

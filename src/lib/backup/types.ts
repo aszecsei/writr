@@ -1,6 +1,8 @@
 import type {
   AppDictionary,
   AppSettings,
+  BrainstormIdea,
+  BrainstormSetup,
   Chapter,
   ChapterSnapshot,
   Character,
@@ -13,6 +15,7 @@ import type {
   PlaylistTrack,
   Project,
   ProjectDictionary,
+  SavedPrompt,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -50,10 +53,21 @@ export interface ProjectBackupData {
   projectDictionary?: ProjectDictionary;
 }
 
+/**
+ * Global, non-project-scoped data carried in full backups. Optional so older
+ * backups (without this section) still validate and import.
+ */
+export interface GlobalsBackupData {
+  savedPrompts: SavedPrompt[];
+  brainstormSetups: BrainstormSetup[];
+  brainstormIdeas: BrainstormIdea[];
+}
+
 export interface FullBackup {
   metadata: BackupMetadata;
   appSettings?: AppSettings;
   appDictionary?: AppDictionary;
+  globals?: GlobalsBackupData;
   projects: ProjectBackupData[];
 }
 

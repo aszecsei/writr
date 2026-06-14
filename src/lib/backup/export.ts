@@ -95,6 +95,12 @@ export async function exportFullBackup(): Promise<FullBackup> {
   const appSettings = await db.appSettings.get("app-settings");
   const appDictionary = await db.appDictionary.get("app-dictionary");
 
+  const [savedPrompts, brainstormSetups, brainstormIdeas] = await Promise.all([
+    db.savedPrompts.toArray(),
+    db.brainstormSetups.toArray(),
+    db.brainstormIdeas.toArray(),
+  ]);
+
   const projectDataResults = await Promise.all(
     allProjects.map((project) => gatherProjectData(project.id)),
   );
@@ -113,6 +119,7 @@ export async function exportFullBackup(): Promise<FullBackup> {
     },
     appSettings,
     appDictionary,
+    globals: { savedPrompts, brainstormSetups, brainstormIdeas },
     projects,
   };
 }

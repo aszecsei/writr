@@ -24,11 +24,8 @@ import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { SeparatorSettingsDialog } from "@/components/layout/sidebar/SeparatorSettingsDialog";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
-import { AgentEditor } from "@/components/settings/AgentEditor";
-import { AgentsManager } from "@/components/settings/AgentsManager";
-import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
-import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import { SavedPromptsManager } from "@/components/settings/SavedPromptsManager";
+import { SettingsModals } from "@/components/settings/SettingsModals";
 import { ShortcutsHelpDialog } from "@/components/settings/ShortcutsHelpDialog";
 import {
   SprintConfigDialog,
@@ -112,10 +109,7 @@ export function AppShell({ children }: AppShellProps) {
         <FocusModeOverlay />
         <main className="h-full overflow-y-auto">{children}</main>
         <SprintWidget />
-        <AppSettingsDialog />
-        <AgentsManager />
-        <AgentEditor />
-        <DictionaryManagerDialog />
+        <SettingsModals />
         <SavedPromptsManager />
         <VersionHistoryDialog />
         <ChapterPropertiesDialog />
@@ -161,10 +155,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       </Group>
       <TtsPlayerBar />
-      <AppSettingsDialog />
-      <AgentsManager />
-      <AgentEditor />
-      <DictionaryManagerDialog />
+      <SettingsModals />
       <SavedPromptsManager />
       <VersionHistoryDialog />
       <ChapterPropertiesDialog />

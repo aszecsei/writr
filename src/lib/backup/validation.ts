@@ -2,6 +2,8 @@ import { z } from "zod/v4";
 import {
   AppDictionarySchema,
   AppSettingsSchema,
+  BrainstormIdeaSchema,
+  BrainstormSetupSchema,
   ChapterSchema,
   ChapterSnapshotSchema,
   CharacterRelationshipSchema,
@@ -15,6 +17,7 @@ import {
   PlaylistTrackSchema,
   ProjectDictionarySchema,
   ProjectSchema,
+  SavedPromptSchema,
   StyleGuideEntrySchema,
   TimelineEventSchema,
   WorldbuildingDocSchema,
@@ -51,12 +54,19 @@ export const ProjectBackupDataSchema = z.object({
   projectDictionary: ProjectDictionarySchema.optional(),
 });
 
+export const GlobalsBackupDataSchema = z.object({
+  savedPrompts: z.array(SavedPromptSchema).default([]),
+  brainstormSetups: z.array(BrainstormSetupSchema).default([]),
+  brainstormIdeas: z.array(BrainstormIdeaSchema).default([]),
+});
+
 export const FullBackupSchema = z.object({
   metadata: BackupMetadataSchema.refine((m) => m.type === "full", {
     message: "Expected full backup metadata",
   }),
   appSettings: AppSettingsSchema.optional(),
   appDictionary: AppDictionarySchema.optional(),
+  globals: GlobalsBackupDataSchema.optional(),
   projects: z.array(ProjectBackupDataSchema),
 });
 

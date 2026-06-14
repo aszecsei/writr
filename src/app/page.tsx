@@ -1,13 +1,13 @@
 "use client";
 
-import { Pencil, Plus, Settings, Trash2 } from "lucide-react";
+import { Lightbulb, Pencil, Plus, Settings, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog";
 import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
-import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
-import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
+import { SettingsModals } from "@/components/settings/SettingsModals";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -45,6 +45,13 @@ export default function DashboardPage() {
             writr
           </h1>
           <div className="flex items-center gap-2">
+            <Link
+              href="/brainstorm"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            >
+              <Lightbulb size={16} />
+              Brainstorm
+            </Link>
             <button
               type="button"
               onClick={() => openModal({ id: "app-settings" })}
@@ -119,8 +126,7 @@ export default function DashboardPage() {
       <CreateProjectDialog />
       <EditProjectDialog />
       <DeleteProjectDialog />
-      <AppSettingsDialog />
-      <DictionaryManagerDialog />
+      <SettingsModals />
     </div>
   );
 }

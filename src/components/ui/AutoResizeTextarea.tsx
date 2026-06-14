@@ -2,6 +2,7 @@
 
 import {
   type ChangeEvent,
+  type FocusEventHandler,
   type KeyboardEventHandler,
   useCallback,
   useEffect,
@@ -45,6 +46,7 @@ interface AutoResizeTextareaProps {
   placeholder?: string;
   disabled?: boolean;
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
+  onBlur?: FocusEventHandler<HTMLTextAreaElement>;
   heightSync?: HeightSyncGroup;
 }
 
@@ -59,6 +61,7 @@ export function AutoResizeTextarea({
   placeholder,
   disabled,
   onKeyDown,
+  onBlur,
   heightSync,
 }: AutoResizeTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -134,6 +137,7 @@ export function AutoResizeTextarea({
       placeholder={placeholder}
       disabled={disabled}
       onKeyDown={onKeyDown}
+      onBlur={onBlur}
     />
   );
 
