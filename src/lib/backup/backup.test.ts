@@ -231,6 +231,11 @@ function makeAppSettings(overrides?: Partial<AppSettings>): AppSettings {
     lastExportedAt: null,
     holeDelimiters: { open: "[", close: "]" },
     holeHighlightOpacity: 0.18,
+    loreRetrievalEnabled: false,
+    omniscientMode: false,
+    loreTopK: 5,
+    sceneTopK: 3,
+    similarityFloor: 0.3,
     updatedAt: ts,
     ...overrides,
   };

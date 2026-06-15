@@ -66,6 +66,10 @@ export interface AiContext {
   currentChapterTitle?: string;
   currentChapterContent?: string;
   selectedText?: string;
+  /** Retrieval blocks (semantic lore + scenes). Populated by the chat panel. */
+  relevantLore?: { title: string; text: string }[];
+  pastEvents?: { title: string; text: string }[];
+  futureEvents?: { title: string; text: string }[];
 }
 
 export type FinishReason =

@@ -1,0 +1,77 @@
+import { db } from "../database";
+import {
+  type IndexedChunk,
+  type IndexedChunkId,
+  IndexedChunkSchema,
+  type IndexedChunkSourceType,
+  type ProjectId,
+} from "../schemas";
+import { generateId, now } from "./helpers";
+
+export type IndexedChunkInput = Omit<
+  IndexedChunk,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export async function getIndexedChunksByProject(
+  projectId: ProjectId,
+): Promise<IndexedChunk[]> {
+  return db.indexedChunks.where({ projectId }).toArray();
+}
+
+export async function getIndexedChunksBySource(
+  projectId: ProjectId,
+  sourceType: IndexedChunkSourceType,
+  sourceId: string,
+): Promise<IndexedChunk[]> {
+  const rows = await db.indexedChunks
+    .where({ sourceId })
+    .filter((r) => r.projectId === projectId && r.sourceType === sourceType)
+    .toArray();
+  return rows.sort((a, b) => a.chunkIndex - b.chunkIndex);
+}
+
+/**
+ * Upsert a chunk keyed on (projectId, sourceType, sourceId, chunkIndex). Reuses
+ * the existing row id when one is present so re-indexing is idempotent.
+ */
+export async function putIndexedChunk(
+  input: IndexedChunkInput,
+): Promise<IndexedChunk> {
+  const existing = (
+    await getIndexedChunksBySource(
+      input.projectId,
+      input.sourceType,
+      input.sourceId,
+    )
+  ).find((r) => r.chunkIndex === input.chunkIndex);
+  const timestamp = now();
+  const row = IndexedChunkSchema.parse({
+    ...input,
+    id: existing?.id ?? generateId(),
+    createdAt: existing?.createdAt ?? timestamp,
+    updatedAt: timestamp,
+  });
+  await db.indexedChunks.put(row);
+  return row;
+}
+
+export async function deleteIndexedChunk(id: IndexedChunkId): Promise<void> {
+  await db.indexedChunks.delete(id);
+}
+
+export async function deleteIndexedChunksBySource(
+  projectId: ProjectId,
+  sourceType: IndexedChunkSourceType,
+  sourceId: string,
+): Promise<void> {
+  const rows = await getIndexedChunksBySource(projectId, sourceType, sourceId);
+  await db.indexedChunks.bulkDelete(rows.map((r) => r.id));
+}
+
+export async function deleteIndexedChunksByProject(
+  projectId: ProjectId,
+): Promise<void> {
+  const rows = await getIndexedChunksByProject(projectId);
+  await db.indexedChunks.bulkDelete(rows.map((r) => r.id));
+}

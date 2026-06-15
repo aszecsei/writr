@@ -107,6 +107,11 @@ export function AppSettingsDialog() {
   const [enableToolCalling, setEnableToolCalling] = useState(false);
   const [comprehensionContextThreshold, setComprehensionContextThreshold] =
     useState(80_000);
+  const [loreRetrievalEnabled, setLoreRetrievalEnabled] = useState(false);
+  const [omniscientMode, setOmniscientMode] = useState(false);
+  const [loreTopK, setLoreTopK] = useState(5);
+  const [sceneTopK, setSceneTopK] = useState(3);
+  const [similarityFloor, setSimilarityFloor] = useState(0.3);
   const [pendingImport, setPendingImport] = useState<{
     backup: Backup;
     filename: string;
@@ -158,6 +163,11 @@ export function AppSettingsDialog() {
       setReasoningEffort(settings.reasoningEffort);
       setEnableToolCalling(settings.enableToolCalling);
       setComprehensionContextThreshold(settings.comprehensionContextThreshold);
+      setLoreRetrievalEnabled(settings.loreRetrievalEnabled);
+      setOmniscientMode(settings.omniscientMode);
+      setLoreTopK(settings.loreTopK);
+      setSceneTopK(settings.sceneTopK);
+      setSimilarityFloor(settings.similarityFloor);
     }
   }, [settings, modal.id]);
 
@@ -232,7 +242,13 @@ export function AppSettingsDialog() {
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
       enableToolCalling !== settings.enableToolCalling ||
-      comprehensionContextThreshold !== settings.comprehensionContextThreshold);
+      comprehensionContextThreshold !==
+        settings.comprehensionContextThreshold ||
+      loreRetrievalEnabled !== settings.loreRetrievalEnabled ||
+      omniscientMode !== settings.omniscientMode ||
+      loreTopK !== settings.loreTopK ||
+      sceneTopK !== settings.sceneTopK ||
+      similarityFloor !== settings.similarityFloor);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -264,6 +280,11 @@ export function AppSettingsDialog() {
       reasoningEffort,
       enableToolCalling,
       comprehensionContextThreshold,
+      loreRetrievalEnabled,
+      omniscientMode,
+      loreTopK,
+      sceneTopK,
+      similarityFloor,
     });
     closeModal();
   }
@@ -368,6 +389,16 @@ export function AppSettingsDialog() {
               onComprehensionContextThresholdChange={
                 setComprehensionContextThreshold
               }
+              loreRetrievalEnabled={loreRetrievalEnabled}
+              onLoreRetrievalEnabledChange={setLoreRetrievalEnabled}
+              omniscientMode={omniscientMode}
+              onOmniscientModeChange={setOmniscientMode}
+              loreTopK={loreTopK}
+              onLoreTopKChange={setLoreTopK}
+              sceneTopK={sceneTopK}
+              onSceneTopKChange={setSceneTopK}
+              similarityFloor={similarityFloor}
+              onSimilarityFloorChange={setSimilarityFloor}
               inputClass={INPUT_CLASS}
               labelClass={LABEL_CLASS}
             />

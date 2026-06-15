@@ -20,6 +20,7 @@ import {
   useWorldbuildingDocsByProject,
 } from "@/hooks/data/useBibleEntries";
 import { useChapter, useManuscriptChapters } from "@/hooks/data/useChapter";
+import { useLoreRetrieval } from "@/hooks/data/useLoreRetrieval";
 import { useProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import {
@@ -36,6 +37,7 @@ import {
 import { getAgentBehavior } from "@/lib/ai/agents/builtins/defaults";
 import { PROVIDERS } from "@/lib/ai/providers";
 import type { AiContext, AiMessage } from "@/lib/ai/types";
+import type { RetrievalResult } from "@/lib/retrieval/types";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -72,6 +74,7 @@ export function AiPanel() {
   const activeChapter = useChapter(
     activeDocumentType === "chapter" ? activeDocumentId : null,
   );
+  const retrieve = useLoreRetrieval(projectId);
 
   const [selectedAgentId, setSelectedAgentId] =
     useState<AgentDefinitionId | null>(null);
@@ -211,7 +214,30 @@ export function AiPanel() {
     }
 
     const settings = await getAppSettings();
-    const context = buildContext();
+    const baseContext = buildContext();
+
+    let retrieval: RetrievalResult | null = null;
+    try {
+      retrieval = activeChapter ? await retrieve(activeChapter) : null;
+    } catch (err) {
+      console.error("Lore retrieval failed; sending without it.", err);
+    }
+
+    const context = {
+      ...baseContext,
+      relevantLore: retrieval?.lore.map((h) => ({
+        title: h.title,
+        text: h.text,
+      })),
+      pastEvents: retrieval?.pastEvents.map((h) => ({
+        title: h.title,
+        text: h.text,
+      })),
+      futureEvents: retrieval?.futureEvents.map((h) => ({
+        title: h.title,
+        text: h.text,
+      })),
+    };
 
     // Capture the editor selection at submit time so a Spark option insert
     // later replaces what the user had highlighted, even if they click

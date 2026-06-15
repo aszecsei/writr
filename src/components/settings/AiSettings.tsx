@@ -49,6 +49,16 @@ interface AiSettingsProps {
   onManageAgents: () => void;
   comprehensionContextThreshold: number;
   onComprehensionContextThresholdChange: (value: number) => void;
+  loreRetrievalEnabled: boolean;
+  onLoreRetrievalEnabledChange: (enabled: boolean) => void;
+  omniscientMode: boolean;
+  onOmniscientModeChange: (enabled: boolean) => void;
+  loreTopK: number;
+  onLoreTopKChange: (value: number) => void;
+  sceneTopK: number;
+  onSceneTopKChange: (value: number) => void;
+  similarityFloor: number;
+  onSimilarityFloorChange: (value: number) => void;
   inputClass: string;
   labelClass: string;
 }
@@ -114,6 +124,16 @@ export function AiSettings({
   onManageAgents,
   comprehensionContextThreshold,
   onComprehensionContextThresholdChange,
+  loreRetrievalEnabled,
+  onLoreRetrievalEnabledChange,
+  omniscientMode,
+  onOmniscientModeChange,
+  loreTopK,
+  onLoreTopKChange,
+  sceneTopK,
+  onSceneTopKChange,
+  similarityFloor,
+  onSimilarityFloorChange,
   inputClass,
   labelClass,
 }: AiSettingsProps) {
@@ -294,6 +314,94 @@ export function AiSettings({
                 per-iteration cost. Default 80,000.
               </span>
             </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <input
+                type="checkbox"
+                checked={loreRetrievalEnabled}
+                onChange={(e) => onLoreRetrievalEnabledChange(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+              />
+              Surface relevant lore & scenes automatically
+              <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
+                — embed and retrieve worldbuilding lore and prior scenes into
+                chat context
+              </span>
+            </label>
+            {loreRetrievalEnabled && (
+              <>
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={omniscientMode}
+                    onChange={(e) => onOmniscientModeChange(e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                  />
+                  Include future scenes (omniscient)
+                  <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
+                    — surface scenes that occur after the current chapter
+                  </span>
+                </label>
+                <label className={labelClass}>
+                  Lore results (top-K)
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={loreTopK}
+                    onChange={(e) => {
+                      const next = Number.parseInt(e.target.value, 10);
+                      if (Number.isFinite(next) && next >= 0) {
+                        onLoreTopKChange(next);
+                      }
+                    }}
+                    className={inputClass}
+                  />
+                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    Number of lore chunks to surface per chat turn. Default 5.
+                  </span>
+                </label>
+                <label className={labelClass}>
+                  Scene results (top-K)
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={sceneTopK}
+                    onChange={(e) => {
+                      const next = Number.parseInt(e.target.value, 10);
+                      if (Number.isFinite(next) && next >= 0) {
+                        onSceneTopKChange(next);
+                      }
+                    }}
+                    className={inputClass}
+                  />
+                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    Number of scene chunks to surface per chat turn. Default 3.
+                  </span>
+                </label>
+                <label className={labelClass}>
+                  Similarity floor
+                  <input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={similarityFloor}
+                    onChange={(e) => {
+                      const next = Number.parseFloat(e.target.value);
+                      if (Number.isFinite(next) && next >= 0 && next <= 1) {
+                        onSimilarityFloorChange(next);
+                      }
+                    }}
+                    className={inputClass}
+                  />
+                  <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    Minimum cosine similarity (0–1) for a chunk to be included.
+                    Lower values surface more results. Default 0.3.
+                  </span>
+                </label>
+              </>
+            )}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"

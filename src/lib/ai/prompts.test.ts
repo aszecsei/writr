@@ -301,6 +301,61 @@ describe("buildMessages", () => {
   });
 });
 
+function baseContext(): AiContext {
+  return {
+    projectTitle: "T",
+    projectDescription: "",
+    genre: "",
+    projectMode: "prose",
+    characters: [],
+    locations: [],
+    styleGuide: [],
+    timelineEvents: [],
+    worldbuildingDocs: [],
+    relationships: [],
+    outlineGridColumns: [],
+    outlineGridRows: [],
+    outlineGridCells: [],
+    chapters: [],
+  };
+}
+
+describe("buildMessages retrieval injection", () => {
+  it("omits retrieval blocks when no retrieval data is present", () => {
+    const msgs = buildMessages("sys", baseContext(), []);
+    const text = JSON.stringify(msgs);
+    expect(text).not.toContain("<relevant-lore>");
+    expect(text).not.toContain("<past-events>");
+    expect(text).not.toContain("<future-events>");
+  });
+
+  it("injects lore and past-events blocks when present", () => {
+    const ctx = {
+      ...baseContext(),
+      relevantLore: [
+        { title: "Funeral rites", text: "Veyrish burn their dead." },
+      ],
+      pastEvents: [{ title: "Chapter 1", text: "They met at the gate." }],
+    };
+    const msgs = buildMessages("sys", ctx, []);
+    const text = JSON.stringify(msgs);
+    expect(text).toContain("<relevant-lore>");
+    expect(text).toContain("Veyrish burn their dead.");
+    expect(text).toContain("<past-events>");
+    expect(text).not.toContain("<future-events>");
+  });
+
+  it("injects a future-events block when present", () => {
+    const ctx = {
+      ...baseContext(),
+      futureEvents: [{ title: "Chapter 9", text: "The betrayal." }],
+    };
+    const text = JSON.stringify(buildMessages("sys", ctx, []));
+    expect(text).toContain("<future-events>");
+    expect(text).toContain("Do not spoil");
+  });
+});
+
 describe("buildAgenticContext", () => {
   it("emits an empty <novel> wrapper when only a title is set", () => {
     const xml = buildAgenticContext(emptyContext());

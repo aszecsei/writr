@@ -48,6 +48,37 @@ In-house Fountain parser/serializer:
 - `fountain-to-prosemirror.ts` — AST → ProseMirror doc, paired with the screenplay extensions in `src/components/editor/extensions/screenplay/`.
 - `types.ts`, `index.ts`.
 
+## `retrieval/` — Lore retrieval
+
+Semantic + entity-linked context retrieval for the AI chat panel. When the user sends a message, the chat panel calls `useLoreRetrieval(projectId)` (from `src/hooks/data/useLoreRetrieval.ts`), which returns an async function that takes the active `Chapter` and returns a `RetrievalResult | null`. The result is mapped onto `AiContext.relevantLore`, `AiContext.pastEvents`, and `AiContext.futureEvents`, which `buildMessages` injects into the system prompt.
+
+### Key files
+
+- `types.ts` — Core interfaces: `RetrievalHit` (`title`, `text`, `sourceId`, `chunkIndex`, `score`), `RetrievalResult` (`lore`, `pastEvents`, `futureEvents`), `RetrievalSettings`.
+- `embedding/get-provider.ts` — `EmbeddingProvider` seam. Currently returns a local transformers.js provider; the seam is the extension point for a server-side embedding API later.
+- `embedding/local.ts` — Browser-local embeddings via `@xenova/transformers`. Runs in a shared worker to avoid blocking the main thread.
+- `indexer.ts` — `reindexProject(...)` chunks worldbuilding docs and manuscript chapters (skipping the current chapter to avoid trivial self-matches), computes embeddings, and upserts into the `indexedChunks` Dexie store.
+- `retriever.ts` — `retrieveContext(...)` runs two retrieval signals and merges them:
+  - **Semantic cosine similarity** — brute-force dot product over all `indexedChunks` for the project. No external vector DB; IndexedDB holds the chunk vectors directly, which is fast enough for novel-scale corpora (thousands of chunks).
+  - **Deterministic entity links** — chapters that reference the same `linkedCharacterIds` or `linkedLocationIds` as the query chapter are promoted, providing stable recall for named entities even when phrasing diverges.
+- `chunker.ts` — Splits document text into overlapping fixed-size chunks before embedding.
+
+### Directionality
+
+Retrieval respects `RetrievalSettings.omniscient`. In the default **forward-only** mode, only chapters that precede the current chapter (by order) are eligible as scene sources, preventing the AI from being shown future plot events. Lore (worldbuilding docs) is always included regardless. Setting `omniscient: true` (controlled by the app's "Omniscient mode" toggle) lifts this restriction.
+
+### Dexie store
+
+Chunks are stored in the `indexedChunks` Dexie table (see `src/db/schemas.ts`). The brute-force cosine scan is chosen deliberately over a library like Vectra because IndexedDB's lack of native ANN support means any in-process ANN index must also be serialized/deserialized, eliminating the lookup advantage at small scale. At novel scale (< 10k chunks) brute-force is under 10 ms.
+
+### Deferred items
+
+- Server-side embedding endpoint (swap `getEmbeddingProvider()` return value; no other changes needed).
+- Cursor-position weighting — boost chunks near the user's current editor position.
+- `search_lore` AI tool — let the model trigger on-demand retrieval mid-conversation.
+- Characters and locations as indexed sources (currently only worldbuilding docs and chapters are indexed).
+- Real ANN index (e.g., HNSW) for projects that grow past ~50k chunks.
+
 ## Standalone files
 
 - `terminology.ts` — Maps user-facing terms based on project mode (e.g., "Chapter" vs. "Sequence" for screenplays). Use this any time you render an entity-type label.

@@ -21,6 +21,7 @@ export * from "./characters";
 export * from "./comments";
 export * from "./dictionary";
 export * from "./editPlans";
+export * from "./indexedChunks";
 export * from "./locations";
 export * from "./outline";
 export * from "./playlist";

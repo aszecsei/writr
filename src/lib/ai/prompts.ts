@@ -53,6 +53,47 @@ export function buildAgenticContext(context: AiContext): string {
   return xml;
 }
 
+function buildRetrievalXml(context: AiContext): string {
+  const sections: string[] = [];
+
+  if (context.relevantLore && context.relevantLore.length > 0) {
+    const items = context.relevantLore
+      .map(
+        (l) => `  <lore title="${escapeAttr(l.title)}">\n${l.text}\n  </lore>`,
+      )
+      .join("\n");
+    sections.push(
+      `<relevant-lore>\nWorldbuilding that may be relevant to the current chapter.\n${items}\n</relevant-lore>`,
+    );
+  }
+
+  if (context.pastEvents && context.pastEvents.length > 0) {
+    const items = context.pastEvents
+      .map(
+        (e) =>
+          `  <past-event title="${escapeAttr(e.title)}">\n${e.text}\n  </past-event>`,
+      )
+      .join("\n");
+    sections.push(
+      `<past-events>\nThese scenes have already occurred in the story and are presented for your knowledge. Do not replicate them in whole or in part.\n${items}\n</past-events>`,
+    );
+  }
+
+  if (context.futureEvents && context.futureEvents.length > 0) {
+    const items = context.futureEvents
+      .map(
+        (e) =>
+          `  <future-event title="${escapeAttr(e.title)}">\n${e.text}\n  </future-event>`,
+      )
+      .join("\n");
+    sections.push(
+      `<future-events>\nThese scenes will occur in future chapters and are presented for your knowledge. Do not spoil them in any way — if you set them up, do so subtly.\n${items}\n</future-events>`,
+    );
+  }
+
+  return sections.join("\n\n");
+}
+
 export interface BuildMessagesOptions {
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
@@ -152,6 +193,14 @@ export function buildMessages(
     messages.push({ role: "assistant", content: "Understood." });
   }
 
+  const retrievalXml = buildRetrievalXml(context);
+  if (retrievalXml.length > 0) {
+    // No cache_control: retrieval changes per chapter/turn and Anthropic caps
+    // cache breakpoints at 4 (system, context, chapter, trailing history).
+    messages.push({ role: "user", content: retrievalXml });
+    messages.push({ role: "assistant", content: "Understood." });
+  }
+
   for (let i = 0; i < history.length; i++) {
     const msg = history[i];
     const isLast = i === history.length - 1;
@@ -182,7 +231,10 @@ export function buildMessages(
   const instructions = options?.postChatInstructions;
   const depth = options?.postChatInstructionsDepth ?? 2;
   if (instructions && depth > 0) {
-    const syntheticUserCount = 1 + (context.currentChapterContent ? 1 : 0);
+    const syntheticUserCount =
+      1 +
+      (context.currentChapterContent ? 1 : 0) +
+      (retrievalXml.length > 0 ? 1 : 0);
     const userIndices: number[] = [];
     let skipped = 0;
     for (let i = 0; i < messages.length; i++) {

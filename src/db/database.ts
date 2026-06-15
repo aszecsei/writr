@@ -21,6 +21,7 @@ import type {
   CharacterRelationship,
   Comment,
   EditPlan,
+  IndexedChunk,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
@@ -96,6 +97,7 @@ export class WritrDatabase extends Dexie {
   savedPrompts!: EntityTable<SavedPrompt, "id">;
   brainstormSetups!: EntityTable<BrainstormSetup, "id">;
   brainstormIdeas!: EntityTable<BrainstormIdea, "id">;
+  indexedChunks!: EntityTable<IndexedChunk, "id">;
 
   constructor() {
     super("writr");
@@ -1028,6 +1030,13 @@ export class WritrDatabase extends Dexie {
     this.version(38).stores({
       brainstormSetups: "id, updatedAt",
       brainstormIdeas: "id, setupId, createdAt",
+    });
+
+    // v39: indexedChunks table backing semantic lore/scene retrieval. Vectors
+    // are stored as plain number[]; cosine search is brute-force in a worker.
+    this.version(39).stores({
+      indexedChunks:
+        "id, projectId, [projectId+sourceType], sourceId, [sourceId+chunkIndex]",
     });
 
     // Seed singleton rows so liveQuery hooks never need to write

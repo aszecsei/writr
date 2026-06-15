@@ -69,6 +69,25 @@ describe("v37 binder-fields migration", () => {
   });
 });
 
+describe("v39 indexedChunks table", () => {
+  const dbName = "writr-migration-v39-test";
+
+  afterEach(async () => {
+    await Dexie.delete(dbName);
+  });
+
+  it("creates the indexedChunks table with expected indexes", async () => {
+    const testDb = new Dexie(dbName);
+    testDb.version(39).stores({
+      indexedChunks:
+        "id, projectId, [projectId+sourceType], sourceId, [sourceId+chunkIndex]",
+    });
+    await testDb.open();
+    expect(testDb.tables.map((t) => t.name)).toContain("indexedChunks");
+    testDb.close();
+  });
+});
+
 describe("ChapterSchema binder defaults", () => {
   it("applies binder defaults when parsing a legacy-shaped chapter", () => {
     const parsed = ChapterSchema.parse({

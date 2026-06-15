@@ -116,6 +116,9 @@ export type AgentDefinitionId = z.infer<typeof AgentDefinitionIdSchema>;
 export const EntityImageIdSchema = z.uuid().brand<"EntityImageId">();
 export type EntityImageId = z.infer<typeof EntityImageIdSchema>;
 
+export const IndexedChunkIdSchema = z.uuid().brand<"IndexedChunkId">();
+export type IndexedChunkId = z.infer<typeof IndexedChunkIdSchema>;
+
 // ─── Project Mode ───────────────────────────────────────────────────
 
 export const ProjectModeEnum = z.enum(["prose", "screenplay"]);
@@ -697,6 +700,16 @@ export const AppSettingsSchema = z.object({
    * note recedes; high while editing so unfilled holes stand out.
    */
   holeHighlightOpacity: z.number().min(0).max(1).default(0.18),
+  /** Master switch: embed & retrieve lore/scenes into chat context. */
+  loreRetrievalEnabled: z.boolean().default(false),
+  /** When true, future scenes are included in retrieval results. */
+  omniscientMode: z.boolean().default(false),
+  /** Number of lore chunks to surface per chat turn. */
+  loreTopK: z.number().int().nonnegative().default(5),
+  /** Number of scene chunks to surface per chat turn. */
+  sceneTopK: z.number().int().nonnegative().default(3),
+  /** Minimum cosine similarity score [−1, 1] for a chunk to be included. */
+  similarityFloor: z.number().min(-1).max(1).default(0.3),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
@@ -1251,6 +1264,28 @@ export const SnapshotManifestSchema = z.object({
   createdAt: timestamp,
 });
 export type SnapshotManifest = z.infer<typeof SnapshotManifestSchema>;
+
+// ─── Indexed Chunk (vector retrieval) ───────────────────────────────
+
+export const IndexedChunkSourceTypeEnum = z.enum(["worldbuilding", "chapter"]);
+export type IndexedChunkSourceType = z.infer<typeof IndexedChunkSourceTypeEnum>;
+
+export const IndexedChunkSchema = z.object({
+  id: IndexedChunkIdSchema,
+  projectId: ProjectIdSchema,
+  sourceType: IndexedChunkSourceTypeEnum,
+  /** WorldbuildingDocId or ChapterId of the chunk's source. */
+  sourceId: z.string(),
+  chunkIndex: z.number().int().nonnegative(),
+  text: z.string(),
+  contentHash: z.string(),
+  vector: z.array(z.number()),
+  /** EmbeddingProvider.id used — re-embed when it changes. */
+  embeddingModel: z.string(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type IndexedChunk = z.infer<typeof IndexedChunkSchema>;
 
 // ─── Settings Normalization ─────────────────────────────────────────
 
