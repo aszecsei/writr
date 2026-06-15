@@ -85,13 +85,19 @@ export async function deleteWorldbuildingDoc(
   const doc = await db.worldbuildingDocs.get(id);
   if (!doc) return;
   const newParent = doc.parentDocId;
-  await db.transaction("rw", db.worldbuildingDocs, async () => {
-    // Re-parent children to deleted doc's parent
-    await db.worldbuildingDocs
-      .where({ parentDocId: id })
-      .modify({ parentDocId: newParent });
-    await db.worldbuildingDocs.delete(id);
-  });
+  await db.transaction(
+    "rw",
+    [db.worldbuildingDocs, db.indexedChunks],
+    async () => {
+      // Re-parent children to deleted doc's parent
+      await db.worldbuildingDocs
+        .where({ parentDocId: id })
+        .modify({ parentDocId: newParent });
+      // Prune the deleted doc's indexed vector chunks (children keep theirs).
+      await db.indexedChunks.where({ sourceId: id }).delete();
+      await db.worldbuildingDocs.delete(id);
+    },
+  );
 }
 
 export async function reorderWorldbuildingDocs(

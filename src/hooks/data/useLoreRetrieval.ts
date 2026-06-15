@@ -16,7 +16,10 @@ import type { RetrievalResult } from "@/lib/retrieval/types";
 
 export function useLoreRetrieval(
   projectId: ProjectId | null,
-): (currentChapter: Chapter) => Promise<RetrievalResult | null> {
+): (
+  currentChapter: Chapter,
+  opts?: { force?: boolean },
+) => Promise<RetrievalResult | null> {
   const settings = useAppSettings();
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
@@ -24,8 +27,11 @@ export function useLoreRetrieval(
   const chapters = useManuscriptChapters(projectId);
 
   return useCallback(
-    async (currentChapter: Chapter) => {
-      if (!projectId || !settings?.loreRetrievalEnabled) return null;
+    async (currentChapter: Chapter, opts?: { force?: boolean }) => {
+      if (!projectId || !settings) return null;
+      // `force` lets the preview run retrieval even while it's disabled, so a
+      // writer can see what *would* be included before turning it on.
+      if (!settings.loreRetrievalEnabled && !opts?.force) return null;
       const provider = getEmbeddingProvider();
       const docs = worldbuildingDocs ?? [];
       const chs = chapters ?? [];

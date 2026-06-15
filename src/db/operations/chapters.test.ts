@@ -17,8 +17,22 @@ import {
   moveChapter,
   updateChapterContent,
 } from "./chapters";
+import { getIndexedChunksBySource, putIndexedChunk } from "./indexedChunks";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
+
+function chapterChunk(sourceId: string) {
+  return {
+    projectId,
+    sourceType: "chapter" as const,
+    sourceId,
+    chunkIndex: 0,
+    text: "t0",
+    contentHash: "h0",
+    vector: [0.1, 0.2],
+    embeddingModel: "fake-v1",
+  };
+}
 
 describe("updateChapterContent", () => {
   beforeEach(async () => {
@@ -281,5 +295,53 @@ describe("deleteChapter", () => {
     expect(await db.chapters.get(parent.id)).toBeUndefined();
     const promoted = await db.chapters.get(child.id);
     expect(promoted?.parentChapterId).toBe(grandparent.id);
+  });
+});
+
+describe("deleteChapter — indexed chunk cleanup", () => {
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.chapters.clear();
+    await db.indexedChunks.clear();
+  });
+
+  it("cascade prunes chunks for every node in the subtree", async () => {
+    const parent = await createChapter({ projectId, title: "Parent" });
+    const child = await createChapter({
+      projectId,
+      title: "Child",
+      parentChapterId: parent.id,
+    });
+    await putIndexedChunk(chapterChunk(parent.id));
+    await putIndexedChunk(chapterChunk(child.id));
+
+    await deleteChapter(parent.id, "cascade");
+
+    expect(
+      await getIndexedChunksBySource(projectId, "chapter", parent.id),
+    ).toHaveLength(0);
+    expect(
+      await getIndexedChunksBySource(projectId, "chapter", child.id),
+    ).toHaveLength(0);
+  });
+
+  it("promote prunes the deleted node's chunks but keeps promoted children's", async () => {
+    const parent = await createChapter({ projectId, title: "Parent" });
+    const child = await createChapter({
+      projectId,
+      title: "Child",
+      parentChapterId: parent.id,
+    });
+    await putIndexedChunk(chapterChunk(parent.id));
+    await putIndexedChunk(chapterChunk(child.id));
+
+    await deleteChapter(parent.id, "promote");
+
+    expect(
+      await getIndexedChunksBySource(projectId, "chapter", parent.id),
+    ).toHaveLength(0);
+    expect(
+      await getIndexedChunksBySource(projectId, "chapter", child.id),
+    ).toHaveLength(1);
   });
 });

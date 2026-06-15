@@ -256,6 +256,7 @@ async function deleteRowAndDependents(chapterId: ChapterId): Promise<void> {
   }
   await db.comments.where({ chapterId }).delete();
   await db.chapterSnapshots.where({ chapterId }).delete();
+  await db.indexedChunks.where({ sourceId: chapterId }).delete();
   await db.chapters.delete(chapterId);
 }
 
@@ -285,6 +286,7 @@ export async function deleteChapter(
       db.chapterSnapshots,
       db.outlineGridRows,
       db.outlineGridCells,
+      db.indexedChunks,
     ],
     async () => {
       if (mode === "cascade") {

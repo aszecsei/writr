@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, Sparkles, Trash2 } from "lucide-react";
+import { BookMarked, Sparkles, Telescope, Trash2 } from "lucide-react";
 import {
   type FormEvent,
   useCallback,
@@ -50,6 +50,7 @@ import { MessageList } from "./MessageList";
 import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
+import { RetrievalPreviewDialog } from "./RetrievalPreviewDialog";
 
 export function AiPanel() {
   const projectId = useProjectStore((s) => s.activeProjectId);
@@ -94,6 +95,7 @@ export function AiPanel() {
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [pendingToolApproval, setPendingToolApproval] = useState(false);
+  const [showRetrievalPreview, setShowRetrievalPreview] = useState(false);
 
   // Mirror `messages` into a ref so the accessor's `getMessages()` can read
   // the freshest snapshot regardless of React batching. The accessor is
@@ -477,6 +479,19 @@ export function AiPanel() {
           <div className="flex items-center gap-1">
             <button
               type="button"
+              onClick={() => setShowRetrievalPreview(true)}
+              disabled={!activeChapter}
+              title={
+                activeChapter
+                  ? "Preview retrieved context"
+                  : "Open a chapter to preview retrieved context"
+              }
+              className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            >
+              <Telescope size={14} />
+            </button>
+            <button
+              type="button"
               onClick={() => openModal({ id: "saved-prompts" })}
               title="Saved prompts"
               className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
@@ -550,6 +565,13 @@ export function AiPanel() {
         <PromptInspectorDialog
           promptMessages={inspectingPrompt}
           onClose={() => setInspectingPrompt(null)}
+        />
+      )}
+      {showRetrievalPreview && activeChapter && (
+        <RetrievalPreviewDialog
+          retrieve={retrieve}
+          chapter={activeChapter}
+          onClose={() => setShowRetrievalPreview(false)}
         />
       )}
     </aside>

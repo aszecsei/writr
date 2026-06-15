@@ -145,6 +145,46 @@ describe("retrieveContext", () => {
     expect(result.lore.map((h) => h.sourceId)).toContain("doc1");
   });
 
+  it("excludes orphaned chunks whose source no longer exists", async () => {
+    const cur = chapter("cur", 2, "Current", "the funeral was somber");
+    // Index a past chapter and a worldbuilding doc, then drop both from the
+    // live source lists to simulate sources deleted without chunk cleanup.
+    await indexSource({
+      provider,
+      projectId,
+      sourceType: "chapter",
+      sourceId: "ghost-chapter",
+      text: "the funeral was somber and grim",
+    });
+    await indexSource({
+      provider,
+      projectId,
+      sourceType: "worldbuilding",
+      sourceId: "ghost-doc",
+      text: "the funeral was somber for the realm",
+    });
+
+    const result = await retrieveContext({
+      provider,
+      projectId,
+      currentChapter: cur,
+      chapters: [cur],
+      characters: [],
+      locations: [],
+      worldbuildingDocs: [],
+      settings: {
+        omniscient: true,
+        loreTopK: 5,
+        sceneTopK: 5,
+        similarityFloor: -1,
+      },
+    });
+
+    expect(result.lore).toHaveLength(0);
+    expect(result.pastEvents).toHaveLength(0);
+    expect(result.futureEvents).toHaveLength(0);
+  });
+
   it("respects topK limits", async () => {
     const cur = chapter("cur", 10, "Current", "query text here");
     const chapters: Chapter[] = [cur];
