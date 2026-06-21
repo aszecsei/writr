@@ -5,6 +5,7 @@ import {
   Grid3x3,
   MapPin,
   Pen,
+  ShieldAlert,
   Users,
 } from "lucide-react";
 import type { EntityGroupConfig, SearchableEntityType } from "./types";
@@ -63,6 +64,16 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
       `/projects/${projectId}/bible/style-guide?highlight=${entityId}`,
     searchableFields: ["title", "content"],
   },
+  guardrailEntry: {
+    type: "guardrailEntry",
+    label: "Guardrail",
+    labelPlural: "Guardrails",
+    icon: ShieldAlert,
+    // Guardrails live alongside the style guide on the same page.
+    buildUrl: (projectId, entityId) =>
+      `/projects/${projectId}/bible/style-guide?highlight=${entityId}`,
+    searchableFields: ["label", "fix", "positiveFix"],
+  },
   worldbuildingDoc: {
     type: "worldbuildingDoc",
     label: "Worldbuilding",
@@ -89,6 +100,7 @@ export const entityTypeOrder: SearchableEntityType[] = [
   "location",
   "timelineEvent",
   "styleGuideEntry",
+  "guardrailEntry",
   "worldbuildingDoc",
   "outlineCell",
 ];

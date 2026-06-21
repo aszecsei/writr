@@ -30,6 +30,9 @@ export type TimelineEventId = z.infer<typeof TimelineEventIdSchema>;
 export const StyleGuideEntryIdSchema = z.uuid().brand<"StyleGuideEntryId">();
 export type StyleGuideEntryId = z.infer<typeof StyleGuideEntryIdSchema>;
 
+export const GuardrailEntryIdSchema = z.uuid().brand<"GuardrailEntryId">();
+export type GuardrailEntryId = z.infer<typeof GuardrailEntryIdSchema>;
+
 export const WorldbuildingDocIdSchema = z.uuid().brand<"WorldbuildingDocId">();
 export type WorldbuildingDocId = z.infer<typeof WorldbuildingDocIdSchema>;
 
@@ -291,15 +294,41 @@ export type StyleGuideCategory = z.infer<typeof StyleGuideCategoryEnum>;
 
 export const StyleGuideEntrySchema = z.object({
   id: StyleGuideEntryIdSchema,
-  projectId: ProjectIdSchema,
+  // null = global (applies to every project); otherwise scoped to a project.
+  projectId: ProjectIdSchema.nullable().default(null),
   category: StyleGuideCategoryEnum.default("custom"),
   title: z.string().min(1),
   content: z.string().default(""),
   order: z.number().int().nonnegative(),
+  /** Projects in which this entry is deactivated (per-project disable). */
+  disabledProjectIds: z.array(ProjectIdSchema).default([]),
   createdAt: timestamp,
   updatedAt: timestamp,
 });
 export type StyleGuideEntry = z.infer<typeof StyleGuideEntrySchema>;
+
+// ─── Guardrail Entry ────────────────────────────────────────────────
+//
+// A "negative" companion to the style guide: a named issue to flag, the set
+// of trigger phrases that surface it, and how to fix it. Unlike a style-guide
+// rule (a positive `title` + `content`), a guardrail carries structured
+// `flags` plus a corrective `fix` and an affirmative `positiveFix`.
+
+export const GuardrailEntrySchema = z.object({
+  id: GuardrailEntryIdSchema,
+  // null = global (applies to every project); otherwise scoped to a project.
+  projectId: ProjectIdSchema.nullable().default(null),
+  label: z.string().min(1),
+  flags: z.array(z.string()).default([]),
+  fix: z.string().default(""),
+  positiveFix: z.string().default(""),
+  order: z.number().int().nonnegative(),
+  /** Projects in which this entry is deactivated (per-project disable). */
+  disabledProjectIds: z.array(ProjectIdSchema).default([]),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type GuardrailEntry = z.infer<typeof GuardrailEntrySchema>;
 
 // ─── Worldbuilding Doc ───────────────────────────────────────────────
 

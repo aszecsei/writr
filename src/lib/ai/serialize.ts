@@ -1,6 +1,7 @@
 import type {
   Character,
   CharacterRelationship,
+  GuardrailEntry,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
@@ -9,6 +10,7 @@ import type {
   TimelineEvent,
   WorldbuildingDoc,
 } from "@/db/schemas";
+import { escapeAttr, escapeText } from "./xml";
 
 export function buildNameMap<T extends { id: string }>(
   items: T[],
@@ -109,6 +111,28 @@ export function serializeTimelineEvent(
 
 export function serializeStyleGuideEntry(s: StyleGuideEntry): string {
   return `<rule title="${s.title}">\n${s.content}\n</rule>`;
+}
+
+/**
+ * A guardrail is a negative: a named issue to flag, the phrases that surface
+ * it, and how to correct it. `flags` are rendered as a list so the model can
+ * match individual trigger patterns; `fix` / `positive-fix` are omitted when
+ * empty to keep the block tight.
+ */
+export function serializeGuardrailEntry(g: GuardrailEntry): string {
+  const lines: string[] = [`<guardrail label="${escapeAttr(g.label)}">`];
+  if (g.flags.length > 0) {
+    lines.push("<flags>");
+    for (const flag of g.flags) {
+      lines.push(`<flag>${escapeText(flag)}</flag>`);
+    }
+    lines.push("</flags>");
+  }
+  if (g.fix) lines.push(`<fix>${escapeText(g.fix)}</fix>`);
+  if (g.positiveFix)
+    lines.push(`<positive-fix>${escapeText(g.positiveFix)}</positive-fix>`);
+  lines.push("</guardrail>");
+  return lines.join("\n");
 }
 
 export function serializeWorldbuildingTree(docs: WorldbuildingDoc[]): string {

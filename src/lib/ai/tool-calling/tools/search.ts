@@ -9,6 +9,7 @@ const SearchableEntityTypeEnum = z.enum([
   "location",
   "timelineEvent",
   "styleGuideEntry",
+  "guardrailEntry",
   "worldbuildingDoc",
   "outlineCell",
 ]);
@@ -24,7 +25,7 @@ export const searchProjectTool = defineTool({
     'tolerated. Wrap text in double quotes (e.g. "moonlit garden") to ' +
     "require an exact phrase. " +
     "Returns matches from chapters, characters, locations, timeline events, " +
-    "style guide, worldbuilding docs, and outline cells. " +
+    "style guide, guardrails, worldbuilding docs, and outline cells. " +
     "Each result includes the entity type, title, matching field, and a text snippet. " +
     "Use this for broad discovery before drilling into specific entities with get_* tools.",
   parameters: {
@@ -41,6 +42,7 @@ export const searchProjectTool = defineTool({
             "location",
             "timelineEvent",
             "styleGuideEntry",
+            "guardrailEntry",
             "worldbuildingDoc",
             "outlineCell",
           ],

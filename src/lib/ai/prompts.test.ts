@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Chapter, ChapterId, ProjectId } from "@/db/schemas";
+import { makeGuardrailEntry } from "@/test/helpers";
 import { buildAgenticContext, buildMessages } from "./prompts";
 import type { AiContext, AiMessage, TextContentPart } from "./types";
 
@@ -11,6 +12,7 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
     characters: [],
     locations: [],
     styleGuide: [],
+    guardrails: [],
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],
@@ -310,6 +312,7 @@ function baseContext(): AiContext {
     characters: [],
     locations: [],
     styleGuide: [],
+    guardrails: [],
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],
@@ -392,6 +395,31 @@ describe("buildAgenticContext", () => {
       '<chapter id="c2" order="1" depth="0" title="Climax"',
     );
     expect(xml).toContain("</table-of-contents>");
+  });
+
+  it("emits a <guardrails> block when guardrails are present", () => {
+    const xml = buildAgenticContext(
+      emptyContext({
+        guardrails: [
+          makeGuardrailEntry({
+            projectId: "p1" as ProjectId,
+            label: "Filler comparisons",
+            flags: ["the way a [comparison]"],
+            fix: "Name what is present.",
+            positiveFix: "Use the concrete detail.",
+          }),
+        ],
+      }),
+    );
+    expect(xml).toContain("<guardrails>");
+    expect(xml).toContain('<guardrail label="Filler comparisons">');
+    expect(xml).toContain("<flag>the way a [comparison]</flag>");
+    expect(xml).toContain("</guardrails>");
+  });
+
+  it("omits the <guardrails> block when none exist", () => {
+    const xml = buildAgenticContext(emptyContext());
+    expect(xml).not.toContain("<guardrails>");
   });
 
   it("escapes special characters in chapter titles and ids", () => {

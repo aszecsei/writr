@@ -8,11 +8,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { getAppSettings } from "@/db/operations";
+import { getAppSettings, isActiveInProject } from "@/db/operations";
 import { getAgent } from "@/db/operations/agents";
 import type { AgentDefinitionId } from "@/db/schemas";
 import {
   useCharactersByProject,
+  useGuardrailsByProject,
   useLocationsByProject,
   useRelationshipsByProject,
   useStyleGuideByProject,
@@ -60,6 +61,7 @@ export function AiPanel() {
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
+  const guardrails = useGuardrailsByProject(projectId);
   const timelineEvents = useTimelineByProject(projectId);
   const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
@@ -136,7 +138,12 @@ export function AiPanel() {
       projectMode: activeProjectMode ?? "prose",
       characters: characters ?? [],
       locations: locations ?? [],
-      styleGuide: styleGuide ?? [],
+      styleGuide: (styleGuide ?? []).filter((e) =>
+        isActiveInProject(e, projectId),
+      ),
+      guardrails: (guardrails ?? []).filter((e) =>
+        isActiveInProject(e, projectId),
+      ),
       timelineEvents: timelineEvents ?? [],
       worldbuildingDocs: worldbuildingDocs ?? [],
       relationships: relationships ?? [],
@@ -152,10 +159,12 @@ export function AiPanel() {
       selectedText: selectedText || undefined,
     };
   }, [
+    projectId,
     project,
     characters,
     locations,
     styleGuide,
+    guardrails,
     timelineEvents,
     worldbuildingDocs,
     relationships,

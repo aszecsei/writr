@@ -190,6 +190,7 @@ const TABLE_KEYS: ProjectDocTable[] = [
   "worldbuilding",
   "timeline",
   "styleGuide",
+  "guardrails",
   "outlineColumns",
   "outlineRows",
   "outlineCells",

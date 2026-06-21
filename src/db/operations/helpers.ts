@@ -22,6 +22,27 @@ export async function getNextOrder(
   return items[items.length - 1].order + 1;
 }
 
+/**
+ * Like {@link getNextOrder} but for entities whose order sequence is scoped by
+ * project where `projectId` may be null (global). A null projectId is not a
+ * valid IndexedDB key, so `.where({ projectId: null })` would match nothing and
+ * collide every global entry at order 0. Scan in JS and filter by exact scope.
+ */
+export async function getNextOrderForProjectScope(
+  table: Table,
+  projectId: string | null,
+  explicitOrder: number | undefined,
+): Promise<number> {
+  if (explicitOrder !== undefined) return explicitOrder;
+  const all = (await table.toArray()) as Array<{
+    projectId: string | null;
+    order: number;
+  }>;
+  const inScope = all.filter((r) => r.projectId === projectId);
+  if (inScope.length === 0) return 0;
+  return Math.max(...inScope.map((r) => r.order)) + 1;
+}
+
 export function now(): string {
   return new Date().toISOString();
 }

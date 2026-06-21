@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback } from "react";
+import { isActiveInProject } from "@/db/operations";
 import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
+  useGuardrailsByProject,
   useLocationsByProject,
   useRelationshipsByProject,
   useStyleGuideByProject,
@@ -31,6 +33,7 @@ export function useAgentRunContext(
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
+  const guardrails = useGuardrailsByProject(projectId);
   const timelineEvents = useTimelineByProject(projectId);
   const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
@@ -47,7 +50,12 @@ export function useAgentRunContext(
       projectMode: project?.mode ?? "prose",
       characters: characters ?? [],
       locations: locations ?? [],
-      styleGuide: styleGuide ?? [],
+      styleGuide: (styleGuide ?? []).filter((e) =>
+        isActiveInProject(e, projectId),
+      ),
+      guardrails: (guardrails ?? []).filter((e) =>
+        isActiveInProject(e, projectId),
+      ),
       timelineEvents: timelineEvents ?? [],
       worldbuildingDocs: worldbuildingDocs ?? [],
       relationships: relationships ?? [],
@@ -57,10 +65,12 @@ export function useAgentRunContext(
       chapters: chapters ?? [],
     }),
     [
+      projectId,
       project,
       characters,
       locations,
       styleGuide,
+      guardrails,
       timelineEvents,
       worldbuildingDocs,
       relationships,

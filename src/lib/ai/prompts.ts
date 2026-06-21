@@ -1,6 +1,6 @@
 import type { Chapter } from "@/db/schemas";
 import { depthMap, manuscriptIndexMap } from "@/lib/binder/tree";
-import { serializeStyleGuideEntry } from "./serialize";
+import { serializeGuardrailEntry, serializeStyleGuideEntry } from "./serialize";
 import type { AiContext, AiMessage, ContentPart } from "./types";
 import { escapeAttr } from "./xml";
 
@@ -39,12 +39,13 @@ export function buildAgenticContext(context: AiContext): string {
   }
 
   if (context.styleGuide.length > 0) {
-    const lines = context.styleGuide
-      .map(serializeStyleGuideEntry)
-      .filter(Boolean);
-    if (lines.length > 0) {
-      xml += `<style-guide>\n${lines.join("\n")}\n</style-guide>\n\n`;
-    }
+    const lines = context.styleGuide.map(serializeStyleGuideEntry).join("\n");
+    xml += `<style-guide>\n${lines}\n</style-guide>\n\n`;
+  }
+
+  if (context.guardrails.length > 0) {
+    const lines = context.guardrails.map(serializeGuardrailEntry).join("\n");
+    xml += `<guardrails>\nIssues to flag and fix. Each lists the phrasings that trigger it, a fix, and an affirmative alternative.\n${lines}\n</guardrails>\n\n`;
   }
 
   xml += buildTableOfContents(context.chapters);

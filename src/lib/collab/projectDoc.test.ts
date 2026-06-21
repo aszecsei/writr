@@ -115,6 +115,7 @@ describe("projectDoc tables enum", () => {
       "worldbuilding",
       "timeline",
       "styleGuide",
+      "guardrails",
       "outlineColumns",
       "outlineRows",
       "outlineCells",

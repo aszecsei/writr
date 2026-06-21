@@ -9,6 +9,7 @@ import {
   CharacterRelationshipSchema,
   CharacterSchema,
   CommentSchema,
+  GuardrailEntrySchema,
   LocationSchema,
   normalizeAppSettings,
   OutlineGridCellSchema,
@@ -42,6 +43,8 @@ export const ProjectBackupDataSchema = z.object({
   locations: z.array(LocationSchema),
   timelineEvents: z.array(TimelineEventSchema),
   styleGuideEntries: z.array(StyleGuideEntrySchema),
+  // `.default([])` so backups exported before guardrails still validate.
+  guardrailEntries: z.array(GuardrailEntrySchema).default([]),
   worldbuildingDocs: z.array(WorldbuildingDocSchema),
   outlineGridColumns: z.array(OutlineGridColumnSchema),
   outlineGridRows: z.array(OutlineGridRowSchema),

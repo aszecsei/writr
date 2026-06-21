@@ -2,6 +2,8 @@ export { useAppSettings } from "./useAppSettings";
 export {
   useCharacter,
   useCharactersByProject,
+  useGuardrailEntry,
+  useGuardrailsByProject,
   useLocation,
   useLocationsByProject,
   useRelationshipsByProject,

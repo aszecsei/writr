@@ -13,6 +13,7 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
     characters: [],
     locations: [],
     styleGuide: [],
+    guardrails: [],
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],

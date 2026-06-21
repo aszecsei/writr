@@ -66,6 +66,22 @@ function remapIdArray(ids: string[] | undefined, idMap: IdMap): string[] {
   return ids.map((id) => idMap.get(id) ?? id);
 }
 
+/**
+ * Remap a list of project ids (e.g. `disabledProjectIds`) through `idMap`,
+ * dropping any that aren't part of this backup — references to other projects
+ * are meaningless in the imported copy.
+ */
+function remapScopedProjectIds(
+  ids: string[] | undefined,
+  idMap: IdMap,
+): string[] {
+  if (!ids) return [];
+  return ids.flatMap((id) => {
+    const mapped = idMap.get(id);
+    return mapped ? [mapped] : [];
+  });
+}
+
 function mustGetId(idMap: IdMap, oldId: string): string {
   const newId = idMap.get(oldId);
   if (!newId) {
@@ -106,6 +122,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   mapEntityIds(idMap, data.locations);
   mapEntityIds(idMap, data.timelineEvents);
   mapEntityIds(idMap, data.styleGuideEntries);
+  mapEntityIds(idMap, data.guardrailEntries);
   mapEntityIds(idMap, data.worldbuildingDocs);
   mapEntityIds(idMap, data.outlineGridColumns);
   mapEntityIds(idMap, data.outlineGridRows);
@@ -121,11 +138,20 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
 
   // Simple entities: only id + projectId remapped
   const chapters = remapSimple(data.chapters, idMap, newProjectId);
-  const styleGuideEntries = remapSimple(
-    data.styleGuideEntries,
-    idMap,
-    newProjectId,
-  );
+  // Style guide & guardrails additionally carry a `disabledProjectIds` list;
+  // remap those through idMap and drop ids outside this backup's scope.
+  const styleGuideEntries = data.styleGuideEntries.map((e) => ({
+    ...e,
+    id: mustGetId(idMap, e.id),
+    projectId: newProjectId,
+    disabledProjectIds: remapScopedProjectIds(e.disabledProjectIds, idMap),
+  }));
+  const guardrailEntries = data.guardrailEntries.map((e) => ({
+    ...e,
+    id: mustGetId(idMap, e.id),
+    projectId: newProjectId,
+    disabledProjectIds: remapScopedProjectIds(e.disabledProjectIds, idMap),
+  }));
   const outlineGridColumns = remapSimple(
     data.outlineGridColumns,
     idMap,
@@ -241,6 +267,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     locations,
     timelineEvents,
     styleGuideEntries,
+    guardrailEntries,
     worldbuildingDocs,
     outlineGridColumns,
     outlineGridRows,
@@ -267,6 +294,7 @@ async function insertProjectData(data: ProjectBackupData): Promise<void> {
   await db.locations.bulkAdd(data.locations);
   await db.timelineEvents.bulkAdd(data.timelineEvents);
   await db.styleGuideEntries.bulkAdd(data.styleGuideEntries);
+  await db.guardrailEntries.bulkAdd(data.guardrailEntries);
   await db.worldbuildingDocs.bulkAdd(data.worldbuildingDocs);
   await db.outlineGridColumns.bulkAdd(data.outlineGridColumns);
   await db.outlineGridRows.bulkAdd(data.outlineGridRows);
@@ -333,6 +361,7 @@ export async function importBackup(
         db.locations,
         db.timelineEvents,
         db.styleGuideEntries,
+        db.guardrailEntries,
         db.worldbuildingDocs,
         db.outlineGridColumns,
         db.outlineGridRows,
@@ -357,6 +386,7 @@ export async function importBackup(
         db.chapterSummaries,
         db.snapshotManifests,
         db.agents,
+        db.indexedChunks,
         db.savedPrompts,
         db.brainstormSetups,
         db.brainstormIdeas,

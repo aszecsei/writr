@@ -21,6 +21,7 @@ import type {
   CharacterRelationship,
   Comment,
   EditPlan,
+  GuardrailEntry,
   IndexedChunk,
   Location,
   OutlineGridCell,
@@ -98,6 +99,7 @@ export class WritrDatabase extends Dexie {
   brainstormSetups!: EntityTable<BrainstormSetup, "id">;
   brainstormIdeas!: EntityTable<BrainstormIdea, "id">;
   indexedChunks!: EntityTable<IndexedChunk, "id">;
+  guardrailEntries!: EntityTable<GuardrailEntry, "id">;
 
   constructor() {
     super("writr");
@@ -1037,6 +1039,33 @@ export class WritrDatabase extends Dexie {
     this.version(39).stores({
       indexedChunks:
         "id, projectId, [projectId+sourceType], sourceId, [sourceId+chunkIndex]",
+    });
+
+    // v40: guardrailEntries — per-project negatives (label/flags/fix/
+    // positiveFix) that complement the style guide. Indexed like style guide
+    // for project-scoped, ordered retrieval.
+    this.version(40).stores({
+      guardrailEntries: "id, projectId, [projectId+order]",
+    });
+
+    // v41: style guide & guardrail entries gain global scope (projectId may be
+    // null) and a per-project `disabledProjectIds` list. No `.stores()` change —
+    // the existing indexes stay; global rows (null projectId) are not indexed by
+    // IndexedDB and are scanned in JS instead. Backfill `disabledProjectIds = []`
+    // so legacy rows survive Zod parse and `.includes` checks.
+    this.version(41).upgrade(async (tx) => {
+      await tx
+        .table("styleGuideEntries")
+        .toCollection()
+        .modify((e: { disabledProjectIds?: unknown }) => {
+          if (!Array.isArray(e.disabledProjectIds)) e.disabledProjectIds = [];
+        });
+      await tx
+        .table("guardrailEntries")
+        .toCollection()
+        .modify((e: { disabledProjectIds?: unknown }) => {
+          if (!Array.isArray(e.disabledProjectIds)) e.disabledProjectIds = [];
+        });
     });
 
     // Seed singleton rows so liveQuery hooks never need to write

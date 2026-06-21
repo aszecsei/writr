@@ -130,6 +130,17 @@ async function loadEntityDocs(
         }),
       );
     })
+    .with("guardrailEntry", async (t) => {
+      const entries = await db.guardrailEntries.where({ projectId }).toArray();
+      return entries.map((e) =>
+        entityToDoc({
+          entity: e as unknown as Record<string, unknown> & { id: string },
+          entityType: t,
+          projectId,
+          titleField: "label",
+        }),
+      );
+    })
     .with("worldbuildingDoc", async (t) => {
       const docs = await db.worldbuildingDocs.where({ projectId }).toArray();
       return docs.map((d) =>

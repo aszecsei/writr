@@ -4,6 +4,7 @@ import type { ProjectId } from "@/db/schemas";
 import {
   makeChapter,
   makeCharacter,
+  makeGuardrailEntry,
   makeLocation,
   makeOutlineGridCell,
   makeOutlineGridColumn,
@@ -43,6 +44,7 @@ describe("list tool", () => {
       db.locations.clear(),
       db.timelineEvents.clear(),
       db.styleGuideEntries.clear(),
+      db.guardrailEntries.clear(),
       db.worldbuildingDocs.clear(),
     ]);
   });
@@ -114,6 +116,15 @@ describe("list tool", () => {
     expect((r.data?.entries as ListEntry[]).length).toBe(1);
   });
 
+  it("lists guardrails", async () => {
+    await db.guardrailEntries.add(
+      makeGuardrailEntry({ projectId, label: "No filler" }),
+    );
+    const r = await executeTool("list", { category: "guardrail" }, ctx);
+    expect(r.success).toBe(true);
+    expect((r.data?.entries as ListEntry[]).length).toBe(1);
+  });
+
   it("lists worldbuilding docs", async () => {
     await db.worldbuildingDocs.bulkAdd([
       makeWorldbuildingDoc({ projectId, title: "Magic" }),
@@ -152,6 +163,7 @@ describe("get tool", () => {
       db.locations.clear(),
       db.timelineEvents.clear(),
       db.styleGuideEntries.clear(),
+      db.guardrailEntries.clear(),
       db.worldbuildingDocs.clear(),
       db.outlineGridColumns.clear(),
       db.outlineGridRows.clear(),
@@ -182,6 +194,33 @@ describe("get tool", () => {
     });
     expect(results[0].data?.name).toBe("Bob");
     expect(results[0].data?.role).toBe("antagonist");
+  });
+
+  it("fetches a single guardrail with its flags and fixes", async () => {
+    const g = makeGuardrailEntry({
+      projectId,
+      label: "No filler comparisons",
+      flags: ["the way a [comparison]"],
+      fix: "Name what is present.",
+      positiveFix: "Use the concrete detail.",
+    });
+    await db.guardrailEntries.add(g);
+    const r = await executeTool(
+      "get",
+      { requests: [{ category: "guardrail", ids: [g.id] }] },
+      ctx,
+    );
+    expect(r.success).toBe(true);
+    const results = r.data?.results as GetResult[];
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      category: "guardrail",
+      id: g.id,
+      found: true,
+    });
+    expect(results[0].data?.label).toBe("No filler comparisons");
+    expect(results[0].data?.flags).toEqual(["the way a [comparison]"]);
+    expect(results[0].data?.positiveFix).toBe("Use the concrete detail.");
   });
 
   it("batches multiple ids in one request", async () => {

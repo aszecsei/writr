@@ -6,6 +6,7 @@ export type SearchableEntityType =
   | "location"
   | "timelineEvent"
   | "styleGuideEntry"
+  | "guardrailEntry"
   | "worldbuildingDoc"
   | "outlineCell";
 

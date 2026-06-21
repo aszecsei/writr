@@ -15,6 +15,7 @@ function makeContext(): AiContext {
     characters: [],
     locations: [],
     styleGuide: [],
+    guardrails: [],
     timelineEvents: [],
     worldbuildingDocs: [],
     relationships: [],

@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Clock, GitFork, Globe, MapPin, Music, Pen, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -60,7 +61,7 @@ const sections: {
 ];
 
 export default function BibleOverviewPage() {
-  const params = useParams<{ projectId: string }>();
+  const params = useParams<{ projectId: ProjectId }>();
   const characters = useCharactersByProject(params.projectId);
   const locations = useLocationsByProject(params.projectId);
   const timeline = useTimelineByProject(params.projectId);

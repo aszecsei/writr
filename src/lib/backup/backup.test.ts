@@ -25,6 +25,7 @@ import { normalizeAppSettings } from "@/db/schemas";
 import {
   makeChapter,
   makeCharacter,
+  makeGuardrailEntry,
   makeLocation,
   makeOutlineGridCell,
   makeOutlineGridColumn,
@@ -305,6 +306,14 @@ function buildTestProjectData(projectId: ProjectId): ProjectBackupData {
     title: "Rule 1",
     id: crypto.randomUUID() as never,
   });
+  const guardrail = makeGuardrailEntry({
+    projectId,
+    label: "No filler comparisons",
+    id: crypto.randomUUID() as never,
+    flags: ["the way a [comparison]"],
+    fix: "Name what is present.",
+    positiveFix: "Use the concrete detail.",
+  });
   const worldDoc = makeWorldbuildingDoc({
     projectId,
     title: "Lore",
@@ -353,6 +362,7 @@ function buildTestProjectData(projectId: ProjectId): ProjectBackupData {
     locations: [location],
     timelineEvents: [timeline],
     styleGuideEntries: [styleGuide],
+    guardrailEntries: [guardrail],
     worldbuildingDocs: [worldDoc],
     outlineGridColumns: [col],
     outlineGridRows: [row],
@@ -374,6 +384,7 @@ async function clearAllTables() {
   await db.locations.clear();
   await db.timelineEvents.clear();
   await db.styleGuideEntries.clear();
+  await db.guardrailEntries.clear();
   await db.worldbuildingDocs.clear();
   await db.outlineGridColumns.clear();
   await db.outlineGridRows.clear();
@@ -416,6 +427,7 @@ describe("gatherProjectData", () => {
     await db.locations.bulkAdd(data.locations);
     await db.timelineEvents.bulkAdd(data.timelineEvents);
     await db.styleGuideEntries.bulkAdd(data.styleGuideEntries);
+    await db.guardrailEntries.bulkAdd(data.guardrailEntries);
     await db.worldbuildingDocs.bulkAdd(data.worldbuildingDocs);
     await db.outlineGridColumns.bulkAdd(data.outlineGridColumns);
     await db.outlineGridRows.bulkAdd(data.outlineGridRows);
@@ -438,6 +450,7 @@ describe("gatherProjectData", () => {
     expect(gathered.locations).toHaveLength(1);
     expect(gathered.timelineEvents).toHaveLength(1);
     expect(gathered.styleGuideEntries).toHaveLength(1);
+    expect(gathered.guardrailEntries).toHaveLength(1);
     expect(gathered.worldbuildingDocs).toHaveLength(1);
     expect(gathered.outlineGridColumns).toHaveLength(1);
     expect(gathered.outlineGridRows).toHaveLength(1);
@@ -937,6 +950,9 @@ describe("remapProjectIds", () => {
     expect(remapped.styleGuideEntries[0].id).not.toBe(
       data.styleGuideEntries[0].id,
     );
+    expect(remapped.guardrailEntries[0].id).not.toBe(
+      data.guardrailEntries[0].id,
+    );
     expect(remapped.worldbuildingDocs[0].id).not.toBe(
       data.worldbuildingDocs[0].id,
     );
@@ -969,6 +985,7 @@ describe("remapProjectIds", () => {
     expect(remapped.characterRelationships[0].projectId).toBe(newProjectId);
     expect(remapped.timelineEvents[0].projectId).toBe(newProjectId);
     expect(remapped.styleGuideEntries[0].projectId).toBe(newProjectId);
+    expect(remapped.guardrailEntries[0].projectId).toBe(newProjectId);
     expect(remapped.worldbuildingDocs[0].projectId).toBe(newProjectId);
     expect(remapped.outlineGridColumns[0].projectId).toBe(newProjectId);
     expect(remapped.outlineGridRows[0].projectId).toBe(newProjectId);
@@ -1060,6 +1077,7 @@ describe("round-trip export → import", () => {
     await db.locations.bulkAdd(data.locations);
     await db.timelineEvents.bulkAdd(data.timelineEvents);
     await db.styleGuideEntries.bulkAdd(data.styleGuideEntries);
+    await db.guardrailEntries.bulkAdd(data.guardrailEntries);
     await db.worldbuildingDocs.bulkAdd(data.worldbuildingDocs);
     await db.outlineGridColumns.bulkAdd(data.outlineGridColumns);
     await db.outlineGridRows.bulkAdd(data.outlineGridRows);
@@ -1112,6 +1130,11 @@ describe("round-trip export → import", () => {
       .where({ projectId })
       .toArray();
     expect(styleGuide).toHaveLength(data.styleGuideEntries.length);
+
+    const guardrails = await db.guardrailEntries.where({ projectId }).toArray();
+    expect(guardrails).toHaveLength(data.guardrailEntries.length);
+    expect(guardrails[0].label).toBe(data.guardrailEntries[0].label);
+    expect(guardrails[0].flags).toEqual(data.guardrailEntries[0].flags);
 
     const worldDocs = await db.worldbuildingDocs.where({ projectId }).toArray();
     expect(worldDocs).toHaveLength(data.worldbuildingDocs.length);

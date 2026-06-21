@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import type { ProjectId } from "@/db/schemas";
+import { isActiveInProject } from "@/db/operations";
+import type { GuardrailEntry, ProjectId, StyleGuideEntry } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data";
 import {
   useCharactersByProject,
+  useGuardrailsByProject,
   useLocationsByProject,
   useRelationshipsByProject,
   useStyleGuideByProject,
@@ -40,9 +42,36 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
   const worldbuilding = useWorldbuildingDocsByProject(projectId);
   const timeline = useTimelineByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
+  const guardrails = useGuardrailsByProject(projectId);
   const outlineColumns = useOutlineGridColumns(projectId);
   const outlineRows = useOutlineGridRows(projectId);
   const outlineCells = useOutlineGridCells(projectId);
+
+  // Peers' `useSharedList` filters by `projectId`, so globals (projectId=null)
+  // would be dropped. Mirror the effective active set with globals denormalized
+  // to this project's id; disabled entries are excluded entirely.
+  const effectiveStyleGuide = useMemo<StyleGuideEntry[] | undefined>(
+    () =>
+      styleGuide
+        ?.filter((e) => isActiveInProject(e, projectId))
+        .map((e) =>
+          e.projectId === null
+            ? { ...e, projectId, disabledProjectIds: [] }
+            : e,
+        ),
+    [styleGuide, projectId],
+  );
+  const effectiveGuardrails = useMemo<GuardrailEntry[] | undefined>(
+    () =>
+      guardrails
+        ?.filter((e) => isActiveInProject(e, projectId))
+        .map((e) =>
+          e.projectId === null
+            ? { ...e, projectId, disabledProjectIds: [] }
+            : e,
+        ),
+    [guardrails, projectId],
+  );
 
   const active = session !== null && isHost && isProjectMode;
   const projectDoc = useMemo(
@@ -80,7 +109,8 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
       locations === undefined ||
       worldbuilding === undefined ||
       timeline === undefined ||
-      styleGuide === undefined ||
+      effectiveStyleGuide === undefined ||
+      effectiveGuardrails === undefined ||
       outlineColumns === undefined ||
       outlineRows === undefined ||
       outlineCells === undefined
@@ -99,7 +129,8 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
         locations,
         worldbuilding,
         timeline,
-        styleGuide,
+        styleGuide: effectiveStyleGuide,
+        guardrails: effectiveGuardrails,
         outlineColumns,
         outlineRows,
         outlineCells,
@@ -115,7 +146,8 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
     mirror.syncTable("locations", locations);
     mirror.syncTable("worldbuilding", worldbuilding);
     mirror.syncTable("timeline", timeline);
-    mirror.syncTable("styleGuide", styleGuide);
+    mirror.syncTable("styleGuide", effectiveStyleGuide);
+    mirror.syncTable("guardrails", effectiveGuardrails);
     mirror.syncTable("outlineColumns", outlineColumns);
     mirror.syncTable("outlineRows", outlineRows);
     mirror.syncTable("outlineCells", outlineCells);
@@ -127,7 +159,8 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
     locations,
     worldbuilding,
     timeline,
-    styleGuide,
+    effectiveStyleGuide,
+    effectiveGuardrails,
     outlineColumns,
     outlineRows,
     outlineCells,

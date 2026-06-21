@@ -86,6 +86,7 @@ const buildContext = async () => ({
   characters: [],
   locations: [],
   styleGuide: [],
+  guardrails: [],
   timelineEvents: [],
   worldbuildingDocs: [],
   relationships: [],

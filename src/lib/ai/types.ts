@@ -34,6 +34,7 @@ import type {
   Chapter,
   Character,
   CharacterRelationship,
+  GuardrailEntry,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
@@ -55,6 +56,7 @@ export interface AiContext {
   characters: Character[];
   locations: Location[];
   styleGuide: StyleGuideEntry[];
+  guardrails: GuardrailEntry[];
   timelineEvents: TimelineEvent[];
   worldbuildingDocs: WorldbuildingDoc[];
   relationships: CharacterRelationship[];

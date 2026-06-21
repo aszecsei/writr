@@ -8,6 +8,8 @@ import type {
   Character,
   CharacterId,
   CharacterRelationship,
+  GuardrailEntry,
+  GuardrailEntryId,
   Location,
   LocationId,
   OutlineGridCell,
@@ -29,6 +31,8 @@ import {
   useChaptersByProject as dexieUseChaptersByProject,
   useCharacter as dexieUseCharacter,
   useCharactersByProject as dexieUseCharactersByProject,
+  useGuardrailEntry as dexieUseGuardrailEntry,
+  useGuardrailsByProject as dexieUseGuardrailsByProject,
   useLocation as dexieUseLocation,
   useLocationsByProject as dexieUseLocationsByProject,
   useProject as dexieUseProject,
@@ -169,6 +173,28 @@ export function useStyleGuideByProject(projectId: ProjectId | null) {
   );
   const shared = useSharedList<StyleGuideEntry>(
     "styleGuide",
+    projectId,
+    "order",
+  );
+  return source.kind === "dexie" ? dexie : shared;
+}
+
+export function useGuardrailEntry(
+  id: GuardrailEntryId | null,
+): GuardrailEntry | undefined {
+  const source = useDataSource();
+  const dexie = dexieUseGuardrailEntry(source.kind === "dexie" ? id : null);
+  const shared = useSharedEntity<GuardrailEntry>("guardrails", id);
+  return source.kind === "dexie" ? dexie : shared;
+}
+
+export function useGuardrailsByProject(projectId: ProjectId | null) {
+  const source = useDataSource();
+  const dexie = dexieUseGuardrailsByProject(
+    source.kind === "dexie" ? projectId : null,
+  );
+  const shared = useSharedList<GuardrailEntry>(
+    "guardrails",
     projectId,
     "order",
   );

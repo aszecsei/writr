@@ -37,6 +37,8 @@ export const CHAT_READS_BASE: readonly string[] = [
   "get:timeline",
   "list:style_guide",
   "get:style_guide",
+  "list:guardrail",
+  "get:guardrail",
   "list:worldbuilding",
   "get:worldbuilding",
   // Chapters: metadata, content, structure.
@@ -203,6 +205,8 @@ export const BRAINSTORM_TOOLS: readonly string[] = [
   "get:timeline",
   "list:style_guide",
   "get:style_guide",
+  "list:guardrail",
+  "get:guardrail",
   "list:worldbuilding",
   "get:worldbuilding",
   "get:outline",
@@ -219,6 +223,8 @@ export const CHARACTER_DIALOGUE_TOOLS: readonly string[] = [
   "get:character",
   "list:style_guide",
   "get:style_guide",
+  "list:guardrail",
+  "get:guardrail",
 ];
 
 /**

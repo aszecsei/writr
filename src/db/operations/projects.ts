@@ -67,6 +67,7 @@ export async function deleteAllProjectData(
   await db.snapshotManifests.where({ projectId }).delete();
   await db.agents.where({ projectId }).delete();
   await db.indexedChunks.where({ projectId }).delete();
+  await db.guardrailEntries.where({ projectId }).delete();
 }
 
 export async function deleteProject(id: ProjectId): Promise<void> {
@@ -103,6 +104,7 @@ export async function deleteProject(id: ProjectId): Promise<void> {
       db.snapshotManifests,
       db.agents,
       db.indexedChunks,
+      db.guardrailEntries,
     ],
     async () => {
       await deleteAllProjectData(id);

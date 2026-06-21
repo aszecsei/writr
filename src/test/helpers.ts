@@ -5,6 +5,8 @@ import type {
   CharacterId,
   CharacterRelationship,
   CharacterRelationshipId,
+  GuardrailEntry,
+  GuardrailEntryId,
   Location,
   LocationId,
   OutlineGridCell,
@@ -122,6 +124,23 @@ export function makeStyleGuideEntry(
     category: "custom",
     content: "",
     order: 0,
+    disabledProjectIds: [],
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeGuardrailEntry(
+  overrides: Partial<GuardrailEntry> & { projectId: ProjectId; label: string },
+): GuardrailEntry {
+  return {
+    id: nextId<GuardrailEntryId>(),
+    flags: [],
+    fix: "",
+    positiveFix: "",
+    order: 0,
+    disabledProjectIds: [],
     createdAt: ts,
     updatedAt: ts,
     ...overrides,

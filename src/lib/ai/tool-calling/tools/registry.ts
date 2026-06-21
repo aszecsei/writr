@@ -24,16 +24,21 @@ import {
   getCharacter,
   getCharactersByProject,
 } from "@/db/operations/characters";
+import {
+  getGuardrailEntry,
+  listGuardrailsForProject,
+} from "@/db/operations/guardrails";
 import { getLocation, getLocationsByProject } from "@/db/operations/locations";
 import {
   getOutlineGridCellsByProject,
   getOutlineGridColumnsByProject,
   getOutlineGridRowsByProject,
 } from "@/db/operations/outline";
+import { isActiveInProject } from "@/db/operations/scope";
 import { getAppSettings } from "@/db/operations/settings";
 import {
-  getStyleGuideByProject,
   getStyleGuideEntry,
+  listStyleGuideForProject,
 } from "@/db/operations/style-guide";
 import {
   getTimelineByProject,
@@ -46,6 +51,7 @@ import {
 import type {
   ChapterId,
   CharacterId,
+  GuardrailEntryId,
   LocationId,
   StyleGuideEntryId,
   TimelineEventId,
@@ -65,6 +71,7 @@ export const READ_CATEGORIES = [
   "timeline",
   "chapter",
   "style_guide",
+  "guardrail",
   "worldbuilding",
   "outline",
   "summary",
@@ -81,6 +88,7 @@ export const LIST_CATEGORIES: readonly ReadCategory[] = [
   "timeline",
   "chapter",
   "style_guide",
+  "guardrail",
   "worldbuilding",
 ] as const;
 
@@ -240,7 +248,9 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
 
   style_guide: {
     async list(ctx) {
-      const rows = await getStyleGuideByProject(ctx.projectId);
+      const rows = (await listStyleGuideForProject(ctx.projectId)).filter((e) =>
+        isActiveInProject(e, ctx.projectId),
+      );
       return {
         message: `Found ${rows.length} style guide entries`,
         entries: rows.map((s) => ({
@@ -261,6 +271,32 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
           title: e.title,
           category: e.category,
           content: e.content,
+        },
+      };
+    },
+  },
+
+  guardrail: {
+    async list(ctx) {
+      const rows = (await listGuardrailsForProject(ctx.projectId)).filter((e) =>
+        isActiveInProject(e, ctx.projectId),
+      );
+      return {
+        message: `Found ${rows.length} guardrails`,
+        entries: rows.map((g) => ({ id: g.id, label: g.label })),
+      };
+    },
+    async get(id) {
+      if (!id) return { data: null, error: "guardrail get requires an id" };
+      const g = await getGuardrailEntry(id as GuardrailEntryId);
+      if (!g) return { data: null, error: `Guardrail not found: ${id}` };
+      return {
+        data: {
+          id: g.id,
+          label: g.label,
+          flags: g.flags,
+          fix: g.fix,
+          positiveFix: g.positiveFix,
         },
       };
     },
@@ -435,7 +471,7 @@ export const listTool = defineTool({
   name: "List Entries",
   description:
     "List all entries of one category in the project. Returns each entry's id and a small set of summary fields. " +
-    "Categories: character, location, timeline, chapter, style_guide, worldbuilding. " +
+    "Categories: character, location, timeline, chapter, style_guide, guardrail, worldbuilding. " +
     "Follow up with `get` to fetch full details for specific ids.",
   parameters: {
     type: "object",

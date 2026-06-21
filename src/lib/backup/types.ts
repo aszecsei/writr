@@ -8,6 +8,7 @@ import type {
   Character,
   CharacterRelationship,
   Comment,
+  GuardrailEntry,
   Location,
   OutlineGridCell,
   OutlineGridColumn,
@@ -41,6 +42,7 @@ export interface ProjectBackupData {
   locations: Location[];
   timelineEvents: TimelineEvent[];
   styleGuideEntries: StyleGuideEntry[];
+  guardrailEntries: GuardrailEntry[];
   worldbuildingDocs: WorldbuildingDoc[];
   outlineGridColumns: OutlineGridColumn[];
   outlineGridRows: OutlineGridRow[];

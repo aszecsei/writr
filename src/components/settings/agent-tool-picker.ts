@@ -61,6 +61,11 @@ export const READS_GROUPS: ToolPickerGroup[] = [
         ids: ["list:style_guide", "get:style_guide"],
       },
       {
+        key: "read:guardrail",
+        label: "Guardrails",
+        ids: ["list:guardrail", "get:guardrail"],
+      },
+      {
         key: "read:worldbuilding",
         label: "Worldbuilding",
         ids: ["list:worldbuilding", "get:worldbuilding"],
