@@ -1,172 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type {
-  AgentRunId,
-  ChapterId,
-  ProjectId,
-  ProposedEdit,
-  ProposedEditId,
-  WorkUnitId,
-} from "@/db/schemas";
 import { normalizedIncludes } from "@/lib/punctuation-match";
 import {
-  applyEditsToContent,
   type EditLocator,
   locateProposedEdit,
   spliceEdit,
-} from "./stagedChapterContent";
-
-const ts = "2024-01-01T00:00:00.000Z";
-
-function makeEdit(overrides: Partial<ProposedEdit>): ProposedEdit {
-  return {
-    id: overrides.id ?? ("edit-x" as ProposedEditId),
-    projectId: "00000000-0000-4000-8000-000000000001" as ProjectId,
-    runId: "00000000-0000-4000-8000-000000000002" as AgentRunId,
-    workUnitId: "00000000-0000-4000-8000-000000000003" as WorkUnitId,
-    chapterId: "00000000-0000-4000-8000-000000000004" as ChapterId,
-    kind: "replace",
-    anchorText: "",
-    newContent: "",
-    rationale: "",
-    status: "approved",
-    createdAt: ts,
-    updatedAt: ts,
-    ...overrides,
-  } as ProposedEdit;
-}
-
-describe("applyEditsToContent", () => {
-  it("applies a single replace edit using the combined locator", () => {
-    const content = "the dog ran swiftly down the road";
-    const edit = makeEdit({
-      id: "e1" as ProposedEditId,
-      kind: "replace",
-      anchorText: "ran swiftly down",
-      newContent: "tore down",
-    });
-    const {
-      content: out,
-      applied,
-      skipped,
-    } = applyEditsToContent(content, [edit]);
-    expect(out).toBe("the dog tore down the road");
-    expect(applied).toEqual(["e1"]);
-    expect(skipped).toEqual([]);
-  });
-
-  it("uses prefix/suffix to disambiguate a repeated anchor", () => {
-    const content = "the good dog and the bad dog ran home";
-    const edit = makeEdit({
-      id: "e1" as ProposedEditId,
-      kind: "replace",
-      prefix: "the bad ",
-      anchorText: "dog",
-      suffix: " ran",
-      newContent: "wolf",
-    });
-    const { content: out } = applyEditsToContent(content, [edit]);
-    expect(out).toBe("the good dog and the bad wolf ran home");
-  });
-
-  it("skips a replace edit when the combined locator is no longer present", () => {
-    const content = "completely different prose now";
-    const edit = makeEdit({
-      id: "e1" as ProposedEditId,
-      kind: "replace",
-      anchorText: "ran swiftly down",
-      newContent: "tore down",
-    });
-    const {
-      content: out,
-      applied,
-      skipped,
-    } = applyEditsToContent(content, [edit]);
-    expect(out).toBe(content);
-    expect(applied).toEqual([]);
-    expect(skipped).toEqual(["e1"]);
-  });
-
-  it("applies two replace edits in the same chapter without clobbering each other", () => {
-    const content = "alpha beta gamma delta epsilon";
-    // Edits supplied in input order — locator decides apply order.
-    const editEarly = makeEdit({
-      id: "early" as ProposedEditId,
-      kind: "replace",
-      anchorText: "beta",
-      newContent: "BETA",
-    });
-    const editLate = makeEdit({
-      id: "late" as ProposedEditId,
-      kind: "replace",
-      anchorText: "delta",
-      newContent: "DELTA",
-    });
-    const {
-      content: out,
-      applied,
-      skipped,
-    } = applyEditsToContent(content, [editEarly, editLate]);
-    expect(out).toBe("alpha BETA gamma DELTA epsilon");
-    expect(applied).toContain("early");
-    expect(applied).toContain("late");
-    expect(skipped).toEqual([]);
-  });
-
-  it("resolves a replace anchor whose quotes differ from the chapter's", () => {
-    // Chapter stores curly quotes (TipTap Typography output); LLM emitted
-    // straight quotes in its tool call. Match must still locate the anchor
-    // and splice using the chapter's original character positions.
-    const content = "She said “hello” and waved.";
-    const edit = makeEdit({
-      id: "e1" as ProposedEditId,
-      kind: "replace",
-      anchorText: 'said "hello"',
-      newContent: 'whispered "hi"',
-    });
-    const {
-      content: out,
-      applied,
-      skipped,
-    } = applyEditsToContent(content, [edit]);
-    expect(out).toBe('She whispered "hi" and waved.');
-    expect(applied).toEqual(["e1"]);
-    expect(skipped).toEqual([]);
-  });
-
-  it("resolves an insert_at anchor whose apostrophe differs from the chapter's", () => {
-    const content = "Don’t do that.";
-    const edit = makeEdit({
-      id: "e1" as ProposedEditId,
-      kind: "insert_at",
-      anchorText: "Don't",
-      fromOffset: undefined,
-      newContent: " really",
-    });
-    const { content: out, applied } = applyEditsToContent(content, [edit]);
-    expect(out).toBe(" reallyDon’t do that.");
-    expect(applied).toEqual(["e1"]);
-  });
-
-  it("applies append + replace together correctly", () => {
-    const content = "first sentence.";
-    const replaceEdit = makeEdit({
-      id: "r" as ProposedEditId,
-      kind: "replace",
-      anchorText: "first",
-      newContent: "First",
-    });
-    const appendEdit = makeEdit({
-      id: "a" as ProposedEditId,
-      kind: "append",
-      newContent: " Second sentence.",
-    });
-    const { content: out } = applyEditsToContent(content, [
-      replaceEdit,
-      appendEdit,
-    ]);
-    expect(out).toBe("First sentence. Second sentence.");
-  });
-});
+} from "./edit-locator";
 
 // The chat-mode Apply path (ChapterEditor) passes a `PendingStagedEdit`, which
 // is structurally an `EditLocator` (no id / DB fields). These cover that shape
@@ -236,8 +74,7 @@ describe("locateProposedEdit (chat-shaped EditLocator)", () => {
       from: content.length,
       to: content.length,
     });
-    // insert_at by anchor: a zero-width point at the anchor start (consistent
-    // with the pipeline applier).
+    // insert_at by anchor: a zero-width point at the anchor start.
     expect(
       locateProposedEdit(content, { kind: "insert_at", anchorText: "bravo" }),
     ).toEqual({ from: 6, to: 6 });

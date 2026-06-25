@@ -1,7 +1,7 @@
 // ─── Tool Calling Types ─────────────────────────────────────────────
 
 import type { z } from "zod";
-import type { AgentRunId, ProjectId, WorkUnitId } from "@/db/schemas";
+import type { ProjectId } from "@/db/schemas";
 
 export type ToolCallStatus =
   | "pending"
@@ -16,39 +16,73 @@ export interface ToolResult {
   data?: Record<string, unknown>;
 }
 
+/** A request from an orchestrator to run a named sub-agent on a subtask. */
+export interface DelegateRequest {
+  /** Name or id of the sub-agent to run. */
+  agent: string;
+  /** The fully-specified, self-contained subtask. */
+  prompt: string;
+}
+
+/** The result of a delegated sub-agent run. */
+export interface DelegateOutcome {
+  /** The sub-agent's final text answer. */
+  answer: string;
+  /** True if the run was cancelled before producing a final answer. */
+  aborted: boolean;
+}
+
+/** A request to pause and ask the user to pick one of several options. */
+export interface ChoiceRequest {
+  question: string;
+  options: string[];
+}
+
+/**
+ * Host the chat panel injects so the `delegate` and `present_choice` tools can
+ * run sub-agents and surface user prompts without reaching into React state
+ * themselves. Present ONLY in interactive chat-panel invocations; absent in
+ * pipeline runs (both tools fail gracefully when it's undefined).
+ */
+export interface DelegationHost {
+  /** Current nesting depth; 0 = the top-level orchestrator. */
+  depth: number;
+  /** Agent-definition ids already in the current chain (cycle guard). */
+  ancestry: ReadonlySet<string>;
+  /**
+   * Run a sub-agent to completion and return its final answer.
+   * `parentToolMessageId` is the delegate tool call's message id, used to
+   * render the sub-agent transcript nested under it.
+   */
+  runSubAgent(
+    req: DelegateRequest,
+    parentToolMessageId?: string,
+  ): Promise<DelegateOutcome>;
+  /** Ask the user to pick an option; resolves with the chosen option text. */
+  requestChoice(req: ChoiceRequest): Promise<string>;
+}
+
 export interface ToolExecutionContext {
   projectId: ProjectId;
-  /** ID of the agent run this tool call belongs to. Set by the agent runner. */
-  runId?: AgentRunId;
   /**
-   * Pipeline-only: the work unit this agent is executing against. Set by
-   * `makeEditorAgent` so dual-mode tools (e.g. `propose_edit`) can attribute
-   * persisted rows to the correct work unit without making the LLM echo the
-   * id back on every call. Absent in chat-mode invocations — that's the
-   * signal a tool uses to switch to its non-persisting branch.
-   */
-  workUnitId?: WorkUnitId;
-  /**
-   * Kind of agent invoking the tool. Tools may branch on this — for example,
-   * `read_chapter` overlays staged proposed edits when called from an editor
-   * agent so a later editor in the same tier sees in-flight changes.
+   * Kind of agent invoking the tool. Tools may branch on this. Set by the
+   * agent runner from the agent's `kind`.
    */
   agentKind?: string;
   /**
-   * The set of chapter ids the agent is permitted to read. Used by the
-   * comprehension reader to preserve forward-only reading: chapter-reading
-   * tools refuse content for chapters outside this set, and list/search tools
-   * filter results to it. The reader populates it with every manuscript chapter
-   * up to and including the current one in flattened reading order. Undefined
-   * means no bound (full project access).
+   * The chat-message id of the tool call currently executing. Set by the agent
+   * runner per tool call so a tool can correlate side effects with its own
+   * message row — `delegate` uses it to attach the sub-agent transcript to the
+   * delegate call. Undefined outside the chat runner.
    */
-  readableChapterIds?: ReadonlySet<string>;
+  toolMessageId?: string;
   /**
-   * Reader-pass number this tool call belongs to (1-based). Set when a reader
-   * agent is constructed inside a multi-pass loop so per-pass tools (e.g.
-   * `propose_answer`) can stamp their writes with the originating pass.
+   * Sub-agent delegation machinery. Set by the AiPanel accessor on the agent's
+   * `agentContext` so the `delegate` / `present_choice` tools can run nested
+   * agents and bubble user-facing gates to the top-level panel. Undefined in
+   * pipeline runs.
    */
-  passNumber?: number;
+  delegation?: DelegationHost;
 }
 
 /** JSON Schema subset used to describe a single property */

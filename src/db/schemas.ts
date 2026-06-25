@@ -74,44 +74,8 @@ export const ProjectDictionaryIdSchema = z
   .brand<"ProjectDictionaryId">();
 export type ProjectDictionaryId = z.infer<typeof ProjectDictionaryIdSchema>;
 
-export const AgentRunIdSchema = z.uuid().brand<"AgentRunId">();
-export type AgentRunId = z.infer<typeof AgentRunIdSchema>;
-
-export const ReaderBibleLogEntryIdSchema = z
-  .uuid()
-  .brand<"ReaderBibleLogEntryId">();
-export type ReaderBibleLogEntryId = z.infer<typeof ReaderBibleLogEntryIdSchema>;
-
-export const ReaderBibleViewEntryIdSchema = z
-  .uuid()
-  .brand<"ReaderBibleViewEntryId">();
-export type ReaderBibleViewEntryId = z.infer<
-  typeof ReaderBibleViewEntryIdSchema
->;
-
-export const AgentNoteIdSchema = z.uuid().brand<"AgentNoteId">();
-export type AgentNoteId = z.infer<typeof AgentNoteIdSchema>;
-
-export const AgentQuestionIdSchema = z.uuid().brand<"AgentQuestionId">();
-export type AgentQuestionId = z.infer<typeof AgentQuestionIdSchema>;
-
-export const WorkUnitIdSchema = z.uuid().brand<"WorkUnitId">();
-export type WorkUnitId = z.infer<typeof WorkUnitIdSchema>;
-
-export const EditPlanIdSchema = z.uuid().brand<"EditPlanId">();
-export type EditPlanId = z.infer<typeof EditPlanIdSchema>;
-
-export const ProposedEditIdSchema = z.uuid().brand<"ProposedEditId">();
-export type ProposedEditId = z.infer<typeof ProposedEditIdSchema>;
-
-export const VerificationIdSchema = z.uuid().brand<"VerificationId">();
-export type VerificationId = z.infer<typeof VerificationIdSchema>;
-
 export const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
 export type ChapterSummaryId = z.infer<typeof ChapterSummaryIdSchema>;
-
-export const SnapshotManifestIdSchema = z.uuid().brand<"SnapshotManifestId">();
-export type SnapshotManifestId = z.infer<typeof SnapshotManifestIdSchema>;
 
 export const AgentDefinitionIdSchema = z.uuid().brand<"AgentDefinitionId">();
 export type AgentDefinitionId = z.infer<typeof AgentDefinitionIdSchema>;
@@ -448,24 +412,7 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 // ─── Agents ─────────────────────────────────────────────────────────
 
 /**
- * Pipeline-internal agent kinds. These run inside the manuscript review/edit
- * pipeline (Reader → Orchestrator → Editor → Verifier). Reader and Editor are
- * also exposed in the AiPanel chat dropdown via their corresponding chat-mode
- * agent rows; Orchestrator and Verifier are not user-selectable.
- */
-export const PipelineAgentKindEnum = z.enum([
-  "reader",
-  "orchestrator",
-  "editor",
-  "verifier",
-]);
-export type PipelineAgentKind = z.infer<typeof PipelineAgentKindEnum>;
-
-/**
- * All agent kinds: chat-mode user-facing agents, pipeline-internal agents
- * (orchestrator, verifier), and user-created agents. Reader/Editor appear in
- * BOTH the user-facing set (chat mode) and the pipeline-internal set — the
- * agent row is shared between the two execution paths.
+ * All agent kinds: chat-mode user-facing agents and user-created agents.
  */
 export const AgentKindEnum = z.enum([
   // User-facing chat agents (selectable from AiPanel dropdown).
@@ -479,21 +426,11 @@ export const AgentKindEnum = z.enum([
   "beta-reader",
   "outline-architect",
   "worldbuilder",
-  // Pipeline-internal (not user-selectable from chat).
-  "orchestrator",
-  "verifier",
+  "orchestrator-chat",
   // User-created via Manage Agents.
   "user",
 ]);
 export type AgentKind = z.infer<typeof AgentKindEnum>;
-
-/** Pipeline kinds as a const set for runtime checks. */
-export const PIPELINE_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
-  "reader",
-  "orchestrator",
-  "editor",
-  "verifier",
-]);
 
 /** Kinds exposed in the AiPanel chat dropdown. */
 export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
@@ -507,6 +444,7 @@ export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
   "beta-reader",
   "outline-architect",
   "worldbuilder",
+  "orchestrator-chat",
   "user",
 ]);
 
@@ -518,11 +456,9 @@ export const AgentModelOverrideSchema = z.object({
 export type AgentModelOverride = z.infer<typeof AgentModelOverrideSchema>;
 
 /**
- * Unified agent definition row. Backs both the seven user-facing chat agents
- * (spark, scene, reader, editor, character-dialogue, brainstorm, chat), the
- * two pipeline-internal agents (orchestrator, verifier), and any user-created
- * agents (kind="user"). Fields are seeded from bundled defaults when a
- * built-in agent is first written; "Reset to defaults" rewrites them.
+ * Unified agent definition row. Backs the built-in chat agents and any
+ * user-created agents (kind="user"). Fields are seeded from bundled defaults
+ * when a built-in agent is first written; "Reset to defaults" rewrites them.
  *
  * Built-in agents are global (projectId=null) and singleton-per-kind. User
  * agents may be project-scoped or global; multiple `kind="user"` rows are
@@ -719,7 +655,6 @@ export const AppSettingsSchema = z.object({
    * soft-resets — ends the current segment and starts a fresh one at the
    * next chapter with empty history. The reader bible carries forward.
    */
-  comprehensionContextThreshold: z.number().int().positive().default(80_000),
   enableToolCalling: z.boolean().default(false),
   customSystemPrompt: z.string().nullable().default(null),
   lastExportedAt: z.string().datetime().nullable().default(null),
@@ -859,410 +794,7 @@ export const CommentSchema = z.object({
 });
 export type Comment = z.infer<typeof CommentSchema>;
 
-// ─── Agent Pipeline ──────────────────────────────────────────────────
-//
-// Tables that back the manuscript review/edit pipeline (Reader → Orchestrator
-// → Editor → Verifier). Phase 1 uses agentRuns, readerBibleLog/View, agentNotes,
-// agentQuestions; Phase 2+ uses workUnits, editPlans, proposedEdits, etc. All
-// declared here in one v26 migration to avoid disturbance migrations later.
-//
-// Strict separation from the authored bible: pipeline tools never read or
-// write Character/Location/etc. tables. The reader builds its model purely
-// from manuscript text via `read_chapter` / `search_*`.
-
-// Top-level paths the Reader is allowed to write under. Anything else is
-// rejected by `bible_write` to prevent the model from inventing structure.
-export const READER_BIBLE_TOP_LEVEL_PATHS = [
-  "characters",
-  "locations",
-  "factions",
-  "rules",
-  "timeline",
-  "voice",
-  "open_threads",
-  "reader_knowledge",
-  // Thematic reader namespaces. Motifs are recurring concrete imagery; symbols
-  // are motifs promoted with an interpretive claim and ≥2 grounded occurrences;
-  // subtext covers what surface scenes are *also* about (juxtapositions,
-  // omissions live as sub-keys here).
-  "motifs",
-  "symbols",
-  "subtext",
-] as const;
-
-export const ReaderBibleOpEnum = z.enum(["set", "merge", "delete"]);
-export type ReaderBibleOp = z.infer<typeof ReaderBibleOpEnum>;
-
-/** Append-only entry recording every reader-bible mutation. */
-export const ReaderBibleLogEntrySchema = z.object({
-  id: ReaderBibleLogEntryIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  /** Slash-segmented path under one of READER_BIBLE_TOP_LEVEL_PATHS. */
-  path: z.string().min(1),
-  op: ReaderBibleOpEnum,
-  /** JSON value for set/merge ops. Ignored for delete. */
-  value: z.unknown().optional(),
-  /** Chapter index (1-based) the reader had processed when writing. */
-  asOfChapter: z.number().int().nonnegative().nullable().default(null),
-  /** Optional pointer back to the agent message that produced this entry. */
-  agentMessageId: z.string().nullable().default(null),
-  createdAt: timestamp,
-});
-export type ReaderBibleLogEntry = z.infer<typeof ReaderBibleLogEntrySchema>;
-
-/** Materialized current view per (runId, path). Bibles are scoped per agent
- * run so reading-passes from one run never leak into another run's context. */
-export const ReaderBibleViewEntrySchema = z.object({
-  id: ReaderBibleViewEntryIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  path: z.string().min(1),
-  value: z.unknown(),
-  lastUpdatedAt: timestamp,
-  lastLogEntryId: z.string(),
-});
-export type ReaderBibleViewEntry = z.infer<typeof ReaderBibleViewEntrySchema>;
-
-export const AgentNoteCategoryEnum = z.enum([
-  "plot",
-  "character",
-  "continuity",
-  "voice",
-  "pacing",
-  "prose",
-  "worldbuilding",
-  "theme",
-  "other",
-]);
-export type AgentNoteCategory = z.infer<typeof AgentNoteCategoryEnum>;
-
-export const AgentNoteSeverityEnum = z.enum([
-  "blocker",
-  "major",
-  "minor",
-  "nit",
-]);
-export type AgentNoteSeverity = z.infer<typeof AgentNoteSeverityEnum>;
-
-export const AgentNoteStatusEnum = z.enum(["open", "addressed", "dismissed"]);
-export type AgentNoteStatus = z.infer<typeof AgentNoteStatusEnum>;
-
-export const AgentReferenceKindEnum = z.enum(["chapter", "bible", "note"]);
-export const AgentReferenceSchema = z.object({
-  kind: AgentReferenceKindEnum,
-  id: z.string(),
-  /** Optional locator (e.g. paragraph index, anchor text snippet). */
-  locator: z.string().optional(),
-});
-export type AgentReference = z.infer<typeof AgentReferenceSchema>;
-
-export const AgentNoteSchema = z.object({
-  id: AgentNoteIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  /** Optional anchor chapter; null = global / cross-cutting. */
-  chapterId: ChapterIdSchema.nullable().default(null),
-  category: AgentNoteCategoryEnum,
-  severity: AgentNoteSeverityEnum,
-  description: z.string().min(1),
-  references: z.array(AgentReferenceSchema).default([]),
-  status: AgentNoteStatusEnum.default("open"),
-  /** Set by orchestrator when a work unit takes responsibility for this note. */
-  addressedByWorkUnitId: WorkUnitIdSchema.nullable().default(null),
-  /** Set when the note was generated by a verifier finding. */
-  sourceVerificationId: VerificationIdSchema.nullable().default(null),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type AgentNote = z.infer<typeof AgentNoteSchema>;
-
-export const AgentQuestionStatusEnum = z.enum([
-  "open",
-  "answered",
-  "dismissed",
-]);
-export type AgentQuestionStatus = z.infer<typeof AgentQuestionStatusEnum>;
-
-export const AgentQuestionSchema = z.object({
-  id: AgentQuestionIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  description: z.string().min(1),
-  references: z.array(AgentReferenceSchema).default([]),
-  status: AgentQuestionStatusEnum.default("open"),
-  humanAnswer: z.string().nullable().default(null),
-  /**
-   * Resolution proposed by a self-answer reader pass. The question stays
-   * `open` until a human ratifies the proposal — agents are advisory.
-   */
-  proposedAnswer: z.string().nullable().default(null),
-  proposedAt: timestamp.nullable().default(null),
-  proposedByPassNumber: z.number().int().positive().nullable().default(null),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type AgentQuestion = z.infer<typeof AgentQuestionSchema>;
-
-export const WorkUnitStatusEnum = z.enum([
-  "planned",
-  "in-progress",
-  "awaiting-approval",
-  "approved",
-  "rejected",
-  "applied",
-  "superseded",
-]);
-export type WorkUnitStatus = z.infer<typeof WorkUnitStatusEnum>;
-
-export const WorkUnitPlacementSchema = z.object({
-  chapterId: ChapterIdSchema,
-  position: z.enum(["before", "after", "replace", "insert-at"]),
-  anchorText: z.string().optional(),
-  paragraphIndex: z.number().int().nonnegative().optional(),
-  pov: z.string().optional(),
-});
-export type WorkUnitPlacement = z.infer<typeof WorkUnitPlacementSchema>;
-
-export const WorkUnitSchema = z.object({
-  id: WorkUnitIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  tier: z.number().int().nonnegative(),
-  goal: z.string().min(1),
-  requiredBeats: z.array(z.string()).default([]),
-  constraints: z.array(z.string()).default([]),
-  placement: WorkUnitPlacementSchema,
-  targetLengthWords: z.number().int().nonnegative().nullable().default(null),
-  bibleRefs: z.array(z.string()).default([]),
-  sourceNoteIds: z.array(AgentNoteIdSchema).default([]),
-  /** Other work-unit ids that must apply before this one. */
-  dependencies: z.array(WorkUnitIdSchema).default([]),
-  status: WorkUnitStatusEnum.default("planned"),
-  ownerEditorMessageId: z.string().nullable().default(null),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type WorkUnit = z.infer<typeof WorkUnitSchema>;
-
-export const EditPlanStatusEnum = z.enum(["draft", "approved", "superseded"]);
-export type EditPlanStatus = z.infer<typeof EditPlanStatusEnum>;
-
-export const EditPlanTierSchema = z.object({
-  tierNumber: z.number().int().nonnegative(),
-  summary: z.string().default(""),
-  workUnitIds: z.array(WorkUnitIdSchema).default([]),
-});
-export type EditPlanTier = z.infer<typeof EditPlanTierSchema>;
-
-export const EditPlanSchema = z.object({
-  id: EditPlanIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  status: EditPlanStatusEnum.default("draft"),
-  currentTier: z.number().int().nonnegative().default(0),
-  tiers: z.array(EditPlanTierSchema).default([]),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type EditPlan = z.infer<typeof EditPlanSchema>;
-
-export const ProposedEditKindEnum = z.enum([
-  "replace",
-  "insert_at",
-  "append",
-  "full_chapter",
-]);
-export type ProposedEditKind = z.infer<typeof ProposedEditKindEnum>;
-
-export const ProposedEditStatusEnum = z.enum([
-  "pending",
-  "approved",
-  "rejected",
-  "applied",
-  "discarded",
-]);
-export type ProposedEditStatus = z.infer<typeof ProposedEditStatusEnum>;
-
-// Fields shared by every proposed-edit variant. The variant-specific fields
-// (locator and disambiguators) live on each branch of the discriminated union.
-const proposedEditBase = {
-  id: ProposedEditIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  workUnitId: WorkUnitIdSchema,
-  chapterId: ChapterIdSchema,
-  newContent: z.string(),
-  rationale: z.string().default(""),
-  status: ProposedEditStatusEnum.default("pending"),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-};
-
-export const ProposedEditSchema = z.discriminatedUnion("kind", [
-  // `replace` locates by `prefix + anchorText + suffix` — anchorText must be
-  // a non-empty verbatim slice of the chapter, prefix/suffix disambiguate.
-  z.object({
-    ...proposedEditBase,
-    kind: z.literal("replace"),
-    anchorText: z.string().min(1),
-    prefix: z.string().optional(),
-    suffix: z.string().optional(),
-  }),
-  // `insert_at` uses fromOffset and/or anchorText as the insertion locator.
-  // The runtime guard in tools/proposedEdits.ts requires at least one.
-  z.object({
-    ...proposedEditBase,
-    kind: z.literal("insert_at"),
-    fromOffset: z.number().int().nonnegative().optional(),
-    anchorText: z.string().optional(),
-  }),
-  z.object({
-    ...proposedEditBase,
-    kind: z.literal("append"),
-  }),
-  z.object({
-    ...proposedEditBase,
-    kind: z.literal("full_chapter"),
-  }),
-]);
-export type ProposedEdit = z.infer<typeof ProposedEditSchema>;
-
-export const VerificationFindingSchema = z.object({
-  description: z.string().min(1),
-  references: z.array(AgentReferenceSchema).default([]),
-});
-export type VerificationFinding = z.infer<typeof VerificationFindingSchema>;
-
-export const VerificationSchema = z.object({
-  id: VerificationIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  tier: z.number().int().nonnegative(),
-  /** Null = tier-wide drift verification. */
-  workUnitId: WorkUnitIdSchema.nullable().default(null),
-  goalAchieved: z.boolean(),
-  contradictions: z.array(VerificationFindingSchema).default([]),
-  continuityBreaks: z.array(VerificationFindingSchema).default([]),
-  voiceMismatches: z.array(VerificationFindingSchema).default([]),
-  notes: z.array(z.string()).default([]),
-  createdAt: timestamp,
-});
-export type Verification = z.infer<typeof VerificationSchema>;
-
-export const AgentRunStatusEnum = z.enum([
-  "idle",
-  "reading",
-  "planning",
-  "awaiting-plan-approval",
-  "executing-tier",
-  "awaiting-edit-approval",
-  "applying-tier",
-  "verifying-tier",
-  "complete",
-  "cancelled",
-  "error",
-]);
-export type AgentRunStatus = z.infer<typeof AgentRunStatusEnum>;
-
-/**
- * Mode for one reader pass. Each mode has a distinct prompt, tool whitelist,
- * and termination semantics (see `runReaderLoop` and `makeReaderAgent`):
- *  - `comprehension` — forward-only, one chapter inlined per agent invocation.
- *  - `thematic`      — single whole-work invocation; hypothesize-and-confirm
- *                       motifs/symbols/subtext via search across chapters.
- *  - `self-answer`   — re-read to resolve open `question(...)` entries; the
- *                       agent proposes resolutions but does not mark them
- *                       answered (humans ratify).
- *
- * Older `readerPasses` rows written before this field existed default to
- * `"comprehension"` on Zod parse, since pass-1 was always comprehension.
- */
-export const ReaderModeEnum = z.enum([
-  "comprehension",
-  "thematic",
-  "self-answer",
-]);
-export type ReaderMode = z.infer<typeof ReaderModeEnum>;
-
-export const ReaderPassSchema = z.object({
-  passNumber: z.number().int().positive(),
-  mode: ReaderModeEnum.default("comprehension"),
-  startedAt: timestamp,
-  completedAt: timestamp.nullable().default(null),
-  newBibleEntries: z.number().int().nonnegative().default(0),
-  newNotes: z.number().int().nonnegative().default(0),
-  newQuestions: z.number().int().nonnegative().default(0),
-  /**
-   * Range of chapter `order` values this pass covered. Only meaningful when
-   * `mode === "comprehension"` — comprehension may run as multiple segments
-   * (passes), each covering a contiguous chapter range. `null` for
-   * thematic / self-answer passes and for legacy rows.
-   */
-  firstChapterOrder: z.number().int().nonnegative().nullable().default(null),
-  lastChapterOrder: z.number().int().nonnegative().nullable().default(null),
-});
-export type ReaderPass = z.infer<typeof ReaderPassSchema>;
-
-export const AgentRunUsageSchema = z.object({
-  promptTokens: z.number().int().nonnegative().default(0),
-  completionTokens: z.number().int().nonnegative().default(0),
-  /** Cumulative tokens written into the prompt cache across this run. */
-  cacheCreationTokens: z.number().int().nonnegative().default(0),
-  /** Cumulative tokens served from the prompt cache across this run. */
-  cacheReadTokens: z.number().int().nonnegative().default(0),
-});
-export type AgentRunUsage = z.infer<typeof AgentRunUsageSchema>;
-
-export const AgentRunSchema = z.object({
-  id: AgentRunIdSchema,
-  projectId: ProjectIdSchema,
-  name: z.string().min(1),
-  status: AgentRunStatusEnum.default("idle"),
-  currentTier: z.number().int().nonnegative().default(0),
-  currentSnapshotManifestId: SnapshotManifestIdSchema.nullable().default(null),
-  readerPasses: z.array(ReaderPassSchema).default([]),
-  /**
-   * Snapshot of agent model overrides at run-creation time. Historic field —
-   * with the unified Agents table (v32+), per-agent model overrides live on
-   * the AgentDefinition row and the runner reads them on demand. Kept for
-   * backward compat with rows created before the unification; new rows leave
-   * this as a partial map.
-   */
-  modelOverrides: z
-    .record(z.string(), AgentModelOverrideSchema.nullable())
-    .default({}),
-  /** Hard cap; pipeline auto-pauses when totalTokenUsage exceeds this. */
-  budgetTokens: z.number().int().positive().default(1_000_000),
-  totalTokenUsage: AgentRunUsageSchema.default({
-    promptTokens: 0,
-    completionTokens: 0,
-    cacheCreationTokens: 0,
-    cacheReadTokens: 0,
-  }),
-  /**
-   * Most recent iteration's prompt_tokens. Used by the UI to surface current
-   * rolling context-window pressure separately from the cumulative budget.
-   */
-  lastIterationPromptTokens: z.number().int().nonnegative().default(0),
-  /**
-   * Set true when verifier surfaces drift; UI requires an incremental Reader
-   * pass before the next plan-approval gate unlocks.
-   */
-  requiresIncrementalReread: z.boolean().default(false),
-  /** Last status-change reason — surfaced in UI banners. */
-  statusReason: z.string().nullable().default(null),
-  /**
-   * When `status === "error"` because a phase threw, records the active
-   * phase that was running so a Retry button can re-enter it. Null for
-   * proactive config errors (e.g. missing API key) that aren't recoverable
-   * by simply retrying, and for non-error states.
-   */
-  failedFromStatus: AgentRunStatusEnum.nullable().default(null),
-  createdAt: timestamp,
-  updatedAt: timestamp,
-});
-export type AgentRun = z.infer<typeof AgentRunSchema>;
+// ─── Chapter Summary ─────────────────────────────────────────────────
 
 export const ChapterSummarySchema = z.object({
   id: ChapterSummaryIdSchema,
@@ -1274,25 +806,6 @@ export const ChapterSummarySchema = z.object({
   createdAt: timestamp,
 });
 export type ChapterSummary = z.infer<typeof ChapterSummarySchema>;
-
-export const SnapshotManifestSchema = z.object({
-  id: SnapshotManifestIdSchema,
-  projectId: ProjectIdSchema,
-  runId: AgentRunIdSchema,
-  tierNumber: z.number().int().nonnegative(),
-  name: z.string().min(1),
-  /** FKs into existing chapterSnapshots — manifests don't duplicate storage. */
-  chapterSnapshotIds: z.array(ChapterSnapshotIdSchema).default([]),
-  /** Inline snapshot of the reader bible at the moment of manifest creation. */
-  readerBibleSnapshot: z.object({
-    view: z.array(ReaderBibleViewEntrySchema).default([]),
-    logCutoffEntryId: z.string().nullable().default(null),
-  }),
-  notesSnapshot: z.array(AgentNoteSchema).default([]),
-  workUnitsSnapshot: z.array(WorkUnitSchema).default([]),
-  createdAt: timestamp,
-});
-export type SnapshotManifest = z.infer<typeof SnapshotManifestSchema>;
 
 // ─── Indexed Chunk (vector retrieval) ───────────────────────────────
 

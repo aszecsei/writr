@@ -105,8 +105,6 @@ export function AppSettingsDialog() {
   const [reasoningEffort, setReasoningEffort] =
     useState<ReasoningEffort>("medium");
   const [enableToolCalling, setEnableToolCalling] = useState(false);
-  const [comprehensionContextThreshold, setComprehensionContextThreshold] =
-    useState(80_000);
   const [loreRetrievalEnabled, setLoreRetrievalEnabled] = useState(false);
   const [omniscientMode, setOmniscientMode] = useState(false);
   const [loreTopK, setLoreTopK] = useState(5);
@@ -162,7 +160,6 @@ export function AppSettingsDialog() {
       setStreamResponses(settings.streamResponses);
       setReasoningEffort(settings.reasoningEffort);
       setEnableToolCalling(settings.enableToolCalling);
-      setComprehensionContextThreshold(settings.comprehensionContextThreshold);
       setLoreRetrievalEnabled(settings.loreRetrievalEnabled);
       setOmniscientMode(settings.omniscientMode);
       setLoreTopK(settings.loreTopK);
@@ -242,8 +239,6 @@ export function AppSettingsDialog() {
       streamResponses !== settings.streamResponses ||
       reasoningEffort !== settings.reasoningEffort ||
       enableToolCalling !== settings.enableToolCalling ||
-      comprehensionContextThreshold !==
-        settings.comprehensionContextThreshold ||
       loreRetrievalEnabled !== settings.loreRetrievalEnabled ||
       omniscientMode !== settings.omniscientMode ||
       loreTopK !== settings.loreTopK ||
@@ -279,7 +274,6 @@ export function AppSettingsDialog() {
       streamResponses,
       reasoningEffort,
       enableToolCalling,
-      comprehensionContextThreshold,
       loreRetrievalEnabled,
       omniscientMode,
       loreTopK,
@@ -384,11 +378,6 @@ export function AppSettingsDialog() {
               onReasoningEffortChange={setReasoningEffort}
               onDebugModeChange={setDebugMode}
               onEnableToolCallingChange={setEnableToolCalling}
-              onManageAgents={() => openModal({ id: "agents-manager" })}
-              comprehensionContextThreshold={comprehensionContextThreshold}
-              onComprehensionContextThresholdChange={
-                setComprehensionContextThreshold
-              }
               loreRetrievalEnabled={loreRetrievalEnabled}
               onLoreRetrievalEnabledChange={setLoreRetrievalEnabled}
               omniscientMode={omniscientMode}

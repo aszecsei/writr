@@ -7,9 +7,6 @@
  *
  * Mutation tools stay flat: one checkbox per tool, grouped by entity for
  * scannability.
- *
- * Pipeline-only tools (those that require an active agent-run context) are
- * marked so the UI can flag them as "(pipeline)".
  */
 
 import { AI_TOOL_MAP } from "@/lib/ai/tool-calling";
@@ -24,8 +21,6 @@ export interface ToolPickerRow {
   ids: readonly string[];
   /** Optional one-line hint shown beneath the label. */
   hint?: string;
-  /** True when every id only makes sense in a pipeline run. */
-  pipeline?: boolean;
 }
 
 /** A subgroup of rows under a section heading. */
@@ -119,28 +114,6 @@ export const READS_GROUPS: ToolPickerGroup[] = [
       },
     ],
   },
-  {
-    heading: "Reader bible (pipeline)",
-    rows: [
-      {
-        key: "read:bible",
-        label: "Reader bible read/list",
-        ids: ["bible_read", "bible_list"],
-        pipeline: true,
-      },
-    ],
-  },
-  {
-    heading: "Reader notes (pipeline)",
-    rows: [
-      {
-        key: "read:notes_questions",
-        label: "List notes / questions",
-        ids: ["list_notes", "list_questions"],
-        pipeline: true,
-      },
-    ],
-  },
 ];
 
 /** Every read-tool id surfaced by the picker. Used by the master toggle. */
@@ -193,28 +166,8 @@ export const MUTATIONS_GROUPS: ToolPickerGroup[] = [
     rows: [mutationRow("propose_edit")],
   },
   {
-    heading: "Reader bible (pipeline)",
-    rows: [{ ...mutationRow("bible_write"), pipeline: true }],
-  },
-  {
-    heading: "Reader notes (pipeline)",
-    rows: [
-      { ...mutationRow("note"), pipeline: true },
-      { ...mutationRow("question"), pipeline: true },
-      { ...mutationRow("propose_answer"), pipeline: true },
-    ],
-  },
-  {
-    heading: "Work units (pipeline)",
-    rows: [
-      { ...mutationRow("create_work_unit"), pipeline: true },
-      { ...mutationRow("update_work_unit"), pipeline: true },
-      { ...mutationRow("finalize_tier"), pipeline: true },
-    ],
-  },
-  {
-    heading: "Verification (pipeline)",
-    rows: [{ ...mutationRow("report_verification"), pipeline: true }],
+    heading: "Orchestration",
+    rows: [mutationRow("delegate"), mutationRow("present_choice")],
   },
 ];
 

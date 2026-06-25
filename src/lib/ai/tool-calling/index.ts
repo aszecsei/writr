@@ -6,6 +6,10 @@ export {
 } from "./tools";
 export type {
   AiToolDefinition,
+  ChoiceRequest,
+  DelegateOutcome,
+  DelegateRequest,
+  DelegationHost,
   ToolCallEntry,
   ToolCallPayload,
   ToolCallStatus,

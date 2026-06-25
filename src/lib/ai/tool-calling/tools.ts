@@ -1,4 +1,3 @@
-import { bibleListTool, bibleReadTool, bibleWriteTool } from "./tools/bible";
 import {
   createChapterTool,
   getChapterStructureTool,
@@ -14,6 +13,7 @@ import {
   updateCharacterTool,
 } from "./tools/characters";
 import { addCommentTool, replyToCommentTool } from "./tools/comments";
+import { delegateTool } from "./tools/delegate";
 import { fail, formatZodError } from "./tools/helpers";
 import {
   createLocationTool,
@@ -21,18 +21,12 @@ import {
   updateLocationTool,
 } from "./tools/locations";
 import {
-  listNotesTool,
-  listQuestionsTool,
-  noteTool,
-  proposeAnswerTool,
-  questionTool,
-} from "./tools/notes";
-import {
   manageOutlineColumnsTool,
   manageOutlineRowsTool,
   setOutlineCellColorTool,
   writeOutlineCellTool,
 } from "./tools/outline";
+import { presentChoiceTool } from "./tools/presentChoice";
 import { proposeEditTool } from "./tools/proposedEdits";
 import { getTool, listTool } from "./tools/registry";
 import { searchProjectTool } from "./tools/search";
@@ -42,12 +36,6 @@ import {
   moveTimelineEventTool,
   updateTimelineEventTool,
 } from "./tools/timeline";
-import { reportVerificationTool } from "./tools/verification";
-import {
-  createWorkUnitTool,
-  finalizeTierTool,
-  updateWorkUnitTool,
-} from "./tools/workUnits";
 import {
   createWorldbuildingDocTool,
   deleteWorldbuildingDocTool,
@@ -91,22 +79,8 @@ export const AI_TOOLS: AiToolDefinition[] = [
   getChapterStructureTool,
   // Project-wide search
   searchProjectTool,
-  // Pipeline reader bible + notes/questions
-  bibleReadTool,
-  bibleWriteTool,
-  bibleListTool,
-  noteTool,
-  questionTool,
-  listNotesTool,
-  listQuestionsTool,
-  proposeAnswerTool,
-  // Pipeline orchestrator + editor
-  createWorkUnitTool,
-  updateWorkUnitTool,
-  finalizeTierTool,
+  // Editor: stage a developmental edit for the user to apply
   proposeEditTool,
-  // Pipeline verifier
-  reportVerificationTool,
   // Beta Reader: inline editor comments + threaded replies
   addCommentTool,
   replyToCommentTool,
@@ -115,6 +89,9 @@ export const AI_TOOLS: AiToolDefinition[] = [
   manageOutlineRowsTool,
   writeOutlineCellTool,
   setOutlineCellColorTool,
+  // Orchestration: sub-agent delegation + user prompts
+  delegateTool,
+  presentChoiceTool,
 ];
 
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(

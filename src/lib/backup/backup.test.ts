@@ -226,7 +226,6 @@ function makeAppSettings(overrides?: Partial<AppSettings>): AppSettings {
     postChatInstructions: "",
     postChatInstructionsDepth: 2,
     assistantPrefill: "",
-    comprehensionContextThreshold: 80_000,
     enableToolCalling: false,
     customSystemPrompt: null,
     lastExportedAt: null,

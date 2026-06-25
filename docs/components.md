@@ -4,8 +4,8 @@ Components live under `src/components/` and are organized by feature area. Befor
 
 ## Feature directories
 
-- **`agents/`** — Agent-driven manuscript review UI: `RunDashboard`, `ActivityPanel`, `PlanView`, `WorkUnitCard`, `EditApprovalPanel`, `EditDiffCard`, `VerificationPanel`, `NotesQuestionsPanel`, `SnapshotsPanel`, `ReaderBibleView`, `PauseResumeBanner`, `RaiseBudgetDialog`.
-- **`ai/`** — Free-form AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`.
+- **`agents/`** — `AgentEditorBody`: the full-page agent-definition editor behind the `/agents/definitions` routes.
+- **`ai/`** — AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `DelegatedAgentCard`, `PendingGatesBar`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`. Sub-agent delegation renders nested transcripts (`DelegatedAgentCard`) and user gates (`PendingGatesBar`).
 - **`bible/`** — Story-bible building blocks: `AddImageDialog`, `ImageGallery`, `ImageLightbox`, `CollapsibleSection`, `DragHandle`, `RoleBadge`, `SortableTimelineCard`.
 - **`collab/`** — Real-time collaboration UI: `ShareSessionButton`, `ShareDialog`, `CollabBanner`, `DisplayNamePrompt`, `ApproveJoinDialog`, `ManageParticipantsDialog`, `GuestSessionShell`, `CollabProseEditor`. All gated on `NEXT_PUBLIC_COLLAB_URL`.
 - **`dashboard/`** — Project picker: `ProjectGrid`, `ProjectCard`, `CreateProjectDialog`, `EditProjectDialog`, `DeleteProjectDialog`, `ProjectFormFields`.
@@ -18,7 +18,7 @@ Components live under `src/components/` and are organized by feature area. Befor
 - **`providers/`** — App-wide context providers (settings, theme, etc.).
 - **`radio/`** — YouTube-backed mood playlist UI.
 - **`search/`** — Project-wide search UI (backed by `src/lib/search/`).
-- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `AgentEditor`, `AgentsManager`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`.
+- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`. (Agent editing moved to `agents/AgentEditorBody` + the `/agents/definitions` routes.)
 - **`sprint/`** — Writing-sprint UI: `SprintWidget`, `SprintConfigDialog`, `SprintHistoryDialog`.
 - **`stats/`** — Writing analytics: `WritingStatsDashboard`, `DailyWordChart`, `TimeOfDayChart`, `StatCard`, `StreakDisplay`.
 - **`ui/`** — Reusable primitives (see below).

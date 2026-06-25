@@ -76,6 +76,15 @@ export interface ToolChatMessage {
   input: Record<string, unknown>;
   status: ToolChatMessageStatus;
   result?: ToolResult;
+  /**
+   * UI-only: for a `delegate` tool call, the sub-agent's own transcript. The
+   * user can drill into it from the chat panel. Never serialized to the wire
+   * format (`toAiMessages` ignores it) — the orchestrator only ever sees the
+   * delegate tool's final `result`.
+   */
+  nestedMessages?: ChatMessage[];
+  /** UI-only: resolved display name of the delegated sub-agent. */
+  nestedAgentName?: string;
   createdAt: string;
 }
 

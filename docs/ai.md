@@ -47,7 +47,7 @@ Tools (`tool-calling/tools/`):
 
 ## Serialization (`serialize.ts`)
 
-Round-trips tool call payloads / messages between the persisted `AgentRun` shape and what the provider expects.
+Round-trips tool call payloads / messages between the chat history shape and what the provider expects.
 
 ## Conventions
 

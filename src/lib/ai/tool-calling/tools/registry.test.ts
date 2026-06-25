@@ -92,21 +92,6 @@ describe("list tool", () => {
     expect((r.data?.entries as ListEntry[]).length).toBe(2);
   });
 
-  it("list chapters honors the readable-chapter set", async () => {
-    const ch1 = makeChapter({ projectId, title: "Ch1", order: 0 });
-    const ch2 = makeChapter({ projectId, title: "Ch2", order: 1 });
-    await db.chapters.bulkAdd([ch1, ch2]);
-    const r = await executeTool(
-      "list",
-      { category: "chapter" },
-      { ...ctx, readableChapterIds: new Set([ch1.id]) },
-    );
-    expect(r.success).toBe(true);
-    const entries = r.data?.entries as ListEntry[];
-    expect(entries).toHaveLength(1);
-    expect(entries[0].title).toBe("Ch1");
-  });
-
   it("lists style guide entries", async () => {
     await db.styleGuideEntries.add(
       makeStyleGuideEntry({ projectId, title: "POV", content: "First" }),
@@ -362,24 +347,6 @@ describe("get tool", () => {
     const results = r.data?.results as GetResult[];
     expect(results[0].data?.totalParagraphs).toBe(4);
     expect(results[0].data?.hasSceneBreaks).toBe(true);
-  });
-
-  it("get for chapter respects the readable-chapter set", async () => {
-    const ch1 = makeChapter({ projectId, title: "Ch1", order: 0 });
-    const ch2 = makeChapter({ projectId, title: "Ch2", order: 1 });
-    await db.chapters.bulkAdd([ch1, ch2]);
-    const r = await executeTool(
-      "get",
-      {
-        requests: [{ category: "chapter", ids: [ch1.id, ch2.id] }],
-      },
-      { ...ctx, readableChapterIds: new Set([ch1.id]) },
-    );
-    expect(r.success).toBe(true);
-    const results = r.data?.results as GetResult[];
-    expect(results[0].found).toBe(true);
-    expect(results[1].found).toBe(false);
-    expect(results[1].error).toMatch(/beyond the current reading position/);
   });
 
   it("rejects empty requests array", async () => {

@@ -1,12 +1,9 @@
 /**
- * Bundled defaults for the built-in agents:
- *   - user-facing chat agents (spark, scene, reader, editor,
- *     character-dialogue, brainstorm, chat, beta-reader, outline-architect)
- *   - 2 pipeline-internal agents (orchestrator, verifier)
+ * Bundled defaults for the built-in chat agents (spark, scene, reader, editor,
+ * character-dialogue, brainstorm, chat, beta-reader, outline-architect,
+ * worldbuilder, orchestrator-chat).
  *
- * The Reader and Editor pipeline factories (`builtins/reader.ts`,
- * `builtins/editor.ts`) keep their hardcoded mode-specific prompts for
- * pipeline runs. The defaults below are used:
+ * The defaults below are used:
  *   - To seed the corresponding `agentDefinitions` row on first migration.
  *   - As the prompt source for chat-mode invocations of those kinds.
  *   - As the value restored when a user clicks "Reset to defaults".
@@ -24,10 +21,13 @@ import {
   CHAT_READS_BASE,
   CHAT_TOOLS,
   EDITOR_CHAT_TOOLS,
+  ORCHESTRATOR_CHAT_TOOLS,
   OUTLINE_ARCHITECT_TOOLS,
   READER_CHAT_TOOLS,
   WORLDBUILDER_TOOLS,
 } from "./tool-permissions";
+// Pipeline agents (orchestrator, verifier) were removed; chat-mode sub-agent
+// delegation (the `orchestrator-chat` agent) replaces them.
 import { WORLDBUILDER_PROMPT } from "./worldbuilder";
 
 /**
@@ -137,9 +137,15 @@ const CHAT_PROMPT = `You are a writer's-room collaborator with full access to th
 
 There's no specific task framing here — engage freely with whatever the writer brings up. Plot, character, prose craft, world details, brainstorming, gut-checks, structure questions, dialogue passes — all in scope. Defer to the writer's voice and direction. When you have an opinion, share it briefly and clearly; don't moralize. When you don't know, say so.`;
 
-const ORCHESTRATOR_PLACEHOLDER_PROMPT = `Pipeline orchestrator agent. The actual system prompt is assembled by builtins/orchestrator.ts at run time; this row exists so the orchestrator can carry a model override and so users have a place to inspect it.`;
+const ORCHESTRATOR_CHAT_PROMPT = `You are an orchestrator. Your job is to break the writer's request into self-contained subtasks and delegate each to the agent best suited for it, keeping your own context lean so you can reason about the whole.
 
-const VERIFIER_PLACEHOLDER_PROMPT = `Pipeline verifier agent. The actual system prompt is assembled by builtins/verifier.ts at run time; this row exists so the verifier can carry a model override and so users have a place to inspect it.`;
+How you work:
+- First, read just enough (bible, chapter list, summaries, search) to scope the request and decide what to delegate. Don't do the detailed work yourself.
+- Use the \`delegate\` tool to hand a subtask to a named sub-agent (e.g. Reader for manuscript analysis, Editor for line edits, Worldbuilder for canon work). Write each \`prompt\` as a complete, standalone briefing — the sub-agent cannot see this conversation, so include every fact and instruction it needs.
+- A sub-agent runs autonomously and returns only its final answer. You see that answer, not its intermediate work. Delegate verbose or specialized tasks so their bulk never crowds your context.
+- Delegate in parallel when subtasks are independent; sequence them when one depends on another's result. Synthesize the returned answers into a coherent response for the writer.
+- When a decision is genuinely the writer's to make (which direction, which option), use \`present_choice\` rather than guessing.
+- Delegate only what benefits from it. Answer trivial questions directly.`;
 
 export const BUILTIN_AGENT_DEFAULTS: Record<
   Exclude<AgentKind, "user">,
@@ -230,22 +236,14 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     behavior: "chat",
     exposed: true,
   },
-  orchestrator: {
+  "orchestrator-chat": {
     name: "Orchestrator",
     description:
-      "Pipeline-internal: turns reader notes into a tier of work units.",
-    systemPrompt: ORCHESTRATOR_PLACEHOLDER_PROMPT,
-    allowedToolIds: [],
+      "Breaks a request into subtasks and delegates each to the best sub-agent, keeping its own context lean.",
+    systemPrompt: ORCHESTRATOR_CHAT_PROMPT,
+    allowedToolIds: [...ORCHESTRATOR_CHAT_TOOLS],
     behavior: "chat",
-    exposed: false,
-  },
-  verifier: {
-    name: "Verifier",
-    description: "Pipeline-internal: re-reads a tier and flags goal misses.",
-    systemPrompt: VERIFIER_PLACEHOLDER_PROMPT,
-    allowedToolIds: [],
-    behavior: "chat",
-    exposed: false,
+    exposed: true,
   },
 };
 
@@ -270,6 +268,7 @@ export const CHAT_AGENT_ORDER: ReadonlyArray<Exclude<AgentKind, "user">> = [
   "beta-reader",
   "outline-architect",
   "worldbuilder",
+  "orchestrator-chat",
 ];
 
 /** Spark response delimiter. Mirrored in SparkOptions parser. */

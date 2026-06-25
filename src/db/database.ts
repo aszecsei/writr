@@ -7,9 +7,6 @@ import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
 import type {
   AgentDefinition,
   AgentDefinitionId,
-  AgentNote,
-  AgentQuestion,
-  AgentRun,
   AppDictionary,
   AppSettings,
   BrainstormIdea,
@@ -20,7 +17,6 @@ import type {
   Character,
   CharacterRelationship,
   Comment,
-  EditPlan,
   GuardrailEntry,
   IndexedChunk,
   Location,
@@ -30,15 +26,9 @@ import type {
   PlaylistTrack,
   Project,
   ProjectDictionary,
-  ProposedEdit,
-  ReaderBibleLogEntry,
-  ReaderBibleViewEntry,
   SavedPrompt,
-  SnapshotManifest,
   StyleGuideEntry,
   TimelineEvent,
-  Verification,
-  WorkUnit,
   WorldbuildingDoc,
   WritingSession,
   WritingSprint,
@@ -83,17 +73,7 @@ export class WritrDatabase extends Dexie {
   appSettings!: EntityTable<AppSettings, "id">;
   appDictionary!: EntityTable<AppDictionary, "id">;
   projectDictionaries!: EntityTable<ProjectDictionary, "id">;
-  agentRuns!: EntityTable<AgentRun, "id">;
-  readerBibleLog!: EntityTable<ReaderBibleLogEntry, "id">;
-  readerBibleView!: EntityTable<ReaderBibleViewEntry, "id">;
-  agentNotes!: EntityTable<AgentNote, "id">;
-  agentQuestions!: EntityTable<AgentQuestion, "id">;
-  workUnits!: EntityTable<WorkUnit, "id">;
-  editPlans!: EntityTable<EditPlan, "id">;
-  proposedEdits!: EntityTable<ProposedEdit, "id">;
-  verifications!: EntityTable<Verification, "id">;
   chapterSummaries!: EntityTable<ChapterSummary, "id">;
-  snapshotManifests!: EntityTable<SnapshotManifest, "id">;
   agents!: EntityTable<AgentDefinition, "id">;
   savedPrompts!: EntityTable<SavedPrompt, "id">;
   brainstormSetups!: EntityTable<BrainstormSetup, "id">;
@@ -895,8 +875,6 @@ export class WritrDatabase extends Dexie {
           "character-dialogue",
           "brainstorm",
           "chat",
-          "orchestrator",
-          "verifier",
         ] as const;
 
         for (const kind of builtinKinds) {
@@ -1067,6 +1045,32 @@ export class WritrDatabase extends Dexie {
           if (!Array.isArray(e.disabledProjectIds)) e.disabledProjectIds = [];
         });
     });
+
+    // v42: remove the agent "pipeline" feature. Chat-mode sub-agent delegation
+    // replaces it. Drop every pipeline-only store (setting it to null deletes
+    // the object store). chapterSummaries and the agents definition table stay.
+    this.version(42)
+      .stores({
+        agentRuns: null,
+        readerBibleLog: null,
+        readerBibleView: null,
+        agentNotes: null,
+        agentQuestions: null,
+        workUnits: null,
+        editPlans: null,
+        proposedEdits: null,
+        verifications: null,
+        snapshotManifests: null,
+      })
+      .upgrade(async (tx) => {
+        // Drop the now-removed pipeline-internal agent definitions so they
+        // don't linger as rows of an unknown kind.
+        await tx
+          .table("agents")
+          .where("kind")
+          .anyOf("orchestrator", "verifier")
+          .delete();
+      });
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

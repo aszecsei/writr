@@ -24,6 +24,7 @@ import type {
   ToolChatMessage,
   UserChatMessage,
 } from "./chat/types";
+import { DelegatedAgentCard } from "./DelegatedAgentCard";
 import { MarkdownMessage } from "./MarkdownMessage";
 import {
   ProposedEditCard,
@@ -78,6 +79,14 @@ interface MessageListProps {
   onApproveToolCall?: (toolMessageId: ChatMessageId) => void;
   onDenyToolCall?: (toolMessageId: ChatMessageId) => void;
   pendingToolApproval?: boolean;
+  /**
+   * When true, the per-message edit / regenerate / delete / continue controls
+   * are suppressed. Used when rendering a sub-agent's nested transcript, which
+   * is read-only history.
+   */
+  readOnly?: boolean;
+  /** Drill into a delegate tool call's nested sub-agent transcript. */
+  onEnterNested?: (toolMessageId: ChatMessageId) => void;
 }
 
 function StopReasonBanner({ reason }: { reason: FinishReason }) {
@@ -176,6 +185,8 @@ export function MessageList({
   onApproveToolCall,
   onDenyToolCall,
   pendingToolApproval,
+  readOnly,
+  onEnterNested,
 }: MessageListProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<ChatMessageId | null>(null);
@@ -186,6 +197,7 @@ export function MessageList({
       .reverse()
       .find((g) => g.kind === "user" || g.kind === "assistant") ?? null;
   const showContinueButton =
+    !readOnly &&
     !loading &&
     !pendingToolApproval &&
     lastNonToolGroup?.kind === "assistant" &&
@@ -221,7 +233,7 @@ export function MessageList({
                   })}
                 </span>
                 <div className="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  {!loading && (
+                  {!readOnly && !loading && (
                     <>
                       <button
                         type="button"
@@ -343,7 +355,7 @@ export function MessageList({
                   </span>
                 )}
                 <div className="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  {!loading && (
+                  {!readOnly && !loading && (
                     <>
                       <button
                         type="button"
@@ -420,6 +432,20 @@ export function MessageList({
                 if (proposedEdit) {
                   return (
                     <ProposedEditCard key={tm.id} payload={proposedEdit} />
+                  );
+                }
+                if (tm.toolName === "delegate") {
+                  return (
+                    <DelegatedAgentCard
+                      key={tm.id}
+                      message={tm}
+                      running={
+                        tm.status !== "executed" && tm.status !== "error"
+                      }
+                      onEnter={
+                        onEnterNested ? () => onEnterNested(tm.id) : undefined
+                      }
+                    />
                   );
                 }
                 return (

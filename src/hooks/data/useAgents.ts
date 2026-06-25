@@ -24,7 +24,6 @@ export function useChatAgents(
     const all = await db.agents.toArray();
     return all
       .filter((a) => {
-        if (a.kind === "orchestrator" || a.kind === "verifier") return false;
         if (a.kind === "user") {
           return (
             a.projectId === null ||
@@ -74,8 +73,12 @@ const KIND_ORDER: Record<string, number> = {
   "character-dialogue": 4,
   brainstorm: 5,
   chat: 6,
-  orchestrator: 7,
-  verifier: 8,
+  "beta-reader": 7,
+  "outline-architect": 8,
+  worldbuilder: 9,
+  "orchestrator-chat": 10,
+  orchestrator: 11,
+  verifier: 12,
   user: 99, // user-created sort by name within the trailing block
 };
 

@@ -13,7 +13,6 @@ All Zustand stores use Immer middleware and are intended for **ephemeral UI stat
 - **`findReplaceStore`** — search/replace terms, regex/case/whole-word modes, match tracking.
 - **`radioStore`** — playlist playback (queue, volume, shuffle, loop). **Persisted** to localStorage.
 - **`collabStore`** — collab session state, connection lifecycle, peer identity, share URLs, approval queue.
-- **`agentActivityStore`** — per-run agent iteration tracking, streaming content, tool calls, reasoning traces.
 
 ## Modal system
 
@@ -26,8 +25,7 @@ create-project           edit-project           delete-project
 project-settings         app-settings           export
 preview-card             link-editor            insert-image
 ruby-editor              dictionary-manager     version-history
-agents-manager           agent-editor           share-collab-session
-collab-approve-join      collab-manage-participants
+share-collab-session     collab-approve-join    collab-manage-participants
 ```
 
 The `null` variant (`{ id: null }`) means "closed". When adding a modal, extend the union; the discriminated type forces every call site to pass the right payload.

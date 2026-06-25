@@ -112,7 +112,6 @@ export const searchChaptersTool = defineTool({
     const matches = await searchChaptersKeyword(
       context.projectId,
       params.query,
-      { readableChapterIds: context.readableChapterIds },
     );
     return ok(`Found ${matches.length} matching chapters`, { matches });
   },
@@ -134,41 +133,9 @@ export const readChapterTool = defineTool({
   },
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
-  async execute(params, context) {
+  async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
-    if (
-      context.readableChapterIds &&
-      !context.readableChapterIds.has(chapter.id)
-    ) {
-      return fail(
-        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
-      );
-    }
-
-    // Editor agents in the same tier should see staged proposed edits from
-    // earlier editors so chapter N+1's editor can acknowledge chapter N's
-    // new scene. Other agent kinds always see the persisted chapter content.
-    if (context.agentKind === "editor" && context.runId) {
-      const { getChapterWithStagedEdits } = await import(
-        "@/lib/ai/agents/pipeline/stagedChapterContent"
-      );
-      const staged = await getChapterWithStagedEdits(
-        context.runId,
-        params.id as ChapterId,
-      );
-      if (staged) {
-        return ok(
-          `Chapter "${chapter.title}" (${staged.wordCount} words, with staged edits)`,
-          {
-            id: chapter.id,
-            title: chapter.title,
-            content: staged.content,
-            staged: true,
-          },
-        );
-      }
-    }
 
     return ok(`Chapter "${chapter.title}" (${chapter.wordCount} words)`, {
       id: chapter.id,
@@ -209,17 +176,9 @@ export const readChapterRangeTool = defineTool({
     })
     .strip(),
   requiresApproval: false,
-  async execute(params, context) {
+  async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
-    if (
-      context.readableChapterIds &&
-      !context.readableChapterIds.has(chapter.id)
-    ) {
-      return fail(
-        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
-      );
-    }
     const paragraphs = splitParagraphs(chapter.content);
     const total = paragraphs.length;
     const start = Math.max(1, Math.min(params.start, total));
@@ -272,17 +231,9 @@ export const searchChapterTool = defineTool({
     })
     .strip(),
   requiresApproval: false,
-  async execute(params, context) {
+  async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
-    if (
-      context.readableChapterIds &&
-      !context.readableChapterIds.has(chapter.id)
-    ) {
-      return fail(
-        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
-      );
-    }
     const result = await searchChapterParagraphsKeyword(
       params.id as ChapterId,
       params.query,
@@ -319,17 +270,9 @@ export const getChapterStructureTool = defineTool({
   },
   inputSchema: z.object({ id: z.string().min(1) }).strip(),
   requiresApproval: false,
-  async execute(params, context) {
+  async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
     if (!chapter) return fail(`Chapter not found: ${params.id}`);
-    if (
-      context.readableChapterIds &&
-      !context.readableChapterIds.has(chapter.id)
-    ) {
-      return fail(
-        `Chapter "${chapter.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
-      );
-    }
     const paragraphs = splitParagraphs(chapter.content);
     const scenes: { start: number; end: number; preview: string }[] = [];
     let sceneStart = 1;

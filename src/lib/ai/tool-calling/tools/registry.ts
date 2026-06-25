@@ -207,9 +207,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
 
   chapter: {
     async list(ctx) {
-      const all = await getChaptersByProject(ctx.projectId);
-      const readable = ctx.readableChapterIds;
-      const rows = readable ? all.filter((c) => readable.has(c.id)) : all;
+      const rows = await getChaptersByProject(ctx.projectId);
       return {
         message: `Found ${rows.length} chapters`,
         entries: rows.map((c) => ({
@@ -220,16 +218,10 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
         })),
       };
     },
-    async get(id, ctx) {
+    async get(id, _ctx) {
       if (!id) return { data: null, error: "chapter get requires an id" };
       const ch = await getChapter(id as ChapterId);
       if (!ch) return { data: null, error: `Chapter not found: ${id}` };
-      if (ctx.readableChapterIds && !ctx.readableChapterIds.has(ch.id)) {
-        return {
-          data: null,
-          error: `Chapter "${ch.title}" is beyond the current reading position; cannot read ahead in a comprehension pass.`,
-        };
-      }
       const paragraphs = splitParagraphs(ch.content);
       const hasSceneBreaks = paragraphs.some((p) => SCENE_BREAK_RE.test(p));
       return {

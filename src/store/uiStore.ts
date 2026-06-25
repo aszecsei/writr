@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { AgentDefinitionId, ChapterId, ProjectId } from "@/db/schemas";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 
 export type SidebarPanel = "chapters" | "bible" | "agents";
 
@@ -36,8 +36,6 @@ export type ModalState =
   | { id: "version-history"; chapterId: ChapterId; projectId: ProjectId }
   | { id: "chapter-properties"; chapterId: ChapterId }
   | { id: "separator-settings"; chapterId: ChapterId }
-  | { id: "agents-manager" }
-  | { id: "agent-editor"; agentId?: AgentDefinitionId }
   | { id: "saved-prompts" }
   | { id: "shortcuts-help" }
   | { id: "share-collab-session" }

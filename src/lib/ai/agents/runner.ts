@@ -1,21 +1,16 @@
 import { match } from "ts-pattern";
-import { getAppSettings } from "@/db/operations/settings";
-import type { AgentRunId, AppSettings } from "@/db/schemas";
+import type { AppSettings } from "@/db/schemas";
 import type {
   ToolCallEntry,
   ToolCallPayload,
   ToolDefinitionForModel,
 } from "../tool-calling";
 import type {
-  AiMessage,
   AiResponse,
   AiStreamChunk,
   AiUsage,
   FinishReason,
 } from "../types";
-import { applyDefinitionOverride } from "./applyDefinitionOverride";
-import type { PipelineEventEmitter } from "./pipeline/events";
-import { makePipelineHistoryAccessor } from "./pipeline/historyAccessor";
 import {
   executeAgentTool,
   getAgentToolDefinition,
@@ -33,12 +28,11 @@ const DEFAULT_MAX_ITERATIONS = 16;
 /**
  * Resolve which provider, model, API key, and reasoning effort an agent should
  * use for its next invocation. Per-agent overrides — set on `agent.modelOverride`
- * by the factory that built the agent (chat or pipeline) — win over global
- * defaults from AppSettings.
+ * by the chat factory that built the agent — win over global defaults from
+ * AppSettings.
  *
- * Pipeline factories populate `agent.modelOverride` from the corresponding
- * AgentDefinition row; chat factories do the same for the row backing the
- * selected agent. There's no longer a settings-level override map.
+ * Chat factories populate `agent.modelOverride` from the AgentDefinition row
+ * backing the selected agent. There's no settings-level override map.
  */
 export function resolveAgentModel(
   agent: Agent,
@@ -83,8 +77,8 @@ function toEntry(payload: ToolCallPayload): ToolCallEntry {
  * Headless agent runner. Executes the streaming → tool-call → loop pattern
  * across iterations, dispatching every state change through the supplied
  * `history: ChatHistoryAccessor`. The accessor owns the canonical chat
- * history — the runner doesn't keep a parallel copy. Both the chat panel and
- * the pipeline orchestrator inject their own implementation.
+ * history — the runner doesn't keep a parallel copy. The chat panel injects
+ * its own implementation.
  */
 export async function runAgent(
   options: RunAgentOptions,
@@ -349,6 +343,7 @@ export async function runAgent(
             agent,
             working.toolName,
             working.input,
+            toolMsgId,
           );
           const final: ToolCallEntry = {
             ...working,
@@ -420,69 +415,4 @@ export async function runAgent(
     toolCalls: allToolCalls,
     aborted,
   };
-}
-
-export interface InvokeAgentForRunOptions {
-  runId: AgentRunId;
-  /**
-   * Bare agent built by a builtin factory. The helper applies user-configured
-   * definition overrides — callers must NOT call `applyDefinitionOverride`
-   * separately or the override will run twice.
-   */
-  agent: Agent;
-  /** Prior conversation history threaded into the first iteration. */
-  history?: AiMessage[];
-  signal?: AbortSignal;
-  /** Receives `agent-*` PipelineEvents stamped with `{ runId, origin }`. */
-  onEvent?: PipelineEventEmitter;
-}
-
-/**
- * Run a single agent in the context of an existing AgentRun. Wraps `runAgent`
- * with the per-run scaffolding every pipeline phase (planTier, executeTier
- * editors, verifyTier, readerLoop) needs:
- *
- *  - applies user-configured definition overrides to the agent
- *  - resolves the model from current AppSettings
- *  - throws on missing API key (callers' `withRunErrorCapture` writes
- *    status=error; this helper deliberately does not duplicate that write)
- *  - implements `ChatHistoryAccessor` over an in-memory buffer that emits
- *    `agent-*` PipelineEvents (mirroring the legacy callback events) and
- *    accumulates token usage onto the AgentRun row
- */
-export async function invokeAgentForRun(
-  options: InvokeAgentForRunOptions,
-): Promise<RunAgentResult & { history: AiMessage[] }> {
-  const {
-    runId,
-    agent,
-    history: initialHistory = [],
-    signal,
-    onEvent,
-  } = options;
-
-  await applyDefinitionOverride(agent);
-
-  const settings = await getAppSettings();
-  const model = resolveAgentModel(agent, settings);
-  if (!model.apiKey) {
-    throw new Error(`No API key configured for provider '${model.provider}'`);
-  }
-
-  const accessor = makePipelineHistoryAccessor({
-    runId,
-    origin: { agentKind: agent.kind, agentId: agent.id },
-    initialHistory,
-    onEvent,
-  });
-
-  const result = await runAgent({
-    agent,
-    model,
-    history: accessor,
-    stream: settings.streamResponses,
-    signal,
-  });
-
-  return { ...result, history: accessor.getMessages() };
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, Settings2 } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { BUTTON_CANCEL } from "@/components/ui/form-styles";
 import type { AiProvider, ReasoningEffort } from "@/db/schemas";
 import { PROVIDERS } from "@/lib/ai/providers";
 
@@ -46,9 +45,6 @@ interface AiSettingsProps {
   onReasoningEffortChange: (effort: ReasoningEffort) => void;
   onDebugModeChange: (enabled: boolean) => void;
   onEnableToolCallingChange: (enabled: boolean) => void;
-  onManageAgents: () => void;
-  comprehensionContextThreshold: number;
-  onComprehensionContextThresholdChange: (value: number) => void;
   loreRetrievalEnabled: boolean;
   onLoreRetrievalEnabledChange: (enabled: boolean) => void;
   omniscientMode: boolean;
@@ -121,9 +117,6 @@ export function AiSettings({
   onReasoningEffortChange,
   onDebugModeChange,
   onEnableToolCallingChange,
-  onManageAgents,
-  comprehensionContextThreshold,
-  onComprehensionContextThresholdChange,
   loreRetrievalEnabled,
   onLoreRetrievalEnabledChange,
   omniscientMode,
@@ -291,29 +284,6 @@ export function AiSettings({
                 approval)
               </span>
             </label>
-            <label className={labelClass}>
-              Comprehension Context Threshold (tokens)
-              <input
-                type="number"
-                min={1000}
-                step={1000}
-                value={comprehensionContextThreshold}
-                onChange={(e) => {
-                  const next = Number.parseInt(e.target.value, 10);
-                  if (Number.isFinite(next) && next > 0) {
-                    onComprehensionContextThresholdChange(next);
-                  }
-                }}
-                className={inputClass}
-              />
-              <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
-                When the pipeline Reader's prompt size exceeds this, the
-                comprehension pass soft-resets — starts a fresh segment at the
-                next chapter with empty history. The reader bible carries
-                forward. Lower values trade long-range awareness for lower
-                per-iteration cost. Default 80,000.
-              </span>
-            </label>
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
@@ -402,16 +372,11 @@ export function AiSettings({
                 </label>
               </>
             )}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={onManageAgents}
-                className={`${BUTTON_CANCEL} inline-flex items-center gap-1.5`}
-              >
-                <Settings2 size={14} />
-                Manage Agents
-              </button>
-            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Manage agents from the <span className="font-medium">Agents</span>{" "}
+              panel in the sidebar — create custom agents and edit built-in ones
+              there.
+            </p>
           </>
         )}
       </div>

@@ -1,18 +1,17 @@
 import type {
   AgentKind,
   AgentModelOverride,
-  AgentRunId,
   AiProvider,
   ReasoningEffort,
 } from "@/db/schemas";
 import type { ToolCallEntry, ToolExecutionContext } from "../tool-calling";
-import type { AiMessage, AiUsage, FinishReason } from "../types";
+import type { AiMessage, FinishReason } from "../types";
 import type { ChatHistoryAccessor } from "./accessor";
 
 /**
  * "Manual" represents the synthesized agent that backs the AiPanel chat — its
- * system prompt comes from the existing task-tool selector instead of one of
- * the pipeline kinds. Custom user-defined agents (Phase 4) use "custom".
+ * system prompt comes from the existing task-tool selector instead of a
+ * built-in agent kind. Custom user-defined agents use "custom".
  */
 export type AnyAgentKind = AgentKind | "manual" | "custom";
 
@@ -28,17 +27,14 @@ export type BuildMessagesFn = (params: { history: AiMessage[] }) => AiMessage[];
 
 /**
  * A first-class agent: a typed configuration of model + prompt + tool subset
- * that can be run through the headless `runAgent()` function. Built-in pipeline
- * agents (reader, orchestrator, editor, verifier) come from factories under
- * `src/lib/ai/agents/builtins/`. The AiPanel chat synthesizes a "manual" agent
- * to preserve its existing UX.
+ * that can be run through the headless `runAgent()` function. Built-in chat
+ * agents come from factories under `src/lib/ai/agents/builtins/`. The AiPanel
+ * chat synthesizes a "manual" agent to preserve its existing UX.
  */
 export interface Agent {
-  /** Unique per invocation (e.g. `"editor:wu_42"`). Used for run-scoped logs. */
+  /** Unique per invocation. Used for logging / correlation. */
   id: string;
   kind: AnyAgentKind;
-  /** When set, scopes tool execution to a specific pipeline run. */
-  runId?: AgentRunId;
   /**
    * Per-agent model override. When omitted, the runner falls back to the
    * global `AppSettings.aiProvider` / `providerModels` / `reasoningEffort`.
@@ -46,7 +42,7 @@ export interface Agent {
   modelOverride?: AgentModelOverride;
   /**
    * Whitelist of tool ids the agent may use. When omitted, tools are still
-   * gated by `enableToolCalling`. Pipeline agents always set this to a tight
+   * gated by `enableToolCalling`. Built-in chat agents set this to a tight
    * subset; the manual agent leaves it undefined.
    */
   allowedToolIds?: string[];
@@ -56,7 +52,7 @@ export interface Agent {
   maxIterations?: number;
   /** Builds messages for each iteration. */
   buildMessages: BuildMessagesFn;
-  /** Tool execution context — projectId, runId, agentKind. */
+  /** Tool execution context — projectId, agentKind. */
   agentContext: ToolExecutionContext;
   /**
    * Pre-rendered system content, exposed for prompt-inspector UIs. Not used by
@@ -76,53 +72,13 @@ export interface ResolvedAgentModel {
   reasoningEffort?: ReasoningEffort;
 }
 
-/**
- * Lifecycle event payloads emitted by the pipeline path's accessor (and
- * consumed by `agentActivityStore` and `pipeline/events.ts`). The chat panel
- * doesn't emit these — it drives the UI directly via `setMessages`.
- */
-export interface IterationStartInfo {
-  messageId: string;
-  iteration: number;
-  /** The full prompt sent to the model — captured on iteration 1 only. */
-  capturedPrompt?: AiMessage[];
-}
-
-export interface IterationEndInfo {
-  messageId: string;
-  iteration: number;
-  content: string;
-  reasoning?: string;
-  finishReason?: FinishReason;
-  durationMs: number;
-  /**
-   * Token usage as reported by the provider. Undefined when the upstream
-   * stream omitted usage (some OpenRouter routes) — pipeline accounting falls
-   * back to its prior value in that case.
-   */
-  usage?: AiUsage;
-}
-
-export interface ToolCallsCollectedInfo {
-  messageId: string;
-  iteration: number;
-  entries: ToolCallEntry[];
-}
-
-export interface ToolCallUpdateInfo {
-  messageId: string;
-  iteration: number;
-  entry: ToolCallEntry;
-}
-
 export interface RunAgentOptions {
   agent: Agent;
   /** Resolved model + key + provider for this run. */
   model: ResolvedAgentModel;
   /**
-   * Canonical chat history accessor. Replaces the prior callback bag plus
-   * the runner's internal `workingHistory`. The chat panel and the pipeline
-   * each provide their own implementation.
+   * Canonical chat history accessor. The chat panel provides its own
+   * implementation.
    */
   history: ChatHistoryAccessor;
   /** Whether to stream the response. Defaults to true. */

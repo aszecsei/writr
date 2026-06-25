@@ -1,19 +1,10 @@
 /**
- * Single inventory of which tools each agent variant may invoke.
- *
- * Agent kinds map to multiple variants when an agent is invoked under
- * different operating contexts:
- *   - Reader has a chat variant (broad reads, no writes) and three pipeline
- *     modes (comprehension / thematic / self-answer).
- *   - Editor has a chat variant (broad reads + `propose_edit`) and a
- *     pipeline variant scoped to a single work unit.
- *   - Orchestrator and Verifier are pipeline-only.
+ * Single inventory of which tools each chat agent may invoke.
  *
  * Tool ids must match registered ids in `AI_TOOLS`. The consolidated `list`
  * and `get` tools accept SCOPED ids (`list:chapter`, `get:summary`, etc.)
- * to limit which categories an agent can read — pipeline readers, for
- * example, must be denied access to the user's authored bible. Use the
- * unscoped `list` / `get` to grant all categories.
+ * to limit which categories an agent can read. Use the unscoped `list` /
+ * `get` to grant all categories.
  */
 
 // ─── Chat-mode read baseline ─────────────────────────────────────────
@@ -60,66 +51,9 @@ export const CHAT_READS_BASE: readonly string[] = [
 /**
  * Chat-mode reader: read-only review of the manuscript and bible. Same
  * surface as the broad chat baseline — readers ground their answers in
- * the bible and chapter content but never mutate. Pipeline-only reader
- * tools (bible_*, list_notes/list_questions) are excluded; they require
- * an active run.
+ * the bible and chapter content but never mutate.
  */
 export const READER_CHAT_TOOLS: readonly string[] = [...CHAT_READS_BASE];
-
-/**
- * Comprehension pass: reader sees ONE inlined chapter. Read-back tools are
- * gated by `readableChapterIds` so the agent cannot peek ahead.
- * `search_project` is excluded because the comprehension reader has no
- * access to the user's authored bible by design — the same reason
- * `list` / `get` are scoped to chapter only.
- */
-export const READER_COMPREHENSION_TOOLS: readonly string[] = [
-  "bible_read",
-  "bible_write",
-  "bible_list",
-  "note",
-  "question",
-  "list_notes",
-  "list_questions",
-  "list:chapter",
-  "read_chapter",
-  "read_chapter_range",
-  "search_chapter",
-  "search_chapters",
-];
-
-/**
- * Thematic pass: comprehension toolset plus broad search so the agent can
- * enumerate every occurrence of a hypothesised motif.
- */
-export const READER_THEMATIC_TOOLS: readonly string[] = [
-  ...READER_COMPREHENSION_TOOLS,
-  "search_project",
-];
-
-/**
- * Self-answer pass: full reconciliation toolset. Walks open questions and
- * surfaces resolutions via `propose_answer`. No `bible_write` to motifs/
- * domain (that's owned by the thematic pass).
- */
-export const READER_SELF_ANSWER_TOOLS: readonly string[] = [
-  "list:chapter",
-  "read_chapter",
-  "read_chapter_range",
-  "search_chapter",
-  "search_chapters",
-  "search_project",
-  "get_chapter_structure",
-  "get:outline",
-  "bible_read",
-  "bible_write",
-  "bible_list",
-  "note",
-  "question",
-  "list_notes",
-  "list_questions",
-  "propose_answer",
-];
 
 // ─── Editor ──────────────────────────────────────────────────────────
 
@@ -181,6 +115,22 @@ export const WORLDBUILDER_TOOLS: readonly string[] = [
   "move_worldbuilding_doc",
 ];
 
+// ─── Orchestrator (chat) ─────────────────────────────────────────────
+
+/**
+ * Chat-mode orchestrator: the full chat read surface plus the two
+ * orchestration tools. `delegate` runs a named sub-agent on a self-contained
+ * subtask and returns only its final answer (keeping the orchestrator's
+ * context lean); `present_choice` pauses to ask the user a decision. The
+ * orchestrator reads to scope work and delegates the rest — it has no
+ * mutating tools of its own.
+ */
+export const ORCHESTRATOR_CHAT_TOOLS: readonly string[] = [
+  ...CHAT_READS_BASE,
+  "delegate",
+  "present_choice",
+];
+
 // ─── Chat / Brainstorm / Character Dialogue ──────────────────────────
 
 /**
@@ -225,53 +175,4 @@ export const CHARACTER_DIALOGUE_TOOLS: readonly string[] = [
   "get:style_guide",
   "list:guardrail",
   "get:guardrail",
-];
-
-/**
- * Pipeline editor: scoped to a single work unit. Read summaries / chapter
- * content / bible refs to ground the edit, then stage via `propose_edit`.
- * No bible_write — facts come from the orchestrator's bibleRefs.
- */
-export const EDITOR_PIPELINE_TOOLS: readonly string[] = [
-  "bible_read",
-  "read_chapter",
-  "read_chapter_range",
-  "get:summary",
-  "propose_edit",
-];
-
-// ─── Orchestrator ────────────────────────────────────────────────────
-
-/**
- * Pipeline orchestrator: turns reader notes into a tier of work units.
- * No `propose_edit` (orchestrator never writes prose) and no `bible_write`
- * (cannot author facts; only the reader does).
- */
-export const ORCHESTRATOR_TOOLS: readonly string[] = [
-  "bible_read",
-  "bible_list",
-  "get:summary",
-  "read_chapter",
-  "list:chapter",
-  "list_notes",
-  "list_questions",
-  "create_work_unit",
-  "update_work_unit",
-  "finalize_tier",
-];
-
-// ─── Verifier ────────────────────────────────────────────────────────
-
-/**
- * Pipeline verifier: read-only inspection of a freshly-applied tier.
- * No write tools beyond `report_verification`; findings are routed back as
- * notes for the next planning round.
- */
-export const VERIFIER_TOOLS: readonly string[] = [
-  "bible_read",
-  "bible_list",
-  "read_chapter",
-  "read_chapter_range",
-  "get:summary",
-  "report_verification",
 ];

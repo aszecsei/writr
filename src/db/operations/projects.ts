@@ -53,18 +53,7 @@ export async function deleteAllProjectData(
   await db.comments.where({ projectId }).delete();
   await db.chapterSnapshots.where({ projectId }).delete();
   await db.projectDictionaries.where({ projectId }).delete();
-  // Agent pipeline tables
-  await db.agentRuns.where({ projectId }).delete();
-  await db.readerBibleLog.where({ projectId }).delete();
-  await db.readerBibleView.where({ projectId }).delete();
-  await db.agentNotes.where({ projectId }).delete();
-  await db.agentQuestions.where({ projectId }).delete();
-  await db.workUnits.where({ projectId }).delete();
-  await db.editPlans.where({ projectId }).delete();
-  await db.proposedEdits.where({ projectId }).delete();
-  await db.verifications.where({ projectId }).delete();
   await db.chapterSummaries.where({ projectId }).delete();
-  await db.snapshotManifests.where({ projectId }).delete();
   await db.agents.where({ projectId }).delete();
   await db.indexedChunks.where({ projectId }).delete();
   await db.guardrailEntries.where({ projectId }).delete();
@@ -91,17 +80,7 @@ export async function deleteProject(id: ProjectId): Promise<void> {
       db.comments,
       db.chapterSnapshots,
       db.projectDictionaries,
-      db.agentRuns,
-      db.readerBibleLog,
-      db.readerBibleView,
-      db.agentNotes,
-      db.agentQuestions,
-      db.workUnits,
-      db.editPlans,
-      db.proposedEdits,
-      db.verifications,
       db.chapterSummaries,
-      db.snapshotManifests,
       db.agents,
       db.indexedChunks,
       db.guardrailEntries,

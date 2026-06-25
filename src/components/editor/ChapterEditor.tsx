@@ -16,7 +16,7 @@ import { useFocusMode } from "@/hooks/editor/useFocusMode";
 import {
   locateProposedEdit,
   spliceEdit,
-} from "@/lib/ai/agents/pipeline/stagedChapterContent";
+} from "@/lib/ai/tool-calling/tools/edit-locator";
 import { getEditorFont } from "@/lib/fonts";
 import {
   fountainToProseMirror,

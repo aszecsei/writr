@@ -97,6 +97,7 @@ export async function executeAgentTool(
   agent: Agent,
   toolId: string,
   params: Record<string, unknown>,
+  toolMessageId?: string,
 ): Promise<ToolResult> {
   if (agent.allowedToolIds) {
     if (toolId === "list") {
@@ -130,8 +131,8 @@ export async function executeAgentTool(
 
   const context: ToolExecutionContext = {
     ...agent.agentContext,
-    runId: agent.agentContext.runId ?? agent.runId,
     agentKind: agent.agentContext.agentKind ?? agent.kind,
+    ...(toolMessageId ? { toolMessageId } : {}),
   };
 
   return executeTool(toolId, params, context);

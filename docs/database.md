@@ -24,7 +24,7 @@ Zod is the single source of truth for every entity. The schema file exports both
 
 **Agent system** (see `docs/agents.md`)
 
-`AgentDefinition`, `AgentModelOverride`, `AgentReference`, `AgentRun`, `AgentRunUsage`, `AgentNote`, `AgentQuestion`, `WorkUnit`, `WorkUnitPlacement`, `EditPlan`, `EditPlanTier`, `ProposedEdit`, `Verification`, `VerificationFinding`, `ReaderPass`, `ReaderBibleLogEntry`, `ReaderBibleViewEntry`, `ChapterSummary`, `SnapshotManifest`.
+`AgentDefinition`, `AgentModelOverride`. `ChapterSummary` (cached per-chapter summaries) is also defined here; it backs the `get:summary` read tool and is independent of agents.
 
 ## Database (`src/db/database.ts`)
 

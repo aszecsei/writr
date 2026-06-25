@@ -14,7 +14,7 @@ Use these whenever a new Dexie table needs a hook. They handle subscription, sus
 
 ### `data/` — Dexie data hooks
 
-`useChapter`, `useProject`, `useBibleEntries`, `useAppSettings`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`, plus agent-system hooks (`useAgents`, `useAgentRun`, `useAgentNotes`, `useReaderBible`, `useVerifications`, `usePlan`).
+`useChapter`, `useProject`, `useBibleEntries`, `useAppSettings`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`, plus the agent-definition hooks (`useAgents`).
 
 ### `editor/` — Editor lifecycle hooks
 

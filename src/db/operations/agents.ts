@@ -1,11 +1,9 @@
-import { match, P } from "ts-pattern";
 import { db } from "../database";
 import {
   type AgentDefinition,
   type AgentDefinitionId,
   AgentDefinitionSchema,
   type AgentKind,
-  PIPELINE_AGENT_KINDS,
   type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
@@ -74,29 +72,18 @@ export async function getAgentByKind(
 /**
  * Agents available for project-scoped operations. Includes:
  *   - All built-in chat agents (kind in CHAT_AGENT_KINDS minus "user").
- *   - Pipeline-internal agents (orchestrator, verifier) when
- *     `includePipelineInternal` is true. These are NOT shown in the chat
- *     dropdown but ARE shown in the Manage Agents view (so users can edit
- *     model overrides).
  *   - User-created agents that are global (projectId=null) or scoped to
  *     this project.
  */
 export async function listAgents(
   projectId: ProjectId | null,
-  options: { includePipelineInternal?: boolean } = {},
 ): Promise<AgentDefinition[]> {
   const all = await db.agents.toArray();
-  const { includePipelineInternal = false } = options;
   return all.filter((a) =>
-    match(a.kind)
-      .with(
-        "user",
-        () =>
-          a.projectId === null ||
-          (projectId !== null && a.projectId === projectId),
-      )
-      .with(P.union("orchestrator", "verifier"), () => includePipelineInternal)
-      .otherwise(() => true),
+    a.kind === "user"
+      ? a.projectId === null ||
+        (projectId !== null && a.projectId === projectId)
+      : true,
   );
 }
 
@@ -208,9 +195,4 @@ export async function seedBuiltinAgents(): Promise<void> {
 /** True if the agent is one of the built-in kinds (not user-created). */
 export function isBuiltinAgent(agent: AgentDefinition): boolean {
   return agent.kind !== "user";
-}
-
-/** True if the agent is one of the four pipeline kinds. */
-export function isPipelineAgent(agent: AgentDefinition): boolean {
-  return PIPELINE_AGENT_KINDS.has(agent.kind);
 }

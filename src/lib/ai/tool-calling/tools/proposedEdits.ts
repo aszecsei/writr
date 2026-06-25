@@ -1,8 +1,6 @@
 import { match, P } from "ts-pattern";
 import { z } from "zod";
 import { getChapter } from "@/db/operations/chapters";
-import { createProposedEdit } from "@/db/operations/proposedEdits";
-import { getWorkUnit } from "@/db/operations/workUnits";
 import type { ChapterId } from "@/db/schemas";
 import {
   countNormalizedOccurrences,
@@ -13,13 +11,9 @@ import { fail, ok } from "./helpers";
 
 // ─── propose_edit ───────────────────────────────────────────────────
 //
-// Dual-mode tool. The shape the LLM sees is identical in both modes; the
-// runtime branches on `context.workUnitId`:
-//   • Pipeline mode (workUnitId set): writes to the proposedEdits staging
-//     table for the orchestrator's tier-apply step to commit.
-//   • Chat mode (workUnitId absent): does not persist. Returns a diff
-//     payload in `result.data` for the AiPanel to render with Apply /
-//     Discard controls. The user is the apply gate.
+// The shape the LLM sees and the diff payload it returns are render-only: the
+// tool does not persist. It returns a diff payload in `result.data` for the
+// AiPanel to render with Apply / Discard controls. The user is the apply gate.
 //
 // `replace` locates an edit by anchorText with optional prefix/suffix
 // disambiguation; the combined string `prefix + anchorText + suffix` MUST
@@ -120,36 +114,8 @@ export const proposeEditTool = defineTool({
       }
     }
 
-    // Pipeline mode: stage the edit for tier-apply.
-    if (context.workUnitId) {
-      if (!context.runId) return fail("propose_edit requires a run context");
-
-      const wu = await getWorkUnit(context.workUnitId);
-      if (!wu) return fail(`Work unit not found: ${context.workUnitId}`);
-      if (wu.runId !== context.runId)
-        return fail("Work unit belongs to a different run");
-
-      const edit = await createProposedEdit({
-        projectId: context.projectId,
-        runId: context.runId,
-        workUnitId: context.workUnitId,
-        chapterId: params.chapterId as ChapterId,
-        kind: params.kind,
-        fromOffset: params.fromOffset,
-        anchorText: params.anchorText,
-        prefix: params.prefix,
-        suffix: params.suffix,
-        newContent: params.newContent,
-        rationale: params.rationale,
-      });
-      return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
-        mode: "pipeline",
-        proposedEditId: edit.id,
-      });
-    }
-
-    // Chat mode: render-only. Resolve originalText so the diff card can
-    // show a before/after without re-fetching the chapter.
+    // Render-only. Resolve originalText so the diff card can show a
+    // before/after without re-fetching the chapter.
     const originalText = resolveOriginalText({
       kind: params.kind,
       anchorText: params.anchorText,

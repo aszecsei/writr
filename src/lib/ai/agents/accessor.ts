@@ -30,16 +30,9 @@ export interface ToolMessagePatch {
 
 /**
  * Interface the agent runner uses to read and write the canonical chat
- * history. Replaces the prior six-callback bag (`onIterationStart`,
- * `onChunk`, `onIterationEnd`, `onToolCallsCollected`, `onToolCallUpdate`,
- * `approveToolCall`) plus the runner's internal `workingHistory`.
- *
- * Two implementations:
- *   - `AiPanel` builds one keyed off `setMessages` to drive the UI.
- *   - The pipeline path (`invokeAgentForRun`) builds an in-memory variant
- *     that emits PipelineEvents for telemetry but holds no UI state.
- *
- * Both share the same lifecycle so the runner doesn't branch on caller type.
+ * history. `AiPanel` builds one keyed off `setMessages` to drive the UI; a
+ * delegated sub-agent builds a nested variant so its transcript renders under
+ * the parent's delegate call. The runner never branches on caller type.
  */
 export interface ChatHistoryAccessor {
   /**
@@ -74,8 +67,7 @@ export interface ChatHistoryAccessor {
    * the same order, for subsequent `updateToolMessage` and `approveToolCall`
    * calls. Batching matches the wire-format expectation that all tool_use
    * ids in an assistant turn are followed by their tool result rows in
-   * order — and lets the pipeline emitter fire its tool-collected event
-   * once with the full set rather than per entry.
+   * order.
    */
   appendPendingToolMessages(
     assistantId: AccessorMessageId,

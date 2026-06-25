@@ -1,6 +1,12 @@
 "use client";
 
-import { BookMarked, Sparkles, Telescope, Trash2 } from "lucide-react";
+import {
+  BookMarked,
+  ChevronLeft,
+  Sparkles,
+  Telescope,
+  Trash2,
+} from "lucide-react";
 import {
   type FormEvent,
   useCallback,
@@ -9,8 +15,8 @@ import {
   useState,
 } from "react";
 import { getAppSettings, isActiveInProject } from "@/db/operations";
-import { getAgent } from "@/db/operations/agents";
-import type { AgentDefinitionId } from "@/db/schemas";
+import { getAgent, listAgents } from "@/db/operations/agents";
+import type { AgentDefinition, AgentDefinitionId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useGuardrailsByProject,
@@ -37,6 +43,11 @@ import {
 } from "@/lib/ai/agents";
 import { getAgentBehavior } from "@/lib/ai/agents/builtins/defaults";
 import { PROVIDERS } from "@/lib/ai/providers";
+import type {
+  ChoiceRequest,
+  DelegateRequest,
+  DelegationHost,
+} from "@/lib/ai/tool-calling";
 import type { AiContext, AiMessage } from "@/lib/ai/types";
 import type { RetrievalResult } from "@/lib/retrieval/types";
 import { useEditorStore } from "@/store/editorStore";
@@ -44,14 +55,64 @@ import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 import { AgentSelector } from "./AgentSelector";
 import { makeUserMessage } from "./chat/factories";
-import { makeAiPanelAccessor } from "./chat/panelAccessor";
-import type { ChatMessage, ChatMessageId } from "./chat/types";
+import {
+  makeAiPanelAccessor,
+  makeNestedPanelAccessor,
+} from "./chat/panelAccessor";
+import type { ChatMessage, ChatMessageId, ToolChatMessage } from "./chat/types";
 import { ImageAttachmentPicker } from "./ImageAttachmentPicker";
 import { MessageList } from "./MessageList";
+import { type PendingGate, PendingGatesBar } from "./PendingGatesBar";
 import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
 import { RetrievalPreviewDialog } from "./RetrievalPreviewDialog";
+
+/**
+ * Resolve a delegation target by id or case-insensitive name among the
+ * available chat agents, excluding any agent already in the delegation chain
+ * (`ancestry`, which includes the caller itself — preventing self-delegation
+ * and cycles).
+ */
+function resolveDelegateTarget(
+  candidates: AgentDefinition[],
+  ref: string,
+  ancestry: ReadonlySet<string>,
+): AgentDefinition | null {
+  const byId = candidates.find((a) => a.id === ref && !ancestry.has(a.id));
+  if (byId) return byId;
+  const lower = ref.trim().toLowerCase();
+  return (
+    candidates.find(
+      (a) => a.name.trim().toLowerCase() === lower && !ancestry.has(a.id),
+    ) ?? null
+  );
+}
+
+/**
+ * Walk a drill path of delegate tool-message ids into the nested transcript it
+ * points at. Returns the nested messages plus the sub-agent name labels for a
+ * breadcrumb, or null if the path is stale (e.g. after a conversation reset).
+ */
+function resolveDrill(
+  messages: ChatMessage[],
+  path: ChatMessageId[],
+): { nested: ChatMessage[]; labels: string[] } | null {
+  let current = messages;
+  const labels: string[] = [];
+  for (const toolId of path) {
+    const tool = current.find(
+      (m): m is ToolChatMessage => m.role === "tool" && m.id === toolId,
+    );
+    if (!tool?.nestedMessages) return null;
+    labels.push(
+      tool.nestedAgentName ??
+        (typeof tool.input.agent === "string" ? tool.input.agent : "sub-agent"),
+    );
+    current = tool.nestedMessages;
+  }
+  return { nested: current, labels };
+}
 
 export function AiPanel() {
   const projectId = useProjectStore((s) => s.activeProjectId);
@@ -98,6 +159,13 @@ export function AiPanel() {
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [pendingToolApproval, setPendingToolApproval] = useState(false);
   const [showRetrievalPreview, setShowRetrievalPreview] = useState(false);
+  // Gates bubbled up from sub-agent runs: mutation approvals and present_choice
+  // prompts. Surfaced in PendingGatesBar regardless of which transcript view
+  // the user is in.
+  const [pendingGates, setPendingGates] = useState<PendingGate[]>([]);
+  // Stack of delegate tool-message ids the user has drilled into. Empty =
+  // viewing the top-level conversation.
+  const [drillPath, setDrillPath] = useState<ChatMessageId[]>([]);
 
   // Mirror `messages` into a ref so the accessor's `getMessages()` can read
   // the freshest snapshot regardless of React batching. The accessor is
@@ -113,6 +181,18 @@ export function AiPanel() {
   // up the entry by tool message id and resolve it.
   const toolApprovalResolversRef = useRef<
     Map<ChatMessageId, (approved: boolean) => void>
+  >(new Map());
+
+  // Resolvers for bubbled-up sub-agent gates, keyed by gate id. The "kind"
+  // lets handleCancel resolve each with a sensible default (deny / empty).
+  const gateResolversRef = useRef<
+    Map<
+      string,
+      {
+        kind: "approval" | "choice";
+        resolve: (value: boolean | string) => void;
+      }
+    >
   >(new Map());
 
   useEffect(() => {
@@ -206,6 +286,52 @@ export function AiPanel() {
     resolveToolApproval(toolMessageId, false);
   }
 
+  /** Bubble a sub-agent mutation approval to the top-level gates bar. */
+  function pushApprovalGate(
+    agentName: string,
+    toolDisplayName: string,
+  ): Promise<boolean> {
+    const gateId = crypto.randomUUID();
+    return new Promise<boolean>((resolve) => {
+      gateResolversRef.current.set(gateId, {
+        kind: "approval",
+        resolve: resolve as (value: boolean | string) => void,
+      });
+      setPendingGates((prev) => [
+        ...prev,
+        { kind: "approval", id: gateId, agentName, toolDisplayName },
+      ]);
+    });
+  }
+
+  /** Bubble a `present_choice` prompt to the top-level gates bar. */
+  function pushChoiceGate(
+    agentName: string,
+    question: string,
+    options: string[],
+  ): Promise<string> {
+    const gateId = crypto.randomUUID();
+    return new Promise<string>((resolve) => {
+      gateResolversRef.current.set(gateId, {
+        kind: "choice",
+        resolve: resolve as (value: boolean | string) => void,
+      });
+      setPendingGates((prev) => [
+        ...prev,
+        { kind: "choice", id: gateId, agentName, question, options },
+      ]);
+    });
+  }
+
+  function resolveGate(gateId: string, value: boolean | string) {
+    const entry = gateResolversRef.current.get(gateId);
+    if (entry) {
+      gateResolversRef.current.delete(gateId);
+      entry.resolve(value);
+    }
+    setPendingGates((prev) => prev.filter((g) => g.id !== gateId));
+  }
+
   /**
    * Run the selected agent against the current chat history. The user
    * message must already have been appended via `setMessages` before this
@@ -219,6 +345,10 @@ export function AiPanel() {
     if (!projectId) {
       throw new Error("No active project.");
     }
+    // Narrowed alias so nested closures (the delegation host) keep the
+    // non-null type — TS widens `projectId` back to `ProjectId | null` across
+    // function boundaries.
+    const activeProjectId = projectId;
     const definition = await getAgent(selectedAgentId);
     if (!definition) {
       throw new Error("Selected agent no longer exists.");
@@ -276,6 +406,94 @@ export function AiPanel() {
         `No API key configured. Add your ${PROVIDERS[model.provider].label} API key in App Settings.`,
       );
     }
+
+    // Delegation host: lets an orchestrator agent run named sub-agents
+    // (`delegate`) and ask the user (`present_choice`). A sub-agent runs its
+    // own tool loop with a nested accessor; only its final answer returns to
+    // the caller. Mutation approvals and choices bubble to the gates bar.
+    function buildDelegationHost(params: {
+      depth: number;
+      ancestry: Set<string>;
+      agentName: string;
+    }): DelegationHost {
+      return {
+        depth: params.depth,
+        ancestry: params.ancestry,
+        async runSubAgent(req: DelegateRequest, parentToolMessageId?: string) {
+          const candidates = await listAgents(activeProjectId);
+          const target = resolveDelegateTarget(
+            candidates,
+            req.agent,
+            params.ancestry,
+          );
+          if (!target) {
+            return {
+              answer: `No available agent named "${req.agent}".`,
+              aborted: false,
+            };
+          }
+          const subAgent = makeChatAgent({
+            definition: target,
+            projectId: activeProjectId,
+            context,
+            customSystemPrompt: settings.customSystemPrompt,
+            postChatInstructions: settings.postChatInstructions,
+            postChatInstructionsDepth: settings.postChatInstructionsDepth,
+          });
+          subAgent.agentContext.delegation = buildDelegationHost({
+            depth: params.depth + 1,
+            ancestry: new Set([...params.ancestry, target.id]),
+            agentName: target.name,
+          });
+          const subModel = resolveAgentModel(subAgent, settings);
+          if (!subModel.apiKey) {
+            return {
+              answer: `No API key configured for provider '${subModel.provider}'.`,
+              aborted: false,
+            };
+          }
+          if (parentToolMessageId) {
+            const parentId = parentToolMessageId as ChatMessageId;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.role === "tool" && m.id === parentId
+                  ? {
+                      ...m,
+                      nestedAgentName: target.name,
+                      nestedMessages: m.nestedMessages ?? [],
+                    }
+                  : m,
+              ),
+            );
+          }
+          const nestedAccessor = makeNestedPanelAccessor({
+            setMessages,
+            parentToolMessageId: (parentToolMessageId ??
+              crypto.randomUUID()) as ChatMessageId,
+            seedPrompt: req.prompt,
+            awaitToolApproval: (_id, info) =>
+              pushApprovalGate(target.name, info?.displayName ?? "a tool"),
+          });
+          const result = await runAgent({
+            agent: subAgent,
+            model: subModel,
+            history: nestedAccessor,
+            stream: settings.streamResponses,
+            signal,
+          });
+          return { answer: result.content, aborted: result.aborted };
+        },
+        async requestChoice(req: ChoiceRequest) {
+          return pushChoiceGate(params.agentName, req.question, req.options);
+        },
+      };
+    }
+
+    agent.agentContext.delegation = buildDelegationHost({
+      depth: 0,
+      ancestry: new Set([definition.id]),
+      agentName: definition.name,
+    });
 
     requestStartRef.current = Date.now();
     setElapsedMs(0);
@@ -351,6 +569,13 @@ export function AiPanel() {
       resolver(false);
     }
     toolApprovalResolversRef.current.clear();
+    // Resolve any bubbled sub-agent gates so nested runs unwind: deny pending
+    // approvals, return an empty choice (the abort signal stops the run next).
+    for (const { kind, resolve } of gateResolversRef.current.values()) {
+      resolve(kind === "approval" ? false : "");
+    }
+    gateResolversRef.current.clear();
+    setPendingGates([]);
     setMessages((prev) => {
       // Drop a trailing assistant turn that hasn't been finalized
       // (no durationMs => still in-progress).
@@ -477,6 +702,11 @@ export function AiPanel() {
     }
   }
 
+  // Resolve the active nested transcript when the user has drilled into a
+  // delegate call. A stale path (e.g. after clearing the conversation) yields
+  // null and falls back to the top-level view.
+  const drill = drillPath.length > 0 ? resolveDrill(messages, drillPath) : null;
+
   return (
     <aside className="flex h-full flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
       <div className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
@@ -513,6 +743,7 @@ export function AiPanel() {
                 onClick={() => {
                   setMessages([]);
                   setError(null);
+                  setDrillPath([]);
                 }}
                 title="Clear conversation"
                 className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
@@ -525,24 +756,69 @@ export function AiPanel() {
         <AgentSelector value={selectedAgentId} onChange={setSelectedAgentId} />
       </div>
 
-      <MessageList
-        messages={messages}
-        loading={loading}
-        elapsedMs={elapsedMs}
-        error={error}
-        onInspectPrompt={setInspectingPrompt}
-        onDeleteMessage={handleDeleteMessage}
-        onEditMessage={handleEditMessage}
-        onRegenerate={handleRegenerate}
-        onContinue={handleContinue}
-        editingMessageId={editingMessageId}
-        editingContent={editingContent}
-        onEditingContentChange={setEditingContent}
-        onCancelEdit={handleCancelEdit}
-        onConfirmEdit={handleConfirmEdit}
-        onApproveToolCall={handleApproveToolCall}
-        onDenyToolCall={handleDenyToolCall}
-        pendingToolApproval={pendingToolApproval}
+      {drill ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 border-b border-neutral-200 px-4 py-2 text-xs dark:border-neutral-800">
+            <button
+              type="button"
+              onClick={() => setDrillPath((p) => p.slice(0, -1))}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-primary-600 transition-colors hover:bg-neutral-100 dark:text-primary-400 dark:hover:bg-neutral-800"
+            >
+              <ChevronLeft size={14} />
+              Back
+            </button>
+            <span className="truncate text-neutral-500 dark:text-neutral-400">
+              Conversation
+              {drill.labels.map((label) => ` › ${label}`).join("")}
+            </span>
+          </div>
+          <MessageList
+            messages={drill.nested}
+            loading={loading}
+            elapsedMs={elapsedMs}
+            error={null}
+            onInspectPrompt={setInspectingPrompt}
+            onDeleteMessage={handleDeleteMessage}
+            onEditMessage={handleEditMessage}
+            onRegenerate={handleRegenerate}
+            onContinue={handleContinue}
+            editingMessageId={editingMessageId}
+            editingContent={editingContent}
+            onEditingContentChange={setEditingContent}
+            onCancelEdit={handleCancelEdit}
+            onConfirmEdit={handleConfirmEdit}
+            readOnly
+            onEnterNested={(toolId) => setDrillPath((p) => [...p, toolId])}
+          />
+        </div>
+      ) : (
+        <MessageList
+          messages={messages}
+          loading={loading}
+          elapsedMs={elapsedMs}
+          error={error}
+          onInspectPrompt={setInspectingPrompt}
+          onDeleteMessage={handleDeleteMessage}
+          onEditMessage={handleEditMessage}
+          onRegenerate={handleRegenerate}
+          onContinue={handleContinue}
+          editingMessageId={editingMessageId}
+          editingContent={editingContent}
+          onEditingContentChange={setEditingContent}
+          onCancelEdit={handleCancelEdit}
+          onConfirmEdit={handleConfirmEdit}
+          onApproveToolCall={handleApproveToolCall}
+          onDenyToolCall={handleDenyToolCall}
+          pendingToolApproval={pendingToolApproval}
+          onEnterNested={(toolId) => setDrillPath((p) => [...p, toolId])}
+        />
+      )}
+
+      <PendingGatesBar
+        gates={pendingGates}
+        onApprove={(gateId) => resolveGate(gateId, true)}
+        onDeny={(gateId) => resolveGate(gateId, false)}
+        onChoose={(gateId, option) => resolveGate(gateId, option)}
       />
 
       <PromptInput

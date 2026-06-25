@@ -5,7 +5,6 @@ export type {
   ChatHistoryAccessor,
   ToolMessagePatch,
 } from "./accessor";
-export { applyDefinitionOverride } from "./applyDefinitionOverride";
 export {
   makeAgentBuildMessages,
   makeChatAgentBuildMessages,
@@ -21,11 +20,7 @@ export type {
   Agent,
   AnyAgentKind,
   BuildMessagesFn,
-  IterationEndInfo,
-  IterationStartInfo,
   ResolvedAgentModel,
   RunAgentOptions,
   RunAgentResult,
-  ToolCallsCollectedInfo,
-  ToolCallUpdateInfo,
 } from "./types";
