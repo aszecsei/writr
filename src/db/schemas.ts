@@ -427,6 +427,8 @@ export const AgentKindEnum = z.enum([
   "outline-architect",
   "worldbuilder",
   "orchestrator-chat",
+  "researcher",
+  "prose-writer",
   // User-created via Manage Agents.
   "user",
 ]);
@@ -445,6 +447,8 @@ export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
   "outline-architect",
   "worldbuilder",
   "orchestrator-chat",
+  "researcher",
+  "prose-writer",
   "user",
 ]);
 
@@ -497,6 +501,10 @@ export const SavedPromptSchema = z.object({
   projectId: ProjectIdSchema.nullable().default(null),
   title: z.string().min(1),
   body: z.string().default(""),
+  // Non-null = a bundled built-in prompt, keyed by this stable identifier. Such
+  // rows are seeded on boot, non-deletable, and resettable to their default
+  // (mirrors built-in agents). null = a user-created prompt.
+  builtinKey: z.string().nullable().default(null),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

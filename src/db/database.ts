@@ -4,6 +4,7 @@ import {
   type BuiltinAgentDefault,
 } from "@/lib/ai/agents/builtins/defaults";
 import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
+import { BUILTIN_SAVED_PROMPTS } from "@/lib/savedPrompts/builtins";
 import type {
   AgentDefinition,
   AgentDefinitionId,
@@ -27,6 +28,7 @@ import type {
   Project,
   ProjectDictionary,
   SavedPrompt,
+  SavedPromptId,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -1072,6 +1074,18 @@ export class WritrDatabase extends Dexie {
           .delete();
       });
 
+    // Backfill `builtinKey` on pre-existing saved prompts. Reads of saved
+    // prompts return raw Dexie rows (no Zod parse), so legacy rows would carry
+    // `undefined` and be misclassified as built-in; normalize them to null.
+    this.version(43).upgrade(async (tx) => {
+      await tx
+        .table("savedPrompts")
+        .toCollection()
+        .modify((p) => {
+          if (p.builtinKey === undefined) p.builtinKey = null;
+        });
+    });
+
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {
       return this.transaction(
@@ -1079,6 +1093,7 @@ export class WritrDatabase extends Dexie {
         this.appSettings,
         this.appDictionary,
         this.agents,
+        this.savedPrompts,
         async () => {
           const timestamp = new Date().toISOString();
           const settings = await this.appSettings.get(APP_SETTINGS_ID);
@@ -1124,6 +1139,29 @@ export class WritrDatabase extends Dexie {
               allowedToolIds: def.allowedToolIds,
               modelOverride: null,
               assistantPrefill: def.assistantPrefill ?? "",
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            });
+          }
+
+          // Idempotent built-in saved-prompt seed (keyed by builtinKey). Edits
+          // to an existing built-in are preserved; only absent keys are added.
+          const existingPrompts = await this.savedPrompts.toArray();
+          const presentPromptKeys = new Set(
+            existingPrompts
+              .map((p) => p.builtinKey)
+              .filter((k): k is string => k != null),
+          );
+          for (const [builtinKey, def] of Object.entries(
+            BUILTIN_SAVED_PROMPTS,
+          )) {
+            if (presentPromptKeys.has(builtinKey)) continue;
+            await this.savedPrompts.add({
+              id: crypto.randomUUID() as SavedPromptId,
+              projectId: null,
+              title: def.title,
+              body: def.body,
+              builtinKey,
               createdAt: timestamp,
               updatedAt: timestamp,
             });

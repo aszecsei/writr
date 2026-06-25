@@ -131,6 +131,23 @@ export const ORCHESTRATOR_CHAT_TOOLS: readonly string[] = [
   "present_choice",
 ];
 
+// ─── Researcher / Prose Writer (orchestrated scene-writing) ──────────
+
+/**
+ * Researcher: read-only investigation surface, same as Reader. Given a scene
+ * concept it grounds a research brief in the bible and prior chapters
+ * (character voices/knowledge, worldbuilding, prior events) — it never mutates
+ * and never writes prose.
+ */
+export const RESEARCHER_TOOLS: readonly string[] = [...CHAT_READS_BASE];
+
+/**
+ * Prose Writer: full read surface so it can pull a verbatim callback or check a
+ * fact, but its prompt treats the supplied brief + beats as authoritative and
+ * discourages re-research. No mutating tools — it only emits prose.
+ */
+export const PROSE_WRITER_TOOLS: readonly string[] = [...CHAT_READS_BASE];
+
 // ─── Chat / Brainstorm / Character Dialogue ──────────────────────────
 
 /**

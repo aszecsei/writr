@@ -36,7 +36,9 @@ builtins/
 
 ## Built-in chat agents
 
-`spark`, `scene`, `reader`, `editor`, `character-dialogue`, `brainstorm`, `chat`, `beta-reader`, `outline-architect`, `worldbuilder`, and `orchestrator-chat`. Each has a `behavior` (`spark` / `scene` / `review` / `edit` / `chat` / `panel`) that drives how the AiPanel renders its response. `kind="user"` agents are user-created and always behave as `chat`.
+`spark`, `scene`, `reader`, `editor`, `character-dialogue`, `brainstorm`, `chat`, `beta-reader`, `outline-architect`, `worldbuilder`, `orchestrator-chat`, `researcher`, and `prose-writer`. Each has a `behavior` (`spark` / `scene` / `review` / `edit` / `chat` / `panel`) that drives how the AiPanel renders its response. `kind="user"` agents are user-created and always behave as `chat`.
+
+`researcher` (behavior `review`) assembles a structured, cited research brief from the bible and prior chapters; `prose-writer` (behavior `scene`) drafts a scene loose-and-fast from a supplied concept + research brief + beats. Both are general-purpose chat agents but are designed as sub-agents of the orchestrated scene-writing flow (see below).
 
 ## Sub-agent delegation
 
@@ -46,6 +48,10 @@ The **Orchestrator** (`orchestrator-chat`) keeps its own context lean by handing
 - **`present_choice`** (`tools/presentChoice.ts`) — pauses to ask the user to pick one of several options.
 
 Both reach the panel through the `DelegationHost` injected on `ToolExecutionContext.delegation` (set by the AiPanel accessor; absent — and the tools fail gracefully — outside interactive chat). Delegation runs entirely through `runAgent` + the chat accessor; sub-agent transcripts render nested under the delegate call via `DelegatedAgentCard`, and user-facing gates surface in `PendingGatesBar`.
+
+### Built-in saved prompts
+
+The orchestrated **Scene Writing** flow ships as a built-in *saved prompt* (`builtinKey: "scene-writing"` in `src/lib/savedPrompts/builtins.ts`), not as a separate agent. Selected with the Orchestrator active, its body drives a five-pass workflow: concept (orchestrator) → research (`Researcher`) → beats (orchestrator) → prose (`Prose Writer`) → edit (`Editor`, returning polished prose). Built-in saved prompts carry a non-null `builtinKey`: they are seeded idempotently in `db.on("ready")`, are non-deletable, and offer reset-to-default — mirroring built-in agents. See `docs/database.md` for the `SavedPrompt` schema.
 
 ## Beta Reader panel
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   createSavedPrompt,
   deleteSavedPrompt,
+  resetSavedPromptToDefault,
   updateSavedPrompt,
 } from "@/db/operations/savedPrompts";
 import type { SavedPrompt, SavedPromptId } from "@/db/schemas";
@@ -41,6 +42,7 @@ export function SavedPromptsManager() {
   const [confirmDelete, setConfirmDelete] = useState<SavedPromptId | null>(
     null,
   );
+  const [confirmReset, setConfirmReset] = useState<SavedPromptId | null>(null);
 
   if (modal.id !== "saved-prompts") return null;
 
@@ -171,6 +173,7 @@ export function SavedPromptsManager() {
               prompt={p}
               onEdit={() => startEdit(p)}
               onDelete={() => setConfirmDelete(p.id)}
+              onReset={() => setConfirmReset(p.id)}
             />
           ),
         )}
@@ -191,6 +194,20 @@ export function SavedPromptsManager() {
         />
       )}
 
+      {confirmReset && (
+        <ConfirmDialog
+          title="Reset this prompt?"
+          message="This restores the built-in prompt's title and body to their bundled defaults, discarding your edits."
+          confirmLabel="Reset"
+          onConfirm={async () => {
+            await resetSavedPromptToDefault(confirmReset);
+            if (editing === confirmReset) setEditing(null);
+            setConfirmReset(null);
+          }}
+          onCancel={() => setConfirmReset(null)}
+        />
+      )}
+
       <div className="mt-4 flex justify-end">
         <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
           Close
@@ -204,10 +221,17 @@ interface SavedPromptRowProps {
   prompt: SavedPrompt;
   onEdit: () => void;
   onDelete: () => void;
+  onReset: () => void;
 }
 
-function SavedPromptRow({ prompt, onEdit, onDelete }: SavedPromptRowProps) {
+function SavedPromptRow({
+  prompt,
+  onEdit,
+  onDelete,
+  onReset,
+}: SavedPromptRowProps) {
   const isGlobal = prompt.projectId === null;
+  const isBuiltin = prompt.builtinKey !== null;
   return (
     <div className="rounded-md border border-neutral-200 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
       <div className="flex items-start justify-between gap-3">
@@ -216,7 +240,12 @@ function SavedPromptRow({ prompt, onEdit, onDelete }: SavedPromptRowProps) {
             <span className="font-medium text-neutral-900 dark:text-neutral-100">
               {prompt.title}
             </span>
-            {isGlobal && (
+            {isBuiltin && (
+              <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                Built-in
+              </span>
+            )}
+            {isGlobal && !isBuiltin && (
               <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
                 Global
               </span>
@@ -237,14 +266,26 @@ function SavedPromptRow({ prompt, onEdit, onDelete }: SavedPromptRowProps) {
           >
             <Pencil size={14} />
           </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            title="Delete"
-            className="rounded p-1 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-          >
-            <Trash2 size={14} />
-          </button>
+          {isBuiltin ? (
+            // Built-in prompts can't be deleted — only reset to their default.
+            <button
+              type="button"
+              onClick={onReset}
+              title="Reset to default"
+              className="rounded p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            >
+              <RotateCcw size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onDelete}
+              title="Delete"
+              className="rounded p-1 text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>

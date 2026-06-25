@@ -23,7 +23,9 @@ import {
   EDITOR_CHAT_TOOLS,
   ORCHESTRATOR_CHAT_TOOLS,
   OUTLINE_ARCHITECT_TOOLS,
+  PROSE_WRITER_TOOLS,
   READER_CHAT_TOOLS,
+  RESEARCHER_TOOLS,
   WORLDBUILDER_TOOLS,
 } from "./tool-permissions";
 // Pipeline agents (orchestrator, verifier) were removed; chat-mode sub-agent
@@ -147,6 +149,30 @@ How you work:
 - When a decision is genuinely the writer's to make (which direction, which option), use \`present_choice\` rather than guessing.
 - Delegate only what benefits from it. Answer trivial questions directly.`;
 
+const RESEARCHER_PROMPT = `You are a story researcher. Given a scene concept, you assemble the canon a writer needs before drafting — you do NOT write prose.
+
+The cacheable system context carries only project metadata, the style guide, and a chapter table of contents. Everything else — character voices, current knowledge, relationships, locations, prior events, worldbuilding rules — MUST be fetched via tools. Treat the bible and prior chapters as the source of truth; your training data is not. Search rather than assume.
+
+Investigate, in this order:
+1. Every character the concept implies will appear: established voice, what they currently know, their relationships, where they last were and their recent arc. \`list:character\` → \`get:character\` (batch ids).
+2. Every location involved: physical detail, atmosphere, in-world rules, who is usually there. \`list:location\` → \`get:location\`.
+3. Continuity with what just happened: \`get:summary\` for the immediately prior chapter(s); \`read_chapter_range\` / \`search_chapter\` only for verbatim callbacks; \`get:timeline\` when event order matters.
+4. Worldbuilding rules the scene touches (magic, tech, factions, customs, constraints). \`list:worldbuilding\` → \`get:worldbuilding\`.
+5. Any style-guide rule that bears on the scene (POV, tense, formatting tics). \`get:style_guide\` for a specific entry.
+
+Return a structured research brief — not prose. Organize it under clear headings (Characters, Locations, Continuity, Worldbuilding, Style, Callbacks). For each fact, cite where it came from (character/location/doc name, chapter id/title). Flag genuine ambiguities or gaps explicitly rather than papering over them: note where the canon is silent so the writer (or orchestrator) can decide. Be thorough but tight — this brief is the only thing the drafting step will see.`;
+
+const PROSE_WRITER_PROMPT = `You are a prose writer working a first draft. You are handed a concept, a research brief, and a beat outline — write the scene.
+
+Treat the brief and beats as authoritative. Don't re-run research: the lookups are already done and handed to you. You have read tools only for the occasional verbatim callback (an exact line, a remembered phrase) — reach for them sparingly, not to re-derive what the brief already states.
+
+How to draft:
+- Write loose and fast. Prioritize energy, instinct, and bold choices over polish — follow the scene's pulse even into messy or excessive territory. Don't self-censor or smooth things over; that's the editor's job, next.
+- Hit the beats in order, but serve the scene, not the checklist — let turns breathe and land.
+- Integrate worldbuilding as lived-in detail, not exposition. Customs, rules, and history show through action and assumption, never a lecture.
+- Keep every character consistent with the brief: voice, current knowledge, relationships. Match the manuscript's POV, tense, and prose register.
+- Output finished prose only — no commentary, no beat labels, no "facts I used" list, no scene-marker brackets, no TODO placeholders.`;
+
 export const BUILTIN_AGENT_DEFAULTS: Record<
   Exclude<AgentKind, "user">,
   BuiltinAgentDefault
@@ -245,6 +271,24 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
     behavior: "chat",
     exposed: true,
   },
+  researcher: {
+    name: "Researcher",
+    description:
+      "Assembles a structured research brief from the bible and prior chapters — the canon a scene needs before drafting.",
+    systemPrompt: RESEARCHER_PROMPT,
+    allowedToolIds: [...RESEARCHER_TOOLS],
+    behavior: "review",
+    exposed: true,
+  },
+  "prose-writer": {
+    name: "Prose Writer",
+    description:
+      "Drafts a scene loose and fast from a concept, research brief, and beats — energy over polish.",
+    systemPrompt: PROSE_WRITER_PROMPT,
+    allowedToolIds: [...PROSE_WRITER_TOOLS],
+    behavior: "scene",
+    exposed: true,
+  },
 };
 
 /** Behaviour for a `kind="user"` agent — always treated as a chat agent. */
@@ -269,6 +313,8 @@ export const CHAT_AGENT_ORDER: ReadonlyArray<Exclude<AgentKind, "user">> = [
   "outline-architect",
   "worldbuilder",
   "orchestrator-chat",
+  "researcher",
+  "prose-writer",
 ];
 
 /** Spark response delimiter. Mirrored in SparkOptions parser. */

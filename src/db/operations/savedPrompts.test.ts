@@ -1,12 +1,15 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
+import { BUILTIN_SAVED_PROMPTS } from "@/lib/savedPrompts/builtins";
 import { db } from "../database";
-import type { ProjectId } from "../schemas";
+import type { ProjectId, SavedPrompt } from "../schemas";
 import {
   createSavedPrompt,
   deleteSavedPrompt,
   getSavedPrompt,
   listAvailableSavedPrompts,
+  resetSavedPromptToDefault,
+  seedBuiltinPrompts,
   updateSavedPrompt,
 } from "./savedPrompts";
 
@@ -85,5 +88,73 @@ describe("savedPrompts operations", () => {
     const prompt = await createSavedPrompt({ title: "X" });
     await deleteSavedPrompt(prompt.id);
     expect(await getSavedPrompt(prompt.id)).toBeUndefined();
+  });
+
+  it("creates user prompts with a null builtinKey", async () => {
+    const prompt = await createSavedPrompt({ title: "User" });
+    expect(prompt.builtinKey).toBeNull();
+  });
+});
+
+describe("built-in saved prompts", () => {
+  beforeEach(async () => {
+    await resetTables();
+  });
+
+  it("seeds each built-in exactly once, idempotently", async () => {
+    await seedBuiltinPrompts();
+    await seedBuiltinPrompts();
+
+    const all = await db.savedPrompts.toArray();
+    const builtinKeys = Object.keys(BUILTIN_SAVED_PROMPTS);
+    expect(all).toHaveLength(builtinKeys.length);
+    for (const key of builtinKeys) {
+      const rows = all.filter((p) => p.builtinKey === key);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].projectId).toBeNull();
+      expect(rows[0].title).toBe(BUILTIN_SAVED_PROMPTS[key].title);
+      expect(rows[0].body).toBe(BUILTIN_SAVED_PROMPTS[key].body);
+    }
+  });
+
+  async function firstBuiltin(): Promise<SavedPrompt & { builtinKey: string }> {
+    const builtin = (await db.savedPrompts.toArray()).find(
+      (p) => p.builtinKey !== null,
+    );
+    if (!builtin || builtin.builtinKey === null) {
+      throw new Error("expected a built-in prompt to be seeded");
+    }
+    return builtin as SavedPrompt & { builtinKey: string };
+  }
+
+  it("refuses to delete a built-in prompt", async () => {
+    await seedBuiltinPrompts();
+    const builtin = await firstBuiltin();
+    await expect(deleteSavedPrompt(builtin.id)).rejects.toThrow(/built-in/i);
+    expect(await getSavedPrompt(builtin.id)).toBeDefined();
+  });
+
+  it("resets a built-in prompt to its bundled default", async () => {
+    await seedBuiltinPrompts();
+    const builtin = await firstBuiltin();
+    await updateSavedPrompt(builtin.id, {
+      title: "Edited title",
+      body: "Edited body",
+    });
+
+    await resetSavedPromptToDefault(builtin.id);
+
+    const restored = await getSavedPrompt(builtin.id);
+    const def = BUILTIN_SAVED_PROMPTS[builtin.builtinKey];
+    expect(restored?.title).toBe(def.title);
+    expect(restored?.body).toBe(def.body);
+  });
+
+  it("reset is a no-op for user-created prompts", async () => {
+    const prompt = await createSavedPrompt({ title: "Mine", body: "keep" });
+    await resetSavedPromptToDefault(prompt.id);
+    const after = await getSavedPrompt(prompt.id);
+    expect(after?.title).toBe("Mine");
+    expect(after?.body).toBe("keep");
   });
 });

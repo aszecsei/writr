@@ -1207,6 +1207,7 @@ describe("round-trip export → import", () => {
       projectId: null,
       title: "Opening line",
       body: "Write a hook.",
+      builtinKey: null,
       createdAt: ts,
       updatedAt: ts,
     });

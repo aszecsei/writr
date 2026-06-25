@@ -77,8 +77,10 @@ const KIND_ORDER: Record<string, number> = {
   "outline-architect": 8,
   worldbuilder: 9,
   "orchestrator-chat": 10,
-  orchestrator: 11,
-  verifier: 12,
+  researcher: 11,
+  "prose-writer": 12,
+  orchestrator: 13,
+  verifier: 14,
   user: 99, // user-created sort by name within the trailing block
 };
 
