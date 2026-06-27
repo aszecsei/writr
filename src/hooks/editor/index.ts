@@ -2,6 +2,7 @@ export { type AppStats, useAppStats } from "./useAppStats";
 export { useAutoSave } from "./useAutoSave";
 export { useCommentsByChapter } from "./useComments";
 export { useEditorCommentSync } from "./useEditorCommentSync";
+export { useEditorGrammar } from "./useEditorGrammar";
 export { useEditorKeyboardShortcuts } from "./useEditorKeyboardShortcuts";
 export { useEditorSpellcheck } from "./useEditorSpellcheck";
 export { useFocusMode } from "./useFocusMode";

@@ -10,6 +10,7 @@ import { useChapter } from "@/hooks/data/useChapter";
 import { useAutoSave } from "@/hooks/editor/useAutoSave";
 import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
+import { useEditorGrammar } from "@/hooks/editor/useEditorGrammar";
 import { useEditorKeyboardShortcuts } from "@/hooks/editor/useEditorKeyboardShortcuts";
 import { useEditorSpellcheck } from "@/hooks/editor/useEditorSpellcheck";
 import { useFocusMode } from "@/hooks/editor/useFocusMode";
@@ -32,6 +33,7 @@ import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useFindReplaceStore } from "@/store/findReplaceStore";
+import { useGrammarStore } from "@/store/grammarStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useUiStore } from "@/store/uiStore";
@@ -43,10 +45,13 @@ import {
 import { EditorToolbar } from "./EditorToolbar";
 import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
+import { GRAMMAR_UPDATED_META } from "./extensions/Grammar";
 import { HOLES_UPDATED_META } from "./extensions/Holes";
 import { SENTENCE_LENGTH_PREVIEW_META } from "./extensions/SentenceLengthPreview";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
+import { GrammarContextMenu } from "./GrammarContextMenu";
+import { GrammarScannerModal } from "./GrammarScannerModal";
 import { ScreenplayToolbar } from "./ScreenplayToolbar";
 import { SpellcheckContextMenu } from "./SpellcheckContextMenu";
 import { SpellcheckScannerModal } from "./SpellcheckScannerModal";
@@ -134,6 +139,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const closeFindReplace = useFindReplaceStore((s) => s.close);
   const contextMenu = useSpellcheckStore((s) => s.contextMenu);
   const closeContextMenu = useSpellcheckStore((s) => s.closeContextMenu);
+  const grammarContextMenu = useGrammarStore((s) => s.contextMenu);
+  const closeGrammarContextMenu = useGrammarStore((s) => s.closeContextMenu);
   const initializedRef = useRef(false);
 
   // Host-side collab binding. The /shared/[uuid] guest path uses
@@ -189,6 +196,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     spellcheckVersion,
   } = useEditorSpellcheck(activeProjectId);
 
+  // Grammar setup (harper.js). Enabled state is persisted in AppSettings.
+  const {
+    grammarServiceRef,
+    grammarEnabledRef,
+    ignoredLintsRef,
+    onGrammarContextMenu,
+    grammarVersion,
+  } = useEditorGrammar();
+
   // Stable callback refs for selection preserver
   const setSelectionRef = useRef(setSelection);
   setSelectionRef.current = setSelection;
@@ -218,6 +234,10 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       spellcheckEnabledRef,
       ignoredWordsRef,
       onSpellcheckContextMenu,
+      grammarServiceRef,
+      grammarEnabledRef,
+      ignoredLintsRef,
+      onGrammarContextMenu,
       onSelectionChange,
       onSelectionClear,
     };
@@ -295,6 +315,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       editor.view.dispatch(tr);
     }
   }, [editor, spellcheckVersion]);
+
+  // Trigger grammar decoration rebuild when grammar state changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: grammarVersion tracks all grammar state changes
+  useEffect(() => {
+    if (editor && !editor.isDestroyed && initializedRef.current) {
+      const tr = editor.state.tr.setMeta(GRAMMAR_UPDATED_META, true);
+      editor.view.dispatch(tr);
+    }
+  }, [editor, grammarVersion]);
 
   // Set active document on mount
   useEffect(() => {
@@ -603,6 +632,14 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
         {activeProjectId && (
           <SpellcheckScannerModal editor={editor} projectId={activeProjectId} />
         )}
+        {grammarContextMenu && (
+          <GrammarContextMenu
+            editor={editor}
+            contextMenu={grammarContextMenu}
+            onClose={closeGrammarContextMenu}
+          />
+        )}
+        <GrammarScannerModal editor={editor} />
       </div>
     </CommentsAdapterProvider>
   );

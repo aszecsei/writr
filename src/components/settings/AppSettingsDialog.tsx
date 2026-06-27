@@ -73,6 +73,7 @@ export function AppSettingsDialog() {
   const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
   const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
   const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
+  const [grammarCheckerEnabled, setGrammarCheckerEnabled] = useState(false);
   const [holeOpenDelimiter, setHoleOpenDelimiter] = useState("[");
   const [holeCloseDelimiter, setHoleCloseDelimiter] = useState("]");
   const [holeHighlightOpacity, setHoleHighlightOpacity] = useState(0.18);
@@ -146,6 +147,7 @@ export function AppSettingsDialog() {
       setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
       setReadingSpeedWpm(settings.readingSpeedWpm);
       setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
+      setGrammarCheckerEnabled(settings.grammarCheckerEnabled);
       setHoleOpenDelimiter(settings.holeDelimiters.open);
       setHoleCloseDelimiter(settings.holeDelimiters.close);
       setHoleHighlightOpacity(settings.holeHighlightOpacity);
@@ -221,6 +223,7 @@ export function AppSettingsDialog() {
       autoSaveSeconds !== Math.round(settings.autoSaveIntervalMs / 1000) ||
       readingSpeedWpm !== settings.readingSpeedWpm ||
       autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
+      grammarCheckerEnabled !== settings.grammarCheckerEnabled ||
       holeOpenDelimiter !== settings.holeDelimiters.open ||
       holeCloseDelimiter !== settings.holeDelimiters.close ||
       holeHighlightOpacity !== settings.holeHighlightOpacity ||
@@ -258,6 +261,7 @@ export function AppSettingsDialog() {
       autoSaveIntervalMs: autoSaveSeconds * 1000,
       readingSpeedWpm,
       autoFocusModeOnSprint,
+      grammarCheckerEnabled,
       holeDelimiters: {
         open: holeOpenDelimiter.trim() || "[",
         close: holeCloseDelimiter.trim() || "]",
@@ -330,6 +334,7 @@ export function AppSettingsDialog() {
             autoSaveSeconds={autoSaveSeconds}
             readingSpeedWpm={readingSpeedWpm}
             autoFocusModeOnSprint={autoFocusModeOnSprint}
+            grammarCheckerEnabled={grammarCheckerEnabled}
             holeOpenDelimiter={holeOpenDelimiter}
             holeCloseDelimiter={holeCloseDelimiter}
             holeHighlightOpacity={holeHighlightOpacity}
@@ -338,10 +343,12 @@ export function AppSettingsDialog() {
             onAutoSaveSecondsChange={setAutoSaveSeconds}
             onReadingSpeedWpmChange={setReadingSpeedWpm}
             onAutoFocusModeOnSprintChange={setAutoFocusModeOnSprint}
+            onGrammarCheckerEnabledChange={setGrammarCheckerEnabled}
             onHoleOpenDelimiterChange={setHoleOpenDelimiter}
             onHoleCloseDelimiterChange={setHoleCloseDelimiter}
             onHoleHighlightOpacityChange={handleHoleHighlightOpacityChange}
             onManageDictionaries={() => openModal({ id: "dictionary-manager" })}
+            onManageGrammarRules={() => openModal({ id: "grammar-rules" })}
             inputClass={INPUT_CLASS}
             labelClass={LABEL_CLASS}
           />

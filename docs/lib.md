@@ -15,6 +15,12 @@ Generates exports for the entire book or a single chapter.
 
 `nspell`-based service with CDN dictionary caching and a Unicode-aware tokenizer. Wired into the editor via the `Spellcheck` extension and `spellcheckStore`.
 
+## `grammar/` — Grammar checking
+
+`harper.js`-based grammar/style checker running in a web worker (`WorkerLinter` with the inlined WASM binary — no separate bundler assets). `GrammarService` is a lazy singleton mirroring `SpellcheckService`; `extractor.ts` walks the document block-by-block and maps harper's character spans back to ProseMirror positions. Spelling-category lints are filtered out so `nspell` stays the sole spell checker. Wired into the editor via the `Grammar` extension and `grammarStore`; the on/off toggle is the persisted `grammarCheckerEnabled` AppSettings field (default **off**). The "Style" category is disabled by default (`DEFAULT_DISABLED_LINT_KINDS` in `schemas.ts`).
+
+Users filter which checks run via the **Grammar Rules** modal (`GrammarRulesDialog`, opened from Editor settings): broad **categories** (lint kinds in `categories.ts`, persisted as `disabledLintKinds` and filtered post-hoc) and **individual rules** (harper's rule keys via `getRuleInfo`, persisted as `grammarRuleOverrides` and applied with `setLintConfig`). `useEditorGrammar` re-applies both to the service and re-checks whenever they change.
+
 ## `search/` — Project-wide search
 
 Paginated full-text search across 7 entity types (chapters, characters, locations, timeline events, style guide, worldbuilding docs, comments). Backs `/projects/[projectId]/search`.

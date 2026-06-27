@@ -596,6 +596,13 @@ export const HoleDelimitersSchema = z.object({
 });
 export type HoleDelimiters = z.infer<typeof HoleDelimitersSchema>;
 
+/**
+ * Grammar categories (lint kinds) switched off by default. "Style" is noisy for
+ * fiction prose, so it's off until the user opts in via the Grammar Rules modal.
+ * Used both for the schema default and the modal's "Reset to defaults".
+ */
+export const DEFAULT_DISABLED_LINT_KINDS: string[] = ["Style"];
+
 export const AppSettingsSchema = z.object({
   id: z.literal("app-settings"),
   enableAiFeatures: z.boolean().default(false),
@@ -649,6 +656,21 @@ export const AppSettingsSchema = z.object({
   autoSaveIntervalMs: z.number().int().positive().default(3000),
   editorFontSize: z.number().int().positive().default(16),
   editorFont: z.string().default("literata"),
+  /** Master switch for the harper.js grammar/style checker in the editor. */
+  grammarCheckerEnabled: z.boolean().default(false),
+  /**
+   * harper lint categories (lint kinds, e.g. "Style", "Punctuation") the user
+   * has switched off. Applied as a post-hoc filter on results. Defaults to
+   * {@link DEFAULT_DISABLED_LINT_KINDS}.
+   */
+  disabledLintKinds: z
+    .array(z.string())
+    .default(() => [...DEFAULT_DISABLED_LINT_KINDS]),
+  /**
+   * Per-rule overrides for harper's individual lint rules (rule key → enabled).
+   * Only explicit overrides are stored; absent keys use harper's default.
+   */
+  grammarRuleOverrides: z.record(z.string(), z.boolean()).default({}),
   debugMode: z.boolean().default(false),
   streamResponses: z.boolean().default(true),
   reasoningEffort: ReasoningEffortEnum.default("medium"),

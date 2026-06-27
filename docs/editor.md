@@ -16,6 +16,7 @@ src/components/editor/
   CopyMenu.tsx                TextToolsMenu.tsx
   InsertImageDialog.tsx       LinkEditorDialog.tsx   RubyDialog.tsx
   SpellcheckContextMenu.tsx   SpellcheckScannerModal.tsx
+  GrammarContextMenu.tsx      GrammarScannerModal.tsx
   VersionHistoryDialog.tsx
   comments/                   Comment thread UI, margin rendering
   extensions/                 Custom TipTap extensions (see below)
@@ -31,6 +32,7 @@ Located in `src/components/editor/extensions/`.
 - **`SearchAndReplace`** — search/replace decorations, driven by `findReplaceStore`.
 - **`TypewriterScrolling`** — keeps the active line centered.
 - **`Spellcheck`** — squiggle decorations, integrates with `nspell` via `spellcheckStore`.
+- **`Grammar`** — blue squiggle decorations for grammar/style issues, integrates with `harper.js` (web worker) via `grammarStore`. Async check; spelling lints are filtered (nspell owns spelling). Toggle persists in the `grammarCheckerEnabled` AppSettings field.
 - **`Indent`** — paragraph indentation marks.
 - **`Ruby`** — ruby-text annotations (CJK reading hints).
 - **`SelectionPreserver`** — preserves selection across blur/focus, used for toolbar dialogs.

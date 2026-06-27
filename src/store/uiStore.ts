@@ -33,6 +33,7 @@ export type ModalState =
   | { id: "insert-image" }
   | { id: "ruby-editor"; currentAnnotation?: string }
   | { id: "dictionary-manager" }
+  | { id: "grammar-rules" }
   | { id: "version-history"; chapterId: ChapterId; projectId: ProjectId }
   | { id: "chapter-properties"; chapterId: ChapterId }
   | { id: "separator-settings"; chapterId: ChapterId }

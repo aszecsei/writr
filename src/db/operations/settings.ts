@@ -32,3 +32,21 @@ export async function updateAppSettings(
     );
   }
 }
+
+/**
+ * Set the enabled state of a single harper grammar rule, merging into the
+ * existing per-rule overrides. Used by the grammar context menu / scanner's
+ * "disable rule" action; the change persists and applies on the next check.
+ */
+export async function setGrammarRuleEnabled(
+  ruleKey: string,
+  enabled: boolean,
+): Promise<void> {
+  const settings = await getAppSettings();
+  await updateAppSettings({
+    grammarRuleOverrides: {
+      ...settings.grammarRuleOverrides,
+      [ruleKey]: enabled,
+    },
+  });
+}

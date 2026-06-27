@@ -16,6 +16,7 @@ import { Markdown } from "tiptap-markdown";
 import type { Awareness } from "y-protocols/awareness";
 import type * as Y from "yjs";
 import type { Comment } from "@/db/schemas";
+import type { GrammarResult, GrammarService } from "@/lib/grammar";
 import {
   countWordsExcludingHoles,
   DEFAULT_HOLE_DELIMITERS,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/holes";
 import type { SpellcheckService } from "@/lib/spellcheck";
 import { Comments } from "./Comments";
+import { Grammar } from "./Grammar";
 import { Holes } from "./Holes";
 import { Indent } from "./Indent";
 import { MarkdownBlockquote } from "./MarkdownBlockquote";
@@ -81,6 +83,10 @@ export interface ExtensionOptions {
     suggestions: string[],
     rect: DOMRect,
   ) => void;
+  grammarServiceRef?: { current: GrammarService | null };
+  grammarEnabledRef?: { current: boolean };
+  ignoredLintsRef?: { current: Set<string> };
+  onGrammarContextMenu?: (result: GrammarResult, rect: DOMRect) => void;
   onSelectionChange?: (text: string, from: number, to: number) => void;
   onSelectionClear?: () => void;
   /**
@@ -173,6 +179,12 @@ export function createExtensions(options?: ExtensionOptions) {
       ignoredWordsRef: options?.ignoredWordsRef,
       onContextMenu: options?.onSpellcheckContextMenu,
     }),
+    Grammar.configure({
+      grammarServiceRef: options?.grammarServiceRef,
+      enabledRef: options?.grammarEnabledRef,
+      ignoredRef: options?.ignoredLintsRef,
+      onContextMenu: options?.onGrammarContextMenu,
+    }),
     Selection,
     SelectionReporter.configure({
       onSelectionChange: options?.onSelectionChange,
@@ -251,6 +263,12 @@ export function createScreenplayExtensions(options?: ExtensionOptions) {
       enabledRef: options?.spellcheckEnabledRef,
       ignoredWordsRef: options?.ignoredWordsRef,
       onContextMenu: options?.onSpellcheckContextMenu,
+    }),
+    Grammar.configure({
+      grammarServiceRef: options?.grammarServiceRef,
+      enabledRef: options?.grammarEnabledRef,
+      ignoredRef: options?.ignoredLintsRef,
+      onContextMenu: options?.onGrammarContextMenu,
     }),
     Selection,
     SelectionReporter.configure({

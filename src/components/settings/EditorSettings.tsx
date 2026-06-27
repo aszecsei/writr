@@ -27,6 +27,7 @@ interface EditorSettingsProps {
   autoSaveSeconds: number;
   readingSpeedWpm: number;
   autoFocusModeOnSprint: boolean;
+  grammarCheckerEnabled: boolean;
   holeOpenDelimiter: string;
   holeCloseDelimiter: string;
   holeHighlightOpacity: number;
@@ -35,10 +36,12 @@ interface EditorSettingsProps {
   onAutoSaveSecondsChange: (seconds: number) => void;
   onReadingSpeedWpmChange: (wpm: number) => void;
   onAutoFocusModeOnSprintChange: (enabled: boolean) => void;
+  onGrammarCheckerEnabledChange: (enabled: boolean) => void;
   onHoleOpenDelimiterChange: (value: string) => void;
   onHoleCloseDelimiterChange: (value: string) => void;
   onHoleHighlightOpacityChange: (value: number) => void;
   onManageDictionaries?: () => void;
+  onManageGrammarRules?: () => void;
   inputClass: string;
   labelClass: string;
 }
@@ -49,6 +52,7 @@ export function EditorSettings({
   autoSaveSeconds,
   readingSpeedWpm,
   autoFocusModeOnSprint,
+  grammarCheckerEnabled,
   holeOpenDelimiter,
   holeCloseDelimiter,
   holeHighlightOpacity,
@@ -57,10 +61,12 @@ export function EditorSettings({
   onAutoSaveSecondsChange,
   onReadingSpeedWpmChange,
   onAutoFocusModeOnSprintChange,
+  onGrammarCheckerEnabledChange,
   onHoleOpenDelimiterChange,
   onHoleCloseDelimiterChange,
   onHoleHighlightOpacityChange,
   onManageDictionaries,
+  onManageGrammarRules,
   inputClass,
   labelClass,
 }: EditorSettingsProps) {
@@ -134,6 +140,27 @@ export function EditorSettings({
             — distraction-free writing
           </span>
         </label>
+        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <input
+            type="checkbox"
+            checked={grammarCheckerEnabled}
+            onChange={(e) => onGrammarCheckerEnabledChange(e.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+          />
+          Enable grammar checker
+          <span className="font-normal text-xs text-neutral-500 dark:text-neutral-400">
+            — real-time grammar & style suggestions
+          </span>
+        </label>
+        {onManageGrammarRules && (
+          <button
+            type="button"
+            onClick={onManageGrammarRules}
+            className="-mt-2 text-left text-sm font-medium text-neutral-700 underline underline-offset-2 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+          >
+            Manage grammar rules
+          </button>
+        )}
         <div>
           <span className={labelClass}>Holes</span>
           <p className="mt-1 text-xs font-normal text-neutral-500 dark:text-neutral-400">

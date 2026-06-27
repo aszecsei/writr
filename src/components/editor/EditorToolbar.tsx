@@ -11,15 +11,19 @@ import {
   PanelRight,
   ScanSearch,
   SpellCheck,
+  SpellCheck2,
+  TextSearch,
   Volume2,
 } from "lucide-react";
 import { useCallback } from "react";
 import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
+import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { extractReadAloudText } from "@/lib/tts/extract";
 import { useCommentStore } from "@/store/commentStore";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
+import { useGrammarStore } from "@/store/grammarStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useTtsStore } from "@/store/ttsStore";
@@ -27,6 +31,7 @@ import { useUiStore } from "@/store/uiStore";
 import { AlignmentDropdown } from "./AlignmentDropdown";
 import { CopyMenu } from "./CopyMenu";
 import { CreateCommentButton } from "./comments";
+import { getGrammarResults } from "./extensions/Grammar";
 import { getSpellcheckResults } from "./extensions/Spellcheck";
 import { FontSelector } from "./FontSelector";
 import { FontSizeSelector } from "./FontSizeSelector";
@@ -54,6 +59,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
   const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
   const openScanner = useSpellcheckStore((s) => s.openScanner);
+
+  // Grammar checking — enabled state is persisted in AppSettings.
+  const grammarEnabled = settings?.grammarCheckerEnabled ?? false;
+  const openGrammarScanner = useGrammarStore((s) => s.openScanner);
 
   const chapter = useChapter(activeDocumentId);
 
@@ -103,6 +112,16 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     const results = getSpellcheckResults(editor.state);
     openScanner(results);
   }, [editor, openScanner]);
+
+  const toggleGrammar = useCallback(() => {
+    void updateAppSettings({ grammarCheckerEnabled: !grammarEnabled });
+  }, [grammarEnabled]);
+
+  // Open grammar scanner with current grammar issues
+  const handleOpenGrammarScanner = useCallback(() => {
+    if (!editor) return;
+    openGrammarScanner(getGrammarResults(editor.state));
+  }, [editor, openGrammarScanner]);
 
   // Link editor callbacks
   const handleLinkApply = useCallback(
@@ -365,6 +384,31 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
             }`}
           >
             <ScanSearch size={16} />
+          </button>
+          <button
+            type="button"
+            title="Toggle grammar checker"
+            onClick={toggleGrammar}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+              grammarEnabled
+                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            }`}
+          >
+            <SpellCheck2 size={16} />
+          </button>
+          <button
+            type="button"
+            title="Open grammar scanner"
+            onClick={handleOpenGrammarScanner}
+            disabled={!grammarEnabled}
+            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+              grammarEnabled
+                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
+            }`}
+          >
+            <TextSearch size={16} />
           </button>
         </>
       )}
