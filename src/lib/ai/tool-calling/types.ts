@@ -111,6 +111,7 @@ export interface ToolParametersSchema {
  */
 export type ToolCategory =
   | "chapter"
+  | "scene"
   | "character"
   | "location"
   | "timeline"

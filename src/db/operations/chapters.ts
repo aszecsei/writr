@@ -13,6 +13,7 @@ import {
   type ProjectId,
 } from "../schemas";
 import { generateId, now } from "./helpers";
+import { createScene } from "./scenes";
 import { recordWritingSession } from "./sprints";
 
 // ─── Chapters ────────────────────────────────────────────────────────
@@ -117,6 +118,13 @@ export async function createChapter(
     updatedAt: now(),
   });
   await db.chapters.add(chapter);
+  // Every chapter *document* has at least one scene (Model D): seed the core
+  // scene (order 0) so the sidebar and Details panel have a row immediately,
+  // before the editor's first save reconciles markers. Separators hold no prose
+  // and get no scene.
+  if (chapter.kind === "document") {
+    await createScene({ projectId: chapter.projectId, chapterId: chapter.id });
+  }
   return chapter;
 }
 
@@ -257,6 +265,7 @@ async function deleteRowAndDependents(chapterId: ChapterId): Promise<void> {
   await db.comments.where({ chapterId }).delete();
   await db.chapterSnapshots.where({ chapterId }).delete();
   await db.indexedChunks.where({ sourceId: chapterId }).delete();
+  await db.scenes.where({ chapterId }).delete();
   await db.chapters.delete(chapterId);
 }
 
@@ -287,6 +296,7 @@ export async function deleteChapter(
       db.outlineGridRows,
       db.outlineGridCells,
       db.indexedChunks,
+      db.scenes,
     ],
     async () => {
       if (mode === "cascade") {

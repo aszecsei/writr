@@ -272,6 +272,30 @@ describe("exportHtml", () => {
     expect(html).toBe("<p>Hello <strong>world</strong></p>");
   });
 
+  it("renders a Writr scene-break marker as <hr>", () => {
+    const html = exportHtml(
+      {
+        projectTitle: "p",
+        chapters: [
+          {
+            title: "c",
+            content:
+              'Before.\n\n<hr data-type="sceneBreak" data-scene-id="abc">\n\nAfter.',
+          },
+        ],
+      },
+      {
+        format: "markdown",
+        scope: "chapter",
+        projectId: PROJECT_ID,
+        includeTitlePage: false,
+        includeChapterHeadings: false,
+        pageBreaksBetweenChapters: false,
+      },
+    );
+    expect(html).toBe("<p>Before.</p>\n<hr>\n<p>After.</p>");
+  });
+
   it("exports a single chapter with heading", () => {
     const content = {
       projectTitle: "My Book",

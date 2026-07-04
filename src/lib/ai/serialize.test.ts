@@ -36,7 +36,7 @@ describe("serializeCharacter", () => {
     expect(xml).toContain('<character name="Alice" role="supporting">');
     expect(xml).toContain("</character>");
     // No optional elements when empty
-    expect(xml).not.toContain("<description>");
+    expect(xml).not.toContain("<physical-description>");
     expect(xml).not.toContain("<aliases>");
   });
 
@@ -75,7 +75,7 @@ describe("serializeCharacter", () => {
     });
     const xml = serializeCharacter(c);
     expect(xml).toContain("<aliases>The One, Neo</aliases>");
-    expect(xml).toContain("<description>desc</description>");
+    expect(xml).toContain("<physical-description>desc</physical-description>");
     expect(xml).toContain("<personality>pers</personality>");
     expect(xml).toContain("<motivations>motiv</motivations>");
     expect(xml).toContain("<strengths>str</strengths>");

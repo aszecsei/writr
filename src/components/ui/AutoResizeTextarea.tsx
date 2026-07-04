@@ -48,6 +48,7 @@ interface AutoResizeTextareaProps {
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
   onBlur?: FocusEventHandler<HTMLTextAreaElement>;
   heightSync?: HeightSyncGroup;
+  autoFocus?: boolean;
 }
 
 export function AutoResizeTextarea({
@@ -63,6 +64,7 @@ export function AutoResizeTextarea({
   onKeyDown,
   onBlur,
   heightSync,
+  autoFocus,
 }: AutoResizeTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const overflowing = useRef(false);
@@ -138,6 +140,8 @@ export function AutoResizeTextarea({
       disabled={disabled}
       onKeyDown={onKeyDown}
       onBlur={onBlur}
+      // biome-ignore lint/a11y/noAutofocus: opt-in, used only when a field toggles into edit mode
+      autoFocus={autoFocus}
     />
   );
 

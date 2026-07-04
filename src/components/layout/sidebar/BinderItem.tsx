@@ -28,6 +28,14 @@ export interface BinderItemShared {
   onRenameKeyDown: (e: React.KeyboardEvent) => void;
   onContextMenu: (e: React.MouseEvent, chapterId: ChapterId) => void;
   onSeparatorOpen: (id: ChapterId) => void;
+  /** Scene count per chapter (Model D). A chapter with >1 scene shows a scene
+   *  chevron and a "N scenes" subtitle. */
+  sceneCounts: Map<ChapterId, number>;
+  /** Which chapters are expanded to show their scene rows. */
+  openChapters: Record<string, boolean>;
+  onToggleChapterOpen: (id: ChapterId) => void;
+  /** Chapter currently highlighted as the target of a scene drag, if any. */
+  sceneDropTargetId: ChapterId | null;
 }
 
 /** A single flat row of the binder (one entry of the flattened visible tree). */
@@ -44,6 +52,10 @@ export function BinderItem({
   const { ref, handleRef, isDragSource } = useSortable({
     id: chapter.id,
     index,
+    // A chapter row is both a chapter reorder target and a scene drop target
+    // (drag a scene onto it to move the scene into this chapter).
+    type: "chapter",
+    accept: ["chapter", "scene"],
     data: { depth, parentId },
     transition: { idle: true },
   });
@@ -88,11 +100,17 @@ export function BinderItem({
   const isRenaming = shared.renamingChapterId === chapter.id;
   const href = `/projects/${shared.projectId}/chapters/${chapter.id}`;
   const isActive = shared.pathname === href;
+  const isSceneDropTarget = shared.sceneDropTargetId === chapter.id;
 
   const own = chapter.wordCount;
   const total = shared.subtreeTotals.get(chapter.id) ?? own;
   const primary = hasChildren ? total : own;
   const holeCount = shared.subtreeHoles.get(chapter.id) ?? 0;
+  const sceneCount = shared.sceneCounts.get(chapter.id) ?? 0;
+  // A chapter's scenes are shown only when it has more than one (the core scene
+  // alone reads as a plain chapter). Legacy nested children take precedence.
+  const showSceneChevron = !hasChildren && sceneCount > 1;
+  const isSceneOpen = shared.openChapters[chapter.id] === true;
 
   if (isRenaming) {
     return (
@@ -120,6 +138,10 @@ export function BinderItem({
       className={`flex items-center rounded-md transition-colors ${
         isDragSource ? "opacity-40" : ""
       } ${
+        isSceneDropTarget
+          ? "ring-2 ring-inset ring-primary-400 dark:ring-primary-500"
+          : ""
+      } ${
         isActive
           ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
           : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
@@ -135,6 +157,15 @@ export function BinderItem({
           className="flex h-6 w-5 shrink-0 items-center justify-center rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+      ) : showSceneChevron ? (
+        <button
+          type="button"
+          aria-label={isSceneOpen ? "Hide scenes" : "Show scenes"}
+          onClick={() => shared.onToggleChapterOpen(chapter.id)}
+          className="flex h-6 w-5 shrink-0 items-center justify-center rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+        >
+          {isSceneOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
       ) : (
         <span className="h-6 w-5 shrink-0" />
@@ -155,6 +186,11 @@ export function BinderItem({
             >
               <TriangleAlert size={12} />
               {holeCount.toLocaleString()}
+            </span>
+          )}
+          {sceneCount > 1 && (
+            <span className="text-neutral-300 dark:text-neutral-600">
+              {sceneCount} scenes ·
             </span>
           )}
           {hasChildren && own > 0 && (

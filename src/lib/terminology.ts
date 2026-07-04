@@ -9,6 +9,10 @@ const TERMS = {
     book: "Book",
     entireBook: "Entire Book",
     currentChapter: "Current Chapter",
+    scene: "Scene",
+    scenes: "Scenes",
+    addScene: "Add Scene",
+    untitledScene: "Untitled Scene",
   },
   screenplay: {
     chapter: "Sequence",
@@ -18,6 +22,12 @@ const TERMS = {
     book: "Screenplay",
     entireBook: "Entire Screenplay",
     currentChapter: "Current Sequence",
+    // A screenplay "scene" already means a slugline/scene-heading, so the
+    // Model-D subdivision uses the screenwriting term "Beat" to avoid collision.
+    scene: "Beat",
+    scenes: "Beats",
+    addScene: "Add Beat",
+    untitledScene: "Untitled Beat",
   },
 } as const;
 

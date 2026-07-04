@@ -510,6 +510,32 @@ ruby rt {
   border-top-color: var(--neutral-600);
 }
 
+/* Scene break: a centered small-caps "Scene" label sitting on a hairline rule,
+   dividing a chapter's single document into its Model-D scenes. */
+.scene-break {
+  border: none;
+  border-top: 1px solid var(--neutral-200);
+  margin: 2em 0;
+  overflow: visible;
+  text-align: center;
+}
+.dark .scene-break {
+  border-top-color: var(--neutral-700);
+}
+.scene-break::before {
+  content: "Scene";
+  position: relative;
+  top: -0.75em;
+  display: inline-block;
+  padding: 0 0.9em;
+  background: var(--background);
+  color: var(--neutral-400);
+  font-variant: small-caps;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
 /* Placeholder styling for screenplay nodes */
 .screenplay-editor .is-empty::before {
   color: var(--neutral-400);

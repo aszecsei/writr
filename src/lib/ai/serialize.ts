@@ -38,7 +38,9 @@ export function serializeCharacter(c: Character): string {
 
   if (c.aliases.length > 0)
     lines.push(`<aliases>${c.aliases.join(", ")}</aliases>`);
-  if (c.description) lines.push(`<description>${c.description}</description>`);
+  if (c.summary) lines.push(`<summary>${c.summary}</summary>`);
+  if (c.description)
+    lines.push(`<physical-description>${c.description}</physical-description>`);
   if (c.personality) lines.push(`<personality>${c.personality}</personality>`);
   if (c.motivations) lines.push(`<motivations>${c.motivations}</motivations>`);
   if (c.strengths) lines.push(`<strengths>${c.strengths}</strengths>`);

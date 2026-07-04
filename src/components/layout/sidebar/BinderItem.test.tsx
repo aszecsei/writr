@@ -60,6 +60,10 @@ function rowsFor(items: Chapter[]): {
     onRenameKeyDown: vi.fn(),
     onContextMenu: vi.fn(),
     onSeparatorOpen: vi.fn(),
+    sceneCounts: new Map(),
+    openChapters: {},
+    onToggleChapterOpen: vi.fn(),
+    sceneDropTargetId: null,
     ...overrides,
   });
   return { rows, shared };

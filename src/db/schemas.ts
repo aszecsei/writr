@@ -86,6 +86,9 @@ export type EntityImageId = z.infer<typeof EntityImageIdSchema>;
 export const IndexedChunkIdSchema = z.uuid().brand<"IndexedChunkId">();
 export type IndexedChunkId = z.infer<typeof IndexedChunkIdSchema>;
 
+export const SceneIdSchema = z.uuid().brand<"SceneId">();
+export type SceneId = z.infer<typeof SceneIdSchema>;
+
 // ─── Project Mode ───────────────────────────────────────────────────
 
 export const ProjectModeEnum = z.enum(["prose", "screenplay"]);
@@ -143,6 +146,57 @@ export const ChapterSchema = z.object({
 });
 export type Chapter = z.infer<typeof ChapterSchema>;
 
+// ─── Scene ───────────────────────────────────────────────────────────
+//
+// Model D: a chapter's prose stays ONE TipTap document; scenes are its
+// second-level subdivisions, delimited inside that document by `sceneBreak`
+// marker nodes carrying a `sceneId`. A Scene row holds identity, ordering, and
+// metadata only — never prose. The content before the first marker is the
+// implicit "core scene" (order 0, backed by no marker), so every chapter
+// document always has at least one scene and a writer never has to think about
+// scenes until they insert a break.
+
+export const TimelineModeEnum = z.enum([
+  "linear",
+  "flashback",
+  "flashforward",
+  "dream",
+  "vision",
+  "other",
+]);
+export type TimelineMode = z.infer<typeof TimelineModeEnum>;
+
+export const SceneSchema = z.object({
+  id: SceneIdSchema,
+  projectId: ProjectIdSchema,
+  chapterId: ChapterIdSchema,
+  // Position within a chapter. order 0 is the core scene (content before the
+  // first marker); it is the only scene with no backing `sceneBreak` node. A
+  // chapter with N scenes has N−1 markers.
+  order: z.number().int().nonnegative(),
+  title: z.string().default(""),
+  status: ChapterStatusEnum.default("draft"),
+  povCharacterId: CharacterIdSchema.nullable().default(null),
+  presentCharacterIds: z.array(CharacterIdSchema).default([]),
+  locationIds: z.array(LocationIdSchema).default([]),
+  timelineMode: TimelineModeEnum.default("linear"),
+  // Free-text storyline threads with project-wide autocomplete (e.g. "1943").
+  strands: z.array(z.string()).default([]),
+  storyDate: z.string().default(""),
+  storyTime: z.string().default(""),
+  targetWordCount: z.number().int().nonnegative().default(0),
+  // Derived: recomputed by the marker↔row sync engine by slicing the chapter
+  // doc at markers. Persisted for cheap sidebar/subtitle display, mirroring how
+  // Chapter.wordCount is persisted rather than recomputed on every read.
+  wordCount: z.number().int().nonnegative().default(0),
+  // Nestable via "/" (e.g. "arc/rising-action"), same convention as
+  // WorldbuildingDoc.tags.
+  tags: z.array(z.string()).default([]),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type Scene = z.infer<typeof SceneSchema>;
+
 // ─── Entity Image ───────────────────────────────────────────────────
 
 export const EntityImageSchema = z.object({
@@ -174,6 +228,7 @@ export const CharacterSchema = z.object({
   role: CharacterRoleEnum.default("supporting"),
   pronouns: z.string().default(""),
   aliases: z.array(z.string()).default([]),
+  summary: z.string().default(""),
   description: z.string().default(""),
   personality: z.string().default(""),
   motivations: z.string().default(""),

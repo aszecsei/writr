@@ -132,6 +132,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   mapEntityIds(idMap, data.playlistTracks);
   mapEntityIds(idMap, data.comments);
   mapEntityIds(idMap, data.chapterSnapshots);
+  mapEntityIds(idMap, data.scenes ?? []);
   if (data.projectDictionary) {
     idMap.set(data.projectDictionary.id, generateId());
   }
@@ -244,6 +245,16 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     projectId: newProjectId,
   }));
 
+  const scenes = (data.scenes ?? []).map((s) => ({
+    ...s,
+    id: mustGetId(idMap, s.id),
+    projectId: newProjectId,
+    chapterId: mustGetId(idMap, s.chapterId),
+    povCharacterId: remapId(s.povCharacterId, idMap),
+    presentCharacterIds: remapIdArray(s.presentCharacterIds, idMap),
+    locationIds: remapIdArray(s.locationIds, idMap),
+  }));
+
   const projectDictionary = data.projectDictionary
     ? {
         ...data.projectDictionary,
@@ -278,6 +289,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     comments,
     chapterSnapshots,
     projectDictionary,
+    scenes,
   } as unknown as ProjectBackupData;
 }
 
@@ -304,6 +316,9 @@ async function insertProjectData(data: ProjectBackupData): Promise<void> {
   await db.playlistTracks.bulkAdd(data.playlistTracks);
   await db.comments.bulkAdd(data.comments);
   await db.chapterSnapshots.bulkAdd(data.chapterSnapshots);
+  if (data.scenes && data.scenes.length > 0) {
+    await db.scenes.bulkAdd(data.scenes);
+  }
   if (data.projectDictionary) {
     await db.projectDictionaries.add(data.projectDictionary);
   }
@@ -380,6 +395,7 @@ export async function importBackup(
         db.savedPrompts,
         db.brainstormSetups,
         db.brainstormIdeas,
+        db.scenes,
       ],
       async () => {
         // Import projects

@@ -82,6 +82,7 @@ function character(
     role: "protagonist",
     pronouns: "",
     aliases: [],
+    summary: "",
     description: "",
     personality: "",
     motivations: "",

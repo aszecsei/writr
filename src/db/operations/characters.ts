@@ -32,6 +32,7 @@ export async function createCharacter(
         | "role"
         | "pronouns"
         | "aliases"
+        | "summary"
         | "description"
         | "personality"
         | "motivations"
@@ -55,6 +56,7 @@ export async function createCharacter(
     role: data.role ?? "supporting",
     pronouns: data.pronouns ?? "",
     aliases: data.aliases ?? [],
+    summary: data.summary ?? "",
     description: data.description ?? "",
     personality: data.personality ?? "",
     motivations: data.motivations ?? "",

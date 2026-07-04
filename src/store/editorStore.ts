@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type {
   ChapterId,
+  SceneId,
   StyleGuideEntryId,
   WorldbuildingDocId,
 } from "@/db/schemas";
@@ -74,6 +75,20 @@ interface EditorState {
   wordCount: number;
   selectedText: string | null;
   selectedRange: { from: number; to: number } | null;
+  /**
+   * The scene whose text the caret currently sits in (Model D). Derived from
+   * the selection vs. the chapter's sceneBreak marker positions, so the Details
+   * panel can bind to the "current" scene. Null when the active document has no
+   * scenes yet or isn't a chapter.
+   */
+  activeSceneId: SceneId | null;
+  /**
+   * A request to scroll the editor to a scene (Model D), set when a scene row is
+   * clicked in a sidebar. The ChapterEditor for that scene's chapter consumes it
+   * once the doc is seeded, positions the caret at the scene start, and clears
+   * it. Survives cross-chapter navigation because the store is global.
+   */
+  pendingSceneScroll: SceneId | null;
   contentVersion: number;
   pendingInsertion: PendingInsertion | null;
   pendingStagedEdit: PendingStagedEdit | null;
@@ -93,6 +108,9 @@ interface EditorState {
   setWordCount: (count: number) => void;
   setSelection: (text: string, from: number, to: number) => void;
   clearSelection: () => void;
+  setActiveSceneId: (id: SceneId | null) => void;
+  requestSceneScroll: (id: SceneId) => void;
+  clearSceneScroll: () => void;
   bumpContentVersion: () => void;
   requestInsertAtCursor: (insertion: PendingInsertion) => void;
   clearPendingInsertion: () => void;
@@ -115,6 +133,8 @@ export const useEditorStore = create<EditorState>()(
     wordCount: 0,
     selectedText: null,
     selectedRange: null,
+    activeSceneId: null,
+    pendingSceneScroll: null,
     contentVersion: 0,
     pendingInsertion: null,
     pendingStagedEdit: null,
@@ -137,6 +157,7 @@ export const useEditorStore = create<EditorState>()(
         s.wordCount = 0;
         s.selectedText = null;
         s.selectedRange = null;
+        s.activeSceneId = null;
       }),
 
     markDirty: () =>
@@ -177,6 +198,21 @@ export const useEditorStore = create<EditorState>()(
       set((s) => {
         s.selectedText = null;
         s.selectedRange = null;
+      }),
+
+    setActiveSceneId: (id) =>
+      set((s) => {
+        s.activeSceneId = id;
+      }),
+
+    requestSceneScroll: (id) =>
+      set((s) => {
+        s.pendingSceneScroll = id;
+      }),
+
+    clearSceneScroll: () =>
+      set((s) => {
+        s.pendingSceneScroll = null;
       }),
 
     bumpContentVersion: () =>

@@ -55,6 +55,7 @@ function character(id: CharacterId, name = "Alice"): Character {
     role: "protagonist",
     pronouns: "",
     aliases: [],
+    summary: "",
     description: "",
     personality: "",
     motivations: "",

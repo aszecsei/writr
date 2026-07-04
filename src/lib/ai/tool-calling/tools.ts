@@ -29,6 +29,7 @@ import {
 import { presentChoiceTool } from "./tools/presentChoice";
 import { proposeEditTool } from "./tools/proposedEdits";
 import { getTool, listTool } from "./tools/registry";
+import { listScenesTool, updateSceneTool } from "./tools/scenes";
 import { searchProjectTool } from "./tools/search";
 import {
   createTimelineEventTool,
@@ -77,6 +78,9 @@ export const AI_TOOLS: AiToolDefinition[] = [
   searchChapterTool,
   searchChaptersTool,
   getChapterStructureTool,
+  // Scene metadata: read (per chapter) + write
+  listScenesTool,
+  updateSceneTool,
   // Project-wide search
   searchProjectTool,
   // Editor: stage a developmental edit for the user to apply

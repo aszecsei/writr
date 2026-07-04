@@ -24,7 +24,15 @@ export const createCharacterTool = defineTool({
         description: "Character role",
         enum: ["protagonist", "antagonist", "supporting", "minor"],
       },
-      description: { type: "string", description: "Brief description" },
+      summary: {
+        type: "string",
+        description: "Brief overview of who the character is",
+      },
+      description: {
+        type: "string",
+        description:
+          "Physical description — appearance, distinguishing features, mannerisms",
+      },
       personality: { type: "string", description: "Personality traits" },
       backstory: { type: "string", description: "Character backstory" },
     },
@@ -34,6 +42,7 @@ export const createCharacterTool = defineTool({
     .object({
       name: z.string().min(1),
       role: CharacterRoleEnum.optional(),
+      summary: z.string().optional(),
       description: z.string().optional(),
       personality: z.string().optional(),
       backstory: z.string().optional(),
@@ -45,6 +54,7 @@ export const createCharacterTool = defineTool({
       projectId: context.projectId,
       name: params.name,
       role: params.role ?? undefined,
+      summary: params.summary ?? undefined,
       description: params.description ?? undefined,
       personality: params.personality ?? undefined,
       backstory: params.backstory ?? undefined,
@@ -73,7 +83,14 @@ export const updateCharacterTool = defineTool({
         description: "New role",
         enum: ["protagonist", "antagonist", "supporting", "minor"],
       },
-      description: { type: "string", description: "New description" },
+      summary: {
+        type: "string",
+        description: "New summary — a brief overview of who the character is",
+      },
+      description: {
+        type: "string",
+        description: "New physical description (appearance)",
+      },
       personality: { type: "string", description: "New personality" },
       backstory: { type: "string", description: "New backstory" },
       motivations: { type: "string", description: "New motivations" },
@@ -88,6 +105,7 @@ export const updateCharacterTool = defineTool({
       id: z.string().min(1),
       name: z.string().optional(),
       role: CharacterRoleEnum.optional(),
+      summary: z.string().optional(),
       description: z.string().optional(),
       personality: z.string().optional(),
       backstory: z.string().optional(),

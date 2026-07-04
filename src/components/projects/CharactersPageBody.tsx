@@ -11,6 +11,7 @@ import {
   useCharactersByProject,
   useRelationshipsByProject,
 } from "@/hooks/data/source";
+import { getInitials } from "@/lib/characters/initials";
 
 const roleTopColors: Record<CharacterRole, string> = {
   protagonist: "border-t-amber-400 dark:border-t-amber-500",
@@ -18,16 +19,6 @@ const roleTopColors: Record<CharacterRole, string> = {
   supporting: "border-t-blue-400 dark:border-t-blue-500",
   minor: "border-t-neutral-300 dark:border-t-neutral-600",
 };
-
-/** Up to two uppercase initials from a name; empty when none can be derived. */
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 type RoleFilter = "all" | CharacterRole;
 

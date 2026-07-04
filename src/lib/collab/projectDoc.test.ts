@@ -86,6 +86,7 @@ function makeCharacter(
     role: "protagonist",
     pronouns: "she/her",
     aliases: ["Al"],
+    summary: "",
     description: "",
     personality: "",
     motivations: "",

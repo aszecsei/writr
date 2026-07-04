@@ -49,6 +49,26 @@ describe("markdownToNodes", () => {
       expect(nodes[0]).toMatchObject({ type: "hr" });
     });
 
+    it("parses a Writr scene-break marker as an hr", () => {
+      const nodes = markdownToNodes(
+        'Before.\n\n<hr data-type="sceneBreak" data-scene-id="abc-123">\n\nAfter.',
+      );
+      expect(nodes.map((n) => n.type)).toEqual([
+        "paragraph",
+        "hr",
+        "paragraph",
+      ]);
+    });
+
+    it("parses a bare inline <hr> as an hr", () => {
+      const nodes = markdownToNodes("Before.\n\n<hr>\n\nAfter.");
+      expect(nodes.map((n) => n.type)).toEqual([
+        "paragraph",
+        "hr",
+        "paragraph",
+      ]);
+    });
+
     it("parses a blockquote", () => {
       const nodes = markdownToNodes("> quoted text");
       expect(nodes).toHaveLength(1);

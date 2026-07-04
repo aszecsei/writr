@@ -1,13 +1,11 @@
 "use client";
 
-import { BarChart3, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTextAnalysis } from "@/hooks/analysis/useTextAnalysis";
 import { getTerm } from "@/lib/terminology";
 import type { AnalysisScope } from "@/lib/text-analysis";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
-import { useUiStore } from "@/store/uiStore";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { ParagraphDensitySection } from "./sections/ParagraphDensitySection";
 import { SentenceLengthSection } from "./sections/SentenceLengthSection";
@@ -22,7 +20,6 @@ import { WordFrequencySection } from "./sections/WordFrequencySection";
 type AnalysisTab = "chapter" | "project" | "all";
 
 export function AnalysisPanel() {
-  const closeAnalysisPanel = useUiStore((s) => s.closeAnalysisPanel);
   const activeChapterId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const projectMode = useProjectStore((s) => s.activeProjectMode);
@@ -67,22 +64,7 @@ export function AnalysisPanel() {
   ];
 
   return (
-    <div className="flex h-full flex-col border-l border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-neutral-200 px-3 dark:border-neutral-800">
-        <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-          <BarChart3 size={14} />
-          <span className="text-xs font-semibold">Writing insights</span>
-        </div>
-        <button
-          type="button"
-          onClick={closeAnalysisPanel}
-          className="rounded-md p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-          aria-label="Close analysis panel"
-        >
-          <X size={14} />
-        </button>
-      </div>
-
+    <div className="flex h-full flex-col bg-neutral-50 dark:bg-neutral-950">
       <div className="flex shrink-0 gap-1 border-b border-neutral-200 px-3 py-2 dark:border-neutral-800">
         {tabs.map(({ id, label, disabled }) => (
           <button

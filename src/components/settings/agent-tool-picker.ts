@@ -92,6 +92,12 @@ export const READS_GROUPS: ToolPickerGroup[] = [
         ids: ["search_chapters"],
       },
       {
+        key: "read:scene",
+        label: "Scene metadata",
+        hint: "list_scenes — per-scene POV, characters, locations, tags",
+        ids: ["list_scenes"],
+      },
+      {
         key: "read:summary",
         label: "Chapter summary",
         ids: ["get:summary"],
@@ -150,7 +156,11 @@ export const MUTATIONS_GROUPS: ToolPickerGroup[] = [
   },
   {
     heading: "Chapters",
-    rows: [mutationRow("create_chapter"), mutationRow("update_chapter")],
+    rows: [
+      mutationRow("create_chapter"),
+      mutationRow("update_chapter"),
+      mutationRow("update_scene"),
+    ],
   },
   {
     heading: "Outline grid",

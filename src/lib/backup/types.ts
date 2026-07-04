@@ -17,6 +17,7 @@ import type {
   Project,
   ProjectDictionary,
   SavedPrompt,
+  Scene,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -53,6 +54,8 @@ export interface ProjectBackupData {
   comments: Comment[];
   chapterSnapshots: ChapterSnapshot[];
   projectDictionary?: ProjectDictionary;
+  // Optional so backups predating Model-D scenes still import cleanly.
+  scenes?: Scene[];
 }
 
 /**

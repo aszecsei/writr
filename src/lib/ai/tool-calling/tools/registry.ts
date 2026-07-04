@@ -146,6 +146,7 @@ const CATEGORY_ADAPTERS: Record<ReadCategory, CategoryAdapter> = {
           name: c.name,
           role: c.role,
           pronouns: c.pronouns,
+          summary: c.summary,
           description: c.description,
           personality: c.personality,
           motivations: c.motivations,

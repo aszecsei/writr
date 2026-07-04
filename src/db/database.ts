@@ -29,6 +29,7 @@ import type {
   ProjectDictionary,
   SavedPrompt,
   SavedPromptId,
+  Scene,
   StyleGuideEntry,
   TimelineEvent,
   WorldbuildingDoc,
@@ -53,6 +54,40 @@ export async function backfillBinderFieldsV37(tx: Transaction): Promise<void> {
       if (ch.includeInCompile === undefined) ch.includeInCompile = true;
       if (ch.pageBreakBefore === undefined) ch.pageBreakBefore = false;
     });
+}
+
+/**
+ * v44 migration: give every existing chapter *document* a backfilled "core
+ * scene" (order 0) so scene count is always >= 1 and the Details panel has a
+ * row to bind to. Separators hold no prose and get no scene. Exported so the
+ * migration can be unit-tested directly against a v43→v44 upgrade.
+ */
+export async function backfillCoreScenesV44(tx: Transaction): Promise<void> {
+  const chapters = await tx.table("chapters").toArray();
+  const ts = new Date().toISOString();
+  const rows = chapters
+    .filter((c) => (c.kind ?? "document") !== "separator")
+    .map((c) => ({
+      id: crypto.randomUUID(),
+      projectId: c.projectId,
+      chapterId: c.id,
+      order: 0,
+      title: "",
+      status: c.status ?? "draft",
+      povCharacterId: null,
+      presentCharacterIds: [],
+      locationIds: [],
+      timelineMode: "linear",
+      strands: [],
+      storyDate: "",
+      storyTime: "",
+      targetWordCount: 0,
+      wordCount: c.wordCount ?? 0,
+      tags: [],
+      createdAt: ts,
+      updatedAt: ts,
+    }));
+  if (rows.length) await tx.table("scenes").bulkAdd(rows);
 }
 
 export class WritrDatabase extends Dexie {
@@ -82,6 +117,7 @@ export class WritrDatabase extends Dexie {
   brainstormIdeas!: EntityTable<BrainstormIdea, "id">;
   indexedChunks!: EntityTable<IndexedChunk, "id">;
   guardrailEntries!: EntityTable<GuardrailEntry, "id">;
+  scenes!: EntityTable<Scene, "id">;
 
   constructor() {
     super("writr");
@@ -1085,6 +1121,29 @@ export class WritrDatabase extends Dexie {
           if (p.builtinKey === undefined) p.builtinKey = null;
         });
     });
+
+    // v44: scenes table (Model D). A chapter is still one TipTap document;
+    // scenes are delimited inside it by `sceneBreak` marker nodes carrying a
+    // sceneId. Rows hold metadata/identity/ordering only, never prose. Indexed
+    // by chapter for the per-chapter ordered query and by project for
+    // cascade/backup/strand aggregation. Every existing chapter document gets a
+    // backfilled core scene (order 0) so scene count is always >= 1.
+    this.version(44)
+      .stores({
+        scenes: "id, projectId, chapterId, [chapterId+order]",
+      })
+      .upgrade(async (tx) => {
+        await backfillCoreScenesV44(tx);
+      });
+
+    this.version(45).upgrade((tx) =>
+      tx
+        .table("characters")
+        .toCollection()
+        .modify((c) => {
+          if (c.summary === undefined) c.summary = "";
+        }),
+    );
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

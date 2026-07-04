@@ -44,4 +44,11 @@ export function splitParagraphs(content: string): string[] {
   return content.split(/\n\n+/).filter((p) => p.trim());
 }
 
-export const SCENE_BREAK_RE = /^[-*]{3,}$|^\*\s\*\s\*$/;
+/**
+ * Detects a scene break in a stored chapter paragraph. Matches both
+ * markdown-style thematic breaks (`---`, `***`, `___`, or spaced `* * *`) —
+ * for authors who type a plain break without opting into Model-D scenes — and
+ * Writr's own scene-break marker (`<hr data-type="sceneBreak" …>`, serialized
+ * by the SceneBreak node). Anchored to the whole (optionally padded) paragraph.
+ */
+export const SCENE_BREAK_RE = /^\s*(?:[-*_]\s*){3,}$|^\s*<hr\b[^>]*>\s*$/i;

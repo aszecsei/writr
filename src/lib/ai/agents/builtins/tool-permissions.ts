@@ -40,6 +40,7 @@ export const CHAT_READS_BASE: readonly string[] = [
   "search_chapter",
   "search_chapters",
   "get_chapter_structure",
+  "list_scenes",
   "get:summary",
   // Project-wide.
   "get:outline",
@@ -66,6 +67,7 @@ export const READER_CHAT_TOOLS: readonly string[] = [...CHAT_READS_BASE];
 export const EDITOR_CHAT_TOOLS: readonly string[] = [
   ...CHAT_READS_BASE,
   "propose_edit",
+  "update_scene",
 ];
 
 // ─── Beta Reader ─────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ export * from "./outline";
 export * from "./playlist";
 export * from "./projects";
 export * from "./savedPrompts";
+export * from "./scenes";
 export * from "./scope";
 export * from "./settings";
 export * from "./snapshots";

@@ -14,6 +14,7 @@ interface CharacterFormState {
   role: CharacterRole;
   pronouns: string;
   aliasesInput: string;
+  summary: string;
   description: string;
   personality: string;
   motivations: string;
@@ -37,6 +38,7 @@ export function useCharacterForm(character: Character | undefined) {
     role: "supporting",
     pronouns: "",
     aliasesInput: "",
+    summary: "",
     description: "",
     personality: "",
     motivations: "",
@@ -59,6 +61,7 @@ export function useCharacterForm(character: Character | undefined) {
         role: character.role,
         pronouns: character.pronouns ?? "",
         aliasesInput: (character.aliases ?? []).join(", "),
+        summary: character.summary ?? "",
         description: character.description ?? "",
         personality: character.personality ?? "",
         motivations: character.motivations ?? "",
@@ -85,6 +88,7 @@ export function useCharacterForm(character: Character | undefined) {
       form.role !== character.role ||
       form.pronouns !== (character.pronouns ?? "") ||
       form.aliasesInput !== (character.aliases ?? []).join(", ") ||
+      form.summary !== (character.summary ?? "") ||
       form.description !== (character.description ?? "") ||
       form.personality !== (character.personality ?? "") ||
       form.motivations !== (character.motivations ?? "") ||
@@ -186,6 +190,7 @@ export function useCharacterForm(character: Character | undefined) {
       role: form.role,
       pronouns: form.pronouns,
       aliases,
+      summary: form.summary,
       description: form.description,
       personality: form.personality,
       motivations: form.motivations,

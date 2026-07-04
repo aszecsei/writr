@@ -17,6 +17,8 @@ import type {
   OutlineGridRowId,
   Project,
   ProjectId,
+  Scene,
+  SceneId,
   StyleGuideEntry,
   StyleGuideEntryId,
   TimelineEvent,
@@ -65,6 +67,7 @@ export function makeCharacter(
     role: "supporting",
     pronouns: "",
     aliases: [],
+    summary: "",
     description: "",
     personality: "",
     motivations: "",
@@ -182,6 +185,30 @@ export function makeChapter(
     kind: "document",
     includeInCompile: true,
     pageBreakBefore: false,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeScene(
+  overrides: Partial<Scene> & { projectId: ProjectId; chapterId: ChapterId },
+): Scene {
+  return {
+    id: nextId<SceneId>(),
+    order: 0,
+    title: "",
+    status: "draft",
+    povCharacterId: null,
+    presentCharacterIds: [],
+    locationIds: [],
+    timelineMode: "linear",
+    strands: [],
+    storyDate: "",
+    storyTime: "",
+    targetWordCount: 0,
+    wordCount: 0,
+    tags: [],
     createdAt: ts,
     updatedAt: ts,
     ...overrides,

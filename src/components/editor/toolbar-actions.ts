@@ -16,6 +16,7 @@ import {
   ListOrdered,
   Quote,
   Redo2,
+  SeparatorHorizontal,
   Strikethrough,
   Underline,
   Undo2,
@@ -131,6 +132,25 @@ export const actions: ToolbarAction[] = [
     icon: Code,
     action: (e) => e.chain().focus().toggleCodeBlock().run(),
     isActive: (e) => e.isActive("codeBlock"),
+    group: "block",
+  },
+  {
+    // Insert a scene break (Model D): starts a new scene at the cursor, or —
+    // with a selection — begins a new scene at the selection start. The backing
+    // Scene row is created by the editor's save-path reconcile.
+    label: "Scene Break",
+    icon: SeparatorHorizontal,
+    action: (e) => {
+      const { from } = e.state.selection;
+      e.chain()
+        .focus()
+        .insertContentAt(from, {
+          type: "sceneBreak",
+          attrs: { sceneId: crypto.randomUUID() },
+        })
+        .run();
+    },
+    isActive: (e) => e.isActive("sceneBreak"),
     group: "block",
   },
   {

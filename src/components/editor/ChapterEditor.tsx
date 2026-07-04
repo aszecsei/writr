@@ -1,12 +1,13 @@
 "use no memo";
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
+import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
-import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
+import type { ChapterId, Comment, ProjectId, SceneId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { useScenesByChapter } from "@/hooks/data/useScene";
 import { useAutoSave } from "@/hooks/editor/useAutoSave";
 import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
@@ -55,6 +56,11 @@ import { GrammarScannerModal } from "./GrammarScannerModal";
 import { ScreenplayToolbar } from "./ScreenplayToolbar";
 import { SpellcheckContextMenu } from "./SpellcheckContextMenu";
 import { SpellcheckScannerModal } from "./SpellcheckScannerModal";
+import {
+  activeSceneAt,
+  ensureSceneIds,
+  reconcileSceneRows,
+} from "./scene-sync";
 
 // tiptap-markdown and character-count store methods on editor.storage
 // but TipTap's Storage type doesn't expose them, so we cast through unknown
@@ -108,12 +114,69 @@ function markdownToInsertContent(markdown: string) {
   }));
 }
 
+/** Position of the sceneBreak marker carrying `sceneId`, or null if absent. */
+function findSceneMarkerPos(editor: Editor, sceneId: string): number | null {
+  let pos: number | null = null;
+  editor.state.doc.forEach((node, offset) => {
+    if (
+      pos === null &&
+      node.type.name === "sceneBreak" &&
+      node.attrs.sceneId === sceneId
+    ) {
+      pos = offset;
+    }
+  });
+  return pos;
+}
+
+/** The nearest HTMLElement for a DOM node (itself if already an element). */
+function elementFor(node: Node | null | undefined): HTMLElement | null {
+  if (!node) return null;
+  return node instanceof HTMLElement ? node : node.parentElement;
+}
+
+/**
+ * Scroll the editor to a scene and place the caret at its start. Returns false
+ * (a no-op) when the scene doesn't belong to this chapter's loaded rows — the
+ * caller then leaves the scroll request pending for the right chapter's editor.
+ * The core scene (no marker) scrolls to the top.
+ *
+ * Scrolls via the DOM `scrollIntoView` (not ProseMirror's transaction-level
+ * scrollIntoView, which doesn't reliably walk the editor's nested overflow
+ * containers), deferred a frame so it runs against post-seed layout.
+ */
+function scrollEditorToScene(
+  editor: Editor,
+  scenes: { id: string }[],
+  targetId: string,
+): boolean {
+  if (!scenes.some((s) => s.id === targetId)) return false;
+  const markerPos = findSceneMarkerPos(editor, targetId);
+  const size = editor.state.doc.content.size;
+  const caret = markerPos !== null ? markerPos + 1 : 1;
+  // Move the caret to the scene start (drives the active-scene highlight).
+  editor
+    .chain()
+    .setTextSelection(Math.max(1, Math.min(caret, size)))
+    .run();
+  requestAnimationFrame(() => {
+    if (editor.isDestroyed) return;
+    const target =
+      markerPos !== null
+        ? elementFor(editor.view.nodeDOM(markerPos))
+        : elementFor(editor.view.domAtPos(1).node);
+    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+  return true;
+}
+
 interface ChapterEditorProps {
   chapterId: ChapterId;
 }
 
 export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const chapter = useChapter(chapterId);
+  const scenes = useScenesByChapter(chapterId);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
   const setActiveDocument = useEditorStore((s) => s.setActiveDocument);
@@ -124,6 +187,15 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const setSelection = useEditorStore((s) => s.setSelection);
   const clearSelection = useEditorStore((s) => s.clearSelection);
+  const setActiveSceneId = useEditorStore((s) => s.setActiveSceneId);
+  const pendingSceneScroll = useEditorStore((s) => s.pendingSceneScroll);
+  const clearSceneScroll = useEditorStore((s) => s.clearSceneScroll);
+  // Latest values readable from the content-seed effect without making it a
+  // dependency (which would wrongly reseed the doc when scenes change).
+  const scenesRef = useRef(scenes);
+  scenesRef.current = scenes;
+  const pendingSceneScrollRef = useRef(pendingSceneScroll);
+  pendingSceneScrollRef.current = pendingSceneScroll;
   const reportStagedEditResult = useEditorStore(
     (s) => s.reportStagedEditResult,
   );
@@ -368,7 +440,25 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     const wc = getWordCount(editor.storage);
     setWordCount(wc);
     initializedRef.current = true;
-  }, [editor, chapter, setWordCount, isScreenplay, collabDoc]);
+    // Consume a pending scene-scroll now that the doc is seeded — this is the
+    // path that fires after cross-chapter navigation. Same-chapter clicks are
+    // handled by the dedicated effect below.
+    const pending = pendingSceneScrollRef.current;
+    if (
+      pending &&
+      scenesRef.current &&
+      scrollEditorToScene(editor, scenesRef.current, pending)
+    ) {
+      clearSceneScroll();
+    }
+  }, [
+    editor,
+    chapter,
+    setWordCount,
+    isScreenplay,
+    collabDoc,
+    clearSceneScroll,
+  ]);
 
   // When the hole delimiters change, rebuild hole decorations and refresh the
   // live word count (a meta-only transaction doesn't fire onUpdate, so the
@@ -412,13 +502,32 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const isCollabHostRef = useRef(isCollabHost);
   isCollabHostRef.current = isCollabHost;
 
+  const activeProjectIdRef = useRef(activeProjectId);
+  activeProjectIdRef.current = activeProjectId;
+
   const save = useCallback(async () => {
     if (!editor || editor.isDestroyed) return;
-    const content = isScreenplayRef.current
+    const isScreenplayNow = isScreenplayRef.current;
+    // Prose Model-D scenes: resolve any null/duplicate marker ids into the doc
+    // BEFORE serializing, so the persisted content carries unique real ids.
+    if (!isScreenplayNow) {
+      ensureSceneIds(editor, () => crypto.randomUUID());
+    }
+    const content = isScreenplayNow
       ? serializeFountain(editor.state.doc)
       : getMarkdown(editor.storage);
     const wordCount = getWordCount(editor.storage);
     await updateChapterContent(chapterId, content, wordCount);
+    // Reconcile Scene rows against the document's markers and write derived
+    // per-scene word counts. Prose only — screenplay has no scene breaks.
+    if (!isScreenplayNow && activeProjectIdRef.current) {
+      await reconcileSceneRows(
+        editor,
+        chapterId,
+        activeProjectIdRef.current as ProjectId,
+        holeDelimitersRef.current,
+      );
+    }
     if (!isCollabHostRef.current) {
       const positions = getCommentPositions(editor.state);
       if (positions.size > 0) {
@@ -428,6 +537,42 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   }, [editor, chapterId]);
 
   useAutoSave(save);
+
+  // Track which scene the caret sits in so the Details panel binds to the
+  // "current" scene. Recomputes on selection/content change and whenever the
+  // chapter's scene rows change. `scenes` is sorted by order, so its ids are
+  // [coreId, ...markerIds] — the ordering activeSceneAt indexes into.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const ids = (scenes ?? []).map((s) => s.id);
+    const update = () => {
+      setActiveSceneId((activeSceneAt(editor, ids) as SceneId | null) ?? null);
+    };
+    update();
+    editor.on("selectionUpdate", update);
+    editor.on("update", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+      editor.off("update", update);
+    };
+  }, [editor, scenes, setActiveSceneId]);
+
+  // Scroll to a scene requested from a sidebar. Handles the same-chapter case
+  // (editor already seeded); cross-chapter scrolls are consumed by the seed
+  // effect after navigation.
+  useEffect(() => {
+    if (
+      !pendingSceneScroll ||
+      !editor ||
+      editor.isDestroyed ||
+      !initializedRef.current
+    ) {
+      return;
+    }
+    if (scrollEditorToScene(editor, scenes ?? [], pendingSceneScroll)) {
+      clearSceneScroll();
+    }
+  }, [pendingSceneScroll, editor, scenes, clearSceneScroll]);
 
   // Save on unmount to preserve content when toggling focus mode
   const editorRef = useRef(editor);

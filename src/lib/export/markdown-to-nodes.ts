@@ -253,6 +253,15 @@ function walkTokens(tokens: Token[]): DocNode[] {
           return;
         }
 
+        // A scene-break marker (`<hr data-type="sceneBreak" …>`, serialized by
+        // the SceneBreak node) or any bare `<hr>` arrives as an inline HTML
+        // block. Without this, the tag-stripping fallback below reduces it to
+        // an empty string and the break is silently dropped from the export.
+        if (/^\s*<hr\b[^>]*>\s*$/i.test(raw)) {
+          nodes.push({ type: "hr" });
+          return;
+        }
+
         const { alignment, indent } = parseHtmlAlignmentAndIndent(raw);
 
         const heading = parseHtmlHeading(raw, alignment, indent);

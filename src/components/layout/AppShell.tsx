@@ -1,19 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
-import { AiPanel } from "@/components/ai/AiPanel";
-
-// Loaded on demand: the analysis panel (and the compromise NLP library it
-// pulls in) should not weigh down the base bundle.
-const AnalysisPanel = dynamic(
-  () =>
-    import("@/components/analysis/AnalysisPanel").then((m) => m.AnalysisPanel),
-  { ssr: false },
-);
-
 import { ApproveJoinDialog } from "@/components/collab/ApproveJoinDialog";
 import { CollabBanner } from "@/components/collab/CollabBanner";
 import { ManageParticipantsDialog } from "@/components/collab/ManageParticipantsDialog";
@@ -23,6 +12,7 @@ import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
 import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { SeparatorSettingsDialog } from "@/components/layout/sidebar/SeparatorSettingsDialog";
+import { RightPanel } from "@/components/panels/RightPanel";
 import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
 import { SavedPromptsManager } from "@/components/settings/SavedPromptsManager";
 import { SettingsModals } from "@/components/settings/SettingsModals";
@@ -46,9 +36,8 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
-  const aiPanelOpen = useUiStore((s) => s.aiPanelOpen);
-  const analysisPanelOpen = useUiStore((s) => s.analysisPanelOpen);
-  const closeAiPanel = useUiStore((s) => s.closeAiPanel);
+  const rightPanel = useUiStore((s) => s.rightPanel);
+  const closeRightPanel = useUiStore((s) => s.closeRightPanel);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const setFocusMode = useUiStore((s) => s.setFocusMode);
   const settings = useAppSettings();
@@ -95,12 +84,16 @@ export function AppShell({ children }: AppShellProps) {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, [focusModeEnabled, setFocusMode]);
 
-  // Close AI panel if AI features are disabled
+  // Close the right panel if it's showing the AI tab but AI features are off.
   useEffect(() => {
-    if (!settings?.enableAiFeatures && aiPanelOpen) {
-      closeAiPanel();
+    if (
+      !settings?.enableAiFeatures &&
+      rightPanel.open &&
+      rightPanel.tab === "ai"
+    ) {
+      closeRightPanel();
     }
-  }, [settings?.enableAiFeatures, aiPanelOpen, closeAiPanel]);
+  }, [settings?.enableAiFeatures, rightPanel, closeRightPanel]);
 
   // In focus mode, render a simplified layout without unmounting children
   if (focusModeEnabled) {
@@ -137,19 +130,11 @@ export function AppShell({ children }: AppShellProps) {
         <Panel id="main" minSize="30%">
           <main className="h-full overflow-y-auto">{children}</main>
         </Panel>
-        {analysisPanelOpen && (
+        {rightPanel.open && (
           <>
             <Separator className="resize-handle" />
-            <Panel id="analysis-panel" defaultSize="25%" minSize="15%">
-              <AnalysisPanel />
-            </Panel>
-          </>
-        )}
-        {aiPanelOpen && settings?.enableAiFeatures && (
-          <>
-            <Separator className="resize-handle" />
-            <Panel id="ai-panel" defaultSize="25%" minSize="15%">
-              <AiPanel />
+            <Panel id="right-panel" defaultSize="25%" minSize="15%">
+              <RightPanel />
             </Panel>
           </>
         )}

@@ -4,6 +4,9 @@ import type { ChapterId, ProjectId } from "@/db/schemas";
 
 export type SidebarPanel = "chapters" | "bible" | "agents";
 
+/** The tabs of the combined right-hand panel. Only one is visible at a time. */
+export type RightPanelTab = "ai" | "analysis" | "details";
+
 // Discriminated union for modal state - provides type safety at call sites
 export type ModalState =
   | { id: null }
@@ -54,8 +57,11 @@ interface UiState {
   sidebarOpen: boolean;
   sidebarPanel: SidebarPanel;
   modal: ModalState;
-  aiPanelOpen: boolean;
-  analysisPanelOpen: boolean;
+  /**
+   * The combined right-hand panel (AI / Analysis / Details). One tab visible at
+   * a time; `open` gates the whole panel. Toggled from the TopBar tab buttons.
+   */
+  rightPanel: { open: boolean; tab: RightPanelTab };
   /**
    * Editor sentence-length highlighting, driven by the analysis panel's
    * "Preview" toggle. Deliberately ephemeral — a visualization mode, not a
@@ -76,21 +82,32 @@ interface UiState {
    * structure lives in Dexie, only this view state is transient.
    */
   collapsedChapters: Record<string, boolean>;
+  /**
+   * Which chapters are "open" in the binder, showing their scene rows. Default
+   * closed (absent / `false`); an explicit `true` reveals a chapter's scenes.
+   * Distinct from `collapsedChapters` (which drives legacy nesting/separators).
+   */
+  openChapters: Record<string, boolean>;
 
   toggleSidebar: () => void;
   setSidebarPanel: (panel: SidebarPanel) => void;
   openModal: <T extends ModalState>(modal: T) => void;
   closeModal: () => void;
-  toggleAiPanel: () => void;
-  closeAiPanel: () => void;
-  toggleAnalysisPanel: () => void;
-  closeAnalysisPanel: () => void;
+  /** Open the panel on `tab`, switching tabs if already open. */
+  openRightPanel: (tab: RightPanelTab) => void;
+  /** Toggle: same tab closes the panel; a different tab switches to it. */
+  toggleRightPanelTab: (tab: RightPanelTab) => void;
+  /** Toggle the panel open/closed, keeping the current tab. */
+  toggleRightPanel: () => void;
+  closeRightPanel: () => void;
   setSentenceLengthPreview: (enabled: boolean) => void;
   toggleFocusMode: () => void;
   setFocusMode: (enabled: boolean) => void;
   requestSearchFocus: () => void;
   toggleChapterCollapsed: (chapterId: string) => void;
   setChapterCollapsed: (chapterId: string, collapsed: boolean) => void;
+  toggleChapterOpen: (chapterId: string) => void;
+  setChapterOpen: (chapterId: string, open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -98,12 +115,12 @@ export const useUiStore = create<UiState>()(
     sidebarOpen: true,
     sidebarPanel: "chapters",
     modal: { id: null },
-    aiPanelOpen: false,
-    analysisPanelOpen: false,
+    rightPanel: { open: false, tab: "details" },
     sentenceLengthPreviewEnabled: false,
     focusModeEnabled: false,
     searchFocusToken: 0,
     collapsedChapters: {},
+    openChapters: {},
 
     toggleSidebar: () =>
       set((s) => {
@@ -125,24 +142,28 @@ export const useUiStore = create<UiState>()(
         s.modal = { id: null };
       }),
 
-    toggleAiPanel: () =>
+    openRightPanel: (tab) =>
       set((s) => {
-        s.aiPanelOpen = !s.aiPanelOpen;
+        s.rightPanel = { open: true, tab };
       }),
 
-    closeAiPanel: () =>
+    toggleRightPanelTab: (tab) =>
       set((s) => {
-        s.aiPanelOpen = false;
+        if (s.rightPanel.open && s.rightPanel.tab === tab) {
+          s.rightPanel.open = false;
+        } else {
+          s.rightPanel = { open: true, tab };
+        }
       }),
 
-    toggleAnalysisPanel: () =>
+    toggleRightPanel: () =>
       set((s) => {
-        s.analysisPanelOpen = !s.analysisPanelOpen;
+        s.rightPanel.open = !s.rightPanel.open;
       }),
 
-    closeAnalysisPanel: () =>
+    closeRightPanel: () =>
       set((s) => {
-        s.analysisPanelOpen = false;
+        s.rightPanel.open = false;
       }),
 
     setSentenceLengthPreview: (enabled) =>
@@ -173,6 +194,16 @@ export const useUiStore = create<UiState>()(
     setChapterCollapsed: (chapterId, collapsed) =>
       set((s) => {
         s.collapsedChapters[chapterId] = collapsed;
+      }),
+
+    toggleChapterOpen: (chapterId) =>
+      set((s) => {
+        s.openChapters[chapterId] = !s.openChapters[chapterId];
+      }),
+
+    setChapterOpen: (chapterId, open) =>
+      set((s) => {
+        s.openChapters[chapterId] = open;
       }),
   })),
 );

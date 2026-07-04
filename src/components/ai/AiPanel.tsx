@@ -708,7 +708,7 @@ export function AiPanel() {
   const drill = drillPath.length > 0 ? resolveDrill(messages, drillPath) : null;
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+    <aside className="flex h-full flex-col bg-white dark:bg-neutral-900">
       <div className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
         <div className="flex items-center justify-between">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100">

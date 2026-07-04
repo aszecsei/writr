@@ -29,6 +29,7 @@ import { Holes } from "./Holes";
 import { Indent } from "./Indent";
 import { MarkdownBlockquote } from "./MarkdownBlockquote";
 import { Ruby } from "./Ruby";
+import { SceneBreak } from "./SceneBreak";
 import { SearchAndReplace } from "./SearchAndReplace";
 import { SelectionReporter } from "./SelectionReporter";
 import { SentenceLengthPreview } from "./SentenceLengthPreview";
@@ -154,6 +155,7 @@ export function createExtensions(options?: ExtensionOptions) {
       defaultAlignment: "left",
     }),
     MarkdownBlockquote,
+    SceneBreak,
     Indent,
     Ruby,
     Typography,
