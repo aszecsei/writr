@@ -482,15 +482,15 @@ export function LocationDetailBody({
       {/* Scenes-here sidebar */}
       {scenesHere.length > 0 && (
         <aside className="hidden w-56 shrink-0 lg:block">
-          <div className="sticky top-8">
-            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          <div className="sticky top-8 flex max-h-[66vh] flex-col">
+            <h3 className="mb-2 flex shrink-0 items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               <Film
                 size={16}
                 className="text-neutral-400 dark:text-neutral-500"
               />
               {getTerm(projectMode, "scenes")}
             </h3>
-            <div className="space-y-0.5">
+            <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
               {scenesHere.map((scene) => {
                 const chapter = chapterById.get(scene.chapterId);
                 const chapterLabel =
