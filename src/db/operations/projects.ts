@@ -1,6 +1,6 @@
 import { db } from "../database";
 import { type Project, type ProjectId, ProjectSchema } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Projects ────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ export async function updateProject(
     Pick<Project, "title" | "description" | "genre" | "targetWordCount">
   >,
 ): Promise<void> {
-  await db.projects.update(id, { ...data, updatedAt: now() });
+  await db.projects.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 /** Delete all project-scoped data (but not the project row itself). */

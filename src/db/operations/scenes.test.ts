@@ -1,16 +1,24 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { makeChapter, makeScene, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";
-import type { ChapterId, CommentId, ProjectId, SceneId } from "../schemas";
+import type {
+  ChapterId,
+  CharacterId,
+  CommentId,
+  ProjectId,
+  SceneId,
+} from "../schemas";
 import { deleteChapter } from "./chapters";
 import { deleteProject } from "./projects";
 import {
   createScene,
   deleteScene,
+  getScene,
   getScenesByChapter,
   moveScene,
   nextSceneOrder,
   reorderScenes,
+  updateScene,
   updateSceneWordCounts,
 } from "./scenes";
 
@@ -46,6 +54,48 @@ describe("createScene / nextSceneOrder", () => {
     const id = "c1111111-1111-4111-a111-111111111111" as SceneId;
     const scene = await createScene({ id, projectId, chapterId: chapterA });
     expect(scene.id).toBe(id);
+  });
+});
+
+describe("updateScene", () => {
+  const povId = "d1111111-1111-4111-a111-111111111111" as CharacterId;
+
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.scenes.clear();
+    await db.chapters.clear();
+  });
+
+  it("leaves omitted fields untouched (a partial update is a no-op for them)", async () => {
+    await seedChapters();
+    const scene = await createScene({
+      projectId,
+      chapterId: chapterA,
+      title: "Original",
+      povCharacterId: povId,
+    });
+
+    // Update only the title; povCharacterId is not in the payload.
+    await updateScene(scene.id, { title: "Renamed" });
+
+    const updated = await getScene(scene.id);
+    expect(updated?.title).toBe("Renamed");
+    // Regression: omitting povCharacterId must NOT clear it.
+    expect(updated?.povCharacterId).toBe(povId);
+  });
+
+  it("clears a field when an explicit null is passed", async () => {
+    await seedChapters();
+    const scene = await createScene({
+      projectId,
+      chapterId: chapterA,
+      povCharacterId: povId,
+    });
+
+    await updateScene(scene.id, { povCharacterId: null });
+
+    const updated = await getScene(scene.id);
+    expect(updated?.povCharacterId).toBeNull();
   });
 });
 

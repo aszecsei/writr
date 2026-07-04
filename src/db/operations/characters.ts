@@ -8,7 +8,7 @@ import {
   CharacterSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Characters ──────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export async function updateCharacter(
   id: CharacterId,
   data: Partial<Omit<Character, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
-  await db.characters.update(id, { ...data, updatedAt: now() });
+  await db.characters.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 export async function deleteCharacter(id: CharacterId): Promise<void> {
@@ -159,7 +159,10 @@ export async function updateRelationship(
   id: CharacterRelationshipId,
   data: Partial<Pick<CharacterRelationship, "type" | "customLabel">>,
 ): Promise<void> {
-  await db.characterRelationships.update(id, { ...data, updatedAt: now() });
+  await db.characterRelationships.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteRelationship(

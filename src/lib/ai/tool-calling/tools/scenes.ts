@@ -10,8 +10,6 @@ import {
 import {
   type ChapterId,
   ChapterStatusEnum,
-  type CharacterId,
-  type LocationId,
   type Scene,
   type SceneId,
   TimelineModeEnum,
@@ -231,14 +229,13 @@ export const updateSceneTool = defineTool({
         return fail(`Unknown location id(s): ${missing.join(", ")}`);
     }
 
-    await updateScene(id as SceneId, {
-      ...fields,
-      povCharacterId: fields.povCharacterId as CharacterId | null | undefined,
-      presentCharacterIds: fields.presentCharacterIds as
-        | CharacterId[]
-        | undefined,
-      locationIds: fields.locationIds as LocationId[] | undefined,
-    });
+    // The db layer strips `undefined`, so an omitted field is a no-op (an
+    // explicit `null` still clears `povCharacterId`). The cast only re-brands
+    // the Zod-validated plain strings back to their id types.
+    await updateScene(
+      id as SceneId,
+      fields as Parameters<typeof updateScene>[1],
+    );
     return ok(
       `Updated scene ${scene.order} of chapter ${scene.chapterId}${
         scene.title ? ` ("${scene.title}")` : ""

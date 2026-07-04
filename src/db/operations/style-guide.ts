@@ -5,7 +5,12 @@ import {
   type StyleGuideEntryId,
   StyleGuideEntrySchema,
 } from "../schemas";
-import { generateId, getNextOrderForProjectScope, now } from "./helpers";
+import {
+  generateId,
+  getNextOrderForProjectScope,
+  now,
+  stripUndefined,
+} from "./helpers";
 import { appliesToProject, byScopeThenOrder } from "./scope";
 
 // ─── Style Guide Entries ────────────────────────────────────────────
@@ -68,7 +73,10 @@ export async function updateStyleGuideEntry(
   id: StyleGuideEntryId,
   data: Partial<Omit<StyleGuideEntry, "id" | "createdAt">>,
 ): Promise<void> {
-  await db.styleGuideEntries.update(id, { ...data, updatedAt: now() });
+  await db.styleGuideEntries.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 /** Add or remove `projectId` from an entry's per-project disable list. */

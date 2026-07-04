@@ -6,7 +6,7 @@ import {
   type AgentKind,
   type ProjectId,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 export type CreateAgentInput = {
   kind: AgentKind;
@@ -102,7 +102,7 @@ export async function updateAgent(
     >
   >,
 ): Promise<void> {
-  await db.agents.update(id, { ...data, updatedAt: now() });
+  await db.agents.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 export async function deleteAgent(id: AgentDefinitionId): Promise<void> {

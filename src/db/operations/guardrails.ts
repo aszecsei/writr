@@ -5,7 +5,12 @@ import {
   GuardrailEntrySchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, getNextOrderForProjectScope, now } from "./helpers";
+import {
+  generateId,
+  getNextOrderForProjectScope,
+  now,
+  stripUndefined,
+} from "./helpers";
 import { appliesToProject, byScopeThenOrder } from "./scope";
 
 // ─── Guardrail Entries ──────────────────────────────────────────────
@@ -69,7 +74,10 @@ export async function updateGuardrailEntry(
   id: GuardrailEntryId,
   data: Partial<Omit<GuardrailEntry, "id" | "createdAt">>,
 ): Promise<void> {
-  await db.guardrailEntries.update(id, { ...data, updatedAt: now() });
+  await db.guardrailEntries.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 /** Add or remove `projectId` from a guardrail's per-project disable list. */

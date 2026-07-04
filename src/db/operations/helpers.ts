@@ -47,6 +47,17 @@ export function now(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Drop keys whose value is `undefined` so a partial update never clears a field
+ * the caller merely omitted. Dexie's `Table.update()` deletes any key set to
+ * `undefined`; `null` is preserved as an explicit "clear this field" signal.
+ */
+export function stripUndefined<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  ) as Partial<T>;
+}
+
 /** Format a Date as YYYY-MM-DD in local time (not UTC). */
 export function toLocalDateString(date: Date): string {
   const y = date.getFullYear();

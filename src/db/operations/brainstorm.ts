@@ -7,7 +7,7 @@ import {
   type BrainstormSetupId,
   BrainstormSetupSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 export type CreateBrainstormSetupInput = {
   name: string;
@@ -45,7 +45,10 @@ export async function updateBrainstormSetup(
   id: BrainstormSetupId,
   data: Partial<Pick<BrainstormSetup, "name" | "columns" | "pattern">>,
 ): Promise<void> {
-  await db.brainstormSetups.update(id, { ...data, updatedAt: now() });
+  await db.brainstormSetups.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 /**

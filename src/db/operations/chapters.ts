@@ -12,7 +12,7 @@ import {
   type ChapterSection,
   type ProjectId,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 import { createScene } from "./scenes";
 import { recordWritingSession } from "./sprints";
 
@@ -140,7 +140,7 @@ export async function updateChapter(
   id: ChapterId,
   data: Partial<Pick<Chapter, "title" | "synopsis" | "status">>,
 ): Promise<void> {
-  await db.chapters.update(id, { ...data, updatedAt: now() });
+  await db.chapters.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 /** Update the label and compile settings of a separator. */
@@ -150,7 +150,7 @@ export async function updateSeparator(
     Pick<Chapter, "title" | "includeInCompile" | "pageBreakBefore">
   >,
 ): Promise<void> {
-  await db.chapters.update(id, { ...data, updatedAt: now() });
+  await db.chapters.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 export async function updateChapterContent(

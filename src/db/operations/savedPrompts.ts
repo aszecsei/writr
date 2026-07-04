@@ -5,7 +5,7 @@ import {
   type SavedPromptId,
   SavedPromptSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 export type CreateSavedPromptInput = {
   title: string;
@@ -56,7 +56,10 @@ export async function updateSavedPrompt(
   id: SavedPromptId,
   data: Partial<Pick<SavedPrompt, "title" | "body" | "projectId">>,
 ): Promise<void> {
-  await db.savedPrompts.update(id, { ...data, updatedAt: now() });
+  await db.savedPrompts.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteSavedPrompt(id: SavedPromptId): Promise<void> {

@@ -5,7 +5,13 @@ import {
   type TimelineEventId,
   TimelineEventSchema,
 } from "../schemas";
-import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
+import {
+  generateId,
+  getNextOrder,
+  now,
+  reorderEntities,
+  stripUndefined,
+} from "./helpers";
 
 // ─── Timeline Events ────────────────────────────────────────────────
 
@@ -59,7 +65,10 @@ export async function updateTimelineEvent(
   id: TimelineEventId,
   data: Partial<Omit<TimelineEvent, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
-  await db.timelineEvents.update(id, { ...data, updatedAt: now() });
+  await db.timelineEvents.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteTimelineEvent(id: TimelineEventId): Promise<void> {

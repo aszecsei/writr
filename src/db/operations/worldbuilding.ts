@@ -5,7 +5,7 @@ import {
   type WorldbuildingDocId,
   WorldbuildingDocSchema,
 } from "../schemas";
-import { generateId, now, reorderEntities } from "./helpers";
+import { generateId, now, reorderEntities, stripUndefined } from "./helpers";
 
 // ─── Worldbuilding Docs ─────────────────────────────────────────────
 
@@ -76,7 +76,10 @@ export async function updateWorldbuildingDoc(
       cursor = parent?.parentDocId ?? null;
     }
   }
-  await db.worldbuildingDocs.update(id, { ...data, updatedAt: now() });
+  await db.worldbuildingDocs.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteWorldbuildingDoc(

@@ -5,7 +5,7 @@ import {
   type CommentId,
   CommentSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Comments ────────────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ export async function updateComment(
     >
   >,
 ): Promise<void> {
-  await db.comments.update(id, { ...data, updatedAt: now() });
+  await db.comments.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 export async function resolveComment(id: CommentId): Promise<void> {

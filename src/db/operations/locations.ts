@@ -5,7 +5,7 @@ import {
   LocationSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Locations ───────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ export async function updateLocation(
   id: LocationId,
   data: Partial<Omit<Location, "id" | "projectId" | "createdAt">>,
 ): Promise<void> {
-  await db.locations.update(id, { ...data, updatedAt: now() });
+  await db.locations.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 export async function deleteLocation(id: LocationId): Promise<void> {

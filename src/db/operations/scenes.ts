@@ -7,7 +7,7 @@ import {
   type SceneId,
   SceneSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Scenes ──────────────────────────────────────────────────────────
 //
@@ -114,7 +114,7 @@ export async function updateScene(
     >
   >,
 ): Promise<void> {
-  await db.scenes.update(id, { ...data, updatedAt: now() });
+  await db.scenes.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
 /**

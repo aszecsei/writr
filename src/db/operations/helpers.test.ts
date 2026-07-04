@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { makeOutlineGridRow, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";
 import type { ProjectId } from "../schemas";
-import { getNextOrder } from "./helpers";
+import { getNextOrder, stripUndefined } from "./helpers";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
@@ -60,5 +60,35 @@ describe("getNextOrder", () => {
 
     const next = await getNextOrder(db.outlineGridRows, { projectId }, 99);
     expect(next).toBe(99);
+  });
+});
+
+describe("stripUndefined", () => {
+  it("drops keys whose value is undefined", () => {
+    const result = stripUndefined({ a: 1, b: undefined, c: "x" });
+    expect(result).toEqual({ a: 1, c: "x" });
+    expect("b" in result).toBe(false);
+  });
+
+  it("preserves null, empty string, zero, false, and empty array", () => {
+    const result = stripUndefined({
+      nul: null,
+      empty: "",
+      zero: 0,
+      no: false,
+      arr: [] as number[],
+      gone: undefined,
+    });
+    expect(result).toEqual({
+      nul: null,
+      empty: "",
+      zero: 0,
+      no: false,
+      arr: [],
+    });
+  });
+
+  it("returns an empty object when every value is undefined", () => {
+    expect(stripUndefined({ a: undefined, b: undefined })).toEqual({});
   });
 });

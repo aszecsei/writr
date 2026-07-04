@@ -5,7 +5,13 @@ import {
   PlaylistTrackSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
+import {
+  generateId,
+  getNextOrder,
+  now,
+  reorderEntities,
+  stripUndefined,
+} from "./helpers";
 
 // ─── Playlist Tracks ─────────────────────────────────────────────────
 
@@ -55,7 +61,10 @@ export async function updatePlaylistTrack(
     >
   >,
 ): Promise<void> {
-  await db.playlistTracks.update(id, { ...data, updatedAt: now() });
+  await db.playlistTracks.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deletePlaylistTrack(id: PlaylistTrackId): Promise<void> {

@@ -12,7 +12,13 @@ import {
   OutlineGridRowSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
+import {
+  generateId,
+  getNextOrder,
+  now,
+  reorderEntities,
+  stripUndefined,
+} from "./helpers";
 
 // ─── Shared helper ──────────────────────────────────────────────────
 
@@ -59,7 +65,10 @@ export async function updateOutlineGridColumn(
   id: OutlineGridColumnId,
   data: Partial<Pick<OutlineGridColumn, "title" | "width">>,
 ): Promise<void> {
-  await db.outlineGridColumns.update(id, { ...data, updatedAt: now() });
+  await db.outlineGridColumns.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteOutlineGridColumn(
@@ -142,7 +151,10 @@ export async function updateOutlineGridRow(
   id: OutlineGridRowId,
   data: Partial<Pick<OutlineGridRow, "linkedChapterId" | "label">>,
 ): Promise<void> {
-  await db.outlineGridRows.update(id, { ...data, updatedAt: now() });
+  await db.outlineGridRows.update(id, {
+    ...stripUndefined(data),
+    updatedAt: now(),
+  });
 }
 
 export async function deleteOutlineGridRow(
