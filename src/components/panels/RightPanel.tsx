@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { BarChart3, Info, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useRef } from "react";
 import { AiPanel } from "@/components/ai/AiPanel";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import type { RightPanelTab } from "@/store/uiStore";
@@ -27,6 +28,13 @@ export function RightPanel() {
   const openRightPanel = useUiStore((s) => s.openRightPanel);
   const closeRightPanel = useUiStore((s) => s.closeRightPanel);
   const aiEnabled = useAppSettings()?.enableAiFeatures ?? false;
+
+  // Latch the AI panel as mounted once its tab is first opened. It then stays
+  // mounted (hidden via CSS) across tab switches so the chat transcript and any
+  // in-flight run survive. The latch avoids eagerly mounting AiPanel — and its
+  // live-query subscriptions — for users who never open the AI tab.
+  const aiActivatedRef = useRef(false);
+  if (tab === "ai") aiActivatedRef.current = true;
 
   const tabs: { id: RightPanelTab; label: string; icon: LucideIcon }[] = [
     { id: "details", label: "Details", icon: Info },
@@ -67,7 +75,11 @@ export function RightPanel() {
       <div className="min-h-0 flex-1">
         {tab === "details" && <DetailsPanel />}
         {tab === "analysis" && <AnalysisPanel />}
-        {tab === "ai" && aiEnabled && <AiPanel />}
+        {aiEnabled && aiActivatedRef.current && (
+          <div className={tab === "ai" ? "h-full" : "hidden"}>
+            <AiPanel />
+          </div>
+        )}
       </div>
     </div>
   );
