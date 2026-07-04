@@ -150,6 +150,10 @@ export const EntityImageSchema = z.object({
   url: z.string().url(),
   caption: z.string().default(""),
   isPrimary: z.boolean().default(false),
+  /** Normalized focal point in [0,1] for CSS `object-position` when the image
+   *  is cropped. Defaults to top-center to keep portrait heads in frame. */
+  focalX: z.number().min(0).max(1).default(0.5),
+  focalY: z.number().min(0).max(1).default(0),
 });
 export type EntityImage = z.infer<typeof EntityImageSchema>;
 

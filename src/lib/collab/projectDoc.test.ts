@@ -242,6 +242,8 @@ describe("entity upsert / read / delete", () => {
           url: "https://example.com/x.png",
           caption: "headshot",
           isPrimary: true,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });

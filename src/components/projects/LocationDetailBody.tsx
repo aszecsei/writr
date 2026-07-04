@@ -51,6 +51,7 @@ export function LocationDetailBody({
     addImage,
     removeImage,
     setPrimaryImage,
+    updateImage,
   } = useLocationForm(location);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -228,6 +229,7 @@ export function LocationDetailBody({
             onAddImage={addImage}
             onRemoveImage={removeImage}
             onSetPrimary={setPrimaryImage}
+            onUpdateImage={updateImage}
             readOnly={readOnly}
           />
         </CollapsibleSection>

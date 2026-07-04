@@ -164,6 +164,18 @@ export function useCharacterForm(character: Character | undefined) {
     }));
   }, []);
 
+  const updateImage = useCallback(
+    (imageId: string, patch: Partial<EntityImage>) => {
+      setFormState((prev) => ({
+        ...prev,
+        images: prev.images.map((img) =>
+          img.id === imageId ? { ...img, ...patch } : img,
+        ),
+      }));
+    },
+    [],
+  );
+
   function getUpdatePayload() {
     const aliases = form.aliasesInput
       .split(",")
@@ -202,5 +214,6 @@ export function useCharacterForm(character: Character | undefined) {
     addImage,
     removeImage,
     setPrimaryImage,
+    updateImage,
   };
 }

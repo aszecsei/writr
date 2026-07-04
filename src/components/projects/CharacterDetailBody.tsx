@@ -70,6 +70,7 @@ export function CharacterDetailBody({
     addImage,
     removeImage,
     setPrimaryImage,
+    updateImage,
   } = useCharacterForm(character);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const personalitySync = useHeightSync();
@@ -457,6 +458,7 @@ export function CharacterDetailBody({
             onAddImage={addImage}
             onRemoveImage={removeImage}
             onSetPrimary={setPrimaryImage}
+            onUpdateImage={updateImage}
             readOnly={readOnly}
           />
         </CollapsibleSection>

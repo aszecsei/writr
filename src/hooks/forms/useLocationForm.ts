@@ -97,6 +97,18 @@ export function useLocationForm(location: Location | undefined) {
     }));
   }, []);
 
+  const updateImage = useCallback(
+    (imageId: string, patch: Partial<EntityImage>) => {
+      setFormState((prev) => ({
+        ...prev,
+        images: prev.images.map((img) =>
+          img.id === imageId ? { ...img, ...patch } : img,
+        ),
+      }));
+    },
+    [],
+  );
+
   function getUpdatePayload() {
     return {
       name: form.name,
@@ -118,5 +130,6 @@ export function useLocationForm(location: Location | undefined) {
     addImage,
     removeImage,
     setPrimaryImage,
+    updateImage,
   };
 }

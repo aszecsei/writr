@@ -116,12 +116,16 @@ describe("serializeCharacter", () => {
           url: "https://example.com/a.jpg",
           caption: "A portrait",
           isPrimary: true,
+          focalX: 0.5,
+          focalY: 0,
         },
         {
           id: "img-2" as never,
           url: "https://example.com/b.jpg",
           caption: "In battle",
           isPrimary: false,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });
@@ -142,12 +146,16 @@ describe("serializeCharacter", () => {
           url: "https://example.com/a.jpg",
           caption: "Visible",
           isPrimary: true,
+          focalX: 0.5,
+          focalY: 0,
         },
         {
           id: "img-2" as never,
           url: "https://example.com/b.jpg",
           caption: "",
           isPrimary: false,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });
@@ -166,6 +174,8 @@ describe("serializeCharacter", () => {
           url: "https://example.com/a.jpg",
           caption: "",
           isPrimary: true,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });
@@ -243,6 +253,8 @@ describe("serializeLocation", () => {
           url: "https://example.com/castle.jpg",
           caption: "The main gate",
           isPrimary: true,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });
@@ -262,6 +274,8 @@ describe("serializeLocation", () => {
           url: "https://example.com/a.jpg",
           caption: "",
           isPrimary: false,
+          focalX: 0.5,
+          focalY: 0,
         },
       ],
     });

@@ -12,12 +12,22 @@ import {
   useRelationshipsByProject,
 } from "@/hooks/data/source";
 
-const roleBorderColors: Record<CharacterRole, string> = {
-  protagonist: "border-l-amber-400 dark:border-l-amber-500",
-  antagonist: "border-l-red-400 dark:border-l-red-500",
-  supporting: "border-l-blue-400 dark:border-l-blue-500",
-  minor: "border-l-neutral-300 dark:border-l-neutral-600",
+const roleTopColors: Record<CharacterRole, string> = {
+  protagonist: "border-t-amber-400 dark:border-t-amber-500",
+  antagonist: "border-t-red-400 dark:border-t-red-500",
+  supporting: "border-t-blue-400 dark:border-t-blue-500",
+  minor: "border-t-neutral-300 dark:border-t-neutral-600",
 };
+
+/** Up to two uppercase initials from a name; empty when none can be derived. */
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 type RoleFilter = "all" | CharacterRole;
 
@@ -108,96 +118,121 @@ export function CharactersPageBody({
         ))}
       </div>
 
-      <div className="mt-5 space-y-3">
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-16 text-neutral-400 dark:text-neutral-500">
-            <Users size={40} strokeWidth={1.5} />
-            <p className="text-sm">
-              {filter === "all"
-                ? readOnly
-                  ? "No characters in this project."
-                  : "No characters yet. Add one to get started."
-                : `No ${filter} characters.`}
-            </p>
-          </div>
-        )}
-        {filtered.map((character) => {
-          const aliases = character.aliases ?? [];
-          const relCount = getRelationshipCount(character.id);
-          const linkedLocCount = (character.linkedLocationIds ?? []).length;
-          const primaryImage = (character.images ?? []).find(
-            (img) => img.isPrimary,
-          );
+      {filtered.length === 0 ? (
+        <div className="mt-5 flex flex-col items-center gap-3 py-16 text-neutral-400 dark:text-neutral-500">
+          <Users size={40} strokeWidth={1.5} />
+          <p className="text-sm">
+            {filter === "all"
+              ? readOnly
+                ? "No characters in this project."
+                : "No characters yet. Add one to get started."
+              : `No ${filter} characters.`}
+          </p>
+        </div>
+      ) : (
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((character) => {
+            const aliases = character.aliases ?? [];
+            const relCount = getRelationshipCount(character.id);
+            const linkedLocCount = (character.linkedLocationIds ?? []).length;
+            const primaryImage = (character.images ?? []).find(
+              (img) => img.isPrimary,
+            );
+            const initials = getInitials(character.name);
 
-          return (
-            <div
-              key={character.id}
-              className={`flex items-start justify-between gap-4 rounded-lg border border-l-4 border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900 ${roleBorderColors[character.role]}`}
-            >
-              {primaryImage && (
-                // biome-ignore lint/performance/noImgElement: external URLs
-                <img
-                  src={primaryImage.url}
-                  alt={character.name}
-                  className="h-12 w-12 shrink-0 rounded-md object-cover"
-                />
-              )}
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(`${basePath}/bible/characters/${character.id}`)
-                }
-                className="flex-1 text-left"
+            return (
+              <div
+                key={character.id}
+                className={`group relative flex flex-col overflow-hidden rounded-lg border border-t-4 border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 ${roleTopColors[character.role]}`}
               >
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {character.name}
-                  </h3>
-                  <RoleBadge role={character.role} />
-                  {character.pronouns && (
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                      {character.pronouns}
-                    </span>
-                  )}
-                </div>
-                {character.description && (
-                  <p className="mt-1 text-xs leading-relaxed text-neutral-500 line-clamp-2 dark:text-neutral-400">
-                    {character.description}
-                  </p>
-                )}
-                {(aliases.length > 0 || relCount > 0 || linkedLocCount > 0) && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {aliases.length > 0 && (
-                      <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                        {aliases.length} alias{aliases.length !== 1 && "es"}
-                      </span>
-                    )}
-                    {relCount > 0 && (
-                      <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                        {relCount} relationship{relCount !== 1 && "s"}
-                      </span>
-                    )}
-                    {linkedLocCount > 0 && (
-                      <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                        {linkedLocCount} location{linkedLocCount !== 1 && "s"}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </button>
-              {!readOnly && (
                 <button
                   type="button"
-                  onClick={() => setDeletingId(character.id)}
-                  className="mt-0.5 shrink-0 text-xs text-neutral-400 hover:text-red-500 dark:text-neutral-500"
+                  onClick={() =>
+                    router.push(`${basePath}/bible/characters/${character.id}`)
+                  }
+                  className="flex flex-1 flex-col text-left"
                 >
-                  Delete
+                  <div className="aspect-[4/3] w-full">
+                    {primaryImage ? (
+                      // biome-ignore lint/performance/noImgElement: external URLs
+                      <img
+                        src={primaryImage.url}
+                        alt={character.name}
+                        className="h-full w-full object-cover"
+                        style={{
+                          objectPosition: `${(primaryImage.focalX ?? 0.5) * 100}% ${(primaryImage.focalY ?? 0) * 100}%`,
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+                        {initials ? (
+                          <span className="text-3xl font-semibold">
+                            {initials}
+                          </span>
+                        ) : (
+                          <Users size={40} strokeWidth={1.5} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        {character.name}
+                      </h3>
+                      <RoleBadge role={character.role} />
+                      {character.pronouns && (
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                          {character.pronouns}
+                        </span>
+                      )}
+                    </div>
+                    {character.description && (
+                      <p className="mt-1 text-xs leading-relaxed text-neutral-500 line-clamp-2 dark:text-neutral-400">
+                        {character.description}
+                      </p>
+                    )}
+                    {(aliases.length > 0 ||
+                      relCount > 0 ||
+                      linkedLocCount > 0) && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {aliases.length > 0 && (
+                          <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                            {aliases.length} alias{aliases.length !== 1 && "es"}
+                          </span>
+                        )}
+                        {relCount > 0 && (
+                          <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                            {relCount} relationship{relCount !== 1 && "s"}
+                          </span>
+                        )}
+                        {linkedLocCount > 0 && (
+                          <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                            {linkedLocCount} location
+                            {linkedLocCount !== 1 && "s"}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletingId(character.id);
+                    }}
+                    className="absolute right-2 top-2 rounded-md bg-white/80 px-2 py-1 text-xs text-neutral-500 opacity-0 backdrop-blur transition-opacity hover:text-red-500 group-hover:opacity-100 dark:bg-neutral-900/80 dark:text-neutral-400"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {!readOnly && deletingId && deletingCharacter && (
         <ConfirmDialog
