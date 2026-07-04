@@ -90,6 +90,8 @@ export interface ExtensionOptions {
   onGrammarContextMenu?: (result: GrammarResult, rect: DOMRect) => void;
   onSelectionChange?: (text: string, from: number, to: number) => void;
   onSelectionClear?: () => void;
+  /** Ref to a `sceneId → title` map used to label scene-break markers. */
+  sceneTitlesRef?: { current: Map<string, string> };
   /**
    * If present, the prose extensions will be augmented with the TipTap
    * Collaboration + CollaborationCaret extensions, and StarterKit's
@@ -155,7 +157,9 @@ export function createExtensions(options?: ExtensionOptions) {
       defaultAlignment: "left",
     }),
     MarkdownBlockquote,
-    SceneBreak,
+    SceneBreak.configure({
+      sceneTitlesRef: options?.sceneTitlesRef ?? { current: new Map() },
+    }),
     Indent,
     Ruby,
     Typography,

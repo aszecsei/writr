@@ -30,6 +30,7 @@ import {
   DEFAULT_HOLE_DELIMITERS,
   type HoleDelimiters,
 } from "@/lib/holes";
+import { getTerm } from "@/lib/terminology";
 import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -48,6 +49,7 @@ import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
 import { GRAMMAR_UPDATED_META } from "./extensions/Grammar";
 import { HOLES_UPDATED_META } from "./extensions/Holes";
+import { SCENE_TITLES_UPDATED_META } from "./extensions/SceneBreak";
 import { SENTENCE_LENGTH_PREVIEW_META } from "./extensions/SentenceLengthPreview";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
@@ -237,6 +239,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // Ref for comments - allows dynamic updates without recreating editor
   const commentsRef = useRef<Comment[]>([]);
 
+  // Ref for scene-break labels: sceneId → title. Titles live in Dexie, not in
+  // the marker node, so the SceneBreak plugin reads them here without the
+  // editor being recreated. A SCENE_TITLES_UPDATED_META dispatch rebuilds the
+  // label decorations when a title changes.
+  const sceneTitlesRef = useRef<Map<string, string>>(new Map());
+
   // Ref for hole delimiters - lets the Holes extension and CharacterCount read
   // the latest setting without recreating the editor (a HOLES_UPDATED_META
   // dispatch rebuilds decorations when the setting changes).
@@ -312,6 +320,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       onGrammarContextMenu,
       onSelectionChange,
       onSelectionClear,
+      sceneTitlesRef,
     };
     if (collabDoc && collabAwareness) {
       opts.collab = {
@@ -556,6 +565,33 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
       editor.off("update", update);
     };
   }, [editor, scenes, setActiveSceneId]);
+
+  // Keep scene-break labels in sync with live scene data. Untitled scenes fall
+  // back to a positional "Scene N" label matching the binder/details panels
+  // (scenes are order-sorted, so the array index is the scene number). Keyed on
+  // a title signature so word-count churn (which also mutates `scenes`) doesn't
+  // trigger needless decoration rebuilds. The ref is read by the SceneBreak
+  // plugin; a meta-only dispatch rebuilds its label decorations without marking
+  // the editor dirty. A mode switch recreates the editor, refreshing the term.
+  const sceneTitlesKey = useMemo(
+    () => (scenes ?? []).map((s) => `${s.id} ${s.title}`).join("\n"),
+    [scenes],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: sceneTitlesKey is the intentional trigger; the map is rebuilt from the latest scenesRef
+  useEffect(() => {
+    const sceneTerm = getTerm(activeProjectMode, "scene");
+    sceneTitlesRef.current = new Map(
+      (scenesRef.current ?? []).map((s, index) => [
+        s.id,
+        s.title.trim() || `${sceneTerm} ${index + 1}`,
+      ]),
+    );
+    if (editor && !editor.isDestroyed) {
+      editor.view.dispatch(
+        editor.state.tr.setMeta(SCENE_TITLES_UPDATED_META, true),
+      );
+    }
+  }, [editor, sceneTitlesKey]);
 
   // Scroll to a scene requested from a sidebar. Handles the same-chapter case
   // (editor already seeded); cross-chapter scrolls are consumed by the seed

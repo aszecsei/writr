@@ -510,30 +510,66 @@ ruby rt {
   border-top-color: var(--neutral-600);
 }
 
-/* Scene break: a centered small-caps "Scene" label sitting on a hairline rule,
-   dividing a chapter's single document into its Model-D scenes. */
+/* Scene break: a small-caps scene label bracketed into a hairline rule,
+   dividing a chapter's single document into its Model-D scenes. The SceneBreak
+   nodeView renders `rule — [ label ] — rule`; the brackets are drawn in CSS so
+   they sit on the rule instead of floating as text. */
 .scene-break {
-  border: none;
-  border-top: 1px solid var(--neutral-200);
+  display: flex;
+  align-items: center;
+  gap: 1em;
   margin: 2em 0;
-  overflow: visible;
-  text-align: center;
+  border: none;
+  user-select: none;
 }
-.dark .scene-break {
-  border-top-color: var(--neutral-700);
+.scene-break .scene-break-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--neutral-200);
 }
-.scene-break::before {
-  content: "Scene";
+.dark .scene-break .scene-break-rule {
+  background: var(--neutral-700);
+}
+.scene-break .scene-break-label {
   position: relative;
-  top: -0.75em;
-  display: inline-block;
-  padding: 0 0.9em;
-  background: var(--background);
   color: var(--neutral-400);
   font-variant: small-caps;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.18em;
+  line-height: 1;
+  white-space: nowrap;
+}
+/* Brackets as three-sided boxes flanking the label, vertically centered on the
+   rule so they read as connected to it. */
+.scene-break .scene-break-label::before,
+.scene-break .scene-break-label::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 0.3em;
+  height: 1.5em;
+  transform: translateY(-50%);
+  border: 1px solid var(--neutral-300);
+}
+.dark .scene-break .scene-break-label::before,
+.dark .scene-break .scene-break-label::after {
+  border-color: var(--neutral-600);
+}
+.scene-break .scene-break-label::before {
+  right: 100%;
+  margin-right: 0.5em;
+  border-right: none;
+}
+.scene-break .scene-break-label::after {
+  left: 100%;
+  margin-left: 0.5em;
+  border-left: none;
+}
+/* Suppress the brackets until the label has resolved (scenes load async). */
+.scene-break .scene-break-label:empty::before,
+.scene-break .scene-break-label:empty::after {
+  display: none;
 }
 
 /* Placeholder styling for screenplay nodes */
