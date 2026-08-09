@@ -337,7 +337,7 @@ describe("chapter tools", () => {
       ctx,
     );
     expect(result.success).toBe(true);
-    expect((result.data?.matches as { id: string }[]).length).toBe(1);
+    expect(result.data?.matches as { id: string }[]).toHaveLength(1);
   });
 
   it("search_chapters returns empty for no matches", async () => {
@@ -354,7 +354,7 @@ describe("chapter tools", () => {
       ctx,
     );
     expect(result.success).toBe(true);
-    expect((result.data?.matches as { id: string }[]).length).toBe(0);
+    expect(result.data?.matches as { id: string }[]).toHaveLength(0);
   });
 });
 
@@ -570,7 +570,7 @@ describe("search_project tool", () => {
     );
     expect(result.success).toBe(true);
     expect(result.data?.totalCount).toBe(0);
-    expect((result.data?.results as unknown[]).length).toBe(0);
+    expect(result.data?.results as unknown[]).toHaveLength(0);
   });
 
   it("filters by entity_types", async () => {

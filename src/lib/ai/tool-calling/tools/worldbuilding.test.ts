@@ -33,9 +33,11 @@ describe("worldbuilding doc tools", () => {
       { requests: [{ category: "worldbuilding", ids: [id] }] },
       ctx,
     );
-    const entry = (
-      fetched.data?.results as { found: boolean; data?: { content?: string } }[]
-    )[0];
+    const results = fetched.data?.results as {
+      found: boolean;
+      data?: { content?: string };
+    }[];
+    const entry = results[0];
     expect(entry.found).toBe(true);
     expect(entry.data?.content).toBe("Magic flows through the Weave.");
   });

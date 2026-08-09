@@ -69,7 +69,7 @@ describe("list tool", () => {
     ]);
     const r = await executeTool("list", { category: "location" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(2);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(2);
   });
 
   it("lists timeline events", async () => {
@@ -79,7 +79,7 @@ describe("list tool", () => {
     ]);
     const r = await executeTool("list", { category: "timeline" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(2);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(2);
   });
 
   it("lists chapters", async () => {
@@ -89,7 +89,7 @@ describe("list tool", () => {
     ]);
     const r = await executeTool("list", { category: "chapter" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(2);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(2);
   });
 
   it("lists style guide entries", async () => {
@@ -98,7 +98,7 @@ describe("list tool", () => {
     );
     const r = await executeTool("list", { category: "style_guide" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(1);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(1);
   });
 
   it("lists guardrails", async () => {
@@ -107,7 +107,7 @@ describe("list tool", () => {
     );
     const r = await executeTool("list", { category: "guardrail" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(1);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(1);
   });
 
   it("lists worldbuilding docs", async () => {
@@ -117,7 +117,7 @@ describe("list tool", () => {
     ]);
     const r = await executeTool("list", { category: "worldbuilding" }, ctx);
     expect(r.success).toBe(true);
-    expect((r.data?.entries as ListEntry[]).length).toBe(2);
+    expect(r.data?.entries as ListEntry[]).toHaveLength(2);
   });
 
   it("rejects unknown category", async () => {
