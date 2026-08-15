@@ -57,6 +57,21 @@ export async function backfillBinderFieldsV37(tx: Transaction): Promise<void> {
 }
 
 /**
+ * v46 migration: backfill `coverImageUrl` on legacy project rows. Project reads
+ * return raw Dexie rows (no Zod parse), so legacy rows would otherwise carry
+ * `undefined`. Exported so the migration can be unit-tested directly against a
+ * v45→v46 upgrade.
+ */
+export async function backfillProjectCoverV46(tx: Transaction): Promise<void> {
+  await tx
+    .table("projects")
+    .toCollection()
+    .modify((p: Record<string, unknown>) => {
+      if (p.coverImageUrl === undefined) p.coverImageUrl = "";
+    });
+}
+
+/**
  * v44 migration: give every existing chapter *document* a backfilled "core
  * scene" (order 0) so scene count is always >= 1 and the Details panel has a
  * row to bind to. Separators hold no prose and get no scene. Exported so the
@@ -1144,6 +1159,8 @@ export class WritrDatabase extends Dexie {
           if (c.summary === undefined) c.summary = "";
         }),
     );
+
+    this.version(46).upgrade(backfillProjectCoverV46);
 
     // Seed singleton rows so liveQuery hooks never need to write
     this.on("ready", () => {

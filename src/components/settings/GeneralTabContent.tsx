@@ -8,15 +8,8 @@ import type {
   UiDensity,
 } from "@/db/schemas";
 import { useAppStats } from "@/hooks/editor/useAppStats";
+import { formatBytes } from "@/lib/format-bytes";
 import { AppearanceSettings } from "./AppearanceSettings";
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
 
 function formatRelativeDate(iso: string): string {
   const date = new Date(iso);

@@ -53,6 +53,7 @@ export function makeProject(
     genre: "",
     targetWordCount: 0,
     mode: "prose",
+    coverImageUrl: "",
     createdAt: ts,
     updatedAt: ts,
     ...overrides,

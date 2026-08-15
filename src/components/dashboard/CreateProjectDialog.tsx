@@ -14,6 +14,7 @@ const initialValues: ProjectFormData = {
   genre: "",
   targetWordCount: 0,
   mode: "prose",
+  coverImageUrl: "",
 };
 
 export function CreateProjectDialog() {
@@ -46,6 +47,7 @@ export function CreateProjectDialog() {
       genre: values.genre.trim(),
       targetWordCount: Math.max(0, values.targetWordCount),
       mode: values.mode,
+      coverImageUrl: values.coverImageUrl,
     });
 
     setValues(initialValues);

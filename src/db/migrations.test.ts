@@ -1,7 +1,11 @@
 import Dexie from "dexie";
 import { afterEach, describe, expect, it } from "vitest";
-import { backfillBinderFieldsV37, backfillCoreScenesV44 } from "./database";
-import { ChapterSchema, SceneSchema } from "./schemas";
+import {
+  backfillBinderFieldsV37,
+  backfillCoreScenesV44,
+  backfillProjectCoverV46,
+} from "./database";
+import { ChapterSchema, ProjectSchema, SceneSchema } from "./schemas";
 
 // The chapters store string as it existed at v36 (before the binder feature).
 // v37 changes no indexes, so this is also the v37 store string.
@@ -162,6 +166,77 @@ describe("v44 core-scene backfill migration", () => {
     });
     // The migrated row must satisfy the current schema.
     expect(() => SceneSchema.parse(core)).not.toThrow();
+  });
+});
+
+describe("v46 project cover backfill migration", () => {
+  const dbName = "writr-migration-v46-test";
+  // The projects store string has been unchanged since v1.
+  const PROJECTS_STORE = "id, title, updatedAt";
+
+  afterEach(async () => {
+    await Dexie.delete(dbName);
+  });
+
+  it("backfills coverImageUrl on legacy projects while preserving existing data", async () => {
+    const oldDb = new Dexie(dbName);
+    oldDb.version(45).stores({ projects: PROJECTS_STORE });
+    await oldDb.open();
+    await oldDb.table("projects").add({
+      id: PROJECT_ID,
+      title: "Legacy Project",
+      description: "a description",
+      genre: "Fantasy",
+      targetWordCount: 80_000,
+      mode: "prose",
+      createdAt: TS,
+      updatedAt: TS,
+    });
+    oldDb.close();
+
+    const upgraded = new Dexie(dbName);
+    upgraded.version(45).stores({ projects: PROJECTS_STORE });
+    upgraded.version(46).upgrade(backfillProjectCoverV46);
+    await upgraded.open();
+    const migrated = await upgraded.table("projects").get(PROJECT_ID);
+    upgraded.close();
+
+    expect(migrated).toMatchObject({
+      coverImageUrl: "",
+      title: "Legacy Project",
+      description: "a description",
+      genre: "Fantasy",
+      targetWordCount: 80_000,
+      mode: "prose",
+    });
+    expect(() => ProjectSchema.parse(migrated)).not.toThrow();
+  });
+
+  it("leaves an already-set cover untouched", async () => {
+    const oldDb = new Dexie(dbName);
+    oldDb.version(45).stores({ projects: PROJECTS_STORE });
+    await oldDb.open();
+    await oldDb.table("projects").add({
+      id: PROJECT_ID,
+      title: "Project",
+      description: "",
+      genre: "",
+      targetWordCount: 0,
+      mode: "prose",
+      coverImageUrl: "https://example.com/cover.jpg",
+      createdAt: TS,
+      updatedAt: TS,
+    });
+    oldDb.close();
+
+    const upgraded = new Dexie(dbName);
+    upgraded.version(45).stores({ projects: PROJECTS_STORE });
+    upgraded.version(46).upgrade(backfillProjectCoverV46);
+    await upgraded.open();
+    const migrated = await upgraded.table("projects").get(PROJECT_ID);
+    upgraded.close();
+
+    expect(migrated?.coverImageUrl).toBe("https://example.com/cover.jpg");
   });
 });
 

@@ -10,10 +10,13 @@ import {
   TriangleAlert,
   Type,
 } from "lucide-react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ImageLightbox } from "@/components/bible/ImageLightbox";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { WritingStatsDashboard } from "@/components/stats";
+import { ProjectCover } from "@/components/ui/ProjectCover";
 import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data/source";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -40,6 +43,7 @@ export function ProjectOverviewBody({
   const stats = useWritingStats(readOnly ? null : projectId);
   const appSettings = useAppSettings();
   const openModal = useUiStore((s) => s.openModal);
+  const [isCoverLightboxOpen, setIsCoverLightboxOpen] = useState(false);
 
   if (!project) return null;
 
@@ -62,6 +66,20 @@ export function ProjectOverviewBody({
   return (
     <div className="mx-auto max-w-editor px-8 py-8">
       <header className="flex items-start justify-between gap-4">
+        {project.coverImageUrl && (
+          <button
+            type="button"
+            onClick={() => setIsCoverLightboxOpen(true)}
+            className="block w-36 shrink-0 cursor-zoom-in rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+            aria-label={`View ${project.title} cover at full size`}
+          >
+            <ProjectCover
+              url={project.coverImageUrl}
+              title={project.title}
+              className="rounded-lg border border-neutral-200 dark:border-neutral-800"
+            />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <h1
             className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
@@ -171,6 +189,14 @@ export function ProjectOverviewBody({
           </h2>
           <WritingStatsDashboard projectId={projectId} />
         </section>
+      )}
+
+      {isCoverLightboxOpen && project.coverImageUrl && (
+        <ImageLightbox
+          url={project.coverImageUrl}
+          caption={project.title}
+          onClose={() => setIsCoverLightboxOpen(false)}
+        />
       )}
 
       {!readOnly && <EditProjectDialog />}

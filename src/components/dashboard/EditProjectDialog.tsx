@@ -14,6 +14,7 @@ const initialValues: ProjectFormData = {
   genre: "",
   targetWordCount: 0,
   mode: "prose",
+  coverImageUrl: "",
 };
 
 export function EditProjectDialog() {
@@ -33,6 +34,7 @@ export function EditProjectDialog() {
         genre: project.genre,
         targetWordCount: project.targetWordCount,
         mode: project.mode,
+        coverImageUrl: project.coverImageUrl ?? "",
       });
     }
   }, [project]);
@@ -48,6 +50,7 @@ export function EditProjectDialog() {
       description: values.description.trim(),
       genre: values.genre.trim(),
       targetWordCount: Math.max(0, values.targetWordCount),
+      coverImageUrl: values.coverImageUrl,
     });
 
     closeModal();

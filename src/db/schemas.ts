@@ -4,6 +4,21 @@ import { z } from "zod/v4";
 
 const timestamp = z.iso.datetime();
 
+const DATA_IMAGE_URL_PATTERN = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
+
+/** Accepts "" (no image), an http(s) URL, or a base64 `data:image/*` URL. */
+export function isSupportedImageSource(value: string): boolean {
+  return (
+    value === "" ||
+    /^https?:\/\//.test(value) ||
+    DATA_IMAGE_URL_PATTERN.test(value)
+  );
+}
+
+export const ImageSourceSchema = z.string().refine(isSupportedImageSource, {
+  message: "Must be an http(s) URL or a data:image/*;base64 URL",
+});
+
 // ─── Branded Entity ID Schemas ──────────────────────────────────────
 //
 // Each entity's primary key gets a distinct brand so the type system
@@ -103,6 +118,8 @@ export const ProjectSchema = z.object({
   genre: z.string().default(""),
   targetWordCount: z.number().int().nonnegative().default(0),
   mode: ProjectModeEnum.default("prose"),
+  /** Cover art, displayed cropped to 2:3. "" means no cover. */
+  coverImageUrl: ImageSourceSchema.default(""),
   createdAt: timestamp,
   updatedAt: timestamp,
 });

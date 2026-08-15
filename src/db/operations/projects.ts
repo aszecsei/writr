@@ -7,7 +7,10 @@ import { generateId, now, stripUndefined } from "./helpers";
 export async function createProject(
   data: Pick<Project, "title"> &
     Partial<
-      Pick<Project, "description" | "genre" | "targetWordCount" | "mode">
+      Pick<
+        Project,
+        "description" | "genre" | "targetWordCount" | "mode" | "coverImageUrl"
+      >
     >,
 ): Promise<Project> {
   const project = ProjectSchema.parse({
@@ -17,6 +20,7 @@ export async function createProject(
     genre: data.genre ?? "",
     targetWordCount: data.targetWordCount ?? 0,
     mode: data.mode ?? "prose",
+    coverImageUrl: data.coverImageUrl ?? "",
     createdAt: now(),
     updatedAt: now(),
   });
@@ -27,7 +31,10 @@ export async function createProject(
 export async function updateProject(
   id: ProjectId,
   data: Partial<
-    Pick<Project, "title" | "description" | "genre" | "targetWordCount">
+    Pick<
+      Project,
+      "title" | "description" | "genre" | "targetWordCount" | "coverImageUrl"
+    >
   >,
 ): Promise<void> {
   await db.projects.update(id, { ...stripUndefined(data), updatedAt: now() });

@@ -8,6 +8,7 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/form-styles";
 import type { ProjectMode } from "@/db/schemas";
+import { ProjectCoverField } from "./ProjectCoverField";
 
 export interface ProjectFormData {
   title: string;
@@ -15,6 +16,7 @@ export interface ProjectFormData {
   genre: string;
   targetWordCount: number;
   mode: ProjectMode;
+  coverImageUrl: string;
 }
 
 interface ProjectFormFieldsProps {
@@ -61,6 +63,10 @@ export function ProjectFormFields({
           </div>
         </fieldset>
       )}
+      <ProjectCoverField
+        value={values.coverImageUrl}
+        onChange={(coverImageUrl) => onChange({ ...values, coverImageUrl })}
+      />
       <div>
         <label className={LABEL_CLASS}>
           Title

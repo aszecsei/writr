@@ -68,6 +68,7 @@ function makeProject(overrides: { id: ProjectId; title: string }) {
     genre: "",
     targetWordCount: 0,
     mode: "prose" as const,
+    coverImageUrl: "",
     createdAt: ts,
     updatedAt: ts,
   };

@@ -244,6 +244,7 @@ describe("cascade deletes", () => {
       genre: "",
       targetWordCount: 0,
       mode: "prose",
+      coverImageUrl: "",
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     });

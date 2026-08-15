@@ -48,6 +48,7 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     genre: "",
     targetWordCount: 0,
     mode: "prose",
+    coverImageUrl: "",
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
