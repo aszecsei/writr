@@ -56,6 +56,14 @@ Tools (`tool-calling/tools/`):
 
 Serializes style guide entries, guardrail entries, and the outline grid to the XML blocks `prompts.ts` embeds in the system context.
 
+## Chat panel (`src/components/ai/AiPanel.tsx`, `src/hooks/ai/`)
+
+`AiPanel` is composition only: layout, `MessageList`, `PromptInput`, and wiring between them. The supporting logic lives in `src/hooks/ai/`:
+
+- `useDelegationHost` — builds the `DelegationHost` a chat agent's `agentContext.delegation` uses so its `delegate` and `present_choice` tool calls can run named sub-agents and bubble user prompts to the panel.
+- `usePendingGates` — the `PendingGatesBar` state: `pushGate` (used both by `useDelegationHost` and directly for the nested-accessor's tool approval) and `resolveGate`/`resetGates`.
+- `useAgentRun` — one run's loading/error/elapsed-time state, the abort controller, and the per-tool approval gate (`awaitToolApproval`/`resolveToolApproval`) that drives the inline Approve/Deny buttons on a pending tool call in `MessageList`.
+
 ## Conventions
 
 - New AI features should add a tool in `tool-calling/tools/` rather than embedding logic in prompts. The tool registry is the seam.
