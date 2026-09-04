@@ -22,7 +22,7 @@ import {
 } from "@/hooks/data/useBibleEntries";
 import { useChapter, useManuscriptChapters } from "@/hooks/data/useChapter";
 import { useLoreRetrieval } from "@/hooks/data/useLoreRetrieval";
-import { useProject } from "@/hooks/data/useProject";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import {
   type Agent,
@@ -80,7 +80,7 @@ function resolveDrill(
 
 export function AiPanel() {
   const projectId = useProjectStore((s) => s.activeProjectId);
-  const project = useProject(projectId);
+  const project = useActiveProject();
   const openModal = useUiStore((s) => s.openModal);
   const savedPrompts = useAvailableSavedPrompts(projectId);
   const characters = useCharactersByProject(projectId);
@@ -131,14 +131,12 @@ export function AiPanel() {
     messagesRef.current = messages;
   }, [messages]);
 
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
-
   const buildContext = useCallback((): AiContext => {
     return {
       projectTitle: project?.title ?? "",
       projectDescription: project?.description ?? "",
       genre: project?.genre ?? "",
-      projectMode: activeProjectMode ?? "prose",
+      projectMode: project?.mode ?? "prose",
       styleGuide: (styleGuide ?? []).filter((e) =>
         isActiveInProject(e, projectId),
       ),
@@ -161,7 +159,6 @@ export function AiPanel() {
     chapters,
     activeChapter,
     selectedText,
-    activeProjectMode,
   ]);
 
   /**

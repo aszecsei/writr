@@ -15,6 +15,7 @@ import {
 import type { ChapterId, ChapterSection, ProjectId, Scene } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useBinderTree } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useScenesByProject } from "@/hooks/data/useScene";
 import { useBinderDragDrop } from "@/hooks/ui/useBinderDragDrop";
 import { useBinderRename } from "@/hooks/ui/useBinderRename";
@@ -34,7 +35,6 @@ import {
   reorderScenesInChapter,
 } from "@/lib/scenes/scene-surgery";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 import { BinderContextMenu } from "./BinderContextMenu";
 import {
@@ -102,7 +102,7 @@ export function BinderSection({
   const openChapters = useUiStore((s) => s.openChapters);
   const toggleChapterOpen = useUiStore((s) => s.toggleChapterOpen);
   const setChapterOpen = useUiStore((s) => s.setChapterOpen);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
   const sceneTerm = getTerm(projectMode, "scene");
   const sceneCountTerm = getTerm(projectMode, "scenes").toLowerCase();
 

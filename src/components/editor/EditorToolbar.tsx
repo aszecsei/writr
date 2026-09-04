@@ -24,6 +24,7 @@ import { updateAppSettings } from "@/db/operations";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { getTerm } from "@/lib/terminology";
 import { extractReadAloudText } from "@/lib/tts/extract";
 import { useCommentStore } from "@/store/commentStore";
@@ -163,8 +164,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
   const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProject = useActiveProject();
+  const activeProjectTitle = activeProject?.title ?? null;
+  const activeProjectMode = activeProject?.mode ?? null;
 
   // Grammar checking — enabled state is persisted in AppSettings.
   const grammarEnabled = settings?.grammarCheckerEnabled ?? false;

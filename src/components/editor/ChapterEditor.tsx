@@ -8,6 +8,7 @@ import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { ChapterId, Comment, ProjectId, SceneId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useScenesByChapter } from "@/hooks/data/useScene";
 import { useAutoSave } from "@/hooks/editor/useAutoSave";
 import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
@@ -84,8 +85,9 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     (s) => s.sentenceLengthPreviewEnabled,
   );
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProject = useActiveProject();
+  const activeProjectTitle = activeProject?.title ?? null;
+  const activeProjectMode = activeProject?.mode ?? null;
   const isScreenplay = activeProjectMode === "screenplay";
   const marginVisible = useCommentStore((s) => s.marginVisible);
   const closeFindReplace = useFindReplaceStore((s) => s.close);
