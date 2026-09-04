@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import type { CompletionParams } from "@/lib/ai/adapters";
-import { PROVIDER_ADAPTERS } from "@/lib/ai/provider-adapters";
+import { PROVIDER_ADAPTERS } from "@/lib/ai/adapters";
 import { PROVIDERS } from "@/lib/ai/providers";
 import { AiRequestSchema } from "./request-schema";
 

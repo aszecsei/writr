@@ -1,9 +1,23 @@
-import type { CacheControl, ContentPart } from "../types";
+import type { AiUsage, CacheControl, ContentPart } from "../types";
 
 interface ParsedImageDataUrl {
   mimeType: string;
   data: string;
 }
+
+/**
+ * Coarsens a `ReasoningEffort` down to the smaller scale a couple of
+ * providers use for reasoning-adjacent knobs: Anthropic's Claude 4.6
+ * `output_config.effort` and OpenRouter's `verbosity` workaround for the same
+ * model family. Shared so the two adapters can't drift.
+ */
+export const REASONING_EFFORT_SCALE: Record<string, string> = {
+  xhigh: "max",
+  high: "high",
+  medium: "medium",
+  low: "low",
+  minimal: "low",
+};
 
 export interface ExtractedTextContent {
   text: string;
@@ -67,4 +81,39 @@ export function parseBase64ImageDataUrl(
  */
 export function generateToolUseId(): string {
   return `call_${crypto.randomUUID()}`;
+}
+
+/**
+ * Build an `AiUsage` object. `totalTokens` defaults to `promptTokens +
+ * completionTokens` (Anthropic reports base input tokens separately from
+ * cache tokens, so callers pre-sum them into `promptTokens`); pass it
+ * explicitly when the provider reports its own total that isn't a plain sum
+ * of the two (e.g. Google's total also covers thinking tokens). Cache fields
+ * are included only when positive.
+ */
+export function toAiUsage(input: {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens?: number;
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
+}): AiUsage {
+  const {
+    promptTokens,
+    completionTokens,
+    totalTokens = promptTokens + completionTokens,
+    cacheCreationTokens,
+    cacheReadTokens,
+  } = input;
+  return {
+    prompt_tokens: promptTokens,
+    completion_tokens: completionTokens,
+    total_tokens: totalTokens,
+    ...(cacheCreationTokens && cacheCreationTokens > 0
+      ? { cache_creation_tokens: cacheCreationTokens }
+      : {}),
+    ...(cacheReadTokens && cacheReadTokens > 0
+      ? { cache_read_tokens: cacheReadTokens }
+      : {}),
+  };
 }

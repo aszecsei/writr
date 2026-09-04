@@ -11,6 +11,8 @@ import {
   extractTextContent,
   generateToolUseId,
   parseBase64ImageDataUrl,
+  REASONING_EFFORT_SCALE,
+  toAiUsage,
 } from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
@@ -155,14 +157,6 @@ const BUDGET_MAP: Record<string, number> = {
   xhigh: 32768,
 };
 
-const EFFORT_MAP: Record<string, string> = {
-  xhigh: "max",
-  high: "high",
-  medium: "medium",
-  low: "low",
-  minimal: "low",
-};
-
 function isAdaptiveModel(model: string): boolean {
   return (
     model.startsWith("claude-opus-4-6") || model.startsWith("claude-sonnet-4-6")
@@ -184,7 +178,7 @@ function getBudget(
 function buildThinkingConfig(params: CompletionParams): object {
   if (hasThinking(params.reasoning)) {
     if (isAdaptiveModel(params.model)) {
-      let effort = EFFORT_MAP[params.reasoning.effort] ?? "high";
+      let effort = REASONING_EFFORT_SCALE[params.reasoning.effort] ?? "high";
       if (effort === "max" && !params.model.startsWith("claude-opus-4-6")) {
         effort = "high";
       }
@@ -284,24 +278,17 @@ export function createAnthropicAdapter(): ProviderAdapter {
       const cacheCreationTokens =
         response.usage.cache_creation_input_tokens ?? 0;
       const cacheReadTokens = response.usage.cache_read_input_tokens ?? 0;
-      const promptTokens =
-        response.usage.input_tokens + cacheCreationTokens + cacheReadTokens;
-      const completionTokens = response.usage.output_tokens;
       return {
         content: text,
         reasoning: reasoning || undefined,
         model: response.model,
-        usage: {
-          prompt_tokens: promptTokens,
-          completion_tokens: completionTokens,
-          total_tokens: promptTokens + completionTokens,
-          ...(cacheCreationTokens > 0
-            ? { cache_creation_tokens: cacheCreationTokens }
-            : {}),
-          ...(cacheReadTokens > 0
-            ? { cache_read_tokens: cacheReadTokens }
-            : {}),
-        },
+        usage: toAiUsage({
+          promptTokens:
+            response.usage.input_tokens + cacheCreationTokens + cacheReadTokens,
+          completionTokens: response.usage.output_tokens,
+          cacheCreationTokens,
+          cacheReadTokens,
+        }),
         finishReason: normalizeStopReason(response.stop_reason),
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       };
@@ -405,24 +392,18 @@ export function createAnthropicAdapter(): ProviderAdapter {
                 cacheReadTokens = usage.cache_read_input_tokens;
             }
             if (e.delta.stop_reason) {
-              const promptTokens =
-                inputTokens + cacheCreationTokens + cacheReadTokens;
               yields.push({
                 type: "stop",
                 finishReason: normalizeStopReason(e.delta.stop_reason),
                 ...(usageSeen
                   ? {
-                      usage: {
-                        prompt_tokens: promptTokens,
-                        completion_tokens: outputTokens,
-                        total_tokens: promptTokens + outputTokens,
-                        ...(cacheCreationTokens > 0
-                          ? { cache_creation_tokens: cacheCreationTokens }
-                          : {}),
-                        ...(cacheReadTokens > 0
-                          ? { cache_read_tokens: cacheReadTokens }
-                          : {}),
-                      },
+                      usage: toAiUsage({
+                        promptTokens:
+                          inputTokens + cacheCreationTokens + cacheReadTokens,
+                        completionTokens: outputTokens,
+                        cacheCreationTokens,
+                        cacheReadTokens,
+                      }),
                     }
                   : {}),
               });
