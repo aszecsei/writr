@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { Editor } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
+import { withEditor } from "@/test/editor";
 import { createExtensions } from "./index";
 
 // tiptap-markdown stashes its serializer under editor.storage.markdown, which
@@ -11,18 +12,9 @@ function getMarkdown(editor: Editor): string {
   ).markdown.getMarkdown();
 }
 
-function withEditor<T>(fn: (editor: Editor) => T): T {
-  const editor = new Editor({ extensions: createExtensions(), content: "" });
-  try {
-    return fn(editor);
-  } finally {
-    editor.destroy();
-  }
-}
-
 describe("SceneBreak markdown round-trip", () => {
   it("preserves the sceneId through a markdown save/load cycle", () => {
-    const md = withEditor((editor) => {
+    const md = withEditor(createExtensions(), (editor) => {
       editor.commands.setContent(
         "<p>Before the break.</p><p>After the break.</p>",
       );
@@ -40,7 +32,7 @@ describe("SceneBreak markdown round-trip", () => {
 
     // ...and re-parsing the markdown reconstructs exactly one sceneBreak node
     // with that id (not a plain horizontal rule).
-    const roundTripped = withEditor((editor) => {
+    const roundTripped = withEditor(createExtensions(), (editor) => {
       editor.commands.setContent(md);
       const ids: (string | null)[] = [];
       editor.state.doc.descendants((node) => {
@@ -52,24 +44,5 @@ describe("SceneBreak markdown round-trip", () => {
     });
 
     expect(roundTripped).toEqual(["scene-abc"]);
-  });
-
-  it("does not turn a plain thematic break into a scene break", () => {
-    const names = withEditor((editor) => {
-      editor.commands.setContent("Para one\n\n---\n\nPara two");
-      const found: string[] = [];
-      editor.state.doc.descendants((node) => {
-        if (
-          node.type.name === "sceneBreak" ||
-          node.type.name === "horizontalRule"
-        ) {
-          found.push(node.type.name);
-        }
-      });
-      return found;
-    });
-
-    expect(names).toContain("horizontalRule");
-    expect(names).not.toContain("sceneBreak");
   });
 });

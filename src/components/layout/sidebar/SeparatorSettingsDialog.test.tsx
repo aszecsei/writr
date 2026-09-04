@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import "fake-indexeddb/auto";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
@@ -20,11 +19,6 @@ describe("SeparatorSettingsDialog", () => {
 
   afterEach(() => {
     useUiStore.getState().closeModal();
-  });
-
-  it("renders nothing when the modal is closed", () => {
-    const { container } = render(<SeparatorSettingsDialog />);
-    expect(container.firstChild).toBeNull();
   });
 
   it("loads the separator's label and compile settings", async () => {

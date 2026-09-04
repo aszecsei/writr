@@ -5,29 +5,46 @@ import { planSceneReorder } from "./scene-drag";
 const ids = (...xs: string[]) => xs as SceneId[];
 
 describe("planSceneReorder", () => {
-  it("moves a scene up (before an earlier sibling)", () => {
+  it.each([
+    {
+      desc: "up (before an earlier sibling)",
+      moved: "c",
+      before: "b",
+      expected: ids("a", "c", "b"),
+    },
+    {
+      desc: "down (before a later sibling)",
+      moved: "a",
+      before: "c",
+      expected: ids("b", "a", "c"),
+    },
+  ])("moves a scene $desc", ({ moved, before, expected }) => {
     expect(
-      planSceneReorder(ids("a", "b", "c"), "c" as SceneId, "b" as SceneId),
-    ).toEqual(ids("a", "c", "b"));
+      planSceneReorder(ids("a", "b", "c"), moved as SceneId, before as SceneId),
+    ).toEqual(expected);
   });
 
-  it("moves a scene down (before a later sibling)", () => {
-    // dropping `a` before `c` lands it between b and c
+  it.each([
+    {
+      desc: "moves a scene to the end when beforeId is null",
+      moved: "a",
+      before: null,
+      expected: ids("b", "c", "a"),
+    },
+    {
+      desc: "can move a scene into the core (position 0) slot",
+      moved: "c",
+      before: "a",
+      expected: ids("c", "a", "b"),
+    },
+  ])("$desc", ({ moved, before, expected }) => {
     expect(
-      planSceneReorder(ids("a", "b", "c"), "a" as SceneId, "c" as SceneId),
-    ).toEqual(ids("b", "a", "c"));
-  });
-
-  it("moves a scene to the end when beforeId is null", () => {
-    expect(planSceneReorder(ids("a", "b", "c"), "a" as SceneId, null)).toEqual(
-      ids("b", "c", "a"),
-    );
-  });
-
-  it("can move a scene into the core (position 0) slot", () => {
-    expect(
-      planSceneReorder(ids("a", "b", "c"), "c" as SceneId, "a" as SceneId),
-    ).toEqual(ids("c", "a", "b"));
+      planSceneReorder(
+        ids("a", "b", "c"),
+        moved as SceneId,
+        before as SceneId | null,
+      ),
+    ).toEqual(expected);
   });
 
   it("returns null when dropping a scene onto itself", () => {

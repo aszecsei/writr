@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { Editor } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
+import { withEditor } from "@/test/editor";
 import { createExtensions } from "./index";
 
 // tiptap-markdown stashes its serializer under editor.storage.markdown, which
@@ -11,20 +12,13 @@ function getMarkdown(editor: Editor): string {
   ).markdown.getMarkdown();
 }
 
-/**
- * These guard against a tiptap-markdown serializer bug where emphasis inside a
- * multi-paragraph blockquote round-trips into literal `*> ...` text. The doc is
- * driven entirely through markdown (parse -> serialize) so the assertions match
- * exactly what gets persisted to and reloaded from IndexedDB.
- */
+// Emphasis inside a multi-paragraph blockquote must round-trip through
+// markdown (parse -> serialize) unchanged.
 function roundTrip(markdown: string): string {
-  const editor = new Editor({ extensions: createExtensions(), content: "" });
-  try {
+  return withEditor(createExtensions(), (editor) => {
     editor.commands.setContent(markdown);
     return getMarkdown(editor);
-  } finally {
-    editor.destroy();
-  }
+  });
 }
 
 describe("MarkdownBlockquote serialization", () => {
@@ -44,11 +38,10 @@ describe("MarkdownBlockquote serialization", () => {
   });
 
   it("keeps the list indent on a blockquote nested in a bullet list", () => {
-    // Driven from a doc (not markdown) because markdown-it does not re-nest a
-    // list-indented blockquote on parse; this isolates the serializer, which is
-    // what the fix changes. Continuation lines must carry the `  ` list indent.
-    const editor = new Editor({ extensions: createExtensions(), content: "" });
-    try {
+    // Driven from a doc, not markdown: markdown-it does not re-nest a
+    // list-indented blockquote on parse. Continuation lines must carry the
+    // list's `  ` indent.
+    const md = withEditor(createExtensions(), (editor) => {
       editor.commands.setContent({
         type: "doc",
         content: [
@@ -71,12 +64,9 @@ describe("MarkdownBlockquote serialization", () => {
           },
         ],
       });
-      expect(getMarkdown(editor)).toBe(
-        "- > *First line*\n  >\n  > *Second line*",
-      );
-    } finally {
-      editor.destroy();
-    }
+      return getMarkdown(editor);
+    });
+    expect(md).toBe("- > *First line*\n  >\n  > *Second line*");
   });
 });
 

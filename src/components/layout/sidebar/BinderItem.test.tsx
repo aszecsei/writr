@@ -95,14 +95,6 @@ describe("BinderItem", () => {
     expect(container.textContent).not.toContain("(");
   });
 
-  it("toggles collapse when the chevron is clicked", () => {
-    const { rows, shared } = rowsFor(folderFixture());
-    const onToggleCollapsed = vi.fn();
-    renderRow(rows[0], 0, shared({ onToggleCollapsed }));
-    fireEvent.click(screen.getByLabelText("Collapse"));
-    expect(onToggleCollapsed).toHaveBeenCalledWith(parentId);
-  });
-
   it("renders a separator as a labelled divider without a link", () => {
     const { rows, shared } = rowsFor([
       makeChapter({
@@ -117,18 +109,28 @@ describe("BinderItem", () => {
     expect(container.querySelector("a")).toBeNull();
   });
 
-  it("toggles collapse when a separator's chevron is clicked", () => {
-    const { rows, shared } = rowsFor([
-      makeChapter({
-        projectId,
-        id: sepId,
-        title: "Part One",
-        kind: "separator",
-      }),
-    ]);
-    const onToggleCollapsed = vi.fn();
-    renderRow(rows[0], 0, shared({ onToggleCollapsed }));
-    fireEvent.click(screen.getByLabelText("Collapse"));
-    expect(onToggleCollapsed).toHaveBeenCalledWith(sepId);
-  });
+  it.each([
+    { label: "a chapter", fixture: folderFixture(), expectedId: parentId },
+    {
+      label: "a separator",
+      fixture: [
+        makeChapter({
+          projectId,
+          id: sepId,
+          title: "Part One",
+          kind: "separator",
+        }),
+      ],
+      expectedId: sepId,
+    },
+  ])(
+    "toggles collapse when $label's chevron is clicked",
+    ({ fixture, expectedId }) => {
+      const { rows, shared } = rowsFor(fixture);
+      const onToggleCollapsed = vi.fn();
+      renderRow(rows[0], 0, shared({ onToggleCollapsed }));
+      fireEvent.click(screen.getByLabelText("Collapse"));
+      expect(onToggleCollapsed).toHaveBeenCalledWith(expectedId);
+    },
+  );
 });

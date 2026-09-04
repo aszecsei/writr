@@ -5,7 +5,7 @@ import { AccordionSection } from "./AccordionSection";
 
 describe("AccordionSection", () => {
   it("renders open by default with the description", () => {
-    const { container } = render(
+    render(
       <AccordionSection
         title="Sentence Length"
         description="How it breaks down."
@@ -13,7 +13,9 @@ describe("AccordionSection", () => {
         <p>content</p>
       </AccordionSection>,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("How it breaks down.")).toBeInTheDocument();
+    expect(screen.getByText("content")).toBeInTheDocument();
   });
 
   it("renders collapsed when defaultOpen is false", () => {
