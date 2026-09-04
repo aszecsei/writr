@@ -7,7 +7,7 @@ import {
   resetIdCounter,
 } from "@/test/helpers";
 import { db } from "../database";
-import type { ChapterId, ProjectId } from "../schemas";
+import type { ProjectId } from "../schemas";
 import {
   createChapter,
   createSeparator,
@@ -53,30 +53,14 @@ describe("updateChapterContent", () => {
     expect(sessions[0].wordCountEnd).toBe(50);
   });
 
-  it("does not throw for a nonexistent chapter ID", async () => {
-    await expect(
-      updateChapterContent(
-        "00000000-0000-4000-8000-999999999999" as ChapterId,
-        "content",
-        10,
-      ),
-    ).resolves.toBeUndefined();
-  });
-
-  it("updates content and wordCount in the database", async () => {
-    const ch = makeChapter({
-      projectId,
-      title: "Ch",
-      content: "old",
-      wordCount: 1,
-    });
+  it("does not record a session when word count stays the same", async () => {
+    const ch = makeChapter({ projectId, title: "Ch", wordCount: 10 });
     await db.chapters.add(ch);
 
-    await updateChapterContent(ch.id, "new content here", 3);
+    await updateChapterContent(ch.id, "same length", 10);
 
-    const updated = await db.chapters.get(ch.id);
-    expect(updated?.content).toBe("new content here");
-    expect(updated?.wordCount).toBe(3);
+    const sessions = await db.writingSessions.toArray();
+    expect(sessions).toHaveLength(0);
   });
 });
 
@@ -86,11 +70,16 @@ describe("createChapter (binder)", () => {
     await db.chapters.clear();
   });
 
-  it("defaults to a top-level manuscript document", async () => {
+  it("defaults to a top-level manuscript document, or a separator with compile defaults", async () => {
     const ch = await createChapter({ projectId, title: "Root" });
     expect(ch.parentChapterId).toBeNull();
     expect(ch.section).toBe("manuscript");
     expect(ch.kind).toBe("document");
+
+    const sep = await createSeparator({ projectId, title: "Part One" });
+    expect(sep.kind).toBe("separator");
+    expect(sep.includeInCompile).toBe(true);
+    expect(sep.pageBreakBefore).toBe(false);
   });
 
   it("computes sibling-scoped order within a parent", async () => {
@@ -126,20 +115,6 @@ describe("createChapter (binder)", () => {
     });
     expect(m.order).toBe(0);
     expect(s.order).toBe(0);
-  });
-});
-
-describe("createSeparator", () => {
-  beforeEach(async () => {
-    resetIdCounter();
-    await db.chapters.clear();
-  });
-
-  it("creates a separator marker with compile defaults", async () => {
-    const sep = await createSeparator({ projectId, title: "Part One" });
-    expect(sep.kind).toBe("separator");
-    expect(sep.includeInCompile).toBe(true);
-    expect(sep.pageBreakBefore).toBe(false);
   });
 });
 

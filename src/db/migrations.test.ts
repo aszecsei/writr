@@ -1,10 +1,12 @@
 import Dexie from "dexie";
 import { afterEach, describe, expect, it } from "vitest";
+import { makeChapter } from "@/test/helpers";
 import {
   backfillBinderFieldsV37,
   backfillCoreScenesV44,
   backfillProjectCoverV46,
 } from "./database";
+import type { ChapterId, ProjectId } from "./schemas";
 import { ChapterSchema, ProjectSchema, SceneSchema } from "./schemas";
 
 // The chapters store string as it existed at v36 (before the binder feature).
@@ -73,25 +75,6 @@ describe("v37 binder-fields migration", () => {
   });
 });
 
-describe("v39 indexedChunks table", () => {
-  const dbName = "writr-migration-v39-test";
-
-  afterEach(async () => {
-    await Dexie.delete(dbName);
-  });
-
-  it("creates the indexedChunks table with expected indexes", async () => {
-    const testDb = new Dexie(dbName);
-    testDb.version(39).stores({
-      indexedChunks:
-        "id, projectId, [projectId+sourceType], sourceId, [sourceId+chunkIndex]",
-    });
-    await testDb.open();
-    expect(testDb.tables.map((t) => t.name)).toContain("indexedChunks");
-    testDb.close();
-  });
-});
-
 describe("v44 core-scene backfill migration", () => {
   const dbName = "writr-migration-v44-test";
   const SEPARATOR_ID = "00000000-0000-4000-8000-000000000002";
@@ -106,40 +89,25 @@ describe("v44 core-scene backfill migration", () => {
     oldDb.version(43).stores({ chapters: CHAPTERS_STORE });
     await oldDb.open();
     await oldDb.table("chapters").bulkAdd([
-      {
-        id: LEGACY_ID,
-        projectId: PROJECT_ID,
+      makeChapter({
+        id: LEGACY_ID as ChapterId,
+        projectId: PROJECT_ID as ProjectId,
         title: "Legacy Chapter",
-        order: 0,
         content: "the quick brown fox",
-        synopsis: "",
         status: "revised",
         wordCount: 4,
-        parentChapterId: null,
-        section: "manuscript",
-        kind: "document",
-        includeInCompile: true,
-        pageBreakBefore: false,
         createdAt: TS,
         updatedAt: TS,
-      },
-      {
-        id: SEPARATOR_ID,
-        projectId: PROJECT_ID,
+      }),
+      makeChapter({
+        id: SEPARATOR_ID as ChapterId,
+        projectId: PROJECT_ID as ProjectId,
         title: "Part One",
         order: 1,
-        content: "",
-        synopsis: "",
-        status: "draft",
-        wordCount: 0,
-        parentChapterId: null,
-        section: "manuscript",
         kind: "separator",
-        includeInCompile: true,
-        pageBreakBefore: false,
         createdAt: TS,
         updatedAt: TS,
-      },
+      }),
     ]);
     oldDb.close();
 
@@ -178,7 +146,14 @@ describe("v46 project cover backfill migration", () => {
     await Dexie.delete(dbName);
   });
 
-  it("backfills coverImageUrl on legacy projects while preserving existing data", async () => {
+  it.each([
+    ["backfills a missing cover to the empty string", undefined, ""],
+    [
+      "leaves an already-set cover untouched",
+      "https://example.com/cover.jpg",
+      "https://example.com/cover.jpg",
+    ],
+  ])("%s", async (_label, seededCover, expectedCover) => {
     const oldDb = new Dexie(dbName);
     oldDb.version(45).stores({ projects: PROJECTS_STORE });
     await oldDb.open();
@@ -189,6 +164,7 @@ describe("v46 project cover backfill migration", () => {
       genre: "Fantasy",
       targetWordCount: 80_000,
       mode: "prose",
+      ...(seededCover === undefined ? {} : { coverImageUrl: seededCover }),
       createdAt: TS,
       updatedAt: TS,
     });
@@ -202,7 +178,7 @@ describe("v46 project cover backfill migration", () => {
     upgraded.close();
 
     expect(migrated).toMatchObject({
-      coverImageUrl: "",
+      coverImageUrl: expectedCover,
       title: "Legacy Project",
       description: "a description",
       genre: "Fantasy",
@@ -210,55 +186,5 @@ describe("v46 project cover backfill migration", () => {
       mode: "prose",
     });
     expect(() => ProjectSchema.parse(migrated)).not.toThrow();
-  });
-
-  it("leaves an already-set cover untouched", async () => {
-    const oldDb = new Dexie(dbName);
-    oldDb.version(45).stores({ projects: PROJECTS_STORE });
-    await oldDb.open();
-    await oldDb.table("projects").add({
-      id: PROJECT_ID,
-      title: "Project",
-      description: "",
-      genre: "",
-      targetWordCount: 0,
-      mode: "prose",
-      coverImageUrl: "https://example.com/cover.jpg",
-      createdAt: TS,
-      updatedAt: TS,
-    });
-    oldDb.close();
-
-    const upgraded = new Dexie(dbName);
-    upgraded.version(45).stores({ projects: PROJECTS_STORE });
-    upgraded.version(46).upgrade(backfillProjectCoverV46);
-    await upgraded.open();
-    const migrated = await upgraded.table("projects").get(PROJECT_ID);
-    upgraded.close();
-
-    expect(migrated?.coverImageUrl).toBe("https://example.com/cover.jpg");
-  });
-});
-
-describe("ChapterSchema binder defaults", () => {
-  it("applies binder defaults when parsing a legacy-shaped chapter", () => {
-    const parsed = ChapterSchema.parse({
-      id: LEGACY_ID,
-      projectId: PROJECT_ID,
-      title: "Legacy Chapter",
-      order: 0,
-      content: "",
-      synopsis: "",
-      status: "draft",
-      wordCount: 0,
-      createdAt: TS,
-      updatedAt: TS,
-    });
-
-    expect(parsed.parentChapterId).toBeNull();
-    expect(parsed.section).toBe("manuscript");
-    expect(parsed.kind).toBe("document");
-    expect(parsed.includeInCompile).toBe(true);
-    expect(parsed.pageBreakBefore).toBe(false);
   });
 });

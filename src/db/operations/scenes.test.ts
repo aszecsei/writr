@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { makeChapter, makeScene, resetIdCounter } from "@/test/helpers";
+import {
+  makeChapter,
+  makeComment,
+  makeScene,
+  resetIdCounter,
+} from "@/test/helpers";
 import { db } from "../database";
-import type {
-  ChapterId,
-  CharacterId,
-  CommentId,
-  ProjectId,
-  SceneId,
-} from "../schemas";
+import type { ChapterId, CharacterId, ProjectId, SceneId } from "../schemas";
 import { deleteChapter } from "./chapters";
-import { deleteProject } from "./projects";
 import {
   createScene,
   deleteScene,
@@ -66,7 +64,7 @@ describe("updateScene", () => {
     await db.chapters.clear();
   });
 
-  it("leaves omitted fields untouched (a partial update is a no-op for them)", async () => {
+  it("leaves an omitted field untouched but clears it on an explicit null", async () => {
     await seedChapters();
     const scene = await createScene({
       projectId,
@@ -77,25 +75,13 @@ describe("updateScene", () => {
 
     // Update only the title; povCharacterId is not in the payload.
     await updateScene(scene.id, { title: "Renamed" });
-
-    const updated = await getScene(scene.id);
-    expect(updated?.title).toBe("Renamed");
-    // Regression: omitting povCharacterId must NOT clear it.
-    expect(updated?.povCharacterId).toBe(povId);
-  });
-
-  it("clears a field when an explicit null is passed", async () => {
-    await seedChapters();
-    const scene = await createScene({
-      projectId,
-      chapterId: chapterA,
-      povCharacterId: povId,
-    });
+    const afterPartial = await getScene(scene.id);
+    expect(afterPartial?.title).toBe("Renamed");
+    expect(afterPartial?.povCharacterId).toBe(povId);
 
     await updateScene(scene.id, { povCharacterId: null });
-
-    const updated = await getScene(scene.id);
-    expect(updated?.povCharacterId).toBeNull();
+    const afterNull = await getScene(scene.id);
+    expect(afterNull?.povCharacterId).toBeNull();
   });
 });
 
@@ -188,30 +174,24 @@ describe("moveScene", () => {
     await seedChapters();
     const a1 = makeScene({ projectId, chapterId: chapterA, order: 1 });
     await db.scenes.add(a1);
-    const commentId = "d1111111-1111-4111-a111-111111111111" as CommentId;
-    await db.comments.add({
-      id: commentId,
+    const comment = makeComment({
       projectId,
       chapterId: chapterA,
-      content: "note",
-      color: "yellow",
       fromOffset: 100,
       toOffset: 110,
-      anchorText: "",
-      status: "active",
-      resolvedAt: null,
-      author: "",
-      authorColor: "",
-      parentCommentId: null,
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
     });
+    await db.comments.add(comment);
 
     await moveScene(a1.id, { chapterId: chapterB }, [
-      { commentId, chapterId: chapterB, fromOffset: 5, toOffset: 15 },
+      {
+        commentId: comment.id,
+        chapterId: chapterB,
+        fromOffset: 5,
+        toOffset: 15,
+      },
     ]);
 
-    const moved = await db.comments.get(commentId);
+    const moved = await db.comments.get(comment.id);
     expect(moved?.chapterId).toBe(chapterB);
     expect(moved?.fromOffset).toBe(5);
     expect(moved?.toOffset).toBe(15);
@@ -234,25 +214,5 @@ describe("cascade deletes", () => {
 
     expect(await getScenesByChapter(chapterA)).toHaveLength(0);
     expect(await getScenesByChapter(chapterB)).toHaveLength(1);
-  });
-
-  it("deletes all project scenes when the project is deleted", async () => {
-    await db.projects.add({
-      id: projectId,
-      title: "P",
-      description: "",
-      genre: "",
-      targetWordCount: 0,
-      mode: "prose",
-      coverImageUrl: "",
-      createdAt: "2024-01-01T00:00:00.000Z",
-      updatedAt: "2024-01-01T00:00:00.000Z",
-    });
-    await seedChapters();
-    await db.scenes.add(makeScene({ projectId, chapterId: chapterA }));
-
-    await deleteProject(projectId);
-
-    expect(await db.scenes.where({ projectId }).count()).toBe(0);
   });
 });

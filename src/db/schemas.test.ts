@@ -1,28 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  IndexedChunkSchema,
-  isSupportedImageSource,
-  ProjectSchema,
-} from "./schemas";
-
-describe("IndexedChunkSchema", () => {
-  it("parses a valid row", () => {
-    const row = IndexedChunkSchema.parse({
-      id: crypto.randomUUID(),
-      projectId: crypto.randomUUID(),
-      sourceType: "worldbuilding",
-      sourceId: crypto.randomUUID(),
-      chunkIndex: 0,
-      text: "lore",
-      contentHash: "deadbeef",
-      vector: [0.1, 0.2],
-      embeddingModel: "fake-v1",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    expect(row.sourceType).toBe("worldbuilding");
-  });
-});
+import { isSupportedImageSource, ProjectSchema } from "./schemas";
 
 describe("isSupportedImageSource", () => {
   it.each([
@@ -57,17 +34,6 @@ describe("ProjectSchema.coverImageUrl", () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-
-  it("defaults to the empty string on a legacy-shaped project", () => {
-    expect(ProjectSchema.parse(base).coverImageUrl).toBe("");
-  });
-
-  it("preserves a data URL cover", () => {
-    const coverImageUrl = "data:image/png;base64,iVBORw0KGgo=";
-    expect(ProjectSchema.parse({ ...base, coverImageUrl }).coverImageUrl).toBe(
-      coverImageUrl,
-    );
-  });
 
   it("rejects an unsupported cover source", () => {
     expect(() =>

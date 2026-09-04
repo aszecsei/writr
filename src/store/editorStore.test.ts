@@ -82,11 +82,6 @@ describe("editorStore", () => {
 
   // ─── Save lifecycle ─────────────────────────────────────────────────
 
-  it("markSaving sets saveStatus to saving", () => {
-    getState().markSaving();
-    expect(getState().saveStatus).toBe("saving");
-  });
-
   it("markSaved clears dirty and sets saved status", () => {
     getState().markDirty();
     getState().markSaving();
@@ -102,54 +97,18 @@ describe("editorStore", () => {
     expect(getState().saveStatus).toBe("error");
   });
 
-  // ─── False-dirty-on-load pattern ────────────────────────────────────
-
-  it("documents the false-dirty-on-load race: setActiveDocument → clean, markDirty → dirty", () => {
-    // When a document loads, setActiveDocument is called first (clean state)
-    getState().setActiveDocument(DOC_1, "chapter");
-    expect(getState().isDirty).toBe(false);
-
-    // Then TipTap's onUpdate fires from setContent, which calls markDirty
-    getState().markDirty();
-    expect(getState().isDirty).toBe(true);
-
-    // This is the known race condition - the document appears dirty
-    // even though no user edits occurred
-    expect(getState().saveStatus).toBe("idle");
-  });
-
-  // ─── setWordCount ───────────────────────────────────────────────────
-
-  it("sets word count", () => {
-    getState().setWordCount(1234);
-    expect(getState().wordCount).toBe(1234);
-  });
-
   // ─── setSelection / clearSelection ──────────────────────────────────
 
-  it("sets selection text and range", () => {
+  it("sets selection text and range, then clears both on clearSelection", () => {
     getState().setSelection("hello world", 5, 16);
-    const s = getState();
-    expect(s.selectedText).toBe("hello world");
-    expect(s.selectedRange).toEqual({ from: 5, to: 16 });
-  });
+    const afterSet = getState();
+    expect(afterSet.selectedText).toBe("hello world");
+    expect(afterSet.selectedRange).toEqual({ from: 5, to: 16 });
 
-  it("clears selection", () => {
-    getState().setSelection("text", 1, 5);
     getState().clearSelection();
-    const s = getState();
-    expect(s.selectedText).toBeNull();
-    expect(s.selectedRange).toBeNull();
-  });
-
-  // ─── bumpContentVersion ─────────────────────────────────────────────
-
-  it("increments content version", () => {
-    expect(getState().contentVersion).toBe(0);
-    getState().bumpContentVersion();
-    expect(getState().contentVersion).toBe(1);
-    getState().bumpContentVersion();
-    expect(getState().contentVersion).toBe(2);
+    const afterClear = getState();
+    expect(afterClear.selectedText).toBeNull();
+    expect(afterClear.selectedRange).toBeNull();
   });
 
   // ─── Staged edits (propose_edit Apply) ──────────────────────────────

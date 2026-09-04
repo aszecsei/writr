@@ -6,6 +6,8 @@ import { getIndexedChunksBySource, putIndexedChunk } from "./indexedChunks";
 import {
   createWorldbuildingDoc,
   deleteWorldbuildingDoc,
+  getWorldbuildingDoc,
+  updateWorldbuildingDoc,
 } from "./worldbuilding";
 
 const projectId = "b2222222-2222-4222-a222-222222222222" as ProjectId;
@@ -80,6 +82,140 @@ describe("deleteWorldbuildingDoc", () => {
   });
 });
 
+describe("deleteWorldbuildingDoc (re-parenting)", () => {
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.worldbuildingDocs.clear();
+  });
+
+  it("children adopted by deleted doc's parent", async () => {
+    const grandparent = makeWorldbuildingDoc({
+      projectId,
+      title: "Grandparent",
+    });
+    const parent = makeWorldbuildingDoc({
+      projectId,
+      title: "Parent",
+      parentDocId: grandparent.id,
+    });
+    const child = makeWorldbuildingDoc({
+      projectId,
+      title: "Child",
+      parentDocId: parent.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([grandparent, parent, child]);
+
+    await deleteWorldbuildingDoc(parent.id);
+
+    const updated = await getWorldbuildingDoc(child.id);
+    expect(updated?.parentDocId).toBe(grandparent.id);
+  });
+
+  it("root doc deleted -> children become roots", async () => {
+    const root = makeWorldbuildingDoc({ projectId, title: "Root" });
+    const child = makeWorldbuildingDoc({
+      projectId,
+      title: "Child",
+      parentDocId: root.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([root, child]);
+
+    await deleteWorldbuildingDoc(root.id);
+
+    const updated = await getWorldbuildingDoc(child.id);
+    expect(updated?.parentDocId).toBeNull();
+  });
+
+  it("leaf doc deletion leaves parent intact", async () => {
+    const parent = makeWorldbuildingDoc({ projectId, title: "Parent" });
+    const leaf = makeWorldbuildingDoc({
+      projectId,
+      title: "Leaf",
+      parentDocId: parent.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([parent, leaf]);
+
+    await deleteWorldbuildingDoc(leaf.id);
+
+    const parentDoc = await getWorldbuildingDoc(parent.id);
+    expect(parentDoc).toBeDefined();
+    expect(parentDoc?.title).toBe("Parent");
+  });
+});
+
+describe("updateWorldbuildingDoc (cycle detection)", () => {
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.worldbuildingDocs.clear();
+  });
+
+  it("throws on direct cycle (parent moved under child)", async () => {
+    const parent = makeWorldbuildingDoc({ projectId, title: "Parent" });
+    const child = makeWorldbuildingDoc({
+      projectId,
+      title: "Child",
+      parentDocId: parent.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([parent, child]);
+
+    await expect(
+      updateWorldbuildingDoc(parent.id, { parentDocId: child.id }),
+    ).rejects.toThrow("Cannot move a document under one of its own children.");
+  });
+
+  it("throws on indirect cycle (A->B->C, move A under C)", async () => {
+    const a = makeWorldbuildingDoc({ projectId, title: "A" });
+    const b = makeWorldbuildingDoc({
+      projectId,
+      title: "B",
+      parentDocId: a.id,
+    });
+    const c = makeWorldbuildingDoc({
+      projectId,
+      title: "C",
+      parentDocId: b.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([a, b, c]);
+
+    await expect(
+      updateWorldbuildingDoc(a.id, { parentDocId: c.id }),
+    ).rejects.toThrow("Cannot move a document under one of its own children.");
+  });
+
+  it("throws on self-reference", async () => {
+    const doc = makeWorldbuildingDoc({ projectId, title: "Self" });
+    await db.worldbuildingDocs.add(doc);
+
+    await expect(
+      updateWorldbuildingDoc(doc.id, { parentDocId: doc.id }),
+    ).rejects.toThrow("Cannot move a document under one of its own children.");
+  });
+
+  it("allows valid reparenting", async () => {
+    const a = makeWorldbuildingDoc({ projectId, title: "A" });
+    const b = makeWorldbuildingDoc({ projectId, title: "B" });
+    await db.worldbuildingDocs.bulkAdd([a, b]);
+
+    await expect(
+      updateWorldbuildingDoc(b.id, { parentDocId: a.id }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("allows moving to root (null parent)", async () => {
+    const parent = makeWorldbuildingDoc({ projectId, title: "Parent" });
+    const child = makeWorldbuildingDoc({
+      projectId,
+      title: "Child",
+      parentDocId: parent.id,
+    });
+    await db.worldbuildingDocs.bulkAdd([parent, child]);
+
+    await expect(
+      updateWorldbuildingDoc(child.id, { parentDocId: null }),
+    ).resolves.toBeUndefined();
+  });
+});
+
 describe("createWorldbuildingDoc", () => {
   beforeEach(async () => {
     resetIdCounter();
@@ -98,5 +234,21 @@ describe("createWorldbuildingDoc", () => {
 
     expect(fourth.order).not.toBe(last.order);
     expect(fourth.order).toBe(3);
+  });
+
+  it("scopes order by parentDocId, not globally", async () => {
+    const root1 = await createWorldbuildingDoc({ projectId, title: "Root1" });
+    const root2 = await createWorldbuildingDoc({ projectId, title: "Root2" });
+    const child1 = await createWorldbuildingDoc({
+      projectId,
+      title: "Child1",
+      parentDocId: root1.id,
+    });
+
+    // root1 and root2 are both roots (parentDocId=null), auto-ordered 0,1.
+    expect(root1.order).toBe(0);
+    expect(root2.order).toBe(1);
+    // child1 is under root1, so it starts at 0 within that scope.
+    expect(child1.order).toBe(0);
   });
 });

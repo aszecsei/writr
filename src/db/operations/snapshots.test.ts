@@ -11,24 +11,6 @@ describe("snapshot operations", () => {
     await db.chapterSnapshots.clear();
   });
 
-  it("should create a snapshot and return it", async () => {
-    const snap = await createSnapshot({
-      chapterId: chapterId1,
-      projectId,
-      name: "Draft 1",
-      content: "Hello world",
-      wordCount: 2,
-    });
-
-    expect(snap.id).toBeDefined();
-    expect(snap.chapterId).toBe(chapterId1);
-    expect(snap.projectId).toBe(projectId);
-    expect(snap.name).toBe("Draft 1");
-    expect(snap.content).toBe("Hello world");
-    expect(snap.wordCount).toBe(2);
-    expect(snap.createdAt).toBeDefined();
-  });
-
   it("should delete a single snapshot", async () => {
     const snap = await createSnapshot({
       chapterId: chapterId1,

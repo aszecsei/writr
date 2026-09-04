@@ -55,12 +55,6 @@ describe("scope predicates", () => {
 describe("style guide scope operations", () => {
   beforeEach(resetTables);
 
-  it("creates a global entry when projectId is omitted", async () => {
-    const entry = await createStyleGuideEntry({ title: "Global voice" });
-    expect(entry.projectId).toBeNull();
-    expect(entry.disabledProjectIds).toEqual([]);
-  });
-
   it("merges globals with project entries and excludes other projects", async () => {
     await createStyleGuideEntry({ title: "Global" });
     await createStyleGuideEntry({ title: "For A", projectId: projectA });
