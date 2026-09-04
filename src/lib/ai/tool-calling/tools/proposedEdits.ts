@@ -59,53 +59,38 @@ export const proposeEditTool = defineTool({
     "kind=insert_at needs fromOffset+anchorText (or anchorText alone). " +
     "kind=append appends to the chapter end. " +
     "kind=full_chapter replaces the whole chapter.",
-  parameters: {
-    type: "object",
-    properties: {
-      chapterId: { type: "string", description: "Target chapter id" },
-      kind: {
-        type: "string",
-        enum: ["replace", "insert_at", "append", "full_chapter"],
-      },
-      anchorText: {
-        type: "string",
-        description:
-          "Required for replace (the exact text being replaced) and for insert_at (the surrounding text the insertion sits next to). Must match the chapter VERBATIM, character-for-character.",
-      },
-      prefix: {
-        type: "string",
-        description:
-          "replace only. Verbatim text immediately preceding anchorText, concatenated as prefix+anchorText+suffix to form a unique locator. Use only when anchorText alone repeats. Do NOT add spaces between prefix and anchorText — the substrings are concatenated as-is.",
-      },
-      suffix: {
-        type: "string",
-        description:
-          "replace only. Verbatim text immediately following anchorText. See prefix.",
-      },
-      fromOffset: {
-        type: "number",
-        description: "0-indexed character offset (insert_at only).",
-      },
-      newContent: {
-        type: "string",
-        description: "Replacement / inserted markdown content.",
-      },
-      rationale: {
-        type: "string",
-        description: "One short sentence on why this edit improves the prose.",
-      },
-    },
-    required: ["chapterId", "kind", "newContent"],
-  },
   inputSchema: z.object({
-    chapterId: z.string().uuid(),
+    chapterId: z.string().uuid().describe("Target chapter id"),
     kind: z.enum(["replace", "insert_at", "append", "full_chapter"]),
-    fromOffset: z.number().int().nonnegative().optional(),
-    anchorText: z.string().optional(),
-    prefix: z.string().optional(),
-    suffix: z.string().optional(),
-    newContent: z.string(),
-    rationale: z.string().optional(),
+    fromOffset: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("0-indexed character offset (insert_at only).")
+      .optional(),
+    anchorText: z
+      .string()
+      .describe(
+        "Required for replace (the exact text being replaced) and for insert_at (the surrounding text the insertion sits next to). Must match the chapter VERBATIM, character-for-character.",
+      )
+      .optional(),
+    prefix: z
+      .string()
+      .describe(
+        "replace only. Verbatim text immediately preceding anchorText, concatenated as prefix+anchorText+suffix to form a unique locator. Use only when anchorText alone repeats. Do NOT add spaces between prefix and anchorText — the substrings are concatenated as-is.",
+      )
+      .optional(),
+    suffix: z
+      .string()
+      .describe(
+        "replace only. Verbatim text immediately following anchorText. See prefix.",
+      )
+      .optional(),
+    newContent: z.string().describe("Replacement / inserted markdown content."),
+    rationale: z
+      .string()
+      .describe("One short sentence on why this edit improves the prose.")
+      .optional(),
   }),
   requiresApproval: false,
   async execute(params, context) {

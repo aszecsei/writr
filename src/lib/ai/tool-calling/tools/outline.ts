@@ -121,21 +121,42 @@ function resolveReorder<T extends { id: string }>(
 
 // ─── manage_outline_columns ─────────────────────────────────────────
 
+const COLUMN_OP_DESCRIPTION = "Which column operation to perform.";
+const COLUMN_TITLE_DESCRIPTION =
+  "Column title. Required for create and rename.";
+const COLUMN_REF_DESCRIPTION =
+  "Target column — its id (from reading the outline) or exact title. Required for rename and delete.";
+
 const ColumnOpSchema = z.discriminatedUnion("op", [
   z.object({
-    op: z.literal("create"),
-    title: z.string().min(1),
-    atIndex: z.number().int().nonnegative().optional(),
+    op: z.literal("create").describe(COLUMN_OP_DESCRIPTION),
+    title: z.string().min(1).describe(COLUMN_TITLE_DESCRIPTION),
+    atIndex: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe(
+        "Optional 0-based insert position for create; appends to the right if omitted.",
+      )
+      .optional(),
   }),
   z.object({
-    op: z.literal("rename"),
-    columnRef: z.string().min(1),
-    title: z.string().min(1),
+    op: z.literal("rename").describe(COLUMN_OP_DESCRIPTION),
+    columnRef: z.string().min(1).describe(COLUMN_REF_DESCRIPTION),
+    title: z.string().min(1).describe(COLUMN_TITLE_DESCRIPTION),
   }),
-  z.object({ op: z.literal("delete"), columnRef: z.string().min(1) }),
   z.object({
-    op: z.literal("reorder"),
-    orderedColumnRefs: z.array(z.string().min(1)).min(1),
+    op: z.literal("delete").describe(COLUMN_OP_DESCRIPTION),
+    columnRef: z.string().min(1).describe(COLUMN_REF_DESCRIPTION),
+  }),
+  z.object({
+    op: z.literal("reorder").describe(COLUMN_OP_DESCRIPTION),
+    orderedColumnRefs: z
+      .array(z.string().min(1))
+      .min(1)
+      .describe(
+        "For reorder: the complete set of column ids in the new left-to-right order.",
+      ),
   }),
 ]);
 
@@ -148,37 +169,6 @@ export const manageOutlineColumnsTool = defineTool({
     "op=create adds a column (optional 0-based atIndex; appends if omitted) and returns its id. " +
     "op=rename/delete target a column by id or exact title (columnRef); delete also removes that column's cells. " +
     "op=reorder takes orderedColumnRefs — the COMPLETE set of column ids in the new left-to-right order.",
-  parameters: {
-    type: "object",
-    properties: {
-      op: {
-        type: "string",
-        enum: ["create", "rename", "delete", "reorder"],
-        description: "Which column operation to perform.",
-      },
-      title: {
-        type: "string",
-        description: "Column title. Required for create and rename.",
-      },
-      columnRef: {
-        type: "string",
-        description:
-          "Target column — its id (from reading the outline) or exact title. Required for rename and delete.",
-      },
-      atIndex: {
-        type: "integer",
-        description:
-          "Optional 0-based insert position for create; appends to the right if omitted.",
-      },
-      orderedColumnRefs: {
-        type: "array",
-        items: { type: "string" },
-        description:
-          "For reorder: the complete set of column ids in the new left-to-right order.",
-      },
-    },
-    required: ["op"],
-  },
   inputSchema: ColumnOpSchema,
   requiresApproval: true,
   async execute(params, context) {
@@ -229,21 +219,42 @@ export const manageOutlineColumnsTool = defineTool({
 
 // ─── manage_outline_rows ────────────────────────────────────────────
 
+const ROW_OP_DESCRIPTION = "Which row operation to perform.";
+const ROW_LABEL_DESCRIPTION =
+  "Row label (the beat's short name). Optional for create; required for relabel.";
+const ROW_REF_DESCRIPTION =
+  "Target row — its id (from reading the outline) or exact label. Required for relabel and delete.";
+
 const RowOpSchema = z.discriminatedUnion("op", [
   z.object({
-    op: z.literal("create"),
-    label: z.string().optional(),
-    atIndex: z.number().int().nonnegative().optional(),
+    op: z.literal("create").describe(ROW_OP_DESCRIPTION),
+    label: z.string().describe(ROW_LABEL_DESCRIPTION).optional(),
+    atIndex: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe(
+        "Optional 0-based insert position for create; appends to the bottom if omitted.",
+      )
+      .optional(),
   }),
   z.object({
-    op: z.literal("relabel"),
-    rowRef: z.string().min(1),
-    label: z.string(),
+    op: z.literal("relabel").describe(ROW_OP_DESCRIPTION),
+    rowRef: z.string().min(1).describe(ROW_REF_DESCRIPTION),
+    label: z.string().describe(ROW_LABEL_DESCRIPTION),
   }),
-  z.object({ op: z.literal("delete"), rowRef: z.string().min(1) }),
   z.object({
-    op: z.literal("reorder"),
-    orderedRowRefs: z.array(z.string().min(1)).min(1),
+    op: z.literal("delete").describe(ROW_OP_DESCRIPTION),
+    rowRef: z.string().min(1).describe(ROW_REF_DESCRIPTION),
+  }),
+  z.object({
+    op: z.literal("reorder").describe(ROW_OP_DESCRIPTION),
+    orderedRowRefs: z
+      .array(z.string().min(1))
+      .min(1)
+      .describe(
+        "For reorder: the complete set of row ids in the new top-to-bottom order.",
+      ),
   }),
 ]);
 
@@ -260,38 +271,6 @@ export const manageOutlineRowsTool = defineTool({
     "op=relabel/delete target a row by id or exact label (rowRef); delete also removes that row's cells. " +
     "Rows linked to a chapter cannot be relabeled or deleted here (that would touch the manuscript). " +
     "op=reorder takes orderedRowRefs — the COMPLETE set of row ids in the new top-to-bottom order.",
-  parameters: {
-    type: "object",
-    properties: {
-      op: {
-        type: "string",
-        enum: ["create", "relabel", "delete", "reorder"],
-        description: "Which row operation to perform.",
-      },
-      label: {
-        type: "string",
-        description:
-          "Row label (the beat's short name). Optional for create; required for relabel.",
-      },
-      rowRef: {
-        type: "string",
-        description:
-          "Target row — its id (from reading the outline) or exact label. Required for relabel and delete.",
-      },
-      atIndex: {
-        type: "integer",
-        description:
-          "Optional 0-based insert position for create; appends to the bottom if omitted.",
-      },
-      orderedRowRefs: {
-        type: "array",
-        items: { type: "string" },
-        description:
-          "For reorder: the complete set of row ids in the new top-to-bottom order.",
-      },
-    },
-    required: ["op"],
-  },
   inputSchema: RowOpSchema,
   requiresApproval: true,
   async execute(params, context) {
@@ -345,26 +324,34 @@ export const manageOutlineRowsTool = defineTool({
 
 // ─── write_outline_cell ─────────────────────────────────────────────
 
+const CELL_MODE_DESCRIPTION =
+  "set replaces content; append adds to existing content; clear empties it.";
+const CELL_ROW_REF_DESCRIPTION = "Target row — its id or exact label.";
+const CELL_COLUMN_REF_DESCRIPTION = "Target column — its id or exact title.";
+const CELL_CONTENT_DESCRIPTION =
+  "The cell text — the braided beat. Required for set and append.";
+const CELL_COLOR_DESCRIPTION = "Optional cell color.";
+
 const CellWriteSchema = z.discriminatedUnion("mode", [
   z.object({
-    mode: z.literal("set"),
-    rowRef: z.string().min(1),
-    columnRef: z.string().min(1),
-    content: z.string().min(1),
-    color: OutlineCardColorEnum.optional(),
+    mode: z.literal("set").describe(CELL_MODE_DESCRIPTION),
+    rowRef: z.string().min(1).describe(CELL_ROW_REF_DESCRIPTION),
+    columnRef: z.string().min(1).describe(CELL_COLUMN_REF_DESCRIPTION),
+    content: z.string().min(1).describe(CELL_CONTENT_DESCRIPTION),
+    color: OutlineCardColorEnum.describe(CELL_COLOR_DESCRIPTION).optional(),
   }),
   z.object({
-    mode: z.literal("append"),
-    rowRef: z.string().min(1),
-    columnRef: z.string().min(1),
-    content: z.string().min(1),
-    color: OutlineCardColorEnum.optional(),
+    mode: z.literal("append").describe(CELL_MODE_DESCRIPTION),
+    rowRef: z.string().min(1).describe(CELL_ROW_REF_DESCRIPTION),
+    columnRef: z.string().min(1).describe(CELL_COLUMN_REF_DESCRIPTION),
+    content: z.string().min(1).describe(CELL_CONTENT_DESCRIPTION),
+    color: OutlineCardColorEnum.describe(CELL_COLOR_DESCRIPTION).optional(),
   }),
   z.object({
-    mode: z.literal("clear"),
-    rowRef: z.string().min(1),
-    columnRef: z.string().min(1),
-    color: OutlineCardColorEnum.optional(),
+    mode: z.literal("clear").describe(CELL_MODE_DESCRIPTION),
+    rowRef: z.string().min(1).describe(CELL_ROW_REF_DESCRIPTION),
+    columnRef: z.string().min(1).describe(CELL_COLUMN_REF_DESCRIPTION),
+    color: OutlineCardColorEnum.describe(CELL_COLOR_DESCRIPTION).optional(),
   }),
 ]);
 
@@ -377,36 +364,6 @@ export const writeOutlineCellTool = defineTool({
     "mode=set replaces the cell content; mode=append adds to it (joined by a blank line); " +
     "mode=clear empties the content (color is preserved). " +
     "Optionally set the cell color in the same call.",
-  parameters: {
-    type: "object",
-    properties: {
-      rowRef: {
-        type: "string",
-        description: "Target row — its id or exact label.",
-      },
-      columnRef: {
-        type: "string",
-        description: "Target column — its id or exact title.",
-      },
-      mode: {
-        type: "string",
-        enum: ["set", "append", "clear"],
-        description:
-          "set replaces content; append adds to existing content; clear empties it.",
-      },
-      content: {
-        type: "string",
-        description:
-          "The cell text — the braided beat. Required for set and append.",
-      },
-      color: {
-        type: "string",
-        enum: ["yellow", "pink", "blue", "green", "orange", "purple", "white"],
-        description: "Optional cell color.",
-      },
-    },
-    required: ["rowRef", "columnRef", "mode"],
-  },
   inputSchema: CellWriteSchema,
   requiresApproval: true,
   async execute(params, context) {
@@ -448,9 +405,9 @@ export const writeOutlineCellTool = defineTool({
 // ─── set_outline_cell_color ─────────────────────────────────────────
 
 const CellColorSchema = z.object({
-  rowRef: z.string().min(1),
-  columnRef: z.string().min(1),
-  color: OutlineCardColorEnum,
+  rowRef: z.string().min(1).describe(CELL_ROW_REF_DESCRIPTION),
+  columnRef: z.string().min(1).describe(CELL_COLUMN_REF_DESCRIPTION),
+  color: OutlineCardColorEnum.describe("The cell color."),
 });
 
 export const setOutlineCellColorTool = defineTool({
@@ -460,25 +417,6 @@ export const setOutlineCellColorTool = defineTool({
     "Set the background color of a single cell without touching its content. " +
     "Use to color-code beats (e.g. tension, POV, status). " +
     "Target the cell with rowRef + columnRef (ids from reading the outline, or exact label/title).",
-  parameters: {
-    type: "object",
-    properties: {
-      rowRef: {
-        type: "string",
-        description: "Target row — its id or exact label.",
-      },
-      columnRef: {
-        type: "string",
-        description: "Target column — its id or exact title.",
-      },
-      color: {
-        type: "string",
-        enum: ["yellow", "pink", "blue", "green", "orange", "purple", "white"],
-        description: "The cell color.",
-      },
-    },
-    required: ["rowRef", "columnRef", "color"],
-  },
   inputSchema: CellColorSchema,
   requiresApproval: true,
   async execute(params, context) {

@@ -22,18 +22,10 @@ export const createChapterTool = defineTool({
   name: "Create Chapter",
   description:
     "Create a new chapter. Use when the user asks to add a chapter to the project.",
-  parameters: {
-    type: "object",
-    properties: {
-      title: { type: "string", description: "Chapter title" },
-      synopsis: { type: "string", description: "Brief chapter synopsis" },
-    },
-    required: ["title"],
-  },
   inputSchema: z
     .object({
-      title: z.string().min(1),
-      synopsis: z.string().optional(),
+      title: z.string().min(1).describe("Chapter title"),
+      synopsis: z.string().describe("Brief chapter synopsis").optional(),
     })
     .strip(),
   requiresApproval: true,
@@ -55,26 +47,12 @@ export const updateChapterTool = defineTool({
   name: "Update Chapter",
   description:
     "Update a chapter's title, synopsis, or status. Only include fields to change.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Chapter ID" },
-      title: { type: "string", description: "New title" },
-      synopsis: { type: "string", description: "New synopsis" },
-      status: {
-        type: "string",
-        description: "New status",
-        enum: ["draft", "revised", "final"],
-      },
-    },
-    required: ["id"],
-  },
   inputSchema: z
     .object({
-      id: z.string().min(1),
-      title: z.string().optional(),
-      synopsis: z.string().optional(),
-      status: ChapterStatusEnum.optional(),
+      id: z.string().min(1).describe("Chapter ID"),
+      title: z.string().describe("New title").optional(),
+      synopsis: z.string().describe("New synopsis").optional(),
+      status: ChapterStatusEnum.describe("New status").optional(),
     })
     .strip(),
   requiresApproval: true,
@@ -96,14 +74,9 @@ export const searchChaptersTool = defineTool({
     "ranked by relevance. Prefix matches and small typos are tolerated. Wrap " +
     'text in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
     "Returns matching chapter titles, IDs, and snippets.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Search phrase or keywords" },
-    },
-    required: ["query"],
-  },
-  inputSchema: z.object({ query: z.string().min(1) }).strip(),
+  inputSchema: z
+    .object({ query: z.string().min(1).describe("Search phrase or keywords") })
+    .strip(),
   requiresApproval: false,
   async execute(params, context) {
     const matches = await searchChaptersKeyword(
@@ -120,14 +93,9 @@ export const readChapterTool = defineTool({
   description:
     "Read the full markdown content of a chapter by ID. " +
     "For large chapters, prefer read_chapter_range or search_chapter to reduce token usage.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Chapter ID" },
-    },
-    required: ["id"],
-  },
-  inputSchema: z.object({ id: z.string().min(1) }).strip(),
+  inputSchema: z
+    .object({ id: z.string().min(1).describe("Chapter ID") })
+    .strip(),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
@@ -147,27 +115,22 @@ export const readChapterRangeTool = defineTool({
   description:
     "Read a range of paragraphs from a chapter (1-indexed, inclusive). " +
     "Default window is 20 paragraphs, max 50. Use after `get` (category=chapter) to discover totalParagraphs.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Chapter ID" },
-      start: {
-        type: "number",
-        description: "Start paragraph number (1-indexed)",
-      },
-      end: {
-        type: "number",
-        description:
-          "End paragraph number (1-indexed, inclusive). Defaults to start + 19.",
-      },
-    },
-    required: ["id", "start"],
-  },
   inputSchema: z
     .object({
-      id: z.string().min(1),
-      start: z.number().int().min(1),
-      end: z.number().int().min(1).optional(),
+      id: z.string().min(1).describe("Chapter ID"),
+      start: z
+        .number()
+        .int()
+        .min(1)
+        .describe("Start paragraph number (1-indexed)"),
+      end: z
+        .number()
+        .int()
+        .min(1)
+        .describe(
+          "End paragraph number (1-indexed, inclusive). Defaults to start + 19.",
+        )
+        .optional(),
     })
     .strip(),
   requiresApproval: false,
@@ -204,24 +167,19 @@ export const searchChapterTool = defineTool({
     'in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
     "Returns matching paragraph numbers with surrounding context. " +
     "Use this instead of read_chapter when looking for a specific passage.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Chapter ID" },
-      query: { type: "string", description: "Search keywords or phrase" },
-      context_paragraphs: {
-        type: "number",
-        description:
-          "Number of surrounding paragraphs to include (default 1, max 3)",
-      },
-    },
-    required: ["id", "query"],
-  },
   inputSchema: z
     .object({
-      id: z.string().min(1),
-      query: z.string().min(1),
-      context_paragraphs: z.number().int().min(0).max(3).optional(),
+      id: z.string().min(1).describe("Chapter ID"),
+      query: z.string().min(1).describe("Search keywords or phrase"),
+      context_paragraphs: z
+        .number()
+        .int()
+        .min(0)
+        .max(3)
+        .describe(
+          "Number of surrounding paragraphs to include (default 1, max 3)",
+        )
+        .optional(),
     })
     .strip(),
   requiresApproval: false,
@@ -254,14 +212,9 @@ export const getChapterStructureTool = defineTool({
   description:
     "Get the structural map of a chapter: scene boundaries with paragraph numbers and previews. " +
     "Use this to understand chapter layout before reading specific sections.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Chapter ID" },
-    },
-    required: ["id"],
-  },
-  inputSchema: z.object({ id: z.string().min(1) }).strip(),
+  inputSchema: z
+    .object({ id: z.string().min(1).describe("Chapter ID") })
+    .strip(),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);

@@ -27,34 +27,13 @@ export const searchProjectTool = defineTool({
     "style guide, guardrails, worldbuilding docs, and outline cells. " +
     "Each result includes the entity type, title, matching field, and a text snippet. " +
     "Use this for broad discovery before drilling into specific entities with the `get` tool.",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Search phrase or keyword" },
-      entity_types: {
-        type: "array",
-        items: {
-          type: "string",
-          enum: [
-            "chapter",
-            "character",
-            "location",
-            "timelineEvent",
-            "styleGuideEntry",
-            "guardrailEntry",
-            "worldbuildingDoc",
-            "outlineCell",
-          ],
-        },
-        description: "Optional filter to search only specific entity types",
-      },
-    },
-    required: ["query"],
-  },
   inputSchema: z
     .object({
-      query: z.string().min(1),
-      entity_types: z.array(SearchableEntityTypeEnum).optional(),
+      query: z.string().min(1).describe("Search phrase or keyword"),
+      entity_types: z
+        .array(SearchableEntityTypeEnum)
+        .describe("Optional filter to search only specific entity types")
+        .optional(),
     })
     .strip(),
   requiresApproval: false,
