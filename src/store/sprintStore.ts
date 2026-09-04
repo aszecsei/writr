@@ -8,8 +8,6 @@ interface SprintState {
   elapsedMs: number;
   remainingMs: number;
   wordsWritten: number;
-  configModalOpen: boolean;
-  historyModalOpen: boolean;
 
   setActiveSprint: (
     id: string | null,
@@ -18,10 +16,6 @@ interface SprintState {
   ) => void;
   updateTimer: (elapsedMs: number, remainingMs: number) => void;
   setWordsWritten: (words: number) => void;
-  openConfigModal: () => void;
-  closeConfigModal: () => void;
-  openHistoryModal: () => void;
-  closeHistoryModal: () => void;
   reset: () => void;
 }
 
@@ -33,8 +27,6 @@ export const useSprintStore = create<SprintState>()(
     elapsedMs: 0,
     remainingMs: 0,
     wordsWritten: 0,
-    configModalOpen: false,
-    historyModalOpen: false,
 
     setActiveSprint: (id, isRunning, isPaused) =>
       set((s) => {
@@ -52,26 +44,6 @@ export const useSprintStore = create<SprintState>()(
     setWordsWritten: (words) =>
       set((s) => {
         s.wordsWritten = words;
-      }),
-
-    openConfigModal: () =>
-      set((s) => {
-        s.configModalOpen = true;
-      }),
-
-    closeConfigModal: () =>
-      set((s) => {
-        s.configModalOpen = false;
-      }),
-
-    openHistoryModal: () =>
-      set((s) => {
-        s.historyModalOpen = true;
-      }),
-
-    closeHistoryModal: () =>
-      set((s) => {
-        s.historyModalOpen = false;
       }),
 
     reset: () =>

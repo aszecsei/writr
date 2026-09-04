@@ -32,6 +32,7 @@ import {
   useRelationshipsByProject,
 } from "@/hooks/data/useBibleEntries";
 import { layoutNodes } from "@/hooks/ui/useAutoLayout";
+import { useUiStore } from "@/store/uiStore";
 
 const nodeTypes: NodeTypes = { character: CharacterNode };
 const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };
@@ -40,7 +41,9 @@ function FamilyTreeCanvas() {
   const params = useParams<{ projectId: ProjectId }>();
   const characters = useCharactersByProject(params.projectId);
   const relationships = useRelationshipsByProject(params.projectId);
-  const [showDialog, setShowDialog] = useState(false);
+  const modal = useUiStore((s) => s.modal);
+  const openModal = useUiStore((s) => s.openModal);
+  const closeModal = useUiStore((s) => s.closeModal);
 
   // --- Controlled ReactFlow state ---
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -163,18 +166,18 @@ function FamilyTreeCanvas() {
       <div className="absolute left-4 top-4 z-10">
         <button
           type="button"
-          onClick={() => setShowDialog(true)}
+          onClick={() => openModal({ id: "add-relationship" })}
           className={`shadow-md ${BUTTON_PRIMARY}`}
         >
           Add Relationship
         </button>
       </div>
 
-      {showDialog && characters && (
+      {modal.id === "add-relationship" && characters && (
         <AddRelationshipDialog
           projectId={params.projectId}
           characters={characters}
-          onClose={() => setShowDialog(false)}
+          onClose={closeModal}
         />
       )}
     </>

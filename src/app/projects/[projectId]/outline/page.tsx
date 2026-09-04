@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { OutlineGrid } from "@/components/outline/OutlineGrid";
 import {
   getTemplateColumns,
@@ -15,6 +15,7 @@ import {
   useOutlineGridColumns,
   useOutlineGridRows,
 } from "@/hooks/outline/useOutlineGrid";
+import { useUiStore } from "@/store/uiStore";
 
 export default function OutlinePage() {
   const params = useParams<{ projectId: ProjectId }>();
@@ -23,9 +24,11 @@ export default function OutlinePage() {
   const columns = useOutlineGridColumns(params.projectId);
   const rows = useOutlineGridRows(params.projectId);
   const chapters = useChaptersByProject(params.projectId);
+  const modal = useUiStore((s) => s.modal);
+  const openModal = useUiStore((s) => s.openModal);
+  const closeModal = useUiStore((s) => s.closeModal);
 
   const hasInitialized = useRef(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   // Show template dialog when grid is empty
   useEffect(() => {
@@ -39,11 +42,11 @@ export default function OutlinePage() {
     }
 
     hasInitialized.current = true;
-    setShowTemplateDialog(true);
-  }, [columns, rows, chapters]);
+    openModal({ id: "outline-template" });
+  }, [columns, rows, chapters, openModal]);
 
   const handleTemplateSelect = async (template: OutlineTemplate) => {
-    setShowTemplateDialog(false);
+    closeModal();
 
     const templateColumns = getTemplateColumns(template);
 
@@ -84,10 +87,10 @@ export default function OutlinePage() {
         />
       </div>
 
-      {showTemplateDialog && (
+      {modal.id === "outline-template" && (
         <OutlineTemplateDialog
           onSelect={handleTemplateSelect}
-          onClose={() => setShowTemplateDialog(false)}
+          onClose={closeModal}
         />
       )}
     </div>

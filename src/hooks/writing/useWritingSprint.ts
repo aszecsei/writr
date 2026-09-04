@@ -21,13 +21,8 @@ export function useWritingSprint() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeChapterId = useEditorStore(selectActiveChapterId);
 
-  const {
-    setActiveSprint,
-    updateTimer,
-    setWordsWritten,
-    reset,
-    closeConfigModal,
-  } = useSprintStore();
+  const { setActiveSprint, updateTimer, setWordsWritten, reset } =
+    useSprintStore();
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startWordCountRef = useRef<number>(0);
@@ -97,7 +92,7 @@ export function useWritingSprint() {
         chapterId: activeChapterId,
         wordCountGoal,
       });
-      closeConfigModal();
+      useUiStore.getState().closeModal();
 
       // Auto-enable focus mode if setting is enabled
       const settings = await getAppSettings();
@@ -105,7 +100,7 @@ export function useWritingSprint() {
         useUiStore.getState().setFocusMode(true);
       }
     },
-    [activeProjectId, activeChapterId, wordCount, closeConfigModal],
+    [activeProjectId, activeChapterId, wordCount],
   );
 
   const pause = useCallback(async () => {

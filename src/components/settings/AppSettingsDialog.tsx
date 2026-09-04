@@ -32,7 +32,6 @@ import {
   getDefaultProviderTtsModels,
   getDefaultProviderTtsVoices,
 } from "@/lib/ai/providers";
-import type { Backup } from "@/lib/backup";
 import {
   applyEditorWidth,
   applyHoleHighlightOpacity,
@@ -45,7 +44,6 @@ import { AiSettings } from "./AiSettings";
 import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
 import { GeneralTabContent } from "./GeneralTabContent";
-import { ImportBackupDialog } from "./ImportBackupDialog";
 
 type SettingsTab = "general" | "editor" | "ai" | "data";
 
@@ -111,10 +109,6 @@ export function AppSettingsDialog() {
   const [loreTopK, setLoreTopK] = useState(5);
   const [sceneTopK, setSceneTopK] = useState(3);
   const [similarityFloor, setSimilarityFloor] = useState(0.3);
-  const [pendingImport, setPendingImport] = useState<{
-    backup: Backup;
-    filename: string;
-  } | null>(null);
 
   // Snapshot of saved settings at dialog open, used to revert on cancel
   const savedSettingsRef = useRef(settings);
@@ -404,7 +398,7 @@ export function AppSettingsDialog() {
         {tab === "data" && (
           <BackupSettings
             onImportReady={(backup, filename) =>
-              setPendingImport({ backup, filename })
+              openModal({ id: "import-backup", backup, filename })
             }
           />
         )}
@@ -415,17 +409,6 @@ export function AppSettingsDialog() {
           submitDisabled={!isDirty}
         />
       </form>
-
-      {pendingImport && (
-        <ImportBackupDialog
-          backup={pendingImport.backup}
-          filename={pendingImport.filename}
-          onClose={() => setPendingImport(null)}
-          onImportComplete={() => {
-            // Result is shown in the dialog, user will close it
-          }}
-        />
-      )}
     </Modal>
   );
 }
