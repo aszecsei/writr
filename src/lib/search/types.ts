@@ -27,6 +27,16 @@ export interface EntityGroupConfig {
   icon: LucideIcon;
   buildUrl: (projectId: string, entityId: string) => string;
   searchableFields: string[];
+  /**
+   * How to load and title this entity type's rows for indexing. Omitted for
+   * types (currently just outlineCell) whose display title needs a join the
+   * generic loader can't express — those are indexed by hand.
+   */
+  titleField?: string;
+  subtitleField?: string;
+  loadEntities?: (
+    projectId: string,
+  ) => Promise<Array<Record<string, unknown> & { id: string }>>;
 }
 
 export interface GroupedSearchResults {

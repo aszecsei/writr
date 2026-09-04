@@ -8,6 +8,7 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+import { db } from "@/db/database";
 import type { EntityGroupConfig, SearchableEntityType } from "./types";
 
 export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
@@ -19,6 +20,8 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/chapters/${entityId}`,
     searchableFields: ["title", "content", "synopsis"],
+    titleField: "title",
+    loadEntities: (projectId) => db.chapters.where({ projectId }).toArray(),
   },
   character: {
     type: "character",
@@ -36,6 +39,9 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
       "backstory",
       "notes",
     ],
+    titleField: "name",
+    subtitleField: "role",
+    loadEntities: (projectId) => db.characters.where({ projectId }).toArray(),
   },
   location: {
     type: "location",
@@ -45,6 +51,8 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/bible/locations/${entityId}`,
     searchableFields: ["name", "description", "notes"],
+    titleField: "name",
+    loadEntities: (projectId) => db.locations.where({ projectId }).toArray(),
   },
   timelineEvent: {
     type: "timelineEvent",
@@ -54,6 +62,9 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/bible/timeline?highlight=${entityId}`,
     searchableFields: ["title", "description"],
+    titleField: "title",
+    loadEntities: (projectId) =>
+      db.timelineEvents.where({ projectId }).toArray(),
   },
   styleGuideEntry: {
     type: "styleGuideEntry",
@@ -63,6 +74,10 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/bible/style-guide?highlight=${entityId}`,
     searchableFields: ["title", "content"],
+    titleField: "title",
+    subtitleField: "category",
+    loadEntities: (projectId) =>
+      db.styleGuideEntries.where({ projectId }).toArray(),
   },
   guardrailEntry: {
     type: "guardrailEntry",
@@ -73,6 +88,9 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/bible/style-guide?highlight=${entityId}`,
     searchableFields: ["label", "fix", "positiveFix"],
+    titleField: "label",
+    loadEntities: (projectId) =>
+      db.guardrailEntries.where({ projectId }).toArray(),
   },
   worldbuildingDoc: {
     type: "worldbuildingDoc",
@@ -82,6 +100,9 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/bible/worldbuilding?doc=${entityId}`,
     searchableFields: ["title", "tags", "content"],
+    titleField: "title",
+    loadEntities: (projectId) =>
+      db.worldbuildingDocs.where({ projectId }).toArray(),
   },
   outlineCell: {
     type: "outlineCell",
@@ -91,6 +112,9 @@ export const entityConfigs: Record<SearchableEntityType, EntityGroupConfig> = {
     buildUrl: (projectId, entityId) =>
       `/projects/${projectId}/outline?highlight=${entityId}`,
     searchableFields: ["content"],
+    // No titleField/loadEntities: an outline cell's display title is
+    // composed from its row + column, which needs a join — see
+    // loadOutlineCellDocs in build-index.ts.
   },
 };
 
