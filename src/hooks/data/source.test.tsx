@@ -20,10 +20,10 @@ const SharedWrapper = ({ children }: { children: ReactNode }) => (
 );
 
 beforeEach(() => {
-  useSharedProjectStore.getState().resetForRoom();
+  useSharedProjectStore.getState().reset();
 });
 afterEach(() => {
-  useSharedProjectStore.getState().resetForRoom();
+  useSharedProjectStore.getState().reset();
 });
 
 describe("source-aware hooks (shared mode)", () => {

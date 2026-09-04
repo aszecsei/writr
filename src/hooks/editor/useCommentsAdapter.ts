@@ -7,6 +7,12 @@ import {
   YjsCommentsAdapter,
   type YjsCommentsPermissions,
 } from "@/lib/collab/comments";
+import {
+  GUEST_DEFAULT_COLOR,
+  GUEST_DEFAULT_NAME,
+  HOST_DEFAULT_COLOR,
+  HOST_DEFAULT_NAME,
+} from "@/lib/collab/identity";
 import type { CommentsAdapter } from "@/lib/comments/adapter";
 import { DexieCommentsAdapter } from "@/lib/comments/dexie-adapter";
 import { useCollabStore } from "@/store/collabStore";
@@ -42,11 +48,6 @@ const READONLY_PERMS: YjsCommentsPermissions = {
   canResolve: false,
   canDelete: false,
 };
-
-const HOST_DEFAULT_NAME = "Host";
-const HOST_DEFAULT_COLOR = "#10b981";
-const GUEST_DEFAULT_NAME = "Guest";
-const GUEST_DEFAULT_COLOR = "#888888";
 
 const dexieMirror: DexieMirror = {
   async upsert(comment: Comment) {

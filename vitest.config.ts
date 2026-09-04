@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
+      "@collab": resolve(__dirname, "collab/src"),
     },
   },
   test: {

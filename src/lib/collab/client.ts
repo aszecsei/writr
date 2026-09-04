@@ -3,7 +3,7 @@ import { decryptPayload, encryptPayload, type RoomKey } from "./crypto";
 import {
   CLOSE_CODES,
   type ClientMessage,
-  canSendClient,
+  canSend,
   type DocKind,
   type ErrorCode,
   type Role,
@@ -11,11 +11,7 @@ import {
   type SystemEvent,
   serverMessageSchema,
 } from "./protocol";
-
-export interface CollabTransport {
-  send(data: string): void;
-  close(code?: number, reason?: string): void;
-}
+import type { WebSocketLike } from "./transport";
 
 type ClientErrorKind =
   | ErrorCode
@@ -67,7 +63,7 @@ interface ClientEventMap {
 }
 
 interface CollabClientOptions {
-  transport: CollabTransport;
+  transport: Pick<WebSocketLike, "send" | "close">;
   key: RoomKey;
   /**
    * Role hint at construction. Used for client-side outgoing gating until the
@@ -82,7 +78,7 @@ const DEFAULT_STREAM_ID = 1;
 
 export class CollabClient {
   private roleValue: Role;
-  private readonly transport: CollabTransport;
+  private readonly transport: Pick<WebSocketLike, "send" | "close">;
   private readonly key: RoomKey;
   private readonly listeners = new Map<
     keyof ClientEventMap,
@@ -307,7 +303,7 @@ export class CollabClient {
 
   private dispatch(message: ClientMessage): void {
     if (this.closed) return;
-    if (!canSendClient(this.role, message)) {
+    if (!canSend(this.role, message)) {
       this.emit("error", {
         kind: "send-not-allowed",
         message: `Role '${this.role}' cannot send '${message.type}'`,

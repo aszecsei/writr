@@ -1,4 +1,4 @@
-import { match, P } from "ts-pattern";
+import { match } from "ts-pattern";
 import type { CollabClient } from "./client";
 import {
   deriveWrapKey,
@@ -8,17 +8,8 @@ import {
   unwrapRoomKey,
   wrapRoomKey,
 } from "./crypto";
-import { type Role, serverMessageSchema } from "./protocol";
-import type { WebSocketLike } from "./transport";
-
-const FATAL_HANDSHAKE_ERROR_CODES = [
-  "join-rejected",
-  "join-timeout",
-  "unauthorized",
-  "invalid-token",
-  "room-not-found",
-  "room-full",
-] as const;
+import { isFatalErrorKind, type Role, serverMessageSchema } from "./protocol";
+import { decodeWsData, type WebSocketLike } from "./transport";
 
 export class JoinDeniedError extends Error {
   readonly reason: string | undefined;
@@ -88,12 +79,7 @@ export function runGuestHandshake(
 
     const onMessage = async (event: { data: string | ArrayBuffer | Blob }) => {
       if (settled) return;
-      const raw =
-        typeof event.data === "string"
-          ? event.data
-          : event.data instanceof ArrayBuffer
-            ? new TextDecoder().decode(event.data)
-            : "";
+      const raw = decodeWsData(event.data);
       if (!raw) return;
 
       let parsed: unknown;
@@ -168,13 +154,14 @@ export function runGuestHandshake(
           settle();
           reject(new JoinDeniedError(m.reason));
         })
-        .with(
-          { type: "error", code: P.union(...FATAL_HANDSHAKE_ERROR_CODES) },
-          async (m) => {
-            settle();
-            reject(new Error(`Collab handshake failed: ${m.code}`));
-          },
-        )
+        .with({ type: "error" }, async (m) => {
+          if (!isFatalErrorKind(m.code)) {
+            buffered.push(raw);
+            return;
+          }
+          settle();
+          reject(new Error(`Collab handshake failed: ${m.code}`));
+        })
         .otherwise(async () => {
           buffered.push(raw);
         });
@@ -204,10 +191,9 @@ export function runGuestHandshake(
     function detach() {
       if (detached) return;
       detached = true;
-      // We can't actually `removeEventListener` because WebSocketLike
-      // doesn't expose it. The settled flag above guards against late
-      // dispatches; the caller will wire the real CollabClient and any
-      // further messages will be processed by it (see lifecycle).
+      ws.removeEventListener("message", onMessage);
+      ws.removeEventListener("close", onClose);
+      ws.removeEventListener("error", onError);
       if (opts.signal) opts.signal.removeEventListener("abort", onAbort);
     }
 

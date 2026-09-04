@@ -8,6 +8,7 @@ import {
   GuestSessionShell,
   type GuestState,
 } from "@/components/collab/GuestSessionShell";
+import { RolePill, SessionHeaderBar } from "@/components/collab/SessionHeader";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import { useCommentsMeta } from "@/hooks/collab/useCommentsMeta";
 import {
@@ -85,7 +86,7 @@ export default function SharedSessionPage() {
       token,
       hostPubEncoded,
       identity,
-      projectMode: shareMode === "project",
+      shareMode,
     }).catch(() => {
       // Failure is recorded on collabStore.error or status=denied; UI reflects it.
     });
@@ -106,7 +107,7 @@ export default function SharedSessionPage() {
   // In project-mode, attach the project reader as soon as we have a
   // session so meta lands in the in-memory store. The reader is detached
   // when this page unmounts (on redirect into the project shell, which
-  // will mount its own reader). resetForRoom keeps state coherent.
+  // will mount its own reader). reset() keeps state coherent.
   useEffect(() => {
     if (shareMode !== "project") return;
     if (!session) return;
@@ -196,7 +197,13 @@ export default function SharedSessionPage() {
   // editor width, comment margin alongside. Non-connected states keep
   // the card-style GuestSessionShell so error/connecting/ended UIs are
   // legible.
-  if (status === "connected" && session && role && role !== "host") {
+  if (
+    status === "connected" &&
+    session &&
+    role &&
+    role !== "host" &&
+    identity
+  ) {
     return (
       <ConnectedSessionLayout
         role={role}
@@ -208,8 +215,8 @@ export default function SharedSessionPage() {
           doc={session.getDoc("prose")}
           awareness={session.awareness}
           editable={role === "edit"}
-          userName={identity?.name}
-          userColor={identity?.color}
+          userName={identity.name}
+          userColor={identity.color}
           commentsDoc={commentsDoc ?? undefined}
           chapterId={commentsMeta.chapterId ?? undefined}
           projectId={commentsMeta.projectId ?? undefined}
@@ -244,25 +251,27 @@ function ConnectedSessionLayout({
 }: ConnectedSessionLayoutProps) {
   return (
     <div className="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
-        <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-          <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-            {role}
-          </span>
-          <span>
-            {peerCount === 1 ? "Just you" : `${peerCount} connected`}
-            {" · "}
-            {hostPresent ? "Host present" : "Host away"}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onLeave}
-          className="rounded-md border border-neutral-300 px-3 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-        >
-          Leave
-        </button>
-      </header>
+      <SessionHeaderBar
+        left={
+          <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+            <RolePill role={role} />
+            <span>
+              {peerCount === 1 ? "Just you" : `${peerCount} connected`}
+              {" · "}
+              {hostPresent ? "Host present" : "Host away"}
+            </span>
+          </div>
+        }
+        right={
+          <button
+            type="button"
+            onClick={onLeave}
+            className="rounded-md border border-neutral-300 px-3 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Leave
+          </button>
+        }
+      />
       <main className="flex-1 overflow-hidden">{children}</main>
     </div>
   );

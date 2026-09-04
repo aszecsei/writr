@@ -1,4 +1,4 @@
-import type { CollabClient, CollabTransport } from "./client";
+import type { CollabClient } from "./client";
 
 export interface WebSocketLike {
   send(data: string): void;
@@ -13,13 +13,27 @@ export interface WebSocketLike {
     listener: (event: { code: number; reason: string }) => void,
   ): void;
   addEventListener(type: "error", listener: () => void): void;
+  removeEventListener(type: "open", listener: () => void): void;
+  removeEventListener(
+    type: "message",
+    listener: (event: { data: string | ArrayBuffer | Blob }) => void,
+  ): void;
+  removeEventListener(
+    type: "close",
+    listener: (event: { code: number; reason: string }) => void,
+  ): void;
+  removeEventListener(type: "error", listener: () => void): void;
 }
 
-export function createWebSocketTransport(ws: WebSocketLike): CollabTransport {
-  return {
-    send: (data) => ws.send(data),
-    close: (code, reason) => ws.close(code, reason),
-  };
+/**
+ * Decodes a raw WebSocket message payload to a string. Blob payloads
+ * aren't supported (callers should set `binaryType = "arraybuffer"`) and
+ * decode to "", same as an empty message.
+ */
+export function decodeWsData(data: string | ArrayBuffer | Blob): string {
+  if (typeof data === "string") return data;
+  if (data instanceof ArrayBuffer) return new TextDecoder().decode(data);
+  return "";
 }
 
 export function wireWebSocketToClient(
@@ -30,12 +44,7 @@ export function wireWebSocketToClient(
     client.handleOpen();
   });
   ws.addEventListener("message", (event) => {
-    const raw =
-      typeof event.data === "string"
-        ? event.data
-        : event.data instanceof ArrayBuffer
-          ? new TextDecoder().decode(event.data)
-          : "";
+    const raw = decodeWsData(event.data);
     if (!raw) return;
     void client.handleMessage(raw);
   });

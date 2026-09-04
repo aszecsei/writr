@@ -5,6 +5,7 @@ import {
   ySyncPluginKey,
 } from "@tiptap/y-tiptap";
 import * as Y from "yjs";
+import { base64urlToBytes, bytesToBase64url } from "./crypto";
 
 /**
  * Helpers around y-prosemirror's relative-position machinery.
@@ -48,7 +49,7 @@ export function encodeRelativeFromAbsolute(
   );
   if (!rel) return null;
   const buf = Y.encodeRelativePosition(rel);
-  return bytesToBase64(buf);
+  return bytesToBase64url(buf);
 }
 
 /**
@@ -64,7 +65,7 @@ export function resolveAbsoluteFromRelative(
   if (!ystate) return null;
   let rel: Y.RelativePosition;
   try {
-    rel = Y.decodeRelativePosition(base64ToBytes(encoded));
+    rel = Y.decodeRelativePosition(base64urlToBytes(encoded));
   } catch {
     return null;
   }
@@ -75,22 +76,4 @@ export function resolveAbsoluteFromRelative(
     ystate.binding.mapping as never,
   );
   return typeof absolute === "number" ? absolute : null;
-}
-
-function bytesToBase64(buf: Uint8Array): string {
-  let bin = "";
-  for (let i = 0; i < buf.length; i += 1) bin += String.fromCharCode(buf[i]);
-  return typeof btoa === "function"
-    ? btoa(bin)
-    : Buffer.from(buf).toString("base64");
-}
-
-function base64ToBytes(b64: string): Uint8Array {
-  if (typeof atob === "function") {
-    const bin = atob(b64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-    return out;
-  }
-  return new Uint8Array(Buffer.from(b64, "base64"));
 }

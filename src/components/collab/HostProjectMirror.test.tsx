@@ -55,7 +55,7 @@ describe("HostProjectMirror", () => {
       peerId: "peer-1",
       hostPresent: true,
     });
-    useCollabStore.getState().setProjectMode(true);
+    useCollabStore.getState().setShareMode("project");
 
     useEditorStore.setState({
       activeDocumentId: chapterOne.id,
@@ -90,7 +90,7 @@ describe("HostProjectMirror", () => {
       peerId: "peer-1",
       hostPresent: true,
     });
-    useCollabStore.getState().setProjectMode(true);
+    useCollabStore.getState().setShareMode("project");
 
     render(<HostProjectMirror projectId={project.id} />);
 

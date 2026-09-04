@@ -17,9 +17,9 @@ collab/                 Standalone WebSocket relay (separate Node service)
 
 - **`session.ts`, `lifecycle.ts`** — Session creation, join, leave, reconnect.
 - **`handshake.ts`** — Key exchange and capability negotiation.
-- **`crypto.ts`** — AES-GCM encryption. The encryption key lives in the URL fragment so it never reaches the relay.
-- **`transport.ts`** — WebSocket transport with reconnect/backoff.
-- **`protocol.ts`** — Wire-format messages.
+- **`crypto.ts`** — AES-GCM encryption. The encryption key lives in the URL fragment so it never reaches the relay. Also owns the `ShareMode` type ("chapter" | "project").
+- **`transport.ts`** — WebSocket transport, plus `WebSocketLike` and `decodeWsData()`.
+- **`protocol.ts`** — Re-exports the wire protocol from `collab/src/protocol.ts` (see below) via the `@collab/*` path alias. Not a separate implementation.
 - **`client.ts`** — High-level facade used by hooks and components.
 - **`attach.ts`** — Wires a `CollabClient` into the collab store; used by `useCollabManager`.
 - **`comments.ts`** — Comment sync layer that keeps Dexie comments aligned with Y.js positions.
@@ -33,7 +33,14 @@ A small standalone Node service. **Blind pass-through** — it never sees plaint
 - `src/room.ts` — Room state and message routing.
 - `src/tokens.ts` — Role-based access tokens (`host`, `edit`, `review`, `view`).
 - `src/rate-limit.ts` — Per-IP room-creation rate limit.
-- `src/protocol.ts` — Wire format (mirrors the client).
+- `src/protocol.ts` — **Single source of truth for the wire protocol.** Both
+  directions (client → server, server → client) as Zod schemas, plus
+  `ROLES`, `DOC_KINDS`, `ERROR_CODES`, `CLOSE_CODES`, `MAX_PAYLOAD_BYTES`,
+  `canSend(role, message)`, and `isFatalErrorKind(kind)`. The Next app
+  imports this same file through the `@collab/*` path alias (see
+  `tsconfig.json`) rather than maintaining a second copy — the relay is
+  built and Dockerised from `collab/` alone, so the module has to live
+  here for that build context to keep working standalone.
 - `src/index.ts` — HTTP + WebSocket entry point.
 - See `collab/README.md` for deployment, env vars (`PORT`, `ALLOWED_ORIGINS`, `GRACE_PERIOD_MS`, …), and threat model.
 

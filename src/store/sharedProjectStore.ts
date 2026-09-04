@@ -27,7 +27,7 @@ export interface SharedProjectState {
     rows: Partial<{ [K in ProjectDocTable]: ProjectDocEntity<K>[] }>,
     opts?: { project?: Project | null; meta?: ProjectDocMeta | null },
   ) => void;
-  resetForRoom: () => void;
+  reset: () => void;
 }
 
 function emptyByTable(): SharedProjectByTable {
@@ -54,8 +54,7 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
       const next = new Map(
         existing as Map<string, unknown>,
       ) as SharedProjectByTable[typeof table];
-      const id = (row as { id: string }).id;
-      (next as Map<string, typeof row>).set(id, row);
+      (next as Map<string, typeof row>).set(row.id, row);
       return {
         byTable: { ...s.byTable, [table]: next } as SharedProjectByTable,
       };
@@ -79,8 +78,7 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
         const provided = rows[table];
         if (!provided) continue;
         for (const row of provided) {
-          const id = (row as { id: string }).id;
-          (byTable[table] as Map<string, typeof row>).set(id, row);
+          (byTable[table] as Map<string, typeof row>).set(row.id, row);
         }
       }
       return {
@@ -89,5 +87,5 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
         meta: opts?.meta ?? null,
       };
     }),
-  resetForRoom: () => set({ ...INITIAL, byTable: emptyByTable() }),
+  reset: () => set({ ...INITIAL, byTable: emptyByTable() }),
 }));

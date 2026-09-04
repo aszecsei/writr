@@ -21,7 +21,6 @@ import {
 export const PROJECT_DOC_VERSION = 1;
 
 const ProjectDocMetaSchema = z.object({
-  mode: z.literal("project"),
   projectId: ProjectIdSchema,
   activeChapterId: ChapterIdSchema.nullable(),
   revision: z.number().int().nonnegative(),
@@ -60,7 +59,7 @@ const PROJECT_DOC_TABLE_SCHEMAS = {
 
 export type ProjectDocEntity<T extends ProjectDocTable> = z.infer<
   (typeof PROJECT_DOC_TABLE_SCHEMAS)[T]
->;
+> & { id: string };
 
 const META_KEY = "meta";
 const PROJECT_KEY = "project";
@@ -85,7 +84,6 @@ export function readProjectMeta(doc: Y.Doc): ProjectDocMeta | null {
   const m = getProjectMeta(doc);
   if (m.size === 0) return null;
   const candidate = {
-    mode: m.get("mode"),
     projectId: m.get("projectId"),
     activeChapterId: m.get("activeChapterId") ?? null,
     revision: m.get("revision"),
@@ -134,7 +132,7 @@ export function upsertEntity<T extends ProjectDocTable>(
   origin: unknown,
 ): void {
   const map = getProjectTable(doc, table);
-  const id = (row as { id: string }).id;
+  const id = row.id;
   doc.transact(() => {
     map.set(id, JSON.stringify(row));
   }, origin);

@@ -3,6 +3,7 @@ import type { ChapterId, Project, ProjectId } from "@/db/schemas";
 import {
   deleteEntity,
   getProjectTable,
+  PROJECT_DOC_TABLES,
   PROJECT_DOC_VERSION,
   type ProjectDocEntity,
   type ProjectDocTable,
@@ -57,14 +58,13 @@ export class ProjectMirror {
     if (this.destroyed) return;
     this.doc.transact(() => {
       this.writeProject(snapshot.project);
-      for (const table of TABLE_KEYS) {
+      for (const table of PROJECT_DOC_TABLES) {
         this.replaceTable(table, snapshot[table]);
       }
       this.revision += 1;
       writeProjectMeta(
         this.doc,
         {
-          mode: "project",
           projectId: this.projectId,
           activeChapterId: snapshot.activeChapterId,
           revision: this.revision,
@@ -90,7 +90,7 @@ export class ProjectMirror {
     const upserts: ProjectDocEntity<T>[] = [];
 
     for (const row of rows) {
-      const id = (row as { id: string }).id;
+      const id = row.id;
       const json = JSON.stringify(row);
       nextHashes.set(id, json);
       if (previousHashes.get(id) !== json) {
@@ -153,7 +153,7 @@ export class ProjectMirror {
     const nextHashes = new Map<string, string>();
     const seen = new Set<string>();
     for (const row of rows) {
-      const id = (row as { id: string }).id;
+      const id = row.id;
       seen.add(id);
       const json = JSON.stringify(row);
       nextHashes.set(id, json);
@@ -165,17 +165,3 @@ export class ProjectMirror {
     this.hashes.set(table, nextHashes);
   }
 }
-
-const TABLE_KEYS: ProjectDocTable[] = [
-  "chapters",
-  "characters",
-  "characterRels",
-  "locations",
-  "worldbuilding",
-  "timeline",
-  "styleGuide",
-  "guardrails",
-  "outlineColumns",
-  "outlineRows",
-  "outlineCells",
-];

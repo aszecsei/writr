@@ -6,10 +6,11 @@
 
 const NAME_KEY = "writr.collab.displayName";
 
-const HOST_DEFAULT_NAME = "Host";
+export const HOST_DEFAULT_NAME = "Host";
 export const GUEST_DEFAULT_NAME = "Guest";
 
-const HOST_DEFAULT_COLOR = "#10b981";
+export const HOST_DEFAULT_COLOR = "#10b981";
+export const GUEST_DEFAULT_COLOR = "#888888";
 
 /**
  * Stable palette for guest carets. Picked deterministically from the

@@ -37,7 +37,6 @@ describe("ProjectMirror.seedFromSnapshot", () => {
     expect(readEntity(doc, "characters", CHARACTER_ID_1)?.name).toBe("Alice");
     const meta = readProjectMeta(doc);
     expect(meta).toEqual({
-      mode: "project",
       projectId: PROJECT_ID,
       activeChapterId: CHAPTER_ID_1,
       revision: 1,

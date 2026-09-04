@@ -46,7 +46,6 @@ describe("round-trips", () => {
     writeProjectMeta(
       doc,
       {
-        mode: "project",
         projectId: PROJECT_ID,
         activeChapterId: CHAPTER_ID_1,
         revision: 1,
@@ -55,7 +54,6 @@ describe("round-trips", () => {
       HOST_ORIGIN,
     );
     expect(readProjectMeta(doc)).toEqual({
-      mode: "project",
       projectId: PROJECT_ID,
       activeChapterId: CHAPTER_ID_1,
       revision: 1,
@@ -78,7 +76,6 @@ describe("project meta", () => {
     writeProjectMeta(
       doc,
       {
-        mode: "project",
         projectId: PROJECT_ID,
         activeChapterId: CHAPTER_ID_1,
         revision: 1,
@@ -96,7 +93,7 @@ describe("project meta", () => {
   it("returns null when meta is malformed", () => {
     const doc = new Y.Doc();
     const m = getProjectMeta(doc);
-    m.set("mode", "chapter"); // wrong literal
+    m.set("projectId", "not-a-uuid"); // fails ProjectIdSchema
     expect(readProjectMeta(doc)).toBeNull();
   });
 });

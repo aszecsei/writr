@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
+import { GUEST_DEFAULT_COLOR, GUEST_DEFAULT_NAME } from "@/lib/collab/identity";
 import { CollabProseEditor } from "./CollabProseEditor";
 
 function makeDoc(): { doc: Y.Doc; awareness: Awareness } {
@@ -24,7 +25,13 @@ describe("CollabProseEditor", () => {
       doc.destroy();
     });
     const { container } = render(
-      <CollabProseEditor doc={doc} awareness={awareness} editable={editable} />,
+      <CollabProseEditor
+        doc={doc}
+        awareness={awareness}
+        editable={editable}
+        userName={GUEST_DEFAULT_NAME}
+        userColor={GUEST_DEFAULT_COLOR}
+      />,
     );
     // ProseMirror renders a contenteditable div reflecting the editable prop.
     const ce = container.querySelector("[contenteditable]");
@@ -45,7 +52,13 @@ describe("CollabProseEditor", () => {
     fragment.insert(0, [para]);
 
     const { container } = render(
-      <CollabProseEditor doc={doc} awareness={awareness} editable={true} />,
+      <CollabProseEditor
+        doc={doc}
+        awareness={awareness}
+        editable={true}
+        userName={GUEST_DEFAULT_NAME}
+        userColor={GUEST_DEFAULT_COLOR}
+      />,
     );
     expect(container.textContent).toContain("hello world");
   });
