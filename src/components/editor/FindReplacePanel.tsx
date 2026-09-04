@@ -11,11 +11,9 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
 import { useFindReplaceStore } from "@/store/findReplaceStore";
-import {
-  getSearchState,
-  SEARCH_UPDATED_META,
-} from "./extensions/SearchAndReplace";
+import { getSearchState } from "./extensions/SearchAndReplace";
 
 interface FindReplacePanelProps {
   editor: Editor | null;
@@ -39,7 +37,6 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   const toggleWholeWord = useFindReplaceStore((s) => s.toggleWholeWord);
   const toggleUseRegex = useFindReplaceStore((s) => s.toggleUseRegex);
   const toggleMode = useFindReplaceStore((s) => s.toggleMode);
-  const setMatchInfo = useFindReplaceStore((s) => s.setMatchInfo);
   const openFindReplace = useFindReplaceStore((s) => s.openFindReplace);
   const close = useFindReplaceStore((s) => s.close);
 
@@ -57,7 +54,7 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
     }
   }, [focusTrigger, isOpen]);
 
-  // Dispatch search to the ProseMirror plugin
+  // Dispatch search to the SearchAndReplace extension
   const dispatchSearch = useCallback(
     (
       term: string,
@@ -69,26 +66,9 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       currentIndex?: number,
     ) => {
       if (!editor || editor.isDestroyed) return;
-
-      const tr = editor.state.tr.setMeta(SEARCH_UPDATED_META, {
-        searchTerm: term,
-        caseSensitive: opts.caseSensitive,
-        wholeWord: opts.wholeWord,
-        useRegex: opts.useRegex,
-        currentIndex,
-      });
-      editor.view.dispatch(tr);
-
-      // Read back match info
-      setTimeout(() => {
-        if (!editor || editor.isDestroyed) return;
-        const state = getSearchState(editor.state);
-        if (state) {
-          setMatchInfo(state.matches.length, state.currentIndex);
-        }
-      }, 0);
+      editor.commands.search(term, opts, currentIndex);
     },
-    [editor, setMatchInfo],
+    [editor],
   );
 
   // Debounced search dispatch on search term change
@@ -106,13 +86,11 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   // Clear decorations on close
   useEffect(() => {
     if (!isOpen && editor && !editor.isDestroyed) {
-      const tr = editor.state.tr.setMeta(SEARCH_UPDATED_META, {
-        searchTerm: "",
+      editor.commands.search("", {
         caseSensitive: false,
         wholeWord: false,
         useRegex: false,
       });
-      editor.view.dispatch(tr);
     }
   }, [isOpen, editor]);
 
@@ -147,109 +125,27 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
 
   const findNext = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
-    const state = getSearchState(editor.state);
-    if (!state || state.matches.length === 0) return;
-
-    const nextIndex = (state.currentIndex + 1) % state.matches.length;
-    dispatchSearch(
-      searchTerm,
-      { caseSensitive, wholeWord, useRegex },
-      nextIndex,
-    );
-    scrollToMatch();
-  }, [
-    editor,
-    searchTerm,
-    caseSensitive,
-    wholeWord,
-    useRegex,
-    dispatchSearch,
-    scrollToMatch,
-  ]);
+    if (editor.commands.findNext()) {
+      scrollToMatch();
+    }
+  }, [editor, scrollToMatch]);
 
   const findPrevious = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
-    const state = getSearchState(editor.state);
-    if (!state || state.matches.length === 0) return;
-
-    const prevIndex =
-      (state.currentIndex - 1 + state.matches.length) % state.matches.length;
-    dispatchSearch(
-      searchTerm,
-      { caseSensitive, wholeWord, useRegex },
-      prevIndex,
-    );
-    scrollToMatch();
-  }, [
-    editor,
-    searchTerm,
-    caseSensitive,
-    wholeWord,
-    useRegex,
-    dispatchSearch,
-    scrollToMatch,
-  ]);
+    if (editor.commands.findPrevious()) {
+      scrollToMatch();
+    }
+  }, [editor, scrollToMatch]);
 
   const replaceCurrent = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
-    const state = getSearchState(editor.state);
-    if (!state || state.matches.length === 0) return;
-
-    const match = state.matches[state.currentIndex];
-    editor
-      .chain()
-      .focus()
-      .insertContentAt({ from: match.from, to: match.to }, replaceTerm)
-      .run();
-
-    // Re-dispatch search to update matches
-    setTimeout(() => {
-      dispatchSearch(
-        searchTerm,
-        { caseSensitive, wholeWord, useRegex },
-        state.currentIndex,
-      );
-    }, 0);
-  }, [
-    editor,
-    replaceTerm,
-    searchTerm,
-    caseSensitive,
-    wholeWord,
-    useRegex,
-    dispatchSearch,
-  ]);
+    editor.commands.replaceCurrent(replaceTerm);
+  }, [editor, replaceTerm]);
 
   const replaceAll = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
-    const state = getSearchState(editor.state);
-    if (!state || state.matches.length === 0) return;
-
-    // Apply all replacements in reverse order in a single transaction
-    const tr = editor.state.tr;
-    const matches = [...state.matches].reverse();
-    for (const match of matches) {
-      if (replaceTerm) {
-        tr.insertText(replaceTerm, match.from, match.to);
-      } else {
-        tr.delete(match.from, match.to);
-      }
-    }
-    editor.view.dispatch(tr);
-
-    // Re-dispatch search
-    setTimeout(() => {
-      dispatchSearch(searchTerm, { caseSensitive, wholeWord, useRegex });
-    }, 0);
-  }, [
-    editor,
-    replaceTerm,
-    searchTerm,
-    caseSensitive,
-    wholeWord,
-    useRegex,
-    dispatchSearch,
-  ]);
+    editor.commands.replaceAll(replaceTerm);
+  }, [editor, replaceTerm]);
 
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -291,13 +187,6 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   );
 
   if (!isOpen) return null;
-
-  const toggleBtnBase =
-    "rounded p-0.5 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400";
-  const toggleBtnActive =
-    "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100";
-  const toggleBtnInactive =
-    "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-500 dark:hover:bg-neutral-800";
 
   return (
     <div className="absolute right-4 top-2 z-30 w-84 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
@@ -353,30 +242,27 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
             >
               <ChevronDown size={12} />
             </button>
-            <button
-              type="button"
+            <ToolbarButton
+              icon={ALargeSmall}
               title="Case sensitive"
+              size="sm"
+              variant={caseSensitive ? "active" : "default"}
               onClick={toggleCaseSensitive}
-              className={`${toggleBtnBase} ${caseSensitive ? toggleBtnActive : toggleBtnInactive}`}
-            >
-              <ALargeSmall size={12} />
-            </button>
-            <button
-              type="button"
+            />
+            <ToolbarButton
+              icon={WholeWord}
               title="Whole word"
+              size="sm"
+              variant={wholeWord ? "active" : "default"}
               onClick={toggleWholeWord}
-              className={`${toggleBtnBase} ${wholeWord ? toggleBtnActive : toggleBtnInactive}`}
-            >
-              <WholeWord size={12} />
-            </button>
-            <button
-              type="button"
+            />
+            <ToolbarButton
+              icon={Regex}
               title="Regular expression"
+              size="sm"
+              variant={useRegex ? "active" : "default"}
               onClick={toggleUseRegex}
-              className={`${toggleBtnBase} ${useRegex ? toggleBtnActive : toggleBtnInactive}`}
-            >
-              <Regex size={12} />
-            </button>
+            />
             <button
               type="button"
               title="Close (Escape)"

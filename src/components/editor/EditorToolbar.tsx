@@ -15,11 +15,16 @@ import {
   TextSearch,
   Volume2,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback } from "react";
 import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
+import { ToolbarSeparator } from "@/components/ui/ToolbarSeparator";
 import { updateAppSettings } from "@/db/operations";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { getTerm } from "@/lib/terminology";
 import { extractReadAloudText } from "@/lib/tts/extract";
 import { useCommentStore } from "@/store/commentStore";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
@@ -39,7 +44,113 @@ import { InsertImageDialog } from "./InsertImageDialog";
 import { LinkEditorDialog } from "./LinkEditorDialog";
 import { RubyDialog } from "./RubyDialog";
 import { TextToolsMenu } from "./TextToolsMenu";
-import { actions, groups } from "./toolbar-actions";
+import { actions, groups, type ToolbarActionModal } from "./toolbar-actions";
+
+interface SharedChapterActionsProps {
+  editor: Editor;
+  projectId: ProjectId | null;
+  chapterId: ChapterId | null;
+  onToggleFocusMode: () => void;
+  /** Rendered immediately before the Copy menu. */
+  beforeCopy?: ReactNode;
+  /** Rendered immediately after the Copy menu, before the next separator. */
+  afterCopy?: ReactNode;
+  /** Rendered immediately after the spellcheck scanner button. */
+  afterSpellcheck?: ReactNode;
+}
+
+/**
+ * Project/chapter-scoped toolbar actions shared by EditorToolbar and
+ * ScreenplayToolbar: export, version history, copy, comments, spellcheck,
+ * and focus mode. The `before*`/`after*` slots let each toolbar interleave
+ * its own extra actions without reshuffling the shared ones.
+ */
+export function SharedChapterActions({
+  editor,
+  projectId,
+  chapterId,
+  onToggleFocusMode,
+  beforeCopy,
+  afterCopy,
+  afterSpellcheck,
+}: SharedChapterActionsProps) {
+  const openModal = useUiStore((s) => s.openModal);
+  const marginVisible = useCommentStore((s) => s.marginVisible);
+  const toggleMargin = useCommentStore((s) => s.toggleMargin);
+  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
+  const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
+  const openScanner = useSpellcheckStore((s) => s.openScanner);
+
+  const handleOpenScanner = useCallback(() => {
+    const results = getSpellcheckResults(editor.state);
+    openScanner(results);
+    openModal({ id: "spellcheck-scanner" });
+  }, [editor, openScanner, openModal]);
+
+  return (
+    <>
+      {projectId && chapterId && (
+        <>
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={Download}
+            title="Export"
+            onClick={() =>
+              openModal({
+                id: "export",
+                projectId,
+                chapterId,
+                scope: "chapter",
+              })
+            }
+          />
+          <ToolbarButton
+            icon={History}
+            title="Version history"
+            onClick={() =>
+              openModal({
+                id: "version-history",
+                chapterId,
+                projectId,
+              })
+            }
+          />
+          {beforeCopy}
+          <CopyMenu projectId={projectId} chapterId={chapterId} />
+          {afterCopy}
+          <ToolbarSeparator />
+          <CreateCommentButton editor={editor} />
+          <ToolbarButton
+            icon={PanelRight}
+            title="Toggle comment margin"
+            onClick={toggleMargin}
+            variant={marginVisible ? "active" : "default"}
+          />
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={SpellCheck}
+            title="Toggle spellcheck"
+            onClick={toggleSpellcheck}
+            variant={spellcheckEnabled ? "active" : "default"}
+          />
+          <ToolbarButton
+            icon={ScanSearch}
+            title="Open spellcheck scanner"
+            onClick={handleOpenScanner}
+            disabled={!spellcheckEnabled}
+          />
+          {afterSpellcheck}
+        </>
+      )}
+      <ToolbarSeparator />
+      <ToolbarButton
+        icon={Maximize2}
+        title="Focus mode (Ctrl+Shift+F)"
+        onClick={onToggleFocusMode}
+      />
+    </>
+  );
+}
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -53,12 +164,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
-  const marginVisible = useCommentStore((s) => s.marginVisible);
-  const toggleMargin = useCommentStore((s) => s.toggleMargin);
-
-  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
-  const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
-  const openScanner = useSpellcheckStore((s) => s.openScanner);
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
 
   // Grammar checking — enabled state is persisted in AppSettings.
   const grammarEnabled = settings?.grammarCheckerEnabled ?? false;
@@ -89,7 +195,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     if (!text.trim()) return;
     void startReadAloud({
       chapterId: activeDocumentId,
-      chapterTitle: chapter.title || "Untitled chapter",
+      chapterTitle:
+        chapter.title || getTerm(activeProjectMode, "untitledChapter"),
       text,
       apiKey: ttsApiKey,
       provider: "openrouter",
@@ -100,19 +207,12 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     editor,
     activeDocumentId,
     chapter,
+    activeProjectMode,
     ttsApiKey,
     ttsModel,
     ttsVoice,
     startReadAloud,
   ]);
-
-  // Open spellcheck scanner with current misspellings
-  const handleOpenScanner = useCallback(() => {
-    if (!editor) return;
-    const results = getSpellcheckResults(editor.state);
-    openScanner(results);
-    openModal({ id: "spellcheck-scanner" });
-  }, [editor, openScanner, openModal]);
 
   const toggleGrammar = useCallback(() => {
     void updateAppSettings({ grammarCheckerEnabled: !grammarEnabled });
@@ -166,15 +266,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }, [editor]);
 
   // Handle modal button clicks
-  const handleModalAction = useCallback(
-    (label: string) => {
+  const handleModalOpen = useCallback(
+    (modal: ToolbarActionModal) => {
       if (!editor) return;
-      if (label === "Link") {
+      if (modal === "link-editor") {
         const attrs = editor.getAttributes("link");
         openModal({ id: "link-editor", currentHref: attrs.href });
-      } else if (label === "Image") {
+      } else if (modal === "insert-image") {
         openModal({ id: "insert-image" });
-      } else if (label === "Ruby Text") {
+      } else if (modal === "ruby-editor") {
         const attrs = editor.getAttributes("ruby");
         openModal({ id: "ruby-editor", currentAnnotation: attrs.annotation });
       }
@@ -218,7 +318,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     <div className="flex flex-wrap items-center gap-density border-b border-neutral-200 bg-white px-4 py-density-button dark:border-neutral-800 dark:bg-neutral-900">
       <FontSelector currentFont={currentFont} />
       <FontSizeSelector currentFontSize={settings?.editorFontSize ?? 16} />
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+      <ToolbarSeparator />
       {groups.map((group, gi) => {
         const groupActions = actions.filter((a) => a.group === group);
         if (groupActions.length === 0) return null;
@@ -227,9 +327,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         if (group === "align") {
           return (
             <div key={group} className="flex items-center">
-              {gi > 0 && (
-                <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-              )}
+              {gi > 0 && <ToolbarSeparator />}
               <AlignmentDropdown editor={editor} />
             </div>
           );
@@ -237,192 +335,84 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         return (
           <div key={group} className="flex items-center">
-            {gi > 0 && (
-              <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-            )}
-            {groupActions.map((action) => {
-              const active = activeStates[action.label] ?? false;
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.label}
-                  type="button"
-                  title={action.label}
-                  onClick={() =>
-                    action.opensModal
-                      ? handleModalAction(action.label)
-                      : action.action(editor)
-                  }
-                  className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                    active
-                      ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                  }`}
-                >
-                  <Icon size={16} />
-                </button>
-              );
-            })}
+            {gi > 0 && <ToolbarSeparator />}
+            {groupActions.map((action) => (
+              <ToolbarButton
+                key={action.label}
+                icon={action.icon}
+                title={action.label}
+                variant={
+                  (activeStates[action.label] ?? false) ? "active" : "default"
+                }
+                onClick={() =>
+                  action.kind === "modal"
+                    ? handleModalOpen(action.modal)
+                    : action.run(editor)
+                }
+              />
+            ))}
           </div>
         );
       })}
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <button
-        type="button"
+      <ToolbarSeparator />
+      <ToolbarButton
+        icon={Brackets}
         title="Insert hole (Ctrl+Shift+H)"
         onClick={() => editor.chain().focus().insertHole().run()}
-        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-      >
-        <Brackets size={16} />
-      </button>
-      {activeProjectId && activeDocumentId && (
-        <>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <button
-            type="button"
-            title="Export"
-            onClick={() =>
-              openModal({
-                id: "export",
-                projectId: activeProjectId,
-                chapterId: activeDocumentId,
-                scope: "chapter",
-              })
-            }
-            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            <Download size={16} />
-          </button>
-          <button
-            type="button"
-            title="Version history"
-            onClick={() =>
-              openModal({
-                id: "version-history",
-                chapterId: activeDocumentId,
-                projectId: activeProjectId,
-              })
-            }
-            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            <History size={16} />
-          </button>
-          <ShareSessionButton />
-          <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
-          <TextToolsMenu editor={editor} />
-          {canReadAloud && (
-            <button
-              type="button"
-              title={
-                hasSelection ? "Read selection aloud" : "Read chapter aloud"
+      />
+      <SharedChapterActions
+        editor={editor}
+        projectId={activeProjectId}
+        chapterId={activeDocumentId}
+        onToggleFocusMode={toggleFocusMode}
+        beforeCopy={<ShareSessionButton />}
+        afterCopy={
+          <>
+            <TextToolsMenu editor={editor} />
+            {canReadAloud && (
+              <ToolbarButton
+                icon={Volume2}
+                title={
+                  hasSelection
+                    ? "Read selection aloud"
+                    : `Read ${getTerm(activeProjectMode, "chapter").toLowerCase()} aloud`
+                }
+                onClick={handleReadAloud}
+                disabled={readAloudLoading}
+              />
+            )}
+            <ToolbarButton
+              icon={ImagePlus}
+              title="Preview Card (Ctrl+Shift+P)"
+              onClick={() =>
+                openModal({
+                  id: "preview-card",
+                  selectedHtml,
+                  projectTitle: activeProjectTitle ?? "Untitled",
+                  chapterTitle: chapter?.title ?? "",
+                })
               }
-              onClick={handleReadAloud}
-              disabled={readAloudLoading}
-              className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                readAloudLoading
-                  ? "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              }`}
-            >
-              <Volume2 size={16} />
-            </button>
-          )}
-          <button
-            type="button"
-            title="Preview Card (Ctrl+Shift+P)"
-            onClick={() =>
-              openModal({
-                id: "preview-card",
-                selectedHtml,
-                projectTitle: activeProjectTitle ?? "Untitled",
-                chapterTitle: chapter?.title ?? "",
-              })
-            }
-            disabled={!hasSelection}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              hasSelection
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <ImagePlus size={16} />
-          </button>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <CreateCommentButton editor={editor} />
-          <button
-            type="button"
-            title="Toggle comment margin"
-            onClick={toggleMargin}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              marginVisible
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <PanelRight size={16} />
-          </button>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <button
-            type="button"
-            title="Toggle spellcheck"
-            onClick={toggleSpellcheck}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              spellcheckEnabled
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <SpellCheck size={16} />
-          </button>
-          <button
-            type="button"
-            title="Open spellcheck scanner"
-            onClick={handleOpenScanner}
-            disabled={!spellcheckEnabled}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              spellcheckEnabled
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <ScanSearch size={16} />
-          </button>
-          <button
-            type="button"
-            title="Toggle grammar checker"
-            onClick={toggleGrammar}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              grammarEnabled
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <SpellCheck2 size={16} />
-          </button>
-          <button
-            type="button"
-            title="Open grammar scanner"
-            onClick={handleOpenGrammarScanner}
-            disabled={!grammarEnabled}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              grammarEnabled
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <TextSearch size={16} />
-          </button>
-        </>
-      )}
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <button
-        type="button"
-        title="Focus mode (Ctrl+Shift+F)"
-        onClick={toggleFocusMode}
-        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-      >
-        <Maximize2 size={16} />
-      </button>
+              disabled={!hasSelection}
+            />
+          </>
+        }
+        afterSpellcheck={
+          <>
+            <ToolbarButton
+              icon={SpellCheck2}
+              title="Toggle grammar checker"
+              onClick={toggleGrammar}
+              variant={grammarEnabled ? "active" : "default"}
+            />
+            <ToolbarButton
+              icon={TextSearch}
+              title="Open grammar scanner"
+              onClick={handleOpenGrammarScanner}
+              disabled={!grammarEnabled}
+            />
+          </>
+        }
+      />
       <LinkEditorDialog onApply={handleLinkApply} onRemove={handleLinkRemove} />
       <InsertImageDialog onInsert={handleImageInsert} />
       <RubyDialog onApply={handleRubyApply} onRemove={handleRubyRemove} />
