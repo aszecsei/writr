@@ -1,7 +1,10 @@
 import type { Editor } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
 import {
+  AlignCenter,
+  ArrowRight,
   Bold,
+  Clapperboard,
   Code,
   Heading1,
   Heading2,
@@ -14,12 +17,16 @@ import {
   Link2,
   List,
   ListOrdered,
+  MessageSquare,
+  Parentheses,
   Quote,
   Redo2,
   SeparatorHorizontal,
   Strikethrough,
   Underline,
   Undo2,
+  User,
+  Zap,
 } from "lucide-react";
 
 export type ToolbarGroup =
@@ -29,7 +36,8 @@ export type ToolbarGroup =
   | "align"
   | "block"
   | "indent"
-  | "history";
+  | "history"
+  | "screenplay";
 
 export interface ToolbarAction {
   label: string;
@@ -207,4 +215,57 @@ export const groups: ToolbarGroup[] = [
   "block",
   "indent",
   "history",
+];
+
+/** Screenplay element-type buttons (scene heading, action, dialogue, …). */
+export const screenplayElementActions: ToolbarAction[] = [
+  {
+    label: "Scene",
+    icon: Clapperboard,
+    action: (e) => e.chain().focus().setNode("sceneHeading").run(),
+    isActive: (e) => e.isActive("sceneHeading"),
+    group: "screenplay",
+  },
+  {
+    label: "Action",
+    icon: Zap,
+    action: (e) => e.chain().focus().setNode("action").run(),
+    isActive: (e) => e.isActive("action"),
+    group: "screenplay",
+  },
+  {
+    label: "Character",
+    icon: User,
+    action: (e) => e.chain().focus().setNode("character").run(),
+    isActive: (e) => e.isActive("character"),
+    group: "screenplay",
+  },
+  {
+    label: "Dialogue",
+    icon: MessageSquare,
+    action: (e) => e.chain().focus().setNode("dialogue").run(),
+    isActive: (e) => e.isActive("dialogue"),
+    group: "screenplay",
+  },
+  {
+    label: "Paren",
+    icon: Parentheses,
+    action: (e) => e.chain().focus().setNode("parenthetical").run(),
+    isActive: (e) => e.isActive("parenthetical"),
+    group: "screenplay",
+  },
+  {
+    label: "Transition",
+    icon: ArrowRight,
+    action: (e) => e.chain().focus().setNode("transition").run(),
+    isActive: (e) => e.isActive("transition"),
+    group: "screenplay",
+  },
+  {
+    label: "Centered",
+    icon: AlignCenter,
+    action: (e) => e.chain().focus().setNode("centered").run(),
+    isActive: (e) => e.isActive("centered"),
+    group: "screenplay",
+  },
 ];

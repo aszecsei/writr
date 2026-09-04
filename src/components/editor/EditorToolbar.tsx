@@ -15,11 +15,13 @@ import {
   TextSearch,
   Volume2,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback } from "react";
 import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
 import { ToolbarButton } from "@/components/ui/ToolbarButton";
 import { ToolbarSeparator } from "@/components/ui/ToolbarSeparator";
 import { updateAppSettings } from "@/db/operations";
+import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
 import { extractReadAloudText } from "@/lib/tts/extract";
@@ -43,6 +45,112 @@ import { RubyDialog } from "./RubyDialog";
 import { TextToolsMenu } from "./TextToolsMenu";
 import { actions, groups } from "./toolbar-actions";
 
+interface SharedChapterActionsProps {
+  editor: Editor;
+  projectId: ProjectId | null;
+  chapterId: ChapterId | null;
+  onToggleFocusMode: () => void;
+  /** Rendered immediately before the Copy menu. */
+  beforeCopy?: ReactNode;
+  /** Rendered immediately after the Copy menu, before the next separator. */
+  afterCopy?: ReactNode;
+  /** Rendered immediately after the spellcheck scanner button. */
+  afterSpellcheck?: ReactNode;
+}
+
+/**
+ * Project/chapter-scoped toolbar actions shared by EditorToolbar and
+ * ScreenplayToolbar: export, version history, copy, comments, spellcheck,
+ * and focus mode. The `before*`/`after*` slots let each toolbar interleave
+ * its own extra actions without reshuffling the shared ones.
+ */
+export function SharedChapterActions({
+  editor,
+  projectId,
+  chapterId,
+  onToggleFocusMode,
+  beforeCopy,
+  afterCopy,
+  afterSpellcheck,
+}: SharedChapterActionsProps) {
+  const openModal = useUiStore((s) => s.openModal);
+  const marginVisible = useCommentStore((s) => s.marginVisible);
+  const toggleMargin = useCommentStore((s) => s.toggleMargin);
+  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
+  const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
+  const openScanner = useSpellcheckStore((s) => s.openScanner);
+
+  const handleOpenScanner = useCallback(() => {
+    const results = getSpellcheckResults(editor.state);
+    openScanner(results);
+    openModal({ id: "spellcheck-scanner" });
+  }, [editor, openScanner, openModal]);
+
+  return (
+    <>
+      {projectId && chapterId && (
+        <>
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={Download}
+            title="Export"
+            onClick={() =>
+              openModal({
+                id: "export",
+                projectId,
+                chapterId,
+                scope: "chapter",
+              })
+            }
+          />
+          <ToolbarButton
+            icon={History}
+            title="Version history"
+            onClick={() =>
+              openModal({
+                id: "version-history",
+                chapterId,
+                projectId,
+              })
+            }
+          />
+          {beforeCopy}
+          <CopyMenu projectId={projectId} chapterId={chapterId} />
+          {afterCopy}
+          <ToolbarSeparator />
+          <CreateCommentButton editor={editor} />
+          <ToolbarButton
+            icon={PanelRight}
+            title="Toggle comment margin"
+            onClick={toggleMargin}
+            variant={marginVisible ? "active" : "default"}
+          />
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={SpellCheck}
+            title="Toggle spellcheck"
+            onClick={toggleSpellcheck}
+            variant={spellcheckEnabled ? "active" : "default"}
+          />
+          <ToolbarButton
+            icon={ScanSearch}
+            title="Open spellcheck scanner"
+            onClick={handleOpenScanner}
+            disabled={!spellcheckEnabled}
+          />
+          {afterSpellcheck}
+        </>
+      )}
+      <ToolbarSeparator />
+      <ToolbarButton
+        icon={Maximize2}
+        title="Focus mode (Ctrl+Shift+F)"
+        onClick={onToggleFocusMode}
+      />
+    </>
+  );
+}
+
 interface EditorToolbarProps {
   editor: Editor | null;
 }
@@ -55,12 +163,6 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
-  const marginVisible = useCommentStore((s) => s.marginVisible);
-  const toggleMargin = useCommentStore((s) => s.toggleMargin);
-
-  const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
-  const toggleSpellcheck = useSpellcheckStore((s) => s.toggleEnabled);
-  const openScanner = useSpellcheckStore((s) => s.openScanner);
 
   // Grammar checking — enabled state is persisted in AppSettings.
   const grammarEnabled = settings?.grammarCheckerEnabled ?? false;
@@ -107,14 +209,6 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     ttsVoice,
     startReadAloud,
   ]);
-
-  // Open spellcheck scanner with current misspellings
-  const handleOpenScanner = useCallback(() => {
-    if (!editor) return;
-    const results = getSpellcheckResults(editor.state);
-    openScanner(results);
-    openModal({ id: "spellcheck-scanner" });
-  }, [editor, openScanner, openModal]);
 
   const toggleGrammar = useCallback(() => {
     void updateAppSettings({ grammarCheckerEnabled: !grammarEnabled });
@@ -262,98 +356,56 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         title="Insert hole (Ctrl+Shift+H)"
         onClick={() => editor.chain().focus().insertHole().run()}
       />
-      {activeProjectId && activeDocumentId && (
-        <>
-          <ToolbarSeparator />
-          <ToolbarButton
-            icon={Download}
-            title="Export"
-            onClick={() =>
-              openModal({
-                id: "export",
-                projectId: activeProjectId,
-                chapterId: activeDocumentId,
-                scope: "chapter",
-              })
-            }
-          />
-          <ToolbarButton
-            icon={History}
-            title="Version history"
-            onClick={() =>
-              openModal({
-                id: "version-history",
-                chapterId: activeDocumentId,
-                projectId: activeProjectId,
-              })
-            }
-          />
-          <ShareSessionButton />
-          <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
-          <TextToolsMenu editor={editor} />
-          {canReadAloud && (
+      <SharedChapterActions
+        editor={editor}
+        projectId={activeProjectId}
+        chapterId={activeDocumentId}
+        onToggleFocusMode={toggleFocusMode}
+        beforeCopy={<ShareSessionButton />}
+        afterCopy={
+          <>
+            <TextToolsMenu editor={editor} />
+            {canReadAloud && (
+              <ToolbarButton
+                icon={Volume2}
+                title={
+                  hasSelection ? "Read selection aloud" : "Read chapter aloud"
+                }
+                onClick={handleReadAloud}
+                disabled={readAloudLoading}
+              />
+            )}
             <ToolbarButton
-              icon={Volume2}
-              title={
-                hasSelection ? "Read selection aloud" : "Read chapter aloud"
+              icon={ImagePlus}
+              title="Preview Card (Ctrl+Shift+P)"
+              onClick={() =>
+                openModal({
+                  id: "preview-card",
+                  selectedHtml,
+                  projectTitle: activeProjectTitle ?? "Untitled",
+                  chapterTitle: chapter?.title ?? "",
+                })
               }
-              onClick={handleReadAloud}
-              disabled={readAloudLoading}
+              disabled={!hasSelection}
             />
-          )}
-          <ToolbarButton
-            icon={ImagePlus}
-            title="Preview Card (Ctrl+Shift+P)"
-            onClick={() =>
-              openModal({
-                id: "preview-card",
-                selectedHtml,
-                projectTitle: activeProjectTitle ?? "Untitled",
-                chapterTitle: chapter?.title ?? "",
-              })
-            }
-            disabled={!hasSelection}
-          />
-          <ToolbarSeparator />
-          <CreateCommentButton editor={editor} />
-          <ToolbarButton
-            icon={PanelRight}
-            title="Toggle comment margin"
-            onClick={toggleMargin}
-            variant={marginVisible ? "active" : "default"}
-          />
-          <ToolbarSeparator />
-          <ToolbarButton
-            icon={SpellCheck}
-            title="Toggle spellcheck"
-            onClick={toggleSpellcheck}
-            variant={spellcheckEnabled ? "active" : "default"}
-          />
-          <ToolbarButton
-            icon={ScanSearch}
-            title="Open spellcheck scanner"
-            onClick={handleOpenScanner}
-            disabled={!spellcheckEnabled}
-          />
-          <ToolbarButton
-            icon={SpellCheck2}
-            title="Toggle grammar checker"
-            onClick={toggleGrammar}
-            variant={grammarEnabled ? "active" : "default"}
-          />
-          <ToolbarButton
-            icon={TextSearch}
-            title="Open grammar scanner"
-            onClick={handleOpenGrammarScanner}
-            disabled={!grammarEnabled}
-          />
-        </>
-      )}
-      <ToolbarSeparator />
-      <ToolbarButton
-        icon={Maximize2}
-        title="Focus mode (Ctrl+Shift+F)"
-        onClick={toggleFocusMode}
+          </>
+        }
+        afterSpellcheck={
+          <>
+            <ToolbarButton
+              icon={SpellCheck2}
+              title="Toggle grammar checker"
+              onClick={toggleGrammar}
+              variant={grammarEnabled ? "active" : "default"}
+            />
+            <ToolbarButton
+              icon={TextSearch}
+              title="Open grammar scanner"
+              onClick={handleOpenGrammarScanner}
+              disabled={!grammarEnabled}
+            />
+          </>
+        }
       />
       <LinkEditorDialog onApply={handleLinkApply} onRemove={handleLinkRemove} />
       <InsertImageDialog onInsert={handleImageInsert} />
