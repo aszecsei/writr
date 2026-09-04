@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import { CompiledView } from "@/components/worldbuilding/CompiledView";
 import { WorldbuildingDocDialog } from "@/components/worldbuilding/WorldbuildingDocDialog";
 import {
@@ -294,7 +295,7 @@ export default function WorldbuildingListPage() {
         <button
           type="button"
           onClick={() => handleAddDoc(null)}
-          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          className={BUTTON_PRIMARY}
         >
           Add Document
         </button>

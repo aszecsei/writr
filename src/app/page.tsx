@@ -8,6 +8,7 @@ import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog"
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
 import { SettingsModals } from "@/components/settings/SettingsModals";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -63,7 +64,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => openModal({ id: "create-project" })}
-              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+              className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
             >
               <Plus size={16} />
               New Project

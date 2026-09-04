@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen, Plus } from "lucide-react";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import type { Project, ProjectId } from "@/db/schemas";
 import { ProjectCard } from "./ProjectCard";
 
@@ -34,7 +35,7 @@ export function ProjectGrid({
           <button
             type="button"
             onClick={onCreateProject}
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:hover:bg-primary-400"
+            className={`mt-6 inline-flex items-center gap-2 ${BUTTON_PRIMARY}`}
           >
             <Plus size={16} />
             Create your first project

@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import {
   deleteWorldbuildingDoc,
@@ -107,12 +108,12 @@ export function WorldbuildingDocDialog({
           placeholder="Document Title"
         />
         <div className="flex gap-4">
-          <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <label className={`flex-1 ${LABEL_CLASS}`}>
             Parent
             <select
               value={parentDocId ?? ""}
               onChange={(e) => handleParentChange(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={INPUT_CLASS}
             >
               <option value="">None (root level)</option>
               {selectableDocs.map(({ doc: d, depth }) => (
@@ -123,24 +124,24 @@ export function WorldbuildingDocDialog({
               ))}
             </select>
           </label>
-          <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <label className={`flex-1 ${LABEL_CLASS}`}>
             Tags
             <input
               type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={INPUT_CLASS}
               placeholder="comma-separated"
             />
           </label>
         </div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label className={LABEL_CLASS}>
           Content
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={16}
-            className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-mono dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+            className={`font-mono ${INPUT_CLASS}`}
             placeholder="Write your worldbuilding content here (Markdown supported)... Leave empty to use as a section heading."
           />
         </label>

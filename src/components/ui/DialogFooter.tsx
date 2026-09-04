@@ -3,6 +3,7 @@ import { BUTTON_CANCEL, BUTTON_DANGER, BUTTON_PRIMARY } from "./button-styles";
 
 interface DialogFooterProps {
   onCancel: () => void;
+  cancelDisabled?: boolean;
   submitLabel?: string;
   submitDisabled?: boolean;
   variant?: "primary" | "danger";
@@ -20,6 +21,7 @@ interface DialogFooterProps {
 
 export function DialogFooter({
   onCancel,
+  cancelDisabled,
   submitLabel = "Save",
   submitDisabled,
   variant = "primary",
@@ -38,7 +40,12 @@ export function DialogFooter({
     <div className={`flex ${left ? "justify-between" : "justify-end"} gap-3`}>
       {left && <div className="flex items-center">{left}</div>}
       <div className="flex gap-3">
-        <button type="button" onClick={onCancel} className={BUTTON_CANCEL}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={cancelDisabled}
+          className={BUTTON_CANCEL}
+        >
           Cancel
         </button>
         <button

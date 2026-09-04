@@ -9,6 +9,7 @@ import {
   RADIO_BASE,
   RADIO_INACTIVE,
 } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
 import { CHECKBOX_CLASS, LEGEND_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -69,10 +70,8 @@ export function PreviewCardDialog() {
         <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
           Select some text in the editor to create a preview card.
         </p>
-        <div className="mt-5 flex justify-end">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Close
-          </button>
+        <div className="mt-5">
+          <CloseFooter onClose={closeModal} />
         </div>
       </Modal>
     );
