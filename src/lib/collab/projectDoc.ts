@@ -59,7 +59,7 @@ const PROJECT_DOC_TABLE_SCHEMAS = {
 
 export type ProjectDocEntity<T extends ProjectDocTable> = z.infer<
   (typeof PROJECT_DOC_TABLE_SCHEMAS)[T]
->;
+> & { id: string };
 
 const META_KEY = "meta";
 const PROJECT_KEY = "project";
@@ -132,7 +132,7 @@ export function upsertEntity<T extends ProjectDocTable>(
   origin: unknown,
 ): void {
   const map = getProjectTable(doc, table);
-  const id = (row as { id: string }).id;
+  const id = row.id;
   doc.transact(() => {
     map.set(id, JSON.stringify(row));
   }, origin);

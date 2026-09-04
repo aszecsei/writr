@@ -90,7 +90,7 @@ export class ProjectMirror {
     const upserts: ProjectDocEntity<T>[] = [];
 
     for (const row of rows) {
-      const id = (row as { id: string }).id;
+      const id = row.id;
       const json = JSON.stringify(row);
       nextHashes.set(id, json);
       if (previousHashes.get(id) !== json) {
@@ -153,7 +153,7 @@ export class ProjectMirror {
     const nextHashes = new Map<string, string>();
     const seen = new Set<string>();
     for (const row of rows) {
-      const id = (row as { id: string }).id;
+      const id = row.id;
       seen.add(id);
       const json = JSON.stringify(row);
       nextHashes.set(id, json);

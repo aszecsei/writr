@@ -7,6 +7,7 @@ import {
   PROJECT_DOC_TABLES,
   type ProjectDocEntity,
   type ProjectDocTable,
+  readEntities,
   readEntity,
   readProjectMeta,
   readProjectRow,
@@ -46,13 +47,7 @@ export function attachProjectReader(
     [K in ProjectDocTable]: ProjectDocEntity<K>[];
   }> = {};
   for (const table of PROJECT_DOC_TABLES) {
-    const map = getProjectTable(doc, table);
-    if (map.size === 0) continue;
-    const rows: ProjectDocEntity<typeof table>[] = [];
-    for (const id of map.keys()) {
-      const parsed = readEntity(doc, table, id);
-      if (parsed) rows.push(parsed);
-    }
+    const rows = readEntities(doc, table);
     if (rows.length > 0) {
       (seedTables as Record<string, ProjectDocEntity<ProjectDocTable>[]>)[
         table
