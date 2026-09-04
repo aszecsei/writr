@@ -74,7 +74,7 @@ https://app.example.com/shared/<roomUuid>?t=<token>#h=<hostPubEncoded>[&p=1]
 
 ### Roles and gating
 
-Roles are enforced both server-side (relay's `canSend()` in `collab/src/protocol.ts`) and client-side (`canSendClient()` in `src/lib/collab/protocol.ts`):
+Roles are enforced by one `canSend(role, message)` in `collab/src/protocol.ts` — the single source of truth for the wire protocol, re-exported to the Next app as `src/lib/collab/protocol.ts` via the `@collab/*` path alias. The relay calls it server-side (authoritative); `CollabClient` calls the same function client-side to pre-empt sends the server would reject:
 
 | Role | Prose Y-update | Comments Y-update | Project Y-update | Join approve/deny / kick |
 |---|---|---|---|---|
