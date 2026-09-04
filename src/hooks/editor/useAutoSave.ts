@@ -28,4 +28,15 @@ export function useAutoSave(saveFn: () => Promise<void>, intervalMs = 3000) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [isDirty, saveFn, intervalMs, markSaving, markSaved, markSaveError]);
+
+  // Flush on unmount (e.g. toggling focus mode recreates the editor) so
+  // in-flight content isn't lost while waiting on the debounce timer above.
+  // Read via a ref so the mount-once cleanup below calls the latest saveFn.
+  const saveFnRef = useRef(saveFn);
+  saveFnRef.current = saveFn;
+  useEffect(() => {
+    return () => {
+      void saveFnRef.current();
+    };
+  }, []);
 }
