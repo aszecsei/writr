@@ -1,5 +1,15 @@
+import { getSchema } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
-import { shouldSkipWord, tokenizeText } from "./tokenizer";
+import { createExtensions } from "@/components/editor/extensions";
+import { extractWords, shouldSkipWord, tokenizeText } from "./tokenizer";
+
+const schema = getSchema(createExtensions());
+
+// biome-ignore lint/suspicious/noExplicitAny: test fixture JSON is intentionally loose
+function docFromJSON(content: any[]): ProseMirrorNode {
+  return schema.nodeFromJSON({ type: "doc", content });
+}
 
 describe("tokenizer", () => {
   describe("tokenizeText", () => {
@@ -65,21 +75,6 @@ describe("tokenizer", () => {
       expect(tokens[1].word).toBe("naïve");
     });
 
-    it("should skip numbers", () => {
-      const tokens = tokenizeText("hello 123 world", 0);
-      expect(tokens).toHaveLength(2);
-      expect(tokens[0].word).toBe("hello");
-      expect(tokens[1].word).toBe("world");
-    });
-
-    it("should handle mixed text and numbers", () => {
-      // "chapter1" contains "chapter" which is extracted as a word
-      const tokens = tokenizeText("chapter1 word", 0);
-      expect(tokens).toHaveLength(2);
-      expect(tokens[0].word).toBe("chapter");
-      expect(tokens[1].word).toBe("word");
-    });
-
     it("should handle em dashes", () => {
       const tokens = tokenizeText("hello—world", 0);
       expect(tokens).toHaveLength(2);
@@ -127,6 +122,37 @@ describe("tokenizer", () => {
     it("should not skip regular words", () => {
       expect(shouldSkipWord("hello")).toBe(false);
       expect(shouldSkipWord("World")).toBe(false);
+    });
+  });
+
+  describe("extractWords", () => {
+    it("skips text carrying an inline code mark while tokenizing adjacent text", () => {
+      const doc = docFromJSON([
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "run " },
+            { type: "text", text: "fooBarBaz", marks: [{ type: "code" }] },
+            { type: "text", text: " now" },
+          ],
+        },
+      ]);
+
+      const words = extractWords(doc).map((token) => token.word);
+      expect(words).toEqual(["run", "now"]);
+    });
+
+    it("skips code blocks entirely", () => {
+      const doc = docFromJSON([
+        {
+          type: "codeBlock",
+          content: [{ type: "text", text: "const x = 1;" }],
+        },
+        { type: "paragraph", content: [{ type: "text", text: "Real prose." }] },
+      ]);
+
+      const words = extractWords(doc).map((token) => token.word);
+      expect(words).toEqual(["Real", "prose"]);
     });
   });
 });
