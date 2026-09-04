@@ -85,7 +85,7 @@ export default function SharedSessionPage() {
       token,
       hostPubEncoded,
       identity,
-      projectMode: shareMode === "project",
+      shareMode,
     }).catch(() => {
       // Failure is recorded on collabStore.error or status=denied; UI reflects it.
     });
@@ -106,7 +106,7 @@ export default function SharedSessionPage() {
   // In project-mode, attach the project reader as soon as we have a
   // session so meta lands in the in-memory store. The reader is detached
   // when this page unmounts (on redirect into the project shell, which
-  // will mount its own reader). resetForRoom keeps state coherent.
+  // will mount its own reader). reset() keeps state coherent.
   useEffect(() => {
     if (shareMode !== "project") return;
     if (!session) return;

@@ -5,7 +5,7 @@ import { type ReactNode, useEffect } from "react";
 import { HostMovedBanner } from "@/components/collab/HostMovedBanner";
 import { DataSourceProvider } from "@/context/DataSourceContext";
 import { attachProjectReader } from "@/lib/collab/projectReader";
-import { useCollabStore } from "@/store/collabStore";
+import { collabSelectors, useCollabStore } from "@/store/collabStore";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
 
 /**
@@ -28,13 +28,13 @@ export default function SharedProjectLayout({
   const router = useRouter();
   const session = useCollabStore((s) => s.session);
   const role = useCollabStore((s) => s.role);
-  const projectMode = useCollabStore((s) => s.projectMode);
+  const isProjectMode = useCollabStore(collabSelectors.isProjectMode);
   const meta = useSharedProjectStore((s) => s.meta);
 
   // Wire the project Y.Doc into the in-memory store. Detach on unmount.
   useEffect(() => {
     if (!session) return;
-    if (!projectMode) return;
+    if (!isProjectMode) return;
     const doc = session.getDoc("project");
     const detach = attachProjectReader({
       doc,
@@ -42,9 +42,9 @@ export default function SharedProjectLayout({
     });
     return () => {
       detach();
-      useSharedProjectStore.getState().resetForRoom();
+      useSharedProjectStore.getState().reset();
     };
-  }, [session, projectMode]);
+  }, [session, isProjectMode]);
 
   // Guard: if the URL projectId doesn't match the host's projectId in
   // the synced meta, bail to the room entry page so the user can re-
@@ -56,7 +56,7 @@ export default function SharedProjectLayout({
     }
   }, [meta, params.projectId, params.roomUuid, router]);
 
-  if (!session || !projectMode) {
+  if (!session || !isProjectMode) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-neutral-500">Connecting to shared project…</p>

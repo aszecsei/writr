@@ -20,7 +20,7 @@ function relay(host: Y.Doc, guest: Y.Doc): void {
 }
 
 beforeEach(() => {
-  useSharedProjectStore.getState().resetForRoom();
+  useSharedProjectStore.getState().reset();
 });
 
 describe("attachProjectReader", () => {
@@ -44,7 +44,6 @@ describe("attachProjectReader", () => {
     expect(state.byTable.characters.get(CHARACTER_ID_1)?.name).toBe("Alice");
     expect(state.project?.id).toBe(PROJECT_ID);
     expect(state.meta).toEqual({
-      mode: "project",
       projectId: PROJECT_ID,
       activeChapterId: CHAPTER_ID_1,
       revision: 1,

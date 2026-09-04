@@ -4,8 +4,10 @@ import { useCallback, useEffect } from "react";
 import { attachClientToStore } from "@/lib/collab/attach";
 import type { CollabClient } from "@/lib/collab/client";
 import { getCollabBaseUrl, isCollabEnabled } from "@/lib/collab/config";
+import type { ShareMode } from "@/lib/collab/crypto";
 import {
   attachJoinRequestHandler,
+  JoinDeniedError,
   type JoinRequestHandle,
 } from "@/lib/collab/handshake";
 import {
@@ -49,7 +51,7 @@ interface JoinAsGuestOptions {
   /** Mirror of the `mode=project` URL fragment flag. The guest's UI
    *  should pre-set this from the URL before calling joinAsGuest so the
    *  shell knows which layout to render before the project meta arrives. */
-  projectMode?: boolean;
+  shareMode?: ShareMode;
 }
 
 export interface UseCollabManagerOptions {
@@ -163,9 +165,11 @@ export function useCollabManager(
       if (opts?.identity) {
         useCollabStore.getState().setIdentity(opts.identity);
       }
-      // Pre-set projectMode so any host-side effect that mounts on
+      // Pre-set shareMode so any host-side effect that mounts on
       // session-creation (e.g. HostProjectMirror) sees the right value.
-      useCollabStore.getState().setProjectMode(opts?.projectMode === true);
+      useCollabStore
+        .getState()
+        .setShareMode(opts?.projectMode === true ? "project" : "chapter");
       const { identity: _hostIdentity, ...connectOpts } = opts ?? {};
       try {
         const conn = await connectAsHost({ baseUrl, ...connectOpts });
@@ -271,9 +275,9 @@ export function useCollabManager(
       useCollabStore.getState().setIdentity(opts.identity);
       useCollabStore.getState().setStatus("awaiting_approval");
       useCollabStore.getState().setDeniedReason(null);
-      // Pre-set projectMode from the URL fragment so the guest shell can
+      // Pre-set shareMode from the URL fragment so the guest shell can
       // render the right layout before the project meta arrives.
-      useCollabStore.getState().setProjectMode(opts.projectMode === true);
+      useCollabStore.getState().setShareMode(opts.shareMode ?? "chapter");
 
       const connectOpts: Parameters<typeof connectAsGuest>[0] = {
         baseUrl,
@@ -303,14 +307,8 @@ export function useCollabManager(
         const store = useCollabStore.getState();
         // JoinDeniedError is a non-error end-state for the guest UI; surface
         // it as `denied` rather than a transport error.
-        const name = err instanceof Error ? err.name : "";
-        if (name === "JoinDeniedError") {
-          const reason = err instanceof Error ? err.message : null;
-          store.setDeniedReason(
-            err instanceof Error && "reason" in err
-              ? ((err as { reason?: string }).reason ?? reason)
-              : reason,
-          );
+        if (err instanceof JoinDeniedError) {
+          store.setDeniedReason(err.reason ?? err.message);
           store.setStatus("denied");
         } else {
           store.setStatus("ended");

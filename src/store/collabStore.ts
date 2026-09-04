@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { ShareMode } from "@/lib/collab/crypto";
 import type { ShareUrls } from "@/lib/collab/lifecycle";
 import type { ErrorCode, Role } from "@/lib/collab/protocol";
 import type { CollabSession } from "@/lib/collab/session";
@@ -87,14 +88,14 @@ interface CollabState {
    */
   deniedReason: string | null;
   /**
-   * True when the session shares the entire project read-only, false (or
-   * null before connection) when only the active chapter is shared.
-   * Host sets this from the share-dialog checkbox; guest mirrors it from
-   * the URL fragment after parsing `&p=1`. Existing roles (edit/review/
-   * view) still apply to the active chapter; non-active content is
-   * read-only for every role when this is true.
+   * "project" when the session shares the entire project read-only,
+   * "chapter" when only the active chapter is shared. Host sets this from
+   * the share-dialog checkbox; guest mirrors it from the URL fragment
+   * after parsing `&p=1`. Existing roles (edit/review/view) still apply
+   * to the active chapter; non-active content is read-only for every
+   * role in "project" mode.
    */
-  projectMode: boolean;
+  shareMode: ShareMode;
 
   setSession: (
     session: CollabSession,
@@ -118,7 +119,7 @@ interface CollabState {
    *  it. Called when peer_left fires. */
   clearGuestPeerId: (peerId: string) => void;
   setDeniedReason: (reason: string | null) => void;
-  setProjectMode: (projectMode: boolean) => void;
+  setShareMode: (shareMode: ShareMode) => void;
   reset: () => void;
 }
 
@@ -138,7 +139,7 @@ const INITIAL: Omit<
   | "revokeGuestPub"
   | "clearGuestPeerId"
   | "setDeniedReason"
-  | "setProjectMode"
+  | "setShareMode"
   | "reset"
 > = {
   session: null,
@@ -154,7 +155,7 @@ const INITIAL: Omit<
   pendingJoinRequests: [],
   approvedGuests: {},
   deniedReason: null,
-  projectMode: false,
+  shareMode: "chapter",
 };
 
 export const useCollabStore = create<CollabState>()((set) => ({
@@ -222,7 +223,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
       return touched ? { approvedGuests: next } : {};
     }),
   setDeniedReason: (reason) => set({ deniedReason: reason }),
-  setProjectMode: (projectMode) => set({ projectMode }),
+  setShareMode: (shareMode) => set({ shareMode }),
   reset: () => set({ ...INITIAL }),
 }));
 
@@ -232,7 +233,7 @@ export const useCollabStore = create<CollabState>()((set) => ({
  */
 export const collabSelectors = {
   isHost: (s: CollabState): boolean => s.role === "host",
-  isProjectMode: (s: CollabState): boolean => s.projectMode === true,
+  isProjectMode: (s: CollabState): boolean => s.shareMode === "project",
   canEditComments: (s: CollabState): boolean =>
     s.role === "host" || s.role === "edit" || s.role === "review",
   isInGrace: (s: CollabState): boolean => s.status === "host_disconnected",

@@ -27,7 +27,7 @@ export interface SharedProjectState {
     rows: Partial<{ [K in ProjectDocTable]: ProjectDocEntity<K>[] }>,
     opts?: { project?: Project | null; meta?: ProjectDocMeta | null },
   ) => void;
-  resetForRoom: () => void;
+  reset: () => void;
 }
 
 function emptyByTable(): SharedProjectByTable {
@@ -89,5 +89,5 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
         meta: opts?.meta ?? null,
       };
     }),
-  resetForRoom: () => set({ ...INITIAL, byTable: emptyByTable() }),
+  reset: () => set({ ...INITIAL, byTable: emptyByTable() }),
 }));
