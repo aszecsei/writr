@@ -50,8 +50,6 @@ interface RunGuestHandshakeOptions {
   displayName: string;
   color: string;
   signal?: AbortSignal;
-  /** Override the random requestId (test seam). */
-  requestId?: string;
 }
 
 interface GuestHandshakeResult {
@@ -84,10 +82,9 @@ export function runGuestHandshake(
     let detached = false;
 
     const requestId =
-      opts.requestId ??
-      (typeof crypto !== "undefined" && "randomUUID" in crypto
+      typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
-        : `req-${Math.random().toString(36).slice(2)}`);
+        : `req-${Math.random().toString(36).slice(2)}`;
 
     const onMessage = async (event: { data: string | ArrayBuffer | Blob }) => {
       if (settled) return;

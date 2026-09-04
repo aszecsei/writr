@@ -55,10 +55,10 @@ let nextRequestId = 1;
 /**
  * Attach a guest the way the host-approval handshake demands: connect,
  * send join-request, host approves. Most existing tests don't care about
- * the handshake specifically, so this keeps them concise. Tests for
- * pending-state behavior should call `attachPending` instead.
- *
- * Requires a host already attached on the same room (passed via `host`).
+ * the handshake specifically, so this keeps them concise. Requires a host
+ * already attached on the same room (passed via `host`, or discoverable
+ * via `findHost`). Tests that specifically want a guest left pending —
+ * with or without a host present — should call `attachPending` instead.
  */
 function attach(
   room: Room,
@@ -77,10 +77,9 @@ function attach(
   // host"; if no host param was passed, look one up.
   const hostEntry = host ?? findHost(room);
   if (!hostEntry) {
-    // No host yet — attempt to deliver join-request anyway (room will
-    // store the requestId in pending; tests that explicitly want
-    // pending-without-host should use attachPending).
-    return { socket, peerId: result.peerId };
+    throw new Error(
+      "attach() requires a host to already be attached; use attachPending() for a guest that should stay pending",
+    );
   }
 
   const requestId = `test-req-${nextRequestId++}`;
@@ -185,7 +184,7 @@ describe("Room.authorize", () => {
 describe("Room.attach", () => {
   it("sends welcome with assigned role and peer id", () => {
     const room = makeRoom();
-    const { socket, peerId } = attach(room, "edit-tok");
+    const { socket, peerId } = attachPending(room, "edit-tok");
     const welcome = socket.byType("welcome")[0];
     expect(welcome).toBeDefined();
     expect(welcome?.role).toBe("edit");
@@ -224,21 +223,25 @@ describe("Room.attach", () => {
     if (!result.ok) expect(result.error).toBe("room-full");
   });
 
-  it("sends buffered updates to late joiners", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    room.receive(host.peerId, sampleY());
-    room.receive(host.peerId, { ...sampleY(), payload: "BBBB" });
-    const guest = attach(room, "view-tok");
-    const buffer = guest.socket.byType("buffer")[0];
-    expect(buffer).toBeDefined();
-    expect(buffer?.docKind).toBe("prose");
-    expect(buffer?.updates).toEqual(["AQID", "BBBB"]);
-  });
+  it.each(["prose", "project"] as const)(
+    "sends buffered %s updates to late joiners",
+    (docKind) => {
+      const room = makeRoom();
+      const host = attach(room, "host-tok");
+      room.receive(host.peerId, { ...sampleY(), docKind });
+      room.receive(host.peerId, { ...sampleY(), docKind, payload: "BBBB" });
+      const guest = attach(room, "view-tok");
+      const buffer = guest.socket
+        .byType("buffer")
+        .find((b) => b.docKind === docKind);
+      expect(buffer).toBeDefined();
+      expect(buffer?.updates).toEqual(["AQID", "BBBB"]);
+    },
+  );
 
   it("emits host_connected when host attaches", () => {
     const room = makeRoom();
-    const guest = attach(room, "edit-tok");
+    const guest = attachPending(room, "edit-tok");
     attach(room, "host-tok");
     expect(
       guest.socket.systemEvents().some((e) => e.event === "host_connected"),
@@ -249,7 +252,7 @@ describe("Room.attach", () => {
 describe("Room.receive: role gating", () => {
   it("blocks 'view' from sending y-update and closes the socket", () => {
     const room = makeRoom();
-    const { socket, peerId } = attach(room, "view-tok");
+    const { socket, peerId } = attachPending(room, "view-tok");
     room.receive(peerId, sampleY());
     expect(socket.byType("error")[0]?.code).toBe("unauthorized");
     expect(socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
@@ -297,23 +300,6 @@ describe("Room.receive: role gating", () => {
       expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
     }
   });
-
-  it("buffers project updates and replays them to a newly-attached view guest", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    room.receive(host.peerId, { ...sampleY(), docKind: "project" });
-    room.receive(host.peerId, {
-      ...sampleY(),
-      docKind: "project",
-      payload: "BBBB",
-    });
-    const guest = attach(room, "view-tok");
-    const projectBuffer = guest.socket
-      .byType("buffer")
-      .find((b) => b.docKind === "project");
-    expect(projectBuffer).toBeDefined();
-    expect(projectBuffer?.updates).toEqual(["AQID", "BBBB"]);
-  });
 });
 
 describe("Room.receive: relay", () => {
@@ -348,7 +334,7 @@ describe("Room.receive: relay", () => {
 describe("Room: invalid messages", () => {
   it("closes socket on malformed message", () => {
     const room = makeRoom();
-    const { socket, peerId } = attach(room, "edit-tok");
+    const { socket, peerId } = attachPending(room, "edit-tok");
     room.receive(peerId, { type: "y-update", docKind: "prose" });
     expect(socket.byType("error")[0]?.code).toBe("invalid-message");
     expect(socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
@@ -356,7 +342,7 @@ describe("Room: invalid messages", () => {
 
   it("rejects non-base64 payloads", () => {
     const room = makeRoom();
-    const { socket, peerId } = attach(room, "edit-tok");
+    const { socket, peerId } = attachPending(room, "edit-tok");
     room.receive(peerId, {
       type: "y-update",
       docKind: "prose",
@@ -628,42 +614,32 @@ describe("Room: handshake (pending guests)", () => {
     ).toBe(false);
   });
 
-  it("emits join_request_cancelled to host when a pending guest disconnects mid-request", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    room.receive(guest.peerId, {
-      type: "join-request",
-      requestId: "req-X",
-      guestPub: "AQID",
-      displayName: "Carol",
-      color: "#001122",
-    });
-    host.socket.sent = [];
+  it.each([true, false])(
+    "emits join_request_cancelled to host on disconnect only if a join-request was sent (sentRequest=%s)",
+    (sentRequest) => {
+      const room = makeRoom();
+      const host = attach(room, "host-tok");
+      const guest = attachPending(room, "edit-tok");
+      if (sentRequest) {
+        room.receive(guest.peerId, {
+          type: "join-request",
+          requestId: "req-X",
+          guestPub: "AQID",
+          displayName: "Carol",
+          color: "#001122",
+        });
+      }
+      host.socket.sent = [];
 
-    room.detach(guest.peerId);
+      room.detach(guest.peerId);
 
-    const cancelled = host.socket
-      .systemEvents()
-      .find((e) => e.event === "join_request_cancelled");
-    expect(cancelled).toBeDefined();
-    expect(cancelled?.requestId).toBe("req-X");
-  });
-
-  it("does not emit join_request_cancelled if pending guest disconnects before sending join-request", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    host.socket.sent = [];
-
-    room.detach(guest.peerId);
-
-    expect(
-      host.socket
+      const cancelled = host.socket
         .systemEvents()
-        .some((e) => e.event === "join_request_cancelled"),
-    ).toBe(false);
-  });
+        .find((e) => e.event === "join_request_cancelled");
+      expect(cancelled !== undefined).toBe(sentRequest);
+      if (sentRequest) expect(cancelled?.requestId).toBe("req-X");
+    },
+  );
 
   it("rejects join-approved from a non-host with unauthorized", () => {
     const room = makeRoom();
@@ -729,122 +705,84 @@ describe("Room: handshake (pending guests)", () => {
 });
 
 describe("Room: pending join timeout", () => {
-  it("times out a pending guest after joinTimeoutMs and notifies the host", () => {
+  it.each([true, false])(
+    "times out a pending guest after joinTimeoutMs, notifying the host only if a join-request was sent (sentRequest=%s)",
+    (sentRequest) => {
+      const room = makeRoom({ joinTimeoutMs: 5_000 });
+      const host = attach(room, "host-tok");
+      const guest = attachPending(room, "edit-tok");
+      if (sentRequest) {
+        room.receive(guest.peerId, {
+          type: "join-request",
+          requestId: "req-T",
+          guestPub: "AQID",
+          displayName: "T",
+          color: "#abcdef",
+        });
+      }
+      host.socket.sent = [];
+      guest.socket.sent = [];
+
+      vi.advanceTimersByTime(5_000);
+
+      // Guest gets a join-timeout error and is closed either way.
+      expect(guest.socket.byType("error")[0]?.code).toBe("join-timeout");
+      expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
+      const cancelled = host.socket
+        .systemEvents()
+        .find((e) => e.event === "join_request_cancelled");
+      expect(cancelled !== undefined).toBe(sentRequest);
+      if (sentRequest) expect(cancelled?.requestId).toBe("req-T");
+    },
+  );
+
+  it.each([
+    [
+      "the host approves",
+      (room: Room, host: { peerId: string }, guest: { peerId: string }) => {
+        room.receive(host.peerId, {
+          type: "join-approved",
+          requestId: "req-1",
+          encryptedRoomKey: "BBBB",
+          to: guest.peerId,
+        });
+      },
+    ],
+    [
+      "the host denies",
+      (room: Room, host: { peerId: string }, guest: { peerId: string }) => {
+        room.receive(host.peerId, {
+          type: "join-denied",
+          requestId: "req-1",
+          to: guest.peerId,
+        });
+      },
+    ],
+    [
+      "the guest disconnects",
+      (room: Room, _host: { peerId: string }, guest: { peerId: string }) => {
+        room.detach(guest.peerId);
+      },
+    ],
+  ] as const)("cancels the join timeout when %s", (_label, resolve) => {
     const room = makeRoom({ joinTimeoutMs: 5_000 });
     const host = attach(room, "host-tok");
     const guest = attachPending(room, "edit-tok");
     room.receive(guest.peerId, {
       type: "join-request",
-      requestId: "req-T",
+      requestId: "req-1",
       guestPub: "AQID",
       displayName: "T",
       color: "#abcdef",
     });
-    host.socket.sent = [];
-    guest.socket.sent = [];
 
-    vi.advanceTimersByTime(5_000);
+    resolve(room, host, guest);
 
-    // Guest gets a join-timeout error and is closed.
-    expect(guest.socket.byType("error")[0]?.code).toBe("join-timeout");
-    expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
-    // Host gets join_request_cancelled so the modal clears.
-    const cancelled = host.socket
-      .systemEvents()
-      .find((e) => e.event === "join_request_cancelled");
-    expect(cancelled?.requestId).toBe("req-T");
-  });
-
-  it("times out a pending guest who never sent join-request without notifying host", () => {
-    const room = makeRoom({ joinTimeoutMs: 5_000 });
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    host.socket.sent = [];
-
-    vi.advanceTimersByTime(5_000);
-
-    expect(guest.socket.byType("error")[0]?.code).toBe("join-timeout");
-    expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
-    expect(
-      host.socket
-        .systemEvents()
-        .some((e) => e.event === "join_request_cancelled"),
-    ).toBe(false);
-  });
-
-  it("cancels the timeout when the host approves in time", () => {
-    const room = makeRoom({ joinTimeoutMs: 5_000 });
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    room.receive(guest.peerId, {
-      type: "join-request",
-      requestId: "req-OK",
-      guestPub: "AQID",
-      displayName: "OK",
-      color: "#abcdef",
-    });
-    room.receive(host.peerId, {
-      type: "join-approved",
-      requestId: "req-OK",
-      encryptedRoomKey: "BBBB",
-      to: guest.peerId,
-    });
-
-    guest.socket.sent = [];
+    const errorsBefore = guest.socket.byType("error").length;
     vi.advanceTimersByTime(10_000);
-
-    // No timeout error fires after approval.
-    expect(guest.socket.byType("error")).toHaveLength(0);
-    expect(guest.socket.closed).toBeNull();
-  });
-
-  it("cancels the timeout when the host denies", () => {
-    const room = makeRoom({ joinTimeoutMs: 5_000 });
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    room.receive(guest.peerId, {
-      type: "join-request",
-      requestId: "req-N",
-      guestPub: "AQID",
-      displayName: "N",
-      color: "#abcdef",
-    });
-    room.receive(host.peerId, {
-      type: "join-denied",
-      requestId: "req-N",
-      to: guest.peerId,
-    });
-
-    // Already closed; advancing time should not produce a second error.
-    const errorsAfterDeny = guest.socket.byType("error").length;
-    vi.advanceTimersByTime(10_000);
-    expect(guest.socket.byType("error").length).toBe(errorsAfterDeny);
-  });
-
-  it("cancels the timeout when the pending guest disconnects on their own", () => {
-    const room = makeRoom({ joinTimeoutMs: 5_000 });
-    const host = attach(room, "host-tok");
-    const guest = attachPending(room, "edit-tok");
-    room.receive(guest.peerId, {
-      type: "join-request",
-      requestId: "req-D",
-      guestPub: "AQID",
-      displayName: "D",
-      color: "#abcdef",
-    });
-
-    room.detach(guest.peerId);
-
-    const cancelledBefore = host.socket
-      .systemEvents()
-      .filter((e) => e.event === "join_request_cancelled").length;
-    vi.advanceTimersByTime(10_000);
-    const cancelledAfter = host.socket
-      .systemEvents()
-      .filter((e) => e.event === "join_request_cancelled").length;
-    // Only one cancelled event — the one from detach. Timeout should
-    // have been cleared.
-    expect(cancelledAfter).toBe(cancelledBefore);
+    // No new error fires — the join-timeout timer was cleared, not just
+    // beaten to the punch.
+    expect(guest.socket.byType("error").length).toBe(errorsBefore);
   });
 });
 
@@ -912,5 +850,34 @@ describe("Room: kick-peer", () => {
     });
 
     expect(host.socket.closed).toBeNull();
+  });
+
+  it("kicks a pending (not-yet-approved) guest, notifying the host via join_request_cancelled instead of peer_left", () => {
+    const room = makeRoom();
+    const host = attach(room, "host-tok");
+    const guest = attachPending(room, "edit-tok");
+    room.receive(guest.peerId, {
+      type: "join-request",
+      requestId: "req-1",
+      guestPub: "AQID",
+      displayName: "Pending",
+      color: "#abcdef",
+    });
+    host.socket.sent = [];
+
+    room.receive(host.peerId, {
+      type: "kick-peer",
+      peerId: guest.peerId,
+    });
+
+    expect(guest.socket.byType("error")[0]?.code).toBe("unauthorized");
+    expect(guest.socket.closed?.code).toBe(CLOSE_CODES.FORBIDDEN);
+    expect(guest.socket.closed?.reason).toBe("kicked");
+    // Pending guests were never announced with peer_joined, so kicking one
+    // surfaces join_request_cancelled (clearing the host's approval modal)
+    // rather than peer_left.
+    const events = host.socket.systemEvents();
+    expect(events.some((e) => e.event === "join_request_cancelled")).toBe(true);
+    expect(events.some((e) => e.event === "peer_left")).toBe(false);
   });
 });

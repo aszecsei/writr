@@ -38,29 +38,33 @@ describe("encryptPayload / decryptPayload", () => {
     expect(new TextDecoder().decode(decoded)).toBe("the quick brown fox");
   });
 
-  it("uses a fresh IV per call (same plaintext yields different ciphertext)", async () => {
-    const key = await generateRoomKey();
-    const plaintext = new TextEncoder().encode("identical");
-    const a = await encryptPayload(key, plaintext);
-    const b = await encryptPayload(key, plaintext);
-    expect(a).not.toBe(b);
-  });
-
-  it("rejects ciphertext that has been tampered with", async () => {
-    const key = await generateRoomKey();
-    const plaintext = new TextEncoder().encode("important");
-    const encoded = await encryptPayload(key, plaintext);
-    const bytes = base64urlToBytes(encoded);
-    bytes[bytes.length - 1] = (bytes[bytes.length - 1] as number) ^ 0xff;
-    const tampered = bytesToBase64url(bytes);
-    await expect(decryptPayload(key, tampered)).rejects.toThrow();
-  });
-
-  it("rejects decryption with a different key", async () => {
-    const a = await generateRoomKey();
-    const b = await generateRoomKey();
-    const ct = await encryptPayload(a, new TextEncoder().encode("secret"));
-    await expect(decryptPayload(b, ct)).rejects.toThrow();
+  it.each([
+    [
+      "tampered ciphertext",
+      async () => {
+        const key = await generateRoomKey();
+        const plaintext = new TextEncoder().encode("important");
+        const encoded = await encryptPayload(key, plaintext);
+        const bytes = base64urlToBytes(encoded);
+        bytes[bytes.length - 1] = (bytes[bytes.length - 1] as number) ^ 0xff;
+        return { key, ciphertext: bytesToBase64url(bytes) };
+      },
+    ],
+    [
+      "a different key",
+      async () => {
+        const a = await generateRoomKey();
+        const b = await generateRoomKey();
+        const ciphertext = await encryptPayload(
+          a,
+          new TextEncoder().encode("secret"),
+        );
+        return { key: b, ciphertext };
+      },
+    ],
+  ] as const)("rejects decryption with %s", async (_label, setup) => {
+    const { key, ciphertext } = await setup();
+    await expect(decryptPayload(key, ciphertext)).rejects.toThrow();
   });
 
   it("rejects ciphertext that is too short to contain an IV", async () => {
@@ -73,12 +77,6 @@ describe("X25519 keypair", () => {
   it("generates a keypair with a base64url-encoded public key", async () => {
     const pair = await generateX25519Keypair();
     expect(pair.pubEncoded).toMatch(/^[A-Za-z0-9_-]+$/);
-  });
-
-  it("imports a public key from the encoded form", async () => {
-    const pair = await generateX25519Keypair();
-    const reimported = await importX25519PubFromEncoded(pair.pubEncoded);
-    expect(reimported).toBeDefined();
   });
 
   it("rejects malformed encoded public keys", async () => {

@@ -1,32 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CollabClient, type CollabTransport } from "./client";
+import { CollabClient } from "./client";
 import {
   decryptPayload,
   encryptPayload,
   generateRoomKey,
   type RoomKey,
 } from "./crypto";
-import type { ClientMessage, ServerMessage } from "./protocol";
-
-class MockTransport implements CollabTransport {
-  sent: ClientMessage[] = [];
-  closed: { code?: number; reason?: string } | null = null;
-
-  send(data: string): void {
-    this.sent.push(JSON.parse(data) as ClientMessage);
-  }
-  close(code?: number, reason?: string): void {
-    if (!this.closed) {
-      this.closed = {};
-      if (code !== undefined) this.closed.code = code;
-      if (reason !== undefined) this.closed.reason = reason;
-    }
-  }
-  reset() {
-    this.sent = [];
-    this.closed = null;
-  }
-}
+import type { ServerMessage } from "./protocol";
+import { MockTransport } from "./test-support";
 
 async function deliver(
   client: CollabClient,
@@ -64,13 +45,7 @@ describe("CollabClient: lifecycle", () => {
     });
   });
 
-  it("defaults to 'view' role when none is provided at construction", () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key });
-    expect(client.role).toBe("view");
-  });
-
-  it("updates role from the server welcome message", async () => {
+  it("defaults to 'view' at construction and updates from the server welcome message", async () => {
     const transport = new MockTransport();
     const client = new CollabClient({ transport, key });
     expect(client.role).toBe("view");
@@ -267,29 +242,14 @@ describe("CollabClient: incoming decryption", () => {
 });
 
 describe("CollabClient: listener registry", () => {
-  it("returns an unsubscribe function", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-    const cb = vi.fn();
-    const off = client.on("welcome", cb);
-    off();
-    await deliver(client, {
-      type: "welcome",
-      peerId: "p",
-      role: "edit",
-      peerCount: 1,
-      hostPresent: false,
-    });
-    expect(cb).not.toHaveBeenCalled();
-  });
-
-  it("supports multiple listeners for the same event", async () => {
+  it("supports multiple listeners and unsubscribes one without affecting the other", async () => {
     const transport = new MockTransport();
     const client = new CollabClient({ transport, key, role: "edit" });
     const a = vi.fn();
     const b = vi.fn();
     client.on("welcome", a);
-    client.on("welcome", b);
+    const offB = client.on("welcome", b);
+    offB();
     await deliver(client, {
       type: "welcome",
       peerId: "p",
@@ -298,6 +258,6 @@ describe("CollabClient: listener registry", () => {
       hostPresent: false,
     });
     expect(a).toHaveBeenCalled();
-    expect(b).toHaveBeenCalled();
+    expect(b).not.toHaveBeenCalled();
   });
 });

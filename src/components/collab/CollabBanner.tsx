@@ -56,11 +56,6 @@ interface CollabBannerContentProps {
   /** Host-only: opens the manage-participants modal. */
   onManageParticipants?: () => void;
   onLeave: () => void;
-  /**
-   * Fixed "now" for snapshot tests so the rendered countdown is
-   * deterministic. Falls back to live `Date.now()` in production.
-   */
-  nowOverride?: number;
 }
 
 /**
@@ -76,9 +71,8 @@ export function CollabBannerContent({
   pendingCount = 0,
   onManageParticipants,
   onLeave,
-  nowOverride,
 }: CollabBannerContentProps) {
-  const remainingSec = useGraceCountdown(graceDeadline, nowOverride);
+  const remainingSec = useGraceCountdown(graceDeadline);
   const isHost = viewerRole === "host";
   const inGrace = status === "host_disconnected";
 
@@ -147,16 +141,13 @@ export function CollabBannerContent({
  * Returns whole seconds remaining until the deadline, or null when no
  * deadline is set. Re-renders every second while the timer is running.
  */
-function useGraceCountdown(
-  deadline: number | null,
-  nowOverride?: number,
-): number | null {
-  const [tick, setTick] = useState(() => nowOverride ?? Date.now());
+function useGraceCountdown(deadline: number | null): number | null {
+  const [tick, setTick] = useState(() => Date.now());
   useEffect(() => {
-    if (deadline === null || nowOverride !== undefined) return;
+    if (deadline === null) return;
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [deadline, nowOverride]);
+  }, [deadline]);
   if (deadline === null) return null;
   const ms = Math.max(0, deadline - tick);
   return Math.ceil(ms / 1000);

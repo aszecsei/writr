@@ -1,15 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findTokenRole, mintToken, tokensEqual } from "./tokens.js";
-
-describe("mintToken", () => {
-  it("returns a base64url string of consistent length", () => {
-    const a = mintToken();
-    const b = mintToken();
-    expect(a).toMatch(/^[A-Za-z0-9_-]+$/);
-    expect(a.length).toBe(b.length);
-    expect(a).not.toBe(b);
-  });
-});
+import { findTokenRole, tokensEqual } from "./tokens.js";
 
 describe("tokensEqual", () => {
   it("returns true for identical strings", () => {

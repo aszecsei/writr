@@ -1,14 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useCollabStore } from "@/store/collabStore";
 import { attachClientToStore } from "./attach";
-import { CollabClient, type CollabTransport } from "./client";
+import { CollabClient } from "./client";
 import { generateRoomKey, type RoomKey } from "./crypto";
 import { CLOSE_CODES, type ServerMessage } from "./protocol";
-
-class MockTransport implements CollabTransport {
-  send(_data: string): void {}
-  close(_code?: number, _reason?: string): void {}
-}
+import { MockTransport } from "./test-support";
 
 async function makeClient(): Promise<{ client: CollabClient; key: RoomKey }> {
   const key = await generateRoomKey();
@@ -151,6 +147,8 @@ describe("attachClientToStore: error handling", () => {
   it("ignores non-fatal error events (decrypt, send-not-allowed)", async () => {
     const { client } = await makeClient();
     attachClientToStore(client, useCollabStore);
+    const onError = vi.fn();
+    client.on("error", onError);
 
     // Emit a decrypt error by feeding garbage
     await deliver(client, {
@@ -160,7 +158,27 @@ describe("attachClientToStore: error handling", () => {
       payload: "AAAAAAAAAAAAAAAAAAAA",
       from: "peer-x",
     });
+
+    expect(onError.mock.calls[0]?.[0]?.kind).toBe("decrypt");
     expect(getState().error).toBeNull();
+  });
+});
+
+describe("attachClientToStore: join_request_cancelled", () => {
+  it("is a no-op on the store (handled by attachJoinRequestHandler instead)", async () => {
+    const { client } = await makeClient();
+    attachClientToStore(client, useCollabStore);
+    const before = getState();
+
+    await deliver(client, {
+      type: "system",
+      data: { event: "join_request_cancelled", requestId: "req-1" },
+    });
+
+    const after = getState();
+    expect(after.status).toBe(before.status);
+    expect(after.peerCount).toBe(before.peerCount);
+    expect(after.error).toBeNull();
   });
 });
 

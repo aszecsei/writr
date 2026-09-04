@@ -1,22 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
-import type {
-  Chapter,
-  ChapterId,
-  Character,
-  CharacterId,
-  CharacterRelationship,
-  GuardrailEntry,
-  Location,
-  OutlineGridCell,
-  OutlineGridColumn,
-  OutlineGridRow,
-  Project,
-  ProjectId,
-  StyleGuideEntry,
-  TimelineEvent,
-  WorldbuildingDoc,
-} from "@/db/schemas";
+import type { ChapterId, CharacterId } from "@/db/schemas";
 import {
   PROJECT_DOC_VERSION,
   readEntities,
@@ -29,97 +13,11 @@ import {
   ProjectMirror,
   type ProjectSnapshot,
 } from "./projectMirror";
+import { chapter, character, emptySnapshot, PROJECT_ID } from "./test-support";
 
-const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
 const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001" as ChapterId;
 const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
 const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
-const NOW = "2026-05-06T12:00:00.000Z";
-
-function project(overrides: Partial<Project> = {}): Project {
-  return {
-    id: PROJECT_ID,
-    title: "Project",
-    description: "",
-    genre: "",
-    targetWordCount: 0,
-    mode: "prose",
-    coverImageUrl: "",
-    createdAt: NOW,
-    updatedAt: NOW,
-    ...overrides,
-  };
-}
-
-function chapter(id: ChapterId, overrides: Partial<Chapter> = {}): Chapter {
-  return {
-    id,
-    projectId: PROJECT_ID,
-    title: `Ch ${id.slice(-1)}`,
-    order: 0,
-    content: "",
-    synopsis: "",
-    status: "draft",
-    wordCount: 0,
-    parentChapterId: null,
-    section: "manuscript",
-    kind: "document",
-    includeInCompile: true,
-    pageBreakBefore: false,
-    createdAt: NOW,
-    updatedAt: NOW,
-    ...overrides,
-  };
-}
-
-function character(
-  id: CharacterId,
-  overrides: Partial<Character> = {},
-): Character {
-  return {
-    id,
-    projectId: PROJECT_ID,
-    name: "Alice",
-    role: "protagonist",
-    pronouns: "",
-    aliases: [],
-    summary: "",
-    description: "",
-    personality: "",
-    motivations: "",
-    internalConflict: "",
-    strengths: "",
-    weaknesses: "",
-    characterArcs: "",
-    dialogueStyle: "",
-    backstory: "",
-    notes: "",
-    linkedCharacterIds: [],
-    linkedLocationIds: [],
-    images: [],
-    createdAt: NOW,
-    updatedAt: NOW,
-    ...overrides,
-  };
-}
-
-function emptySnapshot(): ProjectSnapshot {
-  return {
-    project: project(),
-    activeChapterId: null,
-    chapters: [],
-    characters: [],
-    characterRels: [] as CharacterRelationship[],
-    locations: [] as Location[],
-    worldbuilding: [] as WorldbuildingDoc[],
-    timeline: [] as TimelineEvent[],
-    styleGuide: [] as StyleGuideEntry[],
-    guardrails: [] as GuardrailEntry[],
-    outlineColumns: [] as OutlineGridColumn[],
-    outlineRows: [] as OutlineGridRow[],
-    outlineCells: [] as OutlineGridCell[],
-  };
-}
 
 describe("ProjectMirror.seedFromSnapshot", () => {
   it("populates all tables, project, and meta atomically", () => {
