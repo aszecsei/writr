@@ -1,50 +1,11 @@
 import { db } from "../database";
-import {
-  type ChapterId,
-  type Comment,
-  type CommentId,
-  CommentSchema,
-} from "../schemas";
+import { type Comment, type CommentId, CommentSchema } from "../schemas";
 import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Comments ────────────────────────────────────────────────────────
 
-export async function getCommentsByChapter(
-  chapterId: ChapterId,
-): Promise<Comment[]> {
-  return db.comments.where({ chapterId }).sortBy("fromOffset");
-}
-
 export async function getComment(id: CommentId): Promise<Comment | undefined> {
   return db.comments.get(id);
-}
-
-/**
- * All replies attached to a given root comment, sorted oldest-first so the
- * thread reads chronologically. Replies are flat under their root — never
- * nested further (`reply_to_comment` enforces this).
- */
-export async function getCommentReplies(
-  parentCommentId: CommentId,
-): Promise<Comment[]> {
-  const replies = await db.comments
-    .where("parentCommentId")
-    .equals(parentCommentId)
-    .toArray();
-  return replies.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-}
-
-/**
- * One-shot fetch of a root comment plus its replies. Returns `undefined` if
- * the root is missing; returns the root with `replies: []` if it has none.
- */
-export async function getCommentThread(
-  rootCommentId: CommentId,
-): Promise<{ root: Comment; replies: Comment[] } | undefined> {
-  const root = await db.comments.get(rootCommentId);
-  if (!root) return undefined;
-  const replies = await getCommentReplies(rootCommentId);
-  return { root, replies };
 }
 
 export async function createComment(

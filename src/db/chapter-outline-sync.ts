@@ -174,7 +174,7 @@ export async function updateRowLabel(
 
 /**
  * Reorders outline rows only. The binder is the source of truth for chapter
- * order under the nested model, so reordering rows here no longer moves the
+ * order under the nested model, so reordering rows here does not move the
  * linked chapters (a flat row reorder can't map cleanly onto a tree).
  */
 export async function syncReorderOutlineRows(
@@ -257,42 +257,4 @@ export async function syncDeleteOutlineRow(
       if (cascadedChapter) await compactChapterOrders(projectId);
     },
   );
-}
-
-// ─── Query Operations ───────────────────────────────────────────────────
-
-/**
- * Checks if a chapter has a linked outline row.
- * Used by UI for delete confirmation dialogs.
- */
-export async function hasLinkedRow(chapterId: ChapterId): Promise<boolean> {
-  const row = await db.outlineGridRows
-    .where({ linkedChapterId: chapterId })
-    .first();
-  return row !== undefined;
-}
-
-/**
- * Gets the outline row linked to a chapter.
- * Returns undefined if the chapter has no linked row.
- */
-export async function getLinkedRow(
-  chapterId: ChapterId,
-): Promise<{ id: OutlineGridRowId; label: string } | undefined> {
-  const row = await db.outlineGridRows
-    .where({ linkedChapterId: chapterId })
-    .first();
-  if (!row) return undefined;
-  return { id: row.id, label: row.label };
-}
-
-/**
- * Checks if an outline row has a linked chapter.
- * Used by UI for delete confirmation dialogs.
- */
-export async function hasLinkedChapter(
-  rowId: OutlineGridRowId,
-): Promise<boolean> {
-  const row = await db.outlineGridRows.get(rowId);
-  return row?.linkedChapterId != null;
 }

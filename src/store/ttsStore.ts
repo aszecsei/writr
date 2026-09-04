@@ -3,12 +3,7 @@ import type { ChapterId } from "@/db/schemas";
 import { chunkTextForTts } from "@/lib/tts/chunk";
 import { hashTtsText } from "@/lib/tts/extract";
 
-export type TtsPlaybackState =
-  | "idle"
-  | "loading"
-  | "playing"
-  | "paused"
-  | "error";
+type TtsPlaybackState = "idle" | "loading" | "playing" | "paused" | "error";
 
 interface StartArgs {
   chapterId: ChapterId;
@@ -52,7 +47,6 @@ interface TtsState {
   setCurrentTime(time: number): void;
   setDuration(duration: number): void;
   setPlaybackState(state: TtsPlaybackState): void;
-  clearError(): void;
 }
 
 function cacheKey(
@@ -232,11 +226,5 @@ export const useTtsStore = create<TtsState>()((set, get) => ({
 
   setPlaybackState(state) {
     set({ state });
-  },
-
-  clearError() {
-    set((s) =>
-      s.state === "error" ? { state: "idle", errorMessage: null } : {},
-    );
   },
 }));

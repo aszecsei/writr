@@ -16,6 +16,10 @@ Use these whenever a new Dexie table needs a hook. They handle subscription, sus
 
 `useChapter`, `useProject`, `useBibleEntries`, `useAppSettings`, `useSnapshots`, `useDictionary`, `usePlaylistEntries`, plus the agent-definition hooks (`useAgents`).
 
+### `analysis/` — Text analysis
+
+`useTextAnalysis` — sentence-level prose analysis (readability, hole counts) for a chapter or project scope.
+
 ### `editor/` — Editor lifecycle hooks
 
 `useAutoSave`, `useComments`, `useEditorCommentSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.

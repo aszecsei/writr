@@ -15,13 +15,6 @@ import { appliesToProject, byScopeThenOrder } from "./scope";
 
 // ─── Guardrail Entries ──────────────────────────────────────────────
 
-/** Entries owned by exactly `projectId` (excludes globals). Used by backup. */
-export async function getGuardrailsByProject(
-  projectId: ProjectId,
-): Promise<GuardrailEntry[]> {
-  return db.guardrailEntries.where({ projectId }).sortBy("order");
-}
-
 /**
  * All guardrails applicable to a project context: globals (projectId=null) plus
  * those scoped to `projectId`. Includes per-project-disabled entries — callers

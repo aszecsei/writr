@@ -15,7 +15,7 @@ export function isSupportedImageSource(value: string): boolean {
   );
 }
 
-export const ImageSourceSchema = z.string().refine(isSupportedImageSource, {
+const ImageSourceSchema = z.string().refine(isSupportedImageSource, {
   message: "Must be an http(s) URL or a data:image/*;base64 URL",
 });
 
@@ -33,80 +33,76 @@ export type ProjectId = z.infer<typeof ProjectIdSchema>;
 export const ChapterIdSchema = z.uuid().brand<"ChapterId">();
 export type ChapterId = z.infer<typeof ChapterIdSchema>;
 
-export const CharacterIdSchema = z.uuid().brand<"CharacterId">();
+const CharacterIdSchema = z.uuid().brand<"CharacterId">();
 export type CharacterId = z.infer<typeof CharacterIdSchema>;
 
-export const LocationIdSchema = z.uuid().brand<"LocationId">();
+const LocationIdSchema = z.uuid().brand<"LocationId">();
 export type LocationId = z.infer<typeof LocationIdSchema>;
 
-export const TimelineEventIdSchema = z.uuid().brand<"TimelineEventId">();
+const TimelineEventIdSchema = z.uuid().brand<"TimelineEventId">();
 export type TimelineEventId = z.infer<typeof TimelineEventIdSchema>;
 
-export const StyleGuideEntryIdSchema = z.uuid().brand<"StyleGuideEntryId">();
+const StyleGuideEntryIdSchema = z.uuid().brand<"StyleGuideEntryId">();
 export type StyleGuideEntryId = z.infer<typeof StyleGuideEntryIdSchema>;
 
-export const GuardrailEntryIdSchema = z.uuid().brand<"GuardrailEntryId">();
+const GuardrailEntryIdSchema = z.uuid().brand<"GuardrailEntryId">();
 export type GuardrailEntryId = z.infer<typeof GuardrailEntryIdSchema>;
 
-export const WorldbuildingDocIdSchema = z.uuid().brand<"WorldbuildingDocId">();
+const WorldbuildingDocIdSchema = z.uuid().brand<"WorldbuildingDocId">();
 export type WorldbuildingDocId = z.infer<typeof WorldbuildingDocIdSchema>;
 
-export const CharacterRelationshipIdSchema = z
+const CharacterRelationshipIdSchema = z
   .uuid()
   .brand<"CharacterRelationshipId">();
 export type CharacterRelationshipId = z.infer<
   typeof CharacterRelationshipIdSchema
 >;
 
-export const OutlineGridColumnIdSchema = z
-  .uuid()
-  .brand<"OutlineGridColumnId">();
+const OutlineGridColumnIdSchema = z.uuid().brand<"OutlineGridColumnId">();
 export type OutlineGridColumnId = z.infer<typeof OutlineGridColumnIdSchema>;
 
-export const OutlineGridRowIdSchema = z.uuid().brand<"OutlineGridRowId">();
+const OutlineGridRowIdSchema = z.uuid().brand<"OutlineGridRowId">();
 export type OutlineGridRowId = z.infer<typeof OutlineGridRowIdSchema>;
 
-export const OutlineGridCellIdSchema = z.uuid().brand<"OutlineGridCellId">();
+const OutlineGridCellIdSchema = z.uuid().brand<"OutlineGridCellId">();
 export type OutlineGridCellId = z.infer<typeof OutlineGridCellIdSchema>;
 
-export const WritingSprintIdSchema = z.uuid().brand<"WritingSprintId">();
+const WritingSprintIdSchema = z.uuid().brand<"WritingSprintId">();
 export type WritingSprintId = z.infer<typeof WritingSprintIdSchema>;
 
-export const WritingSessionIdSchema = z.uuid().brand<"WritingSessionId">();
+const WritingSessionIdSchema = z.uuid().brand<"WritingSessionId">();
 export type WritingSessionId = z.infer<typeof WritingSessionIdSchema>;
 
-export const PlaylistTrackIdSchema = z.uuid().brand<"PlaylistTrackId">();
+const PlaylistTrackIdSchema = z.uuid().brand<"PlaylistTrackId">();
 export type PlaylistTrackId = z.infer<typeof PlaylistTrackIdSchema>;
 
-export const CommentIdSchema = z.uuid().brand<"CommentId">();
+const CommentIdSchema = z.uuid().brand<"CommentId">();
 export type CommentId = z.infer<typeof CommentIdSchema>;
 
-export const ChapterSnapshotIdSchema = z.uuid().brand<"ChapterSnapshotId">();
+const ChapterSnapshotIdSchema = z.uuid().brand<"ChapterSnapshotId">();
 export type ChapterSnapshotId = z.infer<typeof ChapterSnapshotIdSchema>;
 
-export const ProjectDictionaryIdSchema = z
-  .uuid()
-  .brand<"ProjectDictionaryId">();
+const ProjectDictionaryIdSchema = z.uuid().brand<"ProjectDictionaryId">();
 export type ProjectDictionaryId = z.infer<typeof ProjectDictionaryIdSchema>;
 
-export const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
+const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
 export type ChapterSummaryId = z.infer<typeof ChapterSummaryIdSchema>;
 
-export const AgentDefinitionIdSchema = z.uuid().brand<"AgentDefinitionId">();
+const AgentDefinitionIdSchema = z.uuid().brand<"AgentDefinitionId">();
 export type AgentDefinitionId = z.infer<typeof AgentDefinitionIdSchema>;
 
-export const EntityImageIdSchema = z.uuid().brand<"EntityImageId">();
+const EntityImageIdSchema = z.uuid().brand<"EntityImageId">();
 export type EntityImageId = z.infer<typeof EntityImageIdSchema>;
 
-export const IndexedChunkIdSchema = z.uuid().brand<"IndexedChunkId">();
+const IndexedChunkIdSchema = z.uuid().brand<"IndexedChunkId">();
 export type IndexedChunkId = z.infer<typeof IndexedChunkIdSchema>;
 
-export const SceneIdSchema = z.uuid().brand<"SceneId">();
+const SceneIdSchema = z.uuid().brand<"SceneId">();
 export type SceneId = z.infer<typeof SceneIdSchema>;
 
 // ─── Project Mode ───────────────────────────────────────────────────
 
-export const ProjectModeEnum = z.enum(["prose", "screenplay"]);
+const ProjectModeEnum = z.enum(["prose", "screenplay"]);
 export type ProjectMode = z.infer<typeof ProjectModeEnum>;
 
 // ─── Project ─────────────────────────────────────────────────────────
@@ -130,14 +126,13 @@ export type Project = z.infer<typeof ProjectSchema>;
 export const ChapterStatusEnum = z.enum(["draft", "revised", "final"]);
 export type ChapterStatus = z.infer<typeof ChapterStatusEnum>;
 
-// Binder taxonomy (v37). A chapter row is either a real `document` (holds prose
+// Binder taxonomy. A chapter row is either a real `document` (holds prose
 // and may nest children) or a `separator` (a label marker dividing siblings).
-export const ChapterKindEnum = z.enum(["document", "separator"]);
-export type ChapterKind = z.infer<typeof ChapterKindEnum>;
+const ChapterKindEnum = z.enum(["document", "separator"]);
 
 // `manuscript` rows compile into the book; `scratchpad` rows are loose storage
 // that never compiles and never counts toward the manuscript word count.
-export const ChapterSectionEnum = z.enum(["manuscript", "scratchpad"]);
+const ChapterSectionEnum = z.enum(["manuscript", "scratchpad"]);
 export type ChapterSection = z.infer<typeof ChapterSectionEnum>;
 
 export const ChapterSchema = z.object({
@@ -150,7 +145,7 @@ export const ChapterSchema = z.object({
   synopsis: z.string().default(""),
   status: ChapterStatusEnum.default("draft"),
   wordCount: z.number().int().nonnegative().default(0),
-  // ── Binder hierarchy (v37) ──
+  // ── Binder hierarchy ──
   parentChapterId: ChapterIdSchema.nullable().default(null),
   section: ChapterSectionEnum.default("manuscript"),
   kind: ChapterKindEnum.default("document"),
@@ -216,7 +211,7 @@ export type Scene = z.infer<typeof SceneSchema>;
 
 // ─── Entity Image ───────────────────────────────────────────────────
 
-export const EntityImageSchema = z.object({
+const EntityImageSchema = z.object({
   id: EntityImageIdSchema,
   url: z.string().url(),
   caption: z.string().default(""),
@@ -266,7 +261,7 @@ export type Character = z.infer<typeof CharacterSchema>;
 
 // ─── Character Relationship ──────────────────────────────────────────
 
-export const RelationshipTypeEnum = z.enum([
+const RelationshipTypeEnum = z.enum([
   "parent",
   "child",
   "spouse",
@@ -322,7 +317,7 @@ export type TimelineEvent = z.infer<typeof TimelineEventSchema>;
 
 // ─── Style Guide Entry ──────────────────────────────────────────────
 
-export const StyleGuideCategoryEnum = z.enum([
+const StyleGuideCategoryEnum = z.enum([
   "voice",
   "pov",
   "tense",
@@ -475,7 +470,7 @@ export type AiProvider = z.infer<typeof AiProviderEnum>;
 
 // ─── Reasoning Effort ────────────────────────────────────────────────
 
-export const ReasoningEffortEnum = z.enum([
+const ReasoningEffortEnum = z.enum([
   "xhigh",
   "high",
   "medium",
@@ -490,7 +485,7 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortEnum>;
 /**
  * All agent kinds: chat-mode user-facing agents and user-created agents.
  */
-export const AgentKindEnum = z.enum([
+const AgentKindEnum = z.enum([
   // User-facing chat agents (selectable from AiPanel dropdown).
   "spark",
   "scene",
@@ -510,25 +505,7 @@ export const AgentKindEnum = z.enum([
 ]);
 export type AgentKind = z.infer<typeof AgentKindEnum>;
 
-/** Kinds exposed in the AiPanel chat dropdown. */
-export const CHAT_AGENT_KINDS: ReadonlySet<AgentKind> = new Set([
-  "spark",
-  "scene",
-  "reader",
-  "editor",
-  "character-dialogue",
-  "brainstorm",
-  "chat",
-  "beta-reader",
-  "outline-architect",
-  "worldbuilder",
-  "orchestrator-chat",
-  "researcher",
-  "prose-writer",
-  "user",
-]);
-
-export const AgentModelOverrideSchema = z.object({
+const AgentModelOverrideSchema = z.object({
   provider: AiProviderEnum,
   model: z.string().min(1),
   reasoningEffort: ReasoningEffortEnum.optional(),
@@ -568,7 +545,7 @@ export type AgentDefinition = z.infer<typeof AgentDefinitionSchema>;
 
 // ─── Saved Prompts ──────────────────────────────────────────────────
 
-export const SavedPromptIdSchema = z.uuid().brand<"SavedPromptId">();
+const SavedPromptIdSchema = z.uuid().brand<"SavedPromptId">();
 export type SavedPromptId = z.infer<typeof SavedPromptIdSchema>;
 
 export const SavedPromptSchema = z.object({
@@ -588,15 +565,15 @@ export type SavedPrompt = z.infer<typeof SavedPromptSchema>;
 
 // ─── Brainstorm ──────────────────────────────────────────────────────
 
-export const BrainstormSetupIdSchema = z.uuid().brand<"BrainstormSetupId">();
+const BrainstormSetupIdSchema = z.uuid().brand<"BrainstormSetupId">();
 export type BrainstormSetupId = z.infer<typeof BrainstormSetupIdSchema>;
 
-export const BrainstormIdeaIdSchema = z.uuid().brand<"BrainstormIdeaId">();
+const BrainstormIdeaIdSchema = z.uuid().brand<"BrainstormIdeaId">();
 export type BrainstormIdeaId = z.infer<typeof BrainstormIdeaIdSchema>;
 
 // A named column is a list of string options. Columns are embedded in their
 // setup (meaningless on their own, always edited together), not a table.
-export const BrainstormColumnSchema = z.object({
+const BrainstormColumnSchema = z.object({
   name: z.string().min(1),
   options: z.array(z.string()).default([]),
 });
@@ -626,7 +603,7 @@ export type BrainstormIdea = z.infer<typeof BrainstormIdeaSchema>;
 
 // ─── App Settings (singleton) ────────────────────────────────────────
 
-export const PrimaryColorEnum = z.enum([
+const PrimaryColorEnum = z.enum([
   "blue",
   "indigo",
   "violet",
@@ -640,22 +617,16 @@ export const PrimaryColorEnum = z.enum([
 ]);
 export type PrimaryColor = z.infer<typeof PrimaryColorEnum>;
 
-export const NeutralColorEnum = z.enum([
-  "zinc",
-  "slate",
-  "gray",
-  "stone",
-  "neutral",
-]);
+const NeutralColorEnum = z.enum(["zinc", "slate", "gray", "stone", "neutral"]);
 export type NeutralColor = z.infer<typeof NeutralColorEnum>;
 
-export const EditorWidthEnum = z.enum(["narrow", "medium", "wide"]);
+const EditorWidthEnum = z.enum(["narrow", "medium", "wide"]);
 export type EditorWidth = z.infer<typeof EditorWidthEnum>;
 
-export const UiDensityEnum = z.enum(["compact", "comfortable"]);
+const UiDensityEnum = z.enum(["compact", "comfortable"]);
 export type UiDensity = z.infer<typeof UiDensityEnum>;
 
-export const GoalCountdownDisplayEnum = z.enum([
+const GoalCountdownDisplayEnum = z.enum([
   "estimated-date",
   "time-remaining",
   "off",
@@ -666,11 +637,10 @@ export type GoalCountdownDisplay = z.infer<typeof GoalCountdownDisplayEnum>;
  * Delimiters wrapping a "hole" — a section the author intentionally skips,
  * usually holding a plaintext summary. See `src/lib/holes.ts`.
  */
-export const HoleDelimitersSchema = z.object({
+const HoleDelimitersSchema = z.object({
   open: z.string().min(1).default("["),
   close: z.string().min(1).default("]"),
 });
-export type HoleDelimiters = z.infer<typeof HoleDelimitersSchema>;
 
 /**
  * Grammar categories (lint kinds) switched off by default. "Style" is noisy for
@@ -756,11 +726,6 @@ export const AppSettingsSchema = z.object({
   postChatInstructions: z.string().default(""),
   postChatInstructionsDepth: z.number().int().nonnegative().default(2),
   assistantPrefill: z.string().default(""),
-  /**
-   * Per-iteration prompt-token threshold above which the comprehension pass
-   * soft-resets — ends the current segment and starts a fresh one at the
-   * next chapter with empty history. The reader bible carries forward.
-   */
   enableToolCalling: z.boolean().default(false),
   customSystemPrompt: z.string().nullable().default(null),
   lastExportedAt: z.string().datetime().nullable().default(null),
@@ -786,13 +751,7 @@ export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
 // ─── Writing Sprint ─────────────────────────────────────────────────
 
-export const SprintStatusEnum = z.enum([
-  "active",
-  "paused",
-  "completed",
-  "abandoned",
-]);
-export type SprintStatus = z.infer<typeof SprintStatusEnum>;
+const SprintStatusEnum = z.enum(["active", "paused", "completed", "abandoned"]);
 
 export const WritingSprintSchema = z.object({
   id: WritingSprintIdSchema,
@@ -830,7 +789,7 @@ export type WritingSession = z.infer<typeof WritingSessionSchema>;
 
 // ─── Playlist Track ──────────────────────────────────────────────────
 
-export const TrackSourceSchema = z.enum(["youtube"]);
+const TrackSourceSchema = z.enum(["youtube"]);
 export type TrackSource = z.infer<typeof TrackSourceSchema>;
 
 export const PlaylistTrackSchema = z.object({
@@ -862,16 +821,10 @@ export type ChapterSnapshot = z.infer<typeof ChapterSnapshotSchema>;
 
 // ─── Comment ─────────────────────────────────────────────────────────
 
-export const CommentColorEnum = z.enum([
-  "yellow",
-  "blue",
-  "green",
-  "red",
-  "purple",
-]);
+const CommentColorEnum = z.enum(["yellow", "blue", "green", "red", "purple"]);
 export type CommentColor = z.infer<typeof CommentColorEnum>;
 
-export const CommentStatusEnum = z.enum(["active", "orphaned", "resolved"]);
+const CommentStatusEnum = z.enum(["active", "orphaned", "resolved"]);
 export type CommentStatus = z.infer<typeof CommentStatusEnum>;
 
 export const CommentSchema = z.object({
@@ -915,7 +868,7 @@ export type ChapterSummary = z.infer<typeof ChapterSummarySchema>;
 
 // ─── Indexed Chunk (vector retrieval) ───────────────────────────────
 
-export const IndexedChunkSourceTypeEnum = z.enum(["worldbuilding", "chapter"]);
+const IndexedChunkSourceTypeEnum = z.enum(["worldbuilding", "chapter"]);
 export type IndexedChunkSourceType = z.infer<typeof IndexedChunkSourceTypeEnum>;
 
 export const IndexedChunkSchema = z.object({

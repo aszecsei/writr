@@ -329,7 +329,7 @@ export async function promoteSceneToChapter(
   // createChapter seeds an (empty) core scene; drop it — the promoted scene
   // becomes this chapter's sole/core scene.
   const seeded = await getScenesByChapter(newChapter.id);
-  for (const s of seeded) await deleteScene(s.id, "delete");
+  for (const s of seeded) await deleteScene(s.id);
 
   await moveSceneToChapter(sceneId, newChapter.id);
   return newChapter.id;
@@ -377,7 +377,7 @@ export async function deleteSceneWithContent(sceneId: SceneId): Promise<void> {
   }
 
   await updateChapterContent(chapterId, newContent, wc);
-  await deleteScene(sceneId, "delete");
+  await deleteScene(sceneId);
   await applyCommentWrites(writes);
   reseedIfActive(chapterId);
 }

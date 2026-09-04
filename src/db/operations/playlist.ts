@@ -3,29 +3,10 @@ import {
   type PlaylistTrack,
   type PlaylistTrackId,
   PlaylistTrackSchema,
-  type ProjectId,
 } from "../schemas";
-import {
-  generateId,
-  getNextOrder,
-  now,
-  reorderEntities,
-  stripUndefined,
-} from "./helpers";
+import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
 
 // ─── Playlist Tracks ─────────────────────────────────────────────────
-
-export async function getPlaylistByProject(
-  projectId: ProjectId,
-): Promise<PlaylistTrack[]> {
-  return db.playlistTracks.where({ projectId }).sortBy("order");
-}
-
-export async function getPlaylistTrack(
-  id: PlaylistTrackId,
-): Promise<PlaylistTrack | undefined> {
-  return db.playlistTracks.get(id);
-}
 
 export async function createPlaylistTrack(
   data: Pick<PlaylistTrack, "projectId" | "title" | "url" | "source"> &
@@ -50,21 +31,6 @@ export async function createPlaylistTrack(
   });
   await db.playlistTracks.add(track);
   return track;
-}
-
-export async function updatePlaylistTrack(
-  id: PlaylistTrackId,
-  data: Partial<
-    Pick<
-      PlaylistTrack,
-      "title" | "url" | "source" | "thumbnailUrl" | "duration"
-    >
-  >,
-): Promise<void> {
-  await db.playlistTracks.update(id, {
-    ...stripUndefined(data),
-    updatedAt: now(),
-  });
 }
 
 export async function deletePlaylistTrack(id: PlaylistTrackId): Promise<void> {

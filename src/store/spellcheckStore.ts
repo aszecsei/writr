@@ -19,7 +19,7 @@ export interface ContextMenuState {
   rect: DOMRect;
 }
 
-export interface ScannerState {
+interface ScannerState {
   currentIndex: number;
   misspellings: MisspelledWord[];
 }
@@ -36,18 +36,14 @@ interface SpellcheckState {
   scanner: ScannerState;
 
   // Actions
-  setEnabled: (enabled: boolean) => void;
   toggleEnabled: () => void;
   addToIgnored: (word: string) => void;
-  removeFromIgnored: (word: string) => void;
-  clearIgnored: () => void;
   openContextMenu: (state: ContextMenuState) => void;
   closeContextMenu: () => void;
   openScanner: (misspellings: MisspelledWord[]) => void;
   closeScanner: () => void;
   nextMisspelling: () => void;
   prevMisspelling: () => void;
-  setCurrentMisspelling: (index: number) => void;
   removeMisspellingAt: (index: number) => void;
 }
 
@@ -62,11 +58,6 @@ export const useSpellcheckStore = create<SpellcheckState>()(
       misspellings: [],
     },
 
-    setEnabled: (enabled) =>
-      set((s) => {
-        s.enabled = enabled;
-      }),
-
     toggleEnabled: () =>
       set((s) => {
         s.enabled = !s.enabled;
@@ -75,16 +66,6 @@ export const useSpellcheckStore = create<SpellcheckState>()(
     addToIgnored: (word) =>
       set((s) => {
         s.ignoredWords.add(word.toLowerCase());
-      }),
-
-    removeFromIgnored: (word) =>
-      set((s) => {
-        s.ignoredWords.delete(word.toLowerCase());
-      }),
-
-    clearIgnored: () =>
-      set((s) => {
-        s.ignoredWords.clear();
       }),
 
     openContextMenu: (state) =>
@@ -128,13 +109,6 @@ export const useSpellcheckStore = create<SpellcheckState>()(
         s.scanner.currentIndex =
           (s.scanner.currentIndex - 1 + s.scanner.misspellings.length) %
           s.scanner.misspellings.length;
-      }),
-
-    setCurrentMisspelling: (index) =>
-      set((s) => {
-        if (index >= 0 && index < s.scanner.misspellings.length) {
-          s.scanner.currentIndex = index;
-        }
       }),
 
     removeMisspellingAt: (index) =>

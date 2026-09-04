@@ -23,7 +23,7 @@ import {
 } from "@/lib/text-analysis";
 import { useAppSettings } from "../data/useAppSettings";
 
-export type TextAnalysisStatus = "loading" | "computing" | "done" | "empty";
+type TextAnalysisStatus = "loading" | "computing" | "done" | "empty";
 
 export interface TextAnalysisResult {
   status: TextAnalysisStatus;

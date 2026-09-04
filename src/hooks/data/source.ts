@@ -9,20 +9,12 @@ import type {
   CharacterId,
   CharacterRelationship,
   GuardrailEntry,
-  GuardrailEntryId,
   Location,
   LocationId,
-  OutlineGridCell,
-  OutlineGridColumn,
-  OutlineGridRow,
   Project,
   ProjectId,
   StyleGuideEntry,
-  StyleGuideEntryId,
   TimelineEvent,
-  TimelineEventId,
-  WorldbuildingDoc,
-  WorldbuildingDocId,
 } from "@/db/schemas";
 import type { ProjectDocTable } from "@/lib/collab/projectDoc";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
@@ -31,18 +23,13 @@ import {
   useChaptersByProject as dexieUseChaptersByProject,
   useCharacter as dexieUseCharacter,
   useCharactersByProject as dexieUseCharactersByProject,
-  useGuardrailEntry as dexieUseGuardrailEntry,
   useGuardrailsByProject as dexieUseGuardrailsByProject,
   useLocation as dexieUseLocation,
   useLocationsByProject as dexieUseLocationsByProject,
   useProject as dexieUseProject,
   useRelationshipsByProject as dexieUseRelationshipsByProject,
   useStyleGuideByProject as dexieUseStyleGuideByProject,
-  useStyleGuideEntry as dexieUseStyleGuideEntry,
   useTimelineByProject as dexieUseTimelineByProject,
-  useTimelineEvent as dexieUseTimelineEvent,
-  useWorldbuildingDoc as dexieUseWorldbuildingDoc,
-  useWorldbuildingDocsByProject as dexieUseWorldbuildingDocsByProject,
 } from "./index";
 
 type SortFieldName = string;
@@ -139,30 +126,12 @@ export function useLocationsByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useTimelineEvent(
-  id: TimelineEventId | null,
-): TimelineEvent | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseTimelineEvent(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<TimelineEvent>("timeline", id);
-  return source.kind === "dexie" ? dexie : shared;
-}
-
 export function useTimelineByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseTimelineByProject(
     source.kind === "dexie" ? projectId : null,
   );
   const shared = useSharedList<TimelineEvent>("timeline", projectId, "order");
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-export function useStyleGuideEntry(
-  id: StyleGuideEntryId | null,
-): StyleGuideEntry | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseStyleGuideEntry(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<StyleGuideEntry>("styleGuide", id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
@@ -179,15 +148,6 @@ export function useStyleGuideByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useGuardrailEntry(
-  id: GuardrailEntryId | null,
-): GuardrailEntry | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseGuardrailEntry(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<GuardrailEntry>("guardrails", id);
-  return source.kind === "dexie" ? dexie : shared;
-}
-
 export function useGuardrailsByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseGuardrailsByProject(
@@ -195,28 +155,6 @@ export function useGuardrailsByProject(projectId: ProjectId | null) {
   );
   const shared = useSharedList<GuardrailEntry>(
     "guardrails",
-    projectId,
-    "order",
-  );
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-export function useWorldbuildingDoc(
-  id: WorldbuildingDocId | null,
-): WorldbuildingDoc | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseWorldbuildingDoc(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<WorldbuildingDoc>("worldbuilding", id);
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-export function useWorldbuildingDocsByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseWorldbuildingDocsByProject(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<WorldbuildingDoc>(
-    "worldbuilding",
     projectId,
     "order",
   );
@@ -232,50 +170,5 @@ export function useRelationshipsByProject(projectId: ProjectId | null) {
     "characterRels",
     projectId,
   );
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-// Outline grid hooks live in src/hooks/outline/useOutlineGrid.ts.
-// We import them lazily here so the existing module continues to be the
-// single import path for dexie consumers; the source-aware wrappers below
-// branch in the same way as the bible/chapter hooks above.
-import {
-  useOutlineGridCells as dexieUseOutlineGridCells,
-  useOutlineGridColumns as dexieUseOutlineGridColumns,
-  useOutlineGridRows as dexieUseOutlineGridRows,
-} from "@/hooks/outline/useOutlineGrid";
-
-export function useOutlineGridColumns(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseOutlineGridColumns(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<OutlineGridColumn>(
-    "outlineColumns",
-    projectId,
-    "order",
-  );
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-export function useOutlineGridRows(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseOutlineGridRows(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<OutlineGridRow>(
-    "outlineRows",
-    projectId,
-    "order",
-  );
-  return source.kind === "dexie" ? dexie : shared;
-}
-
-export function useOutlineGridCells(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseOutlineGridCells(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<OutlineGridCell>("outlineCells", projectId);
   return source.kind === "dexie" ? dexie : shared;
 }
