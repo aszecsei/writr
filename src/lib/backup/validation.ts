@@ -19,6 +19,7 @@ import {
   ProjectDictionarySchema,
   ProjectSchema,
   SavedPromptSchema,
+  SceneSchema,
   StyleGuideEntrySchema,
   TimelineEventSchema,
   WorldbuildingDocSchema,
@@ -55,6 +56,7 @@ export const ProjectBackupDataSchema = z.object({
   comments: z.array(CommentSchema),
   chapterSnapshots: z.array(ChapterSnapshotSchema).default([]),
   projectDictionary: ProjectDictionarySchema.optional(),
+  scenes: z.array(SceneSchema).default([]),
 });
 
 export const GlobalsBackupDataSchema = z.object({

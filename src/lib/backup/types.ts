@@ -1,85 +1,23 @@
+import type { z } from "zod/v4";
 import type {
-  AppDictionary,
-  AppSettings,
-  BrainstormIdea,
-  BrainstormSetup,
-  Chapter,
-  ChapterSnapshot,
-  Character,
-  CharacterRelationship,
-  Comment,
-  GuardrailEntry,
-  Location,
-  OutlineGridCell,
-  OutlineGridColumn,
-  OutlineGridRow,
-  PlaylistTrack,
-  Project,
-  ProjectDictionary,
-  SavedPrompt,
-  Scene,
-  StyleGuideEntry,
-  TimelineEvent,
-  WorldbuildingDoc,
-  WritingSession,
-  WritingSprint,
-} from "@/db/schemas";
+  BackupMetadataSchema,
+  FullBackupSchema,
+  GlobalsBackupDataSchema,
+  ProjectBackupDataSchema,
+  ProjectBackupSchema,
+} from "./validation";
 
 export const BACKUP_VERSION = 1;
 
-export interface BackupMetadata {
-  version: number;
-  type: "full" | "project";
-  exportedAt: string;
-  projectCount?: number;
-  projectTitle?: string;
-}
+export type BackupMetadata = z.infer<typeof BackupMetadataSchema>;
 
-export interface ProjectBackupData {
-  project: Project;
-  chapters: Chapter[];
-  characters: Character[];
-  characterRelationships: CharacterRelationship[];
-  locations: Location[];
-  timelineEvents: TimelineEvent[];
-  styleGuideEntries: StyleGuideEntry[];
-  guardrailEntries: GuardrailEntry[];
-  worldbuildingDocs: WorldbuildingDoc[];
-  outlineGridColumns: OutlineGridColumn[];
-  outlineGridRows: OutlineGridRow[];
-  outlineGridCells: OutlineGridCell[];
-  writingSprints: WritingSprint[];
-  writingSessions: WritingSession[];
-  playlistTracks: PlaylistTrack[];
-  comments: Comment[];
-  chapterSnapshots: ChapterSnapshot[];
-  projectDictionary?: ProjectDictionary;
-  // Optional so backups predating Model-D scenes still import cleanly.
-  scenes?: Scene[];
-}
+export type ProjectBackupData = z.infer<typeof ProjectBackupDataSchema>;
 
-/**
- * Global, non-project-scoped data carried in full backups. Optional so older
- * backups (without this section) still validate and import.
- */
-export interface GlobalsBackupData {
-  savedPrompts: SavedPrompt[];
-  brainstormSetups: BrainstormSetup[];
-  brainstormIdeas: BrainstormIdea[];
-}
+export type GlobalsBackupData = z.infer<typeof GlobalsBackupDataSchema>;
 
-export interface FullBackup {
-  metadata: BackupMetadata;
-  appSettings?: AppSettings;
-  appDictionary?: AppDictionary;
-  globals?: GlobalsBackupData;
-  projects: ProjectBackupData[];
-}
+export type FullBackup = z.infer<typeof FullBackupSchema>;
 
-export interface ProjectBackup {
-  metadata: BackupMetadata;
-  data: ProjectBackupData;
-}
+export type ProjectBackup = z.infer<typeof ProjectBackupSchema>;
 
 export type Backup = FullBackup | ProjectBackup;
 

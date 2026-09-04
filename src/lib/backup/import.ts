@@ -132,7 +132,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
   mapEntityIds(idMap, data.playlistTracks);
   mapEntityIds(idMap, data.comments);
   mapEntityIds(idMap, data.chapterSnapshots);
-  mapEntityIds(idMap, data.scenes ?? []);
+  mapEntityIds(idMap, data.scenes);
   if (data.projectDictionary) {
     idMap.set(data.projectDictionary.id, generateId());
   }
@@ -245,7 +245,7 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
     projectId: newProjectId,
   }));
 
-  const scenes = (data.scenes ?? []).map((s) => ({
+  const scenes = data.scenes.map((s) => ({
     ...s,
     id: mustGetId(idMap, s.id),
     projectId: newProjectId,
@@ -316,7 +316,7 @@ async function insertProjectData(data: ProjectBackupData): Promise<void> {
   await db.playlistTracks.bulkAdd(data.playlistTracks);
   await db.comments.bulkAdd(data.comments);
   await db.chapterSnapshots.bulkAdd(data.chapterSnapshots);
-  if (data.scenes && data.scenes.length > 0) {
+  if (data.scenes.length > 0) {
     await db.scenes.bulkAdd(data.scenes);
   }
   if (data.projectDictionary) {
