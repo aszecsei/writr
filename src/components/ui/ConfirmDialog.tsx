@@ -1,7 +1,9 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+import { BUTTON_CANCEL, BUTTON_DANGER, BUTTON_PRIMARY } from "./button-styles";
+import { Modal } from "./Modal";
 
 interface ConfirmDialogProps {
   title: string;
@@ -28,90 +30,53 @@ export function ConfirmDialog({
   onCancel,
   extraAction,
 }: ConfirmDialogProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  const handleClose = useCallback(() => {
-    onCancel();
-  }, [onCancel]);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") handleClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleClose]);
-
-  function handleOverlayClick(e: React.MouseEvent) {
-    if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-      handleClose();
-    }
-  }
-
   const isDanger = variant === "danger";
 
   return (
-    <div
-      className="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      role="alertdialog"
-      aria-modal="true"
-      onClick={handleOverlayClick}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") handleClose();
-      }}
-    >
-      <div
-        ref={panelRef}
-        className="modal-panel relative w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900"
-      >
-        <div className="flex items-start gap-3">
-          {isDanger && (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-          )}
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {title}
-            </h3>
-            <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              {message}
-            </div>
+    <Modal onClose={onCancel} maxWidth="max-w-sm">
+      <div className="flex items-start gap-3">
+        {isDanger && (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-2">
-          {extraAction && (
-            <button
-              type="button"
-              onClick={extraAction.onClick}
-              className="w-full rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900"
-            >
-              {extraAction.label}
-            </button>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus-visible:ring-offset-neutral-900"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
-                isDanger
-                  ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500"
-                  : "bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-              }`}
-            >
-              {confirmLabel}
-            </button>
+        )}
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            {title}
+          </h3>
+          <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            {message}
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="mt-6 flex flex-col gap-2">
+        {extraAction && (
+          <button
+            type="button"
+            onClick={extraAction.onClick}
+            className={`w-full ${BUTTON_DANGER}`}
+          >
+            {extraAction.label}
+          </button>
+        )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className={`flex-1 ${BUTTON_CANCEL}`}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`flex-1 ${isDanger ? BUTTON_DANGER : BUTTON_PRIMARY}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
