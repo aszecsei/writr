@@ -41,7 +41,10 @@ Read the docs that match the area you're touching:
 - **One modal at a time.** `uiStore.modal` is a discriminated union; extend it and use `openModal()` / `closeModal()`.
 - **Stores hold ephemeral UI state only.** If state survives a refresh, it belongs in Dexie.
 - **Use `terminology.ts`** for user-facing labels that change between prose and screenplay modes — don't hard-code "Chapter".
-- **Test gated UI both ways.** Features gated on env vars (e.g., `NEXT_PUBLIC_COLLAB_URL`) need snapshots with the var unset to lock in the disabled-feature baseline.
+- **Zod is the single source of truth.** Derive TypeScript types with `z.infer` and JSON schemas with `z.toJSONSchema`; never hand-write a parallel interface or schema for a shape Zod already defines. Three of the audit's data-loss bugs came from parallel copies drifting.
+- **Hooks passed as values are named `use*`.** The React Compiler identifies hook calls by name; a parameter or variable holding a hook must be named `use…` or the call gets memoised away and the hook order breaks. See `docs/conventions.md`.
+- **`npm run lint` is biome + knip + `scripts/check-source.mjs`.** Unused files/exports/dependencies, NUL bytes, `require()` and new `as unknown as` casts fail lint. Un-export or delete rather than adding to the baseline.
+- **Test gated UI both ways.** Features gated on env vars (e.g., `NEXT_PUBLIC_COLLAB_URL`) need snapshots with the var unset to lock in the disabled-feature baseline. Those are the only snapshots: everything else asserts the specific thing the test name promises.
 
 ## Agent skills
 

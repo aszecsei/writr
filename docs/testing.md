@@ -41,4 +41,9 @@ await createChapter(makeChapter({ projectId, title: "Ch. 1" }));
 
 - **Operations / hooks:** test against a real `db` with `fake-indexeddb`. Don't mock Dexie.
 - **Stores:** create a fresh store instance per test (Zustand stores are modules; reset via the store's exported `reset`/`set` if available, or by re-importing).
+- **Snapshots:** only for env-gated "feature disabled" baselines. A full-tree snapshot of enabled UI churns on every icon or class change and asserts nothing the test name promises; use `getByRole` / `getByText` for the fact the test is about.
+- **No tests of absence or history.** Don't assert that something was removed, a count of registered items, or a constant's literal value; don't name tests after a bug. Test the invariant instead.
+- **No library tests.** Dexie create-then-get, Zod defaults, Zustand setters, yjs replication and third-party tagging are not project logic.
+- **No real-timer sleeps.** Seed explicit timestamps or use `vi.useFakeTimers` / `vi.setSystemTime`; wait on state with `vi.waitFor`, not a fixed number of turns.
+- **Fixtures come from `src/test/helpers.ts`** (and `src/test/pm-schema.ts` for ProseMirror docs, `src/lib/collab/test-support.ts` for collab fakes). Add a `makeX` helper before hand-writing an entity literal a second time.
 - **Streaming AI tests:** use `src/lib/ai/build-messages.test.ts` and adapter tests as reference for how to drive the streaming generator.

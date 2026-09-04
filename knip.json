@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["collab/src/index.ts", "collab/vitest.config.ts"],
+  "project": ["src/**/*.{ts,tsx}", "collab/src/**/*.ts"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["@tailwindcss/typography", "tailwindcss"]
+}

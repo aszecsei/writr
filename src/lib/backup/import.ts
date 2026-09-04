@@ -7,7 +7,6 @@ import type {
   FullBackup,
   ImportOptions,
   ImportResult,
-  ProjectBackup,
   ProjectBackupData,
 } from "./types";
 import { isBackupVersionSupported, validateBackup } from "./validation";
@@ -39,10 +38,6 @@ export function parseBackupFile(content: string): Backup {
 
 export function isFullBackup(backup: Backup): backup is FullBackup {
   return backup.metadata.type === "full";
-}
-
-export function isProjectBackup(backup: Backup): backup is ProjectBackup {
-  return backup.metadata.type === "project";
 }
 
 type IdMap = Map<string, string>;
