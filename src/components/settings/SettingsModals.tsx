@@ -1,6 +1,7 @@
 import { AppSettingsDialog } from "@/components/settings/AppSettingsDialog";
 import { DictionaryManagerDialog } from "@/components/settings/DictionaryManagerDialog";
 import { GrammarRulesDialog } from "@/components/settings/GrammarRulesDialog";
+import { ImportBackupDialog } from "@/components/settings/ImportBackupDialog";
 
 /**
  * The Settings modal and every modal reachable from within it. Mount this
@@ -13,6 +14,7 @@ export function SettingsModals() {
       <AppSettingsDialog />
       <DictionaryManagerDialog />
       <GrammarRulesDialog />
+      <ImportBackupDialog />
     </>
   );
 }

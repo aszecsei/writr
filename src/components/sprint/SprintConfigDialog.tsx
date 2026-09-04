@@ -13,7 +13,7 @@ import {
 import { Modal } from "@/components/ui/Modal";
 import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
 import { useProjectStore } from "@/store/projectStore";
-import { useSprintStore } from "@/store/sprintStore";
+import { useUiStore } from "@/store/uiStore";
 
 const DURATION_PRESETS = [
   { label: "15 min", ms: 15 * 60 * 1000 },
@@ -24,9 +24,9 @@ const DURATION_PRESETS = [
 ];
 
 export function SprintConfigDialog() {
-  const configModalOpen = useSprintStore((s) => s.configModalOpen);
-  const closeConfigModal = useSprintStore((s) => s.closeConfigModal);
-  const openHistoryModal = useSprintStore((s) => s.openHistoryModal);
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
+  const openModal = useUiStore((s) => s.openModal);
   const projectTitle = useProjectStore((s) => s.activeProjectTitle);
 
   const { start } = useWritingSprint();
@@ -39,7 +39,7 @@ export function SprintConfigDialog() {
   const [wordGoal, setWordGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (!configModalOpen) return null;
+  if (modal.id !== "sprint-config") return null;
 
   const effectiveDuration = useCustom
     ? Number.parseInt(customMinutes, 10) * 60 * 1000
@@ -70,13 +70,12 @@ export function SprintConfigDialog() {
   }
 
   function handleViewHistory() {
-    closeConfigModal();
-    openHistoryModal();
+    openModal({ id: "sprint-history" });
   }
 
   return (
     <Modal
-      onClose={closeConfigModal}
+      onClose={closeModal}
       title={
         <span className="inline-flex items-center gap-2">
           <Timer size={18} />
@@ -149,7 +148,7 @@ export function SprintConfigDialog() {
 
         {/* Actions */}
         <DialogFooter
-          onCancel={closeConfigModal}
+          onCancel={closeModal}
           submitDisabled={!isValidDuration}
           submitType="button"
           onSubmit={handleStart}

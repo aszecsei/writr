@@ -10,7 +10,7 @@ import {
   useSprintStats,
 } from "@/hooks/writing/useSprintHistory";
 import { useProjectStore } from "@/store/projectStore";
-import { useSprintStore } from "@/store/sprintStore";
+import { useUiStore } from "@/store/uiStore";
 
 function formatDuration(ms: number): string {
   const totalMinutes = Math.floor(ms / 60000);
@@ -91,17 +91,17 @@ function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
 }
 
 export function SprintHistoryDialog() {
-  const historyModalOpen = useSprintStore((s) => s.historyModalOpen);
-  const closeHistoryModal = useSprintStore((s) => s.closeHistoryModal);
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
   const projectId = useProjectStore((s) => s.activeProjectId);
 
   const sprints = useSprintHistory(projectId);
   const stats = useSprintStats(projectId);
 
-  if (!historyModalOpen) return null;
+  if (modal.id !== "sprint-history") return null;
 
   return (
-    <Modal onClose={closeHistoryModal} maxWidth="max-w-lg">
+    <Modal onClose={closeModal} maxWidth="max-w-lg">
       <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         <History size={18} />
         Sprint History
@@ -157,7 +157,7 @@ export function SprintHistoryDialog() {
 
       {/* Close button */}
       <div className="mt-5">
-        <CloseFooter onClose={closeHistoryModal} />
+        <CloseFooter onClose={closeModal} />
       </div>
     </Modal>
   );

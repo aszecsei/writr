@@ -28,7 +28,6 @@ export function TopBar() {
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
-  const openSprintConfig = useSprintStore((s) => s.openConfigModal);
   const activeSprintId = useSprintStore((s) => s.activeSprintId);
   const settings = useAppSettings();
 
@@ -98,7 +97,7 @@ export function TopBar() {
             </button>
             <button
               type="button"
-              onClick={openSprintConfig}
+              onClick={() => openModal({ id: "sprint-config" })}
               disabled={!!activeSprintId}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-neutral-400 ${
                 activeSprintId

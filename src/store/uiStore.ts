@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { ChapterId, ProjectId } from "@/db/schemas";
+import type { ChapterId, EntityImageId, ProjectId } from "@/db/schemas";
+import type { Backup } from "@/lib/backup";
 
 export type SidebarPanel = "chapters" | "bible" | "agents";
 
@@ -51,7 +52,14 @@ type ModalState =
     }
   | { id: "collab-manage-participants" }
   | { id: "spellcheck-scanner" }
-  | { id: "grammar-scanner" };
+  | { id: "grammar-scanner" }
+  | { id: "sprint-config" }
+  | { id: "sprint-history" }
+  | { id: "outline-template" }
+  | { id: "add-relationship" }
+  | { id: "add-image" }
+  | { id: "image-lightbox"; imageId: EntityImageId }
+  | { id: "import-backup"; backup: Backup; filename: string };
 
 export type ModalId = ModalState["id"];
 
@@ -231,3 +239,5 @@ export const isCollabManageParticipantsModal = createModalGuard(
 );
 export const isSpellcheckScannerModal = createModalGuard("spellcheck-scanner");
 export const isGrammarScannerModal = createModalGuard("grammar-scanner");
+export const isImageLightboxModal = createModalGuard("image-lightbox");
+export const isImportBackupModal = createModalGuard("import-backup");

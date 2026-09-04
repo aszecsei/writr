@@ -61,6 +61,7 @@ function rowsFor(items: Chapter[]): {
     onContextMenu: vi.fn(),
     onSeparatorOpen: vi.fn(),
     sceneCounts: new Map(),
+    sceneTerm: "scenes",
     openChapters: {},
     onToggleChapterOpen: vi.fn(),
     sceneDropTargetId: null,

@@ -7,7 +7,6 @@ import { BrainstormWorkspace } from "@/components/brainstorm/BrainstormWorkspace
 import { SavedIdeasList } from "@/components/brainstorm/SavedIdeasList";
 import { SetupList } from "@/components/brainstorm/SetupList";
 import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog";
-import { SettingsModals } from "@/components/settings/SettingsModals";
 import { Spinner } from "@/components/ui/Spinner";
 import type { BrainstormSetupId } from "@/db/schemas";
 import { useBrainstormSetups } from "@/hooks/data";
@@ -98,7 +97,6 @@ export default function BrainstormPage() {
       </main>
 
       <CreateProjectDialog />
-      <SettingsModals />
     </div>
   );
 }

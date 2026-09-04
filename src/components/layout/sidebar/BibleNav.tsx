@@ -1,28 +1,9 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
-import {
-  Clock,
-  GitFork,
-  Globe,
-  LayoutGrid,
-  MapPin,
-  Music,
-  Pen,
-  Users,
-} from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import type { ProjectId } from "@/db/schemas";
-
-const bibleLinks: { label: string; path: string; icon: LucideIcon }[] = [
-  { label: "Characters", path: "bible/characters", icon: Users },
-  { label: "Locations", path: "bible/locations", icon: MapPin },
-  { label: "Timeline", path: "bible/timeline", icon: Clock },
-  { label: "Family Tree", path: "bible/family-tree", icon: GitFork },
-  { label: "Style Guide", path: "bible/style-guide", icon: Pen },
-  { label: "Worldbuilding", path: "bible/worldbuilding", icon: Globe },
-  { label: "Playlist", path: "bible/playlist", icon: Music },
-];
+import { BIBLE_SECTIONS } from "@/lib/bible-sections";
 
 export function BibleNav({
   projectId,
@@ -44,13 +25,13 @@ export function BibleNav({
         <LayoutGrid size={14} />
         Overview
       </Link>
-      {bibleLinks.map((link) => {
-        const href = `/projects/${projectId}/${link.path}`;
+      {BIBLE_SECTIONS.map((section) => {
+        const href = `/projects/${projectId}/${section.path}`;
         const isActive = pathname.startsWith(href);
-        const Icon = link.icon;
+        const Icon = section.icon;
         return (
           <Link
-            key={link.path}
+            key={section.path}
             href={href}
             className={`flex items-center gap-2 rounded-md px-3 py-density-item text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
               isActive
@@ -59,7 +40,7 @@ export function BibleNav({
             }`}
           >
             <Icon size={14} />
-            {link.label}
+            {section.label}
           </Link>
         );
       })}

@@ -20,6 +20,15 @@ export interface ProjectFormData {
   coverImageUrl: string;
 }
 
+export const DEFAULT_PROJECT_FORM_VALUES: ProjectFormData = {
+  title: "",
+  description: "",
+  genre: "",
+  targetWordCount: 0,
+  mode: "prose",
+  coverImageUrl: "",
+};
+
 interface ProjectFormFieldsProps {
   values: ProjectFormData;
   onChange: (values: ProjectFormData) => void;

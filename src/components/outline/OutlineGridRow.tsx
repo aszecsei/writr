@@ -20,6 +20,7 @@ interface OutlineGridRowProps {
   columns: OutlineGridColumn[];
   cellsMap: Map<string, OutlineGridCell>;
   highlightCellId?: OutlineGridCellId | null;
+  chapterTerm: string;
   chapterTitle?: string;
   chapterStatus?: string;
   /** Nesting depth of the linked chapter, for binder-matching indentation. */
@@ -39,6 +40,7 @@ export function OutlineGridRow({
   columns,
   cellsMap,
   highlightCellId,
+  chapterTerm,
   chapterTitle,
   chapterStatus,
   depth = 0,
@@ -105,7 +107,7 @@ export function OutlineGridRow({
               onDoubleClick={startEditing}
               title={
                 row.linkedChapterId
-                  ? "Linked to chapter - Double-click to edit"
+                  ? `Linked to ${chapterTerm.toLowerCase()} - Double-click to edit`
                   : "Double-click to edit"
               }
             >

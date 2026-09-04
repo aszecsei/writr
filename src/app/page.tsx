@@ -7,7 +7,6 @@ import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog"
 import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
-import { SettingsModals } from "@/components/settings/SettingsModals";
 import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import {
   ContextMenu,
@@ -128,7 +127,6 @@ export default function DashboardPage() {
       <CreateProjectDialog />
       <EditProjectDialog />
       <DeleteProjectDialog />
-      <SettingsModals />
     </div>
   );
 }

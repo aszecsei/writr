@@ -211,7 +211,7 @@ export function ExportDialog() {
                 This export contains {holeWarning.total}{" "}
                 {holeWarning.total === 1 ? "hole" : "holes"}
                 {holeWarning.chapters.length > 1
-                  ? ` across ${holeWarning.chapters.length} chapters`
+                  ? ` across ${holeWarning.chapters.length} ${getTerm(activeProjectMode, "chapters").toLowerCase()}`
                   : ""}
                 .
               </p>

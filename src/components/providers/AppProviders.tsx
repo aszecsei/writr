@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { RadioPlayer } from "@/components/radio/RadioPlayer";
 import { TtsAudioEngine } from "@/components/tts/TtsAudioEngine";
+import { GlobalModals } from "./GlobalModals";
 import { ThemeProvider } from "./ThemeProvider";
 
 interface AppProvidersProps {
@@ -15,6 +16,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <ThemeProvider />
       <RadioPlayer />
       <TtsAudioEngine />
+      <GlobalModals />
       {children}
     </>
   );

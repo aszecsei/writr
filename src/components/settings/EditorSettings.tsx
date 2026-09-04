@@ -1,6 +1,11 @@
 "use client";
 
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { EDITOR_FONTS, type EditorFont } from "@/lib/fonts";
+import type {
+  AppSettingsDraft,
+  SetAppSettingsField,
+} from "./AppSettingsDialog";
 
 const CATEGORY_STYLE_LABELS: Record<EditorFont["category"], string> = {
   serif: "serif",
@@ -10,53 +15,19 @@ const CATEGORY_STYLE_LABELS: Record<EditorFont["category"], string> = {
 };
 
 interface EditorSettingsProps {
-  editorFont: string;
-  editorFontSize: number;
-  autoSaveSeconds: number;
-  readingSpeedWpm: number;
-  autoFocusModeOnSprint: boolean;
-  grammarCheckerEnabled: boolean;
-  holeOpenDelimiter: string;
-  holeCloseDelimiter: string;
-  holeHighlightOpacity: number;
-  onEditorFontChange: (font: string) => void;
-  onEditorFontSizeChange: (size: number) => void;
-  onAutoSaveSecondsChange: (seconds: number) => void;
-  onReadingSpeedWpmChange: (wpm: number) => void;
-  onAutoFocusModeOnSprintChange: (enabled: boolean) => void;
-  onGrammarCheckerEnabledChange: (enabled: boolean) => void;
-  onHoleOpenDelimiterChange: (value: string) => void;
-  onHoleCloseDelimiterChange: (value: string) => void;
+  draft: AppSettingsDraft;
+  setField: SetAppSettingsField;
   onHoleHighlightOpacityChange: (value: number) => void;
   onManageDictionaries?: () => void;
   onManageGrammarRules?: () => void;
-  inputClass: string;
-  labelClass: string;
 }
 
 export function EditorSettings({
-  editorFont,
-  editorFontSize,
-  autoSaveSeconds,
-  readingSpeedWpm,
-  autoFocusModeOnSprint,
-  grammarCheckerEnabled,
-  holeOpenDelimiter,
-  holeCloseDelimiter,
-  holeHighlightOpacity,
-  onEditorFontChange,
-  onEditorFontSizeChange,
-  onAutoSaveSecondsChange,
-  onReadingSpeedWpmChange,
-  onAutoFocusModeOnSprintChange,
-  onGrammarCheckerEnabledChange,
-  onHoleOpenDelimiterChange,
-  onHoleCloseDelimiterChange,
+  draft,
+  setField,
   onHoleHighlightOpacityChange,
   onManageDictionaries,
   onManageGrammarRules,
-  inputClass,
-  labelClass,
 }: EditorSettingsProps) {
   return (
     <fieldset>
@@ -64,12 +35,12 @@ export function EditorSettings({
         Editor
       </legend>
       <div className="mt-2 space-y-4">
-        <label className={labelClass}>
+        <label className={LABEL_CLASS}>
           Font Family
           <select
-            value={editorFont}
-            onChange={(e) => onEditorFontChange(e.target.value)}
-            className={inputClass}
+            value={draft.editorFont}
+            onChange={(e) => setField("editorFont", e.target.value)}
+            className={INPUT_CLASS}
           >
             {EDITOR_FONTS.map((font) => (
               <option key={font.id} value={font.id}>
@@ -79,38 +50,44 @@ export function EditorSettings({
           </select>
         </label>
         <div className="grid grid-cols-2 gap-4">
-          <label className={labelClass}>
+          <label className={LABEL_CLASS}>
             Font Size (px)
             <input
               type="number"
               min={10}
               max={32}
-              value={editorFontSize}
-              onChange={(e) => onEditorFontSizeChange(Number(e.target.value))}
-              className={inputClass}
+              value={draft.editorFontSize}
+              onChange={(e) =>
+                setField("editorFontSize", Number(e.target.value))
+              }
+              className={INPUT_CLASS}
             />
           </label>
-          <label className={labelClass}>
+          <label className={LABEL_CLASS}>
             Auto-save (seconds)
             <input
               type="number"
               min={1}
               max={60}
-              value={autoSaveSeconds}
-              onChange={(e) => onAutoSaveSecondsChange(Number(e.target.value))}
-              className={inputClass}
+              value={draft.autoSaveSeconds}
+              onChange={(e) =>
+                setField("autoSaveSeconds", Number(e.target.value))
+              }
+              className={INPUT_CLASS}
             />
           </label>
         </div>
-        <label className={labelClass}>
+        <label className={LABEL_CLASS}>
           Reading Speed (WPM)
           <input
             type="number"
             min={100}
             max={500}
-            value={readingSpeedWpm}
-            onChange={(e) => onReadingSpeedWpmChange(Number(e.target.value))}
-            className={inputClass}
+            value={draft.readingSpeedWpm}
+            onChange={(e) =>
+              setField("readingSpeedWpm", Number(e.target.value))
+            }
+            className={INPUT_CLASS}
           />
           <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
             Words per minute for reading time estimates (default: 200)
@@ -119,8 +96,10 @@ export function EditorSettings({
         <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
-            checked={autoFocusModeOnSprint}
-            onChange={(e) => onAutoFocusModeOnSprintChange(e.target.checked)}
+            checked={draft.autoFocusModeOnSprint}
+            onChange={(e) =>
+              setField("autoFocusModeOnSprint", e.target.checked)
+            }
             className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           Auto-enable focus mode when starting a sprint
@@ -131,8 +110,10 @@ export function EditorSettings({
         <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
-            checked={grammarCheckerEnabled}
-            onChange={(e) => onGrammarCheckerEnabledChange(e.target.checked)}
+            checked={draft.grammarCheckerEnabled}
+            onChange={(e) =>
+              setField("grammarCheckerEnabled", e.target.checked)
+            }
             className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           Enable grammar checker
@@ -150,39 +131,39 @@ export function EditorSettings({
           </button>
         )}
         <div>
-          <span className={labelClass}>Holes</span>
+          <span className={LABEL_CLASS}>Holes</span>
           <p className="mt-1 text-xs font-normal text-neutral-500 dark:text-neutral-400">
             Delimiters that mark a section you're intentionally skipping over.
             Holes are highlighted, excluded from word counts, and flagged before
             export.
           </p>
           <div className="mt-2 grid grid-cols-2 gap-4">
-            <label className={labelClass}>
+            <label className={LABEL_CLASS}>
               Open Delimiter
               <input
                 type="text"
-                value={holeOpenDelimiter}
-                onChange={(e) => onHoleOpenDelimiterChange(e.target.value)}
+                value={draft.holeOpenDelimiter}
+                onChange={(e) => setField("holeOpenDelimiter", e.target.value)}
                 placeholder="["
-                className={inputClass}
+                className={INPUT_CLASS}
               />
             </label>
-            <label className={labelClass}>
+            <label className={LABEL_CLASS}>
               Close Delimiter
               <input
                 type="text"
-                value={holeCloseDelimiter}
-                onChange={(e) => onHoleCloseDelimiterChange(e.target.value)}
+                value={draft.holeCloseDelimiter}
+                onChange={(e) => setField("holeCloseDelimiter", e.target.value)}
                 placeholder="]"
-                className={inputClass}
+                className={INPUT_CLASS}
               />
             </label>
           </div>
-          <label className={`${labelClass} mt-4`}>
+          <label className={`${LABEL_CLASS} mt-4`}>
             <span className="flex items-center justify-between">
               <span>Highlight Translucency</span>
               <span className="tabular-nums font-normal text-neutral-500 dark:text-neutral-400">
-                {Math.round(holeHighlightOpacity * 100)}%
+                {Math.round(draft.holeHighlightOpacity * 100)}%
               </span>
             </span>
             <div className="mt-2 flex items-center gap-3">
@@ -191,7 +172,7 @@ export function EditorSettings({
                 min={0}
                 max={1}
                 step={0.02}
-                value={holeHighlightOpacity}
+                value={draft.holeHighlightOpacity}
                 onChange={(e) =>
                   onHoleHighlightOpacityChange(Number(e.target.value))
                 }
@@ -201,7 +182,7 @@ export function EditorSettings({
               <span
                 className="rounded px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300"
                 style={{
-                  backgroundColor: `rgb(250 204 21 / ${holeHighlightOpacity})`,
+                  backgroundColor: `rgb(250 204 21 / ${draft.holeHighlightOpacity})`,
                 }}
               >
                 [ hole ]
