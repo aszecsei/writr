@@ -4,16 +4,12 @@ import type {
   AiProvider,
   ReasoningEffort,
 } from "@/db/schemas";
-import type { ToolCallEntry, ToolExecutionContext } from "../tool-calling";
-import type { AiMessage, FinishReason } from "../types";
+import type { ToolExecutionContext } from "../tool-calling";
+import type { AiMessage } from "../types";
 import type { ChatHistoryAccessor } from "./accessor";
 
-/**
- * "Manual" represents the synthesized agent that backs the AiPanel chat — its
- * system prompt comes from the existing task-tool selector instead of a
- * built-in agent kind. Custom user-defined agents use "custom".
- */
-export type AnyAgentKind = AgentKind | "manual" | "custom";
+/** Custom user-defined agents use "custom"; built-in kinds use `AgentKind`. */
+type AnyAgentKind = AgentKind | "custom";
 
 /**
  * Function that produces the messages for one iteration of the agent loop.
@@ -28,12 +24,9 @@ export type BuildMessagesFn = (params: { history: AiMessage[] }) => AiMessage[];
 /**
  * A first-class agent: a typed configuration of model + prompt + tool subset
  * that can be run through the headless `runAgent()` function. Built-in chat
- * agents come from factories under `src/lib/ai/agents/builtins/`. The AiPanel
- * chat synthesizes a "manual" agent to preserve its existing UX.
+ * agents come from factories under `src/lib/ai/agents/builtins/`.
  */
 export interface Agent {
-  /** Unique per invocation. Used for logging / correlation. */
-  id: string;
   kind: AnyAgentKind;
   /**
    * Per-agent model override. When omitted, the runner falls back to the
@@ -43,7 +36,7 @@ export interface Agent {
   /**
    * Whitelist of tool ids the agent may use. When omitted, tools are still
    * gated by `enableToolCalling`. Built-in chat agents set this to a tight
-   * subset; the manual agent leaves it undefined.
+   * subset; agents with no tool access leave it undefined.
    */
   allowedToolIds?: string[];
   /** Whether to send tool definitions to the model at all. */
@@ -52,7 +45,7 @@ export interface Agent {
   maxIterations?: number;
   /** Builds messages for each iteration. */
   buildMessages: BuildMessagesFn;
-  /** Tool execution context — projectId, agentKind. */
+  /** Tool execution context — projectId, delegation host. */
   agentContext: ToolExecutionContext;
   /**
    * Pre-rendered system content, exposed for prompt-inspector UIs. Not used by
@@ -88,15 +81,8 @@ export interface RunAgentOptions {
 }
 
 export interface RunAgentResult {
-  iterations: number;
   /** Final assistant content (last turn). */
   content: string;
-  reasoning?: string;
-  finishReason?: FinishReason;
-  /** All tool calls executed across iterations. */
-  toolCalls: ToolCallEntry[];
   /** True when aborted via signal. */
   aborted: boolean;
 }
-
-export type { ToolCallEntry, ToolExecutionContext };

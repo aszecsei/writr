@@ -45,13 +45,12 @@ import {
 } from "./tools/worldbuilding";
 import type {
   AiToolDefinition,
-  ToolDefinitionForModel,
   ToolExecutionContext,
   ToolResult,
 } from "./types";
 
 export const AI_TOOLS: AiToolDefinition[] = [
-  // Consolidated read surface (replaces list_*/get_* per-entity tools)
+  // Consolidated read surface
   listTool,
   getTool,
   // Story bible CRUD
@@ -101,15 +100,6 @@ export const AI_TOOLS: AiToolDefinition[] = [
 export const AI_TOOL_MAP = new Map<string, AiToolDefinition>(
   AI_TOOLS.map((t) => [t.id, t]),
 );
-
-export function getToolDefinitionsForModel(): ToolDefinitionForModel[] {
-  return AI_TOOLS.map(({ id, name, description, parameters }) => ({
-    id,
-    name,
-    description,
-    parameters,
-  }));
-}
 
 export async function executeTool(
   toolId: string,

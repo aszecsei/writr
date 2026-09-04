@@ -13,7 +13,6 @@ import { fail, ok, reorderRelative } from "./helpers";
 
 export const createWorldbuildingDocTool = defineTool({
   id: "create_worldbuilding_doc",
-  category: "worldbuilding",
   name: "Create Worldbuilding Doc",
   description:
     "Create a new worldbuilding document in the project's world bible. " +
@@ -64,7 +63,6 @@ export const createWorldbuildingDocTool = defineTool({
 
 export const updateWorldbuildingDocTool = defineTool({
   id: "update_worldbuilding_doc",
-  category: "worldbuilding",
   name: "Update Worldbuilding Doc",
   description:
     "Update fields on an existing worldbuilding document. Only include the " +
@@ -119,7 +117,6 @@ export const updateWorldbuildingDocTool = defineTool({
 
 export const deleteWorldbuildingDocTool = defineTool({
   id: "delete_worldbuilding_doc",
-  category: "worldbuilding",
   name: "Delete Worldbuilding Doc",
   description:
     "Delete a worldbuilding document. Any child docs are re-parented to the " +
@@ -148,7 +145,6 @@ export const deleteWorldbuildingDocTool = defineTool({
 
 export const moveWorldbuildingDocTool = defineTool({
   id: "move_worldbuilding_doc",
-  category: "worldbuilding",
   name: "Move Worldbuilding Doc",
   description:
     "Reorder a worldbuilding doc by moving it directly before or after a " +

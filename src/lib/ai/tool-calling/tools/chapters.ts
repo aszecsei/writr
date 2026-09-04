@@ -19,7 +19,6 @@ import { fail, ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
 
 export const createChapterTool = defineTool({
   id: "create_chapter",
-  category: "chapter",
   name: "Create Chapter",
   description:
     "Create a new chapter. Use when the user asks to add a chapter to the project.",
@@ -53,7 +52,6 @@ export const createChapterTool = defineTool({
 
 export const updateChapterTool = defineTool({
   id: "update_chapter",
-  category: "chapter",
   name: "Update Chapter",
   description:
     "Update a chapter's title, synopsis, or status. Only include fields to change.",
@@ -91,7 +89,6 @@ export const updateChapterTool = defineTool({
 
 export const searchChaptersTool = defineTool({
   id: "search_chapters",
-  category: "chapter",
   name: "Search Chapters",
   description:
     "Tokenized keyword search across chapter titles and content (BM25-ranked). " +
@@ -119,7 +116,6 @@ export const searchChaptersTool = defineTool({
 
 export const readChapterTool = defineTool({
   id: "read_chapter",
-  category: "chapter",
   name: "Read Chapter",
   description:
     "Read the full markdown content of a chapter by ID. " +
@@ -147,7 +143,6 @@ export const readChapterTool = defineTool({
 
 export const readChapterRangeTool = defineTool({
   id: "read_chapter_range",
-  category: "chapter",
   name: "Read Chapter Range",
   description:
     "Read a range of paragraphs from a chapter (1-indexed, inclusive). " +
@@ -201,7 +196,6 @@ export const readChapterRangeTool = defineTool({
 
 export const searchChapterTool = defineTool({
   id: "search_chapter",
-  category: "chapter",
   name: "Search Chapter",
   description:
     "Tokenized keyword search within a single chapter (BM25-ranked over paragraphs). " +
@@ -256,7 +250,6 @@ export const searchChapterTool = defineTool({
 
 export const getChapterStructureTool = defineTool({
   id: "get_chapter_structure",
-  category: "chapter",
   name: "Get Chapter Structure",
   description:
     "Get the structural map of a chapter: scene boundaries with paragraph numbers and previews. " +

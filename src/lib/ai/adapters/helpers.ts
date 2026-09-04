@@ -15,12 +15,12 @@ export interface ExtractedTextContent {
  *
  * `withTrailingCacheControl` wraps the most recent history message's string
  * content into a `[{type:"text", text, cache_control}]` array so prompt caching
- * spans tool-calling iterations. The provider adapters then need to convert
- * tool/assistant messages back into provider-specific shapes — historically
- * these branches checked `typeof content === "string"` and silently dropped
- * the array form, wiping the most recent tool result on every follow-up turn.
+ * spans tool-calling iterations. Provider adapters converting tool/assistant
+ * messages back into provider-specific shapes must not check
+ * `typeof content === "string"` and drop the array form, or the most recent
+ * tool result goes missing on every follow-up turn.
  *
- * Use this helper anywhere an adapter previously fell back to `""` for
+ * Use this helper anywhere an adapter needs a plain-text fallback for
  * non-string content. Concatenates all text parts and surfaces the first
  * `cache_control` so callers can re-attach it where the wire format allows
  * (e.g. Anthropic `tool_result` blocks).

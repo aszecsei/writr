@@ -23,8 +23,7 @@ function normalizeStopReason(
       .with("max_tokens", (): FinishReason => "length")
       .with("stop_sequence", (): FinishReason => "stop")
       .with("tool_use", (): FinishReason => "tool_use")
-      // null, undefined, or empty string fall back to "stop" — same as the
-      // original `stopReason ? "unknown" : "stop"` branch.
+      // null, undefined, or empty string fall back to "stop".
       .with(P.union(null, undefined, ""), (): FinishReason => "stop")
       .otherwise((): FinishReason => "unknown")
   );
@@ -133,12 +132,11 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         content: msg.content,
       });
     } else {
-      // Always preserve content-array shape. Previously this branch joined
-      // the parts back into a string when nothing carried cache_control or
-      // an image, but that flipped the wire shape between tool-calling
-      // iterations: a previously-trailing message would arrive as array form
-      // (with cache_control) on iter N and as string form (no cache_control)
-      // on iter N+1, busting Anthropic's prefix-byte cache match.
+      // Always preserve content-array shape — joining the parts back into a
+      // string would flip the wire shape between tool-calling iterations:
+      // the message trailing in iteration N would arrive as array form (with
+      // cache_control) and as string form (no cache_control) in iteration
+      // N+1, busting Anthropic's prefix-byte cache match.
       nonSystemMessages.push({
         role: msg.role as "user" | "assistant",
         content: toAnthropicContent(msg.content),

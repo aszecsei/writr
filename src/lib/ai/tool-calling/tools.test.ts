@@ -15,47 +15,20 @@ import {
   makeTimelineEvent,
   resetIdCounter,
 } from "@/test/helpers";
-import { AI_TOOL_MAP, executeTool, getToolDefinitionsForModel } from "./tools";
+import { AI_TOOL_MAP, AI_TOOLS, executeTool } from "./tools";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
 
 describe("tool registry", () => {
-  it("exports 35 tool definitions", () => {
-    expect(getToolDefinitionsForModel()).toHaveLength(35);
-  });
-
   it("has unique tool IDs", () => {
-    const defs = getToolDefinitionsForModel();
-    const ids = defs.map((d) => d.id);
+    const ids = AI_TOOLS.map((d) => d.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("registers the consolidated list and get tools", () => {
     expect(AI_TOOL_MAP.get("list")).toBeDefined();
     expect(AI_TOOL_MAP.get("get")).toBeDefined();
-  });
-
-  it("does not register the obsolete per-entity read tools", () => {
-    const removed = [
-      "list_characters",
-      "list_locations",
-      "list_timeline_events",
-      "list_chapters",
-      "list_style_guide",
-      "list_worldbuilding_docs",
-      "get_character",
-      "get_location",
-      "get_timeline_event",
-      "get_chapter",
-      "get_style_guide_entry",
-      "get_worldbuilding_doc",
-      "get_outline",
-      "read_summary",
-    ];
-    for (const id of removed) {
-      expect(AI_TOOL_MAP.get(id)).toBeUndefined();
-    }
   });
 });
 

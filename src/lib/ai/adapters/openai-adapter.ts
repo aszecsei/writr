@@ -183,8 +183,8 @@ function toOpenAIMessage(
       // System messages stay as plain strings — the chat flow never marks the
       // system message with cache_control, so its shape is already stable.
       // Wrapping system in a content array would change the wire shape and
-      // could itself bust caching for any deployment that previously cached
-      // against the string form.
+      // could itself bust the prompt cache, which keys on a byte-stable
+      // prefix.
       if (m.role === "system") {
         if (typeof m.content === "string") {
           return { role: "system", content: m.content };

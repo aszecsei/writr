@@ -11,7 +11,6 @@ export interface TextContentPart {
 export interface ImageUrlContentPart {
   type: "image_url";
   image_url: { url: string };
-  cache_control?: CacheControl;
 }
 
 export type ContentPart = TextContentPart | ImageUrlContentPart;
@@ -32,37 +31,21 @@ export interface AiMessage {
 import type {
   AiProvider,
   Chapter,
-  Character,
-  CharacterRelationship,
   GuardrailEntry,
-  Location,
-  OutlineGridCell,
-  OutlineGridColumn,
-  OutlineGridRow,
   ProjectMode,
   ReasoningEffort,
   StyleGuideEntry,
-  TimelineEvent,
-  WorldbuildingDoc,
 } from "@/db/schemas";
 
-export type { AiProvider, ReasoningEffort };
+export type { ReasoningEffort };
 
 export interface AiContext {
   projectTitle: string;
   projectDescription: string;
   genre: string;
   projectMode?: ProjectMode;
-  characters: Character[];
-  locations: Location[];
   styleGuide: StyleGuideEntry[];
   guardrails: GuardrailEntry[];
-  timelineEvents: TimelineEvent[];
-  worldbuildingDocs: WorldbuildingDoc[];
-  relationships: CharacterRelationship[];
-  outlineGridColumns: OutlineGridColumn[];
-  outlineGridRows: OutlineGridRow[];
-  outlineGridCells: OutlineGridCell[];
   chapters: Chapter[];
   currentChapterId?: string;
   currentChapterTitle?: string;

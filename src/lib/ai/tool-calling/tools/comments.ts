@@ -38,12 +38,10 @@ function stampForPersona(persona: BetaReaderPersonaId): PersonaStamp {
 // them as PM positions (off by a small constant per block boundary), so
 // highlights will be a few characters off in chapters with many blocks
 // preceding the anchor. `anchorText` is always stored so a future
-// doc-aware reconcile pass can correct them at render time. Accepted as a
-// v1 trade-off; see the plan's "Open questions" section.
+// doc-aware reconcile pass can correct them at render time.
 
 export const addCommentTool = defineTool({
   id: "add_comment",
-  category: "note",
   name: "Add Comment",
   description:
     "Drop an inline comment on a specific span of chapter text. " +
@@ -161,7 +159,6 @@ export const addCommentTool = defineTool({
 
 export const replyToCommentTool = defineTool({
   id: "reply_to_comment",
-  category: "note",
   name: "Reply to Comment",
   description:
     "Add a reply to an existing comment. The reply inherits position from " +

@@ -1,10 +1,10 @@
 import type { AiContext } from "../../types";
 
 /**
- * Format suffix appended to pipeline-agent system prompts when the project is
- * a screenplay. Keeps the core agent discipline identical and just retunes
- * format expectations — far less surface area than maintaining two parallel
- * prompts per agent.
+ * Format suffix appended to chat-agent system prompts (in `chatAgent.ts`)
+ * when the project is a screenplay. Keeps the core agent discipline identical
+ * and just retunes format expectations — far less surface area than
+ * maintaining two parallel prompts per agent.
  */
 const SCREENPLAY_SUFFIX = `
 

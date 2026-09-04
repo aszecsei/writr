@@ -13,7 +13,6 @@ import { fail, ok, reorderRelative } from "./helpers";
 
 export const createTimelineEventTool = defineTool({
   id: "create_timeline_event",
-  category: "timeline",
   name: "Create Timeline Event",
   description:
     "Add a timeline event. Use when the user asks to add events or plot points.",
@@ -53,7 +52,6 @@ export const createTimelineEventTool = defineTool({
 
 export const updateTimelineEventTool = defineTool({
   id: "update_timeline_event",
-  category: "timeline",
   name: "Update Timeline Event",
   description:
     "Update fields on an existing timeline event. Only include fields to change. " +
@@ -88,7 +86,6 @@ export const updateTimelineEventTool = defineTool({
 
 export const deleteTimelineEventTool = defineTool({
   id: "delete_timeline_event",
-  category: "timeline",
   name: "Delete Timeline Event",
   description:
     "Delete a timeline event. Use the `list` and `get` tools first to " +
@@ -116,7 +113,6 @@ export const deleteTimelineEventTool = defineTool({
 
 export const moveTimelineEventTool = defineTool({
   id: "move_timeline_event",
-  category: "timeline",
   name: "Move Timeline Event",
   description:
     "Reposition a timeline event by moving it directly before or after " +

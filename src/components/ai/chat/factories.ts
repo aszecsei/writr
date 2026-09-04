@@ -8,7 +8,7 @@ import type {
   UserChatMessage,
 } from "./types";
 
-export function mintChatMessageId(): ChatMessageId {
+function mintChatMessageId(): ChatMessageId {
   return crypto.randomUUID() as ChatMessageId;
 }
 

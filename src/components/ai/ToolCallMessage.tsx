@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, CircleDashed, Loader2, X } from "lucide-react";
+import { AlertCircle, Check, CircleDashed, X } from "lucide-react";
 import { match, P } from "ts-pattern";
 import {
   BETA_READER_PERSONA_ATTRIBUTION,
@@ -80,14 +80,12 @@ interface ToolCallMessageProps {
   entry: ToolCallEntry;
   onApprove?: () => void;
   onDeny?: () => void;
-  loading?: boolean;
 }
 
 export function ToolCallMessage({
   entry,
   onApprove,
   onDeny,
-  loading,
 }: ToolCallMessageProps) {
   // Hide the persona field from the parameter list — it's redundant with
   // the badge in the header, and the comment body is what the user wants
@@ -106,9 +104,6 @@ export function ToolCallMessage({
         </span>
         {persona && <PersonaBadge persona={persona} />}
         <StatusBadge status={entry.status} />
-        {loading && (
-          <Loader2 size={12} className="animate-spin text-neutral-400" />
-        )}
       </div>
 
       {/* Parameters */}

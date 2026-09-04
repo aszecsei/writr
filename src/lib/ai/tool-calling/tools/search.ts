@@ -16,7 +16,6 @@ const SearchableEntityTypeEnum = z.enum([
 
 export const searchProjectTool = defineTool({
   id: "search_project",
-  category: "search",
   name: "Search Project",
   description:
     "Tokenized keyword search across the project (BM25-ranked). " +

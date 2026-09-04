@@ -3,12 +3,7 @@
 import type { z } from "zod";
 import type { ProjectId } from "@/db/schemas";
 
-export type ToolCallStatus =
-  | "pending"
-  | "approved"
-  | "denied"
-  | "executed"
-  | "error";
+type ToolCallStatus = "pending" | "approved" | "denied" | "executed" | "error";
 
 export interface ToolResult {
   success: boolean;
@@ -25,7 +20,7 @@ export interface DelegateRequest {
 }
 
 /** The result of a delegated sub-agent run. */
-export interface DelegateOutcome {
+interface DelegateOutcome {
   /** The sub-agent's final text answer. */
   answer: string;
   /** True if the run was cancelled before producing a final answer. */
@@ -41,8 +36,8 @@ export interface ChoiceRequest {
 /**
  * Host the chat panel injects so the `delegate` and `present_choice` tools can
  * run sub-agents and surface user prompts without reaching into React state
- * themselves. Present ONLY in interactive chat-panel invocations; absent in
- * pipeline runs (both tools fail gracefully when it's undefined).
+ * themselves. Present ONLY in interactive chat-panel invocations; both tools
+ * fail gracefully when it's undefined.
  */
 export interface DelegationHost {
   /** Current nesting depth; 0 = the top-level orchestrator. */
@@ -65,11 +60,6 @@ export interface DelegationHost {
 export interface ToolExecutionContext {
   projectId: ProjectId;
   /**
-   * Kind of agent invoking the tool. Tools may branch on this. Set by the
-   * agent runner from the agent's `kind`.
-   */
-  agentKind?: string;
-  /**
    * The chat-message id of the tool call currently executing. Set by the agent
    * runner per tool call so a tool can correlate side effects with its own
    * message row — `delegate` uses it to attach the sub-agent transcript to the
@@ -79,8 +69,7 @@ export interface ToolExecutionContext {
   /**
    * Sub-agent delegation machinery. Set by the AiPanel accessor on the agent's
    * `agentContext` so the `delegate` / `present_choice` tools can run nested
-   * agents and bubble user-facing gates to the top-level panel. Undefined in
-   * pipeline runs.
+   * agents and bubble user-facing gates to the top-level panel.
    */
   delegation?: DelegationHost;
 }
@@ -105,34 +94,10 @@ export interface ToolParametersSchema {
   required?: string[];
 }
 
-/**
- * Domain tag for a tool. Lets agent-management UIs group tools and lets
- * future code filter by category instead of matching on tool ids.
- */
-export type ToolCategory =
-  | "chapter"
-  | "scene"
-  | "character"
-  | "location"
-  | "timeline"
-  | "style-guide"
-  | "worldbuilding"
-  | "outline"
-  | "search"
-  | "bible"
-  | "work-unit"
-  | "edit"
-  | "note"
-  | "summary"
-  | "verification"
-  | "read";
-
 export interface AiToolDefinition {
   id: string;
   name: string;
   description: string;
-  /** Domain tag for grouping / filtering. Optional for forward compatibility. */
-  category?: ToolCategory;
   parameters: ToolParametersSchema;
   inputSchema: z.ZodType;
   requiresApproval: boolean;
