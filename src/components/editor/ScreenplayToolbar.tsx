@@ -51,7 +51,7 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
             key={action.label}
             type="button"
             title={action.label}
-            onClick={() => action.action(editor)}
+            onClick={() => action.kind === "command" && action.run(editor)}
             className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
               isActive
                 ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
@@ -70,7 +70,7 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
           key={action.label}
           icon={action.icon}
           title={HISTORY_TITLES[action.label] ?? action.label}
-          onClick={() => action.action(editor)}
+          onClick={() => action.kind === "command" && action.run(editor)}
         />
       ))}
 

@@ -43,7 +43,7 @@ import { InsertImageDialog } from "./InsertImageDialog";
 import { LinkEditorDialog } from "./LinkEditorDialog";
 import { RubyDialog } from "./RubyDialog";
 import { TextToolsMenu } from "./TextToolsMenu";
-import { actions, groups } from "./toolbar-actions";
+import { actions, groups, type ToolbarActionModal } from "./toolbar-actions";
 
 interface SharedChapterActionsProps {
   editor: Editor;
@@ -262,15 +262,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }, [editor]);
 
   // Handle modal button clicks
-  const handleModalAction = useCallback(
-    (label: string) => {
+  const handleModalOpen = useCallback(
+    (modal: ToolbarActionModal) => {
       if (!editor) return;
-      if (label === "Link") {
+      if (modal === "link-editor") {
         const attrs = editor.getAttributes("link");
         openModal({ id: "link-editor", currentHref: attrs.href });
-      } else if (label === "Image") {
+      } else if (modal === "insert-image") {
         openModal({ id: "insert-image" });
-      } else if (label === "Ruby Text") {
+      } else if (modal === "ruby-editor") {
         const attrs = editor.getAttributes("ruby");
         openModal({ id: "ruby-editor", currentAnnotation: attrs.annotation });
       }
@@ -341,9 +341,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                   (activeStates[action.label] ?? false) ? "active" : "default"
                 }
                 onClick={() =>
-                  action.opensModal
-                    ? handleModalAction(action.label)
-                    : action.action(editor)
+                  action.kind === "modal"
+                    ? handleModalOpen(action.modal)
+                    : action.run(editor)
                 }
               />
             ))}
