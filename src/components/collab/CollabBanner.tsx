@@ -44,7 +44,7 @@ export function CollabBanner() {
   );
 }
 
-export interface CollabBannerContentProps {
+interface CollabBannerContentProps {
   viewerRole: Role;
   status: ReturnType<typeof useCollabStore.getState>["status"];
   peerCount: number;

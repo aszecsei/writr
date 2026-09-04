@@ -36,14 +36,14 @@ export class HandshakeAbortedError extends Error {
   }
 }
 
-export interface GuestWelcome {
+interface GuestWelcome {
   peerId: string;
   role: Role;
   peerCount: number;
   hostPresent: boolean;
 }
 
-export interface RunGuestHandshakeOptions {
+interface RunGuestHandshakeOptions {
   ws: WebSocketLike;
   roomUuid: string;
   hostPubEncoded: string;
@@ -54,7 +54,7 @@ export interface RunGuestHandshakeOptions {
   requestId?: string;
 }
 
-export interface GuestHandshakeResult {
+interface GuestHandshakeResult {
   roomKey: RoomKey;
   welcome: GuestWelcome;
   /**
@@ -263,7 +263,7 @@ export function runGuestHandshake(
   });
 }
 
-export interface AttachJoinRequestHandlerOptions {
+interface AttachJoinRequestHandlerOptions {
   client: CollabClient;
   hostPriv: CryptoKey;
   roomKey: RoomKey;

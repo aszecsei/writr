@@ -9,7 +9,6 @@ const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
 function makeAgent(allowed: string[] | undefined): Agent {
   return {
-    id: "test-agent",
     kind: "custom",
     enableToolCalling: true,
     allowedToolIds: allowed,

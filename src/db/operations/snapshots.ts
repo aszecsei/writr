@@ -1,6 +1,5 @@
 import { db } from "../database";
 import {
-  type ChapterId,
   type ChapterSnapshot,
   type ChapterSnapshotId,
   ChapterSnapshotSchema,

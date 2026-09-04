@@ -2,7 +2,6 @@ import { db } from "../database";
 import {
   type ChapterId,
   type ProjectId,
-  type WritingSession,
   type WritingSessionId,
   WritingSessionSchema,
   type WritingSprint,
@@ -175,4 +174,3 @@ export async function recordWritingSession(
     });
   }
 }
-

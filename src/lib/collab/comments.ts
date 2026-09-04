@@ -15,7 +15,6 @@ import type {
   CommentPatch,
   CommentsAdapter,
 } from "@/lib/comments/adapter";
-import { REMOTE_ORIGIN } from "./session";
 import {
   encodeRelativeFromAbsolute,
   resolveAbsoluteFromRelative,
@@ -42,7 +41,7 @@ export interface DexieMirror {
   remove(id: CommentId): Promise<void>;
 }
 
-export interface YjsCommentsAdapterOptions {
+interface YjsCommentsAdapterOptions {
   commentsDoc: Y.Doc;
   editor: Editor | null;
   chapterId: ChapterId;
@@ -218,13 +217,7 @@ export class YjsCommentsAdapter implements CommentsAdapter {
   ) => {
     this.rebuildSnapshot();
     if (this.opts.dexieMirror) {
-      // Mirror only AFTER the Y transaction commits. Skip snapshot-only
-      // changes (no events on the byId map) so we don't redundantly
-      // touch IndexedDB. Skip mirror writes for our own local mutations
-      // when they originate from the same flow that already updated the
-      // adapter's caller — but the host's create/update/resolve/remove
-      // methods write through the mirror inline, so we only need to
-      // catch *remote* changes here.
+      // Local mutations mirror inline; only mirror remote transactions here.
       if (transaction.origin !== this) {
         void this.mirrorEvents(events);
       }
@@ -257,12 +250,6 @@ export class YjsCommentsAdapter implements CommentsAdapter {
     if (this.destroyed) return;
     this.destroyed = true;
     this.byId.unobserveDeep(this.observer);
-  }
-
-  /** Used by the editor to mirror PM updates into the snapshot. */
-  refresh(): void {
-    this.rebuildSnapshot();
-    this.opts.onChange();
   }
 
   /** Host-only: write `chapterId` / `projectId` so guests can read them. */
@@ -497,9 +484,3 @@ export class YjsCommentsAdapter implements CommentsAdapter {
     }
   }
 }
-
-// Suppress unused-import warning for REMOTE_ORIGIN — we don't filter on it
-// inside the adapter today (we use transaction.origin === this), but we
-// re-export it so callers wiring hostâ†”Dexie mirrors at a higher level
-// can compose against the same sentinel.
-void REMOTE_ORIGIN;

@@ -21,7 +21,7 @@ interface SharedProjectStoreApi {
   ): void;
 }
 
-export interface AttachProjectReaderOptions {
+interface AttachProjectReaderOptions {
   doc: Y.Doc;
   store: SharedProjectStoreApi;
 }

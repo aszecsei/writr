@@ -5,9 +5,6 @@ import type { CommentColor } from "@/db/schemas";
 // The Beta Reader is a single-pass chat agent that role-plays three reader
 // personas (Maya / Anton / Joan). The system prompt below is XML-structured
 // so each persona's section is independently parseable:
-//   - `extractPersonaPrompts(BETA_READER_PANEL_PROMPT)` (see bottom of file)
-//     pulls out the three persona briefs for a future per-persona conversion
-//     without rewriting any prose.
 //   - The AiPanel parses `<maya>`, `<anton>`, `<joan>` blocks from the model's
 //     reply and renders them as labeled persona sections.
 //   - The `add_comment` / `reply_to_comment` tools take a `persona` argument
@@ -59,12 +56,8 @@ export const BETA_READER_PERSONA_ATTRIBUTION = {
 
 // ─── Prompt ─────────────────────────────────────────────────────────
 //
-// Forward-compat contract: each `<persona id="...">…</persona>` block is
-// self-contained and reads correctly as a standalone agent brief. The
-// `<panel>` and `<output-format>` framing is the only piece that has to be
-// rewritten when converting to per-persona execution. `extractPersonaPrompts`
-// at the bottom of this file enforces parseability via a runtime sanity
-// check we can assert in tests.
+// Each `<persona id="...">…</persona>` block is self-contained and reads
+// correctly as a standalone agent brief.
 
 export const BETA_READER_PANEL_PROMPT = `<panel>
 You are the Beta Reader Panel. Three readers respond to the same chapter independently. Output your response as three blocks in the exact order below, using the XML tags shown. Do NOT interleave personas; do NOT have personas reference each other within their own narrative — keep their voices separate. Tool calls (add_comment, reply_to_comment) MUST use persona="maya" | "anton" | "joan" matching the block you are currently inside; never mis-attribute.
@@ -101,37 +94,3 @@ Emit exactly three blocks in this order. Tool calls (add_comment / reply_to_comm
 [Joan's narrative response — 2-3 paragraphs of skeptical pushback. Tool calls with persona="joan" go here.]
 </joan>
 </output-format>`;
-
-// ─── Forward-compat: extractor for per-persona conversion ───────────
-
-const PERSONA_BLOCK_REGEX =
-  /<persona\s+id="(maya|anton|joan)"[^>]*>([\s\S]*?)<\/persona>/g;
-
-/**
- * Pull the three persona briefs out of the panel prompt. Used today as a
- * test guard (the structure must remain parseable as the prompt evolves)
- * and intended for a future per-persona conversion that seeds three
- * standalone agent rows from the panel prompt without rewriting the briefs.
- *
- * Returns a record with all three persona ids populated; throws if any
- * persona block is missing or empty so prompt regressions fail loudly.
- */
-export function extractPersonaPrompts(
-  panelPrompt: string,
-): Record<BetaReaderPersonaId, string> {
-  const out: Partial<Record<BetaReaderPersonaId, string>> = {};
-  for (const match of panelPrompt.matchAll(PERSONA_BLOCK_REGEX)) {
-    const id = match[1] as BetaReaderPersonaId;
-    const body = match[2].trim();
-    if (body.length === 0) {
-      throw new Error(`Persona block for "${id}" is empty`);
-    }
-    out[id] = body;
-  }
-  for (const id of BETA_READER_PERSONA_IDS) {
-    if (!out[id]) {
-      throw new Error(`Persona block for "${id}" not found in panel prompt`);
-    }
-  }
-  return out as Record<BetaReaderPersonaId, string>;
-}

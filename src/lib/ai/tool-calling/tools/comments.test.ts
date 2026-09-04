@@ -2,11 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
 import { createComment } from "@/db/operations/comments";
 import type { ProjectId } from "@/db/schemas";
-import {
-  BETA_READER_PANEL_PROMPT,
-  BETA_READER_PERSONA_ATTRIBUTION,
-  extractPersonaPrompts,
-} from "@/lib/ai/agents/builtins/betaReader";
+import { BETA_READER_PERSONA_ATTRIBUTION } from "@/lib/ai/agents/builtins/betaReader";
 import { makeChapter, resetIdCounter } from "@/test/helpers";
 import { executeTool } from "../tools";
 import type { ToolExecutionContext } from "../types";
@@ -297,20 +293,5 @@ describe("reply_to_comment", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toMatch(/cannot reply to a reply/);
-  });
-});
-
-describe("extractPersonaPrompts", () => {
-  it("returns non-empty briefs for all three personas", () => {
-    const out = extractPersonaPrompts(BETA_READER_PANEL_PROMPT);
-    expect(Object.keys(out).sort()).toEqual(["anton", "joan", "maya"]);
-    for (const id of ["maya", "anton", "joan"] as const) {
-      expect(out[id].length).toBeGreaterThan(50);
-    }
-  });
-
-  it("throws when a persona block is missing", () => {
-    const broken = '<persona id="maya" name="Maya">hi</persona>';
-    expect(() => extractPersonaPrompts(broken)).toThrow(/anton/);
   });
 });

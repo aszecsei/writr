@@ -39,7 +39,7 @@ What the relay knows:
 - Room UUIDs (random, no chapter or user identifiers).
 - Per-token role assignments (`view` | `review` | `edit` | `host`).
 - Number of connected sockets per room.
-- Message envelope types (`y-update`, `awareness`, `meta`, …) — for role gating only.
+- Message envelope types (`y-update`, `awareness`, …) — for role gating only.
 - Encrypted payload sizes.
 
 What the relay never sees:
@@ -76,14 +76,14 @@ https://app.example.com/shared/<roomUuid>?t=<token>#h=<hostPubEncoded>[&p=1]
 
 Roles are enforced both server-side (relay's `canSend()` in `collab/src/protocol.ts`) and client-side (`canSendClient()` in `src/lib/collab/protocol.ts`):
 
-| Role | Prose Y-update | Comments Y-update | Project Y-update | Meta / rotate | Join approve/deny / kick |
-|---|---|---|---|---|---|
-| `view` | ✗ | ✗ | ✗ | ✗ | ✗ |
-| `review` | ✗ | ✓ | ✗ | ✗ | ✗ |
-| `edit` | ✓ | ✓ | ✗ | ✗ | ✗ |
-| `host` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Role | Prose Y-update | Comments Y-update | Project Y-update | Join approve/deny / kick |
+|---|---|---|---|---|
+| `view` | ✗ | ✗ | ✗ | ✗ |
+| `review` | ✗ | ✓ | ✗ | ✗ |
+| `edit` | ✓ | ✓ | ✗ | ✗ |
+| `host` | ✓ | ✓ | ✓ | ✓ |
 
-Awareness and `request-buffer` are open to all roles. Project Y-updates are host-only — guests in project mode get a read-only mirror of the host's project Dexie state via `ProjectMirror` / `ProjectReader`.
+Awareness is open to all roles. Project Y-updates are host-only — guests in project mode get a read-only mirror of the host's project Dexie state via `ProjectMirror` / `ProjectReader`.
 
 ### Tokens and rate limits (relay)
 
@@ -98,7 +98,7 @@ Awareness and `request-buffer` are open to all roles. Project Y-updates are host
 
 ### Client-side key persistence
 
-- The host's X25519 private key is persisted in **`sessionStorage`** under `writr.collab.host.<roomUuid>` (`useCollabManager.ts`) so a page reload during a session can resume hosting. It is cleared when the session ends. `sessionStorage` is per-tab and cleared on tab close.
+- The host's X25519 private key is **not persisted**. It lives only in memory for the duration of the session; a page reload requires re-minting a room and re-handshaking.
 - The display name is persisted in `localStorage` (`writr.collab.displayName`) for convenience — it survives across sessions.
 - The room key (the AES-GCM key delivered via the share fragment) is **never** written to any storage. It lives only in memory for the duration of the session.
 
@@ -113,6 +113,6 @@ Awareness and `request-buffer` are open to all roles. Project Y-updates are host
 
 - **Encryption-at-rest for IndexedDB.** OS-level disk encryption is the user's responsibility.
 - **Auth for `/api/ai`.** The route trusts its caller; deploy your own gateway if exposing it publicly.
-- **Forward secrecy across sessions.** Each session uses a fresh room key, but a compromised session key reveals all updates exchanged in that session. Y.js does not natively support intra-session key rotation; `rotate-stream` is for stream cleanup, not key rotation.
+- **Forward secrecy across sessions.** Each session uses a fresh room key, but a compromised session key reveals all updates exchanged in that session. Y.js does not natively support intra-session key rotation.
 - **Defense against a malicious host.** A host with `edit` peers is implicitly trusted by those peers — they share document state. The threat model treats the host as the data owner.
 - **Anonymity from peers.** Guests' display names are visible to all other peers in the same session (encrypted to the relay, plaintext to peers).

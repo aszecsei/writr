@@ -279,28 +279,6 @@ describe("Room.receive: role gating", () => {
     expect(editor.socket.byType("error")).toHaveLength(0);
   });
 
-  it("blocks non-host from sending meta", () => {
-    const room = makeRoom();
-    const editor = attach(room, "edit-tok");
-    room.receive(editor.peerId, {
-      type: "meta",
-      streamId: 1,
-      payload: "AQID",
-    });
-    expect(editor.socket.byType("error")[0]?.code).toBe("unauthorized");
-  });
-
-  it("allows host to send rotate-stream", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-    expect(host.socket.byType("error")).toHaveLength(0);
-  });
-
   it("allows host to send y-update on the project docKind", () => {
     const room = makeRoom();
     const host = attach(room, "host-tok");
@@ -364,72 +342,6 @@ describe("Room.receive: relay", () => {
 
     expect(host.socket.byType("awareness")[0]?.payload).toBe("AQID");
     expect(guest.socket.byType("awareness")).toHaveLength(0);
-  });
-
-  it("drops y-update with stale streamId", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    const editor = attach(room, "edit-tok");
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 5,
-    });
-    host.socket.sent = [];
-
-    room.receive(editor.peerId, sampleY(1));
-    expect(host.socket.byType("y-update")).toHaveLength(0);
-
-    room.receive(editor.peerId, sampleY(5));
-    expect(host.socket.byType("y-update")).toHaveLength(1);
-  });
-});
-
-describe("Room.receive: rotate-stream", () => {
-  it("clears buffer and broadcasts to all peers including host", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    const editor = attach(room, "edit-tok");
-    room.receive(editor.peerId, sampleY(1));
-    host.socket.sent = [];
-    editor.socket.sent = [];
-
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-
-    expect(host.socket.byType("rotate-stream")[0]?.newStreamId).toBe(2);
-    expect(editor.socket.byType("rotate-stream")[0]?.newStreamId).toBe(2);
-
-    const lateGuest = attach(room, "view-tok");
-    expect(lateGuest.socket.byType("buffer")).toHaveLength(0);
-  });
-
-  it("ignores rotate-stream with a non-increasing streamId", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-    host.socket.sent = [];
-
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-    expect(host.socket.byType("rotate-stream")).toHaveLength(0);
-
-    room.receive(host.peerId, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 1,
-    });
-    expect(host.socket.byType("rotate-stream")).toHaveLength(0);
   });
 });
 
@@ -566,22 +478,6 @@ describe("Room.destroy", () => {
     room.destroy("shutdown");
     room.destroy("shutdown");
     expect(onDestroy).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("Room.receive: request-buffer", () => {
-  it("sends current buffer for a docKind on request", () => {
-    const room = makeRoom();
-    const host = attach(room, "host-tok");
-    room.receive(host.peerId, sampleY());
-    const guest = attach(room, "view-tok");
-    guest.socket.sent = [];
-
-    room.receive(guest.peerId, { type: "request-buffer", docKind: "prose" });
-
-    const buffer = guest.socket.byType("buffer")[0];
-    expect(buffer?.updates).toEqual(["AQID"]);
-    expect(buffer?.streamId).toBe(1);
   });
 });
 

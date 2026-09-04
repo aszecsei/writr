@@ -14,38 +14,25 @@ export interface MakeChatAgentInput {
   /** Pre-task user instructions injected into the Nth-last user message. */
   postChatInstructions?: string;
   postChatInstructionsDepth?: number;
-  /** Stream setting passthrough; not used at agent construction. */
-  systemPromptSuffix?: string;
 }
 
 /**
  * Build a runnable Agent from an AgentDefinition row, suitable for AiPanel
- * chat invocations. Handles the seven user-facing built-in kinds (spark,
- * scene, reader, editor, character-dialogue, brainstorm, chat) AND
- * `kind="user"` rows uniformly — all of them are just "system prompt + tool
- * subset + optional model override".
- *
- * For built-in pipeline kinds (reader/editor/orchestrator/verifier), this
- * factory is used ONLY for chat-mode invocations. Pipeline runs use the
- * dedicated factories in `reader.ts` / `editor.ts` which build mode- and
- * work-unit-specific briefings; those factories read the same agent row's
- * `modelOverride` so per-agent model config flows to both paths.
+ * chat invocations. Handles every built-in kind and `kind="user"` rows
+ * uniformly — all of them are just "system prompt + tool subset + optional
+ * model override".
  */
 export function makeChatAgent(input: MakeChatAgentInput): Agent {
   const { definition, projectId, context } = input;
   const enableToolCalling = definition.allowedToolIds.length > 0;
 
-  // Apply the shared voice mandate at runtime (consistent with how pipeline
-  // factories wrap their prompts). Stored row content is the role description
-  // only; the mandate isn't duplicated in every agentDefinition row.
+  // Stored row content is the role description only; the shared voice
+  // mandate is applied at runtime so it isn't duplicated in every
+  // agentDefinition row.
   const baseSystemPrompt = withVoiceMandate(definition.systemPrompt);
-  const withSuffix = input.systemPromptSuffix
-    ? `${baseSystemPrompt}\n\n${input.systemPromptSuffix}`
-    : baseSystemPrompt;
-  const systemPrompt = withScreenplaySuffix(withSuffix, context);
+  const systemPrompt = withScreenplaySuffix(baseSystemPrompt, context);
 
   return {
-    id: `chat:${definition.kind}:${definition.id}`,
     kind: definition.kind === "user" ? "custom" : definition.kind,
     enableToolCalling,
     allowedToolIds: enableToolCalling ? definition.allowedToolIds : undefined,
@@ -61,7 +48,6 @@ export function makeChatAgent(input: MakeChatAgentInput): Agent {
     }),
     agentContext: {
       projectId,
-      agentKind: definition.kind === "user" ? "custom" : definition.kind,
     },
     systemPrompt,
   };

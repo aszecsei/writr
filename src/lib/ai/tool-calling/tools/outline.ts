@@ -141,7 +141,6 @@ const ColumnOpSchema = z.discriminatedUnion("op", [
 
 export const manageOutlineColumnsTool = defineTool({
   id: "manage_outline_columns",
-  category: "outline",
   name: "Manage Outline Columns",
   description:
     "Create, rename, delete, or reorder columns of the outline grid. " +
@@ -253,7 +252,6 @@ const CHAPTER_LINKED_MSG =
 
 export const manageOutlineRowsTool = defineTool({
   id: "manage_outline_rows",
-  category: "outline",
   name: "Manage Outline Rows",
   description:
     "Create, relabel, delete, or reorder rows of the outline grid. " +
@@ -372,7 +370,6 @@ const CellWriteSchema = z.discriminatedUnion("mode", [
 
 export const writeOutlineCellTool = defineTool({
   id: "write_outline_cell",
-  category: "outline",
   name: "Write Outline Cell",
   description:
     "Write the content of a single cell — the intersection of a row (beat) and a column (lens). " +
@@ -458,7 +455,6 @@ const CellColorSchema = z.object({
 
 export const setOutlineCellColorTool = defineTool({
   id: "set_outline_cell_color",
-  category: "outline",
   name: "Set Outline Cell Color",
   description:
     "Set the background color of a single cell without touching its content. " +

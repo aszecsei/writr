@@ -35,7 +35,6 @@ export default function SharedProjectLayout({
   useEffect(() => {
     if (!session) return;
     if (!projectMode) return;
-    if (role === "host") return;
     const doc = session.getDoc("project");
     const detach = attachProjectReader({
       doc,
@@ -45,7 +44,7 @@ export default function SharedProjectLayout({
       detach();
       useSharedProjectStore.getState().resetForRoom();
     };
-  }, [session, projectMode, role]);
+  }, [session, projectMode]);
 
   // Guard: if the URL projectId doesn't match the host's projectId in
   // the synced meta, bail to the room entry page so the user can re-
@@ -66,7 +65,7 @@ export default function SharedProjectLayout({
   }
 
   return (
-    <DataSourceProvider source={{ kind: "shared", roomUuid: params.roomUuid }}>
+    <DataSourceProvider source={{ kind: "shared" }}>
       <div className="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
         <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
           <span className="text-sm text-neutral-500 dark:text-neutral-400">

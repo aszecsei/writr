@@ -13,10 +13,7 @@ interface AgentSelectorProps {
 
 /**
  * Dropdown of all chat-mode agents (built-ins + user-created). No
- * Built-in/Custom split — every agent looks the same. The previous
- * `ToolSelector` predecessor distinguished built-in tools, custom tools,
- * and custom agents in three optgroups; with the unified Agents model,
- * none of those distinctions remain in the UI.
+ * Built-in/Custom split — every agent looks the same.
  */
 export function AgentSelector({ value, onChange }: AgentSelectorProps) {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);

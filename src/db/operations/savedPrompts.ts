@@ -1,6 +1,5 @@
 import { db } from "../database";
 import {
-  type ProjectId,
   type SavedPrompt,
   type SavedPromptId,
   SavedPromptSchema,

@@ -83,7 +83,7 @@ export function SparkOptions({ content, capturedRange }: SparkOptionsProps) {
   );
 }
 
-export function parseSparkOptions(content: string): string[] {
+function parseSparkOptions(content: string): string[] {
   return content
     .split(SPARK_OPTION_DELIMITER)
     .map((s) => s.trim())

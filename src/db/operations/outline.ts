@@ -2,7 +2,6 @@ import { db } from "../database";
 import {
   type ChapterId,
   type OutlineGridCell,
-  type OutlineGridCellId,
   OutlineGridCellSchema,
   type OutlineGridColumn,
   type OutlineGridColumnId,

@@ -38,7 +38,7 @@ function getProposedEditChatPayload(
 ): ProposedEditChatPayload | null {
   if (m.toolName !== "propose_edit") return null;
   const data = m.result?.data;
-  if (data?.mode !== "chat") return null;
+  if (!data) return null;
   return data as unknown as ProposedEditChatPayload;
 }
 

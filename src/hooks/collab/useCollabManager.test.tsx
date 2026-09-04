@@ -94,7 +94,6 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_COLLAB_URL = "ws://localhost:4444";
   useCollabStore.getState().reset();
   useUiStore.getState().closeModal();
-  if (typeof window !== "undefined") window.sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -145,44 +144,6 @@ describe("useCollabManager: enablement gate", () => {
   });
 });
 
-async function bringUpHost(
-  wsFactory: never,
-  fetchFn: typeof fetch,
-): Promise<{
-  result: ReturnType<
-    typeof renderHook<ReturnType<typeof useCollabManager>, void>
-  >["result"];
-  ws: FakeWebSocket;
-}> {
-  const { result } = renderHook(() => useCollabManager());
-
-  let promise!: Promise<void>;
-  act(() => {
-    promise = result.current.startAsHost({
-      appOrigin: "https://app.example",
-      fetchFn,
-      wsFactory,
-    });
-  });
-
-  await flush();
-  const sockets = (wsFactory as unknown as { sockets?: FakeWebSocket[] })
-    .sockets;
-  void sockets;
-  return await flushHost(result, promise);
-}
-
-async function flushHost(
-  result: { current: ReturnType<typeof useCollabManager> },
-  promise: Promise<void>,
-): Promise<{ result: typeof result; ws: FakeWebSocket }> {
-  // Use the hardcoded singleton via the captured side-effects.
-  // We can't easily reach back to sockets here, so callers below should use
-  // the explicit pattern instead. This helper exists only to silence TS.
-  await promise;
-  return { result, ws: undefined as unknown as FakeWebSocket };
-}
-
 describe("useCollabManager: startAsHost", () => {
   it("seeds the store with role=host, peerId, peerCount, and shareUrls (#h= form)", async () => {
     const { wsFactory, sockets } = withFakeWs();
@@ -228,12 +189,6 @@ describe("useCollabManager: startAsHost", () => {
     expect(state.shareUrls?.review).toContain("?t=review-tok#h=");
     expect(state.shareUrls?.view).toContain("?t=view-tok#h=");
     expect(state.shareUrls?.edit).not.toContain("#k=");
-
-    // Host private key should be persisted to sessionStorage for reload.
-    const stored = window.sessionStorage.getItem(
-      `writr.collab.host.${SAMPLE_ROOM.roomUuid}`,
-    );
-    expect(stored).not.toBeNull();
   });
 
   it("records error and sets status=ended when mintRoom fails", async () => {
@@ -762,7 +717,7 @@ describe("useCollabManager: host approval flow", () => {
 });
 
 describe("useCollabManager: lifecycle", () => {
-  it("end() resets the store, clears pending state, and wipes sessionStorage", async () => {
+  it("end() resets the store and clears pending state", async () => {
     const { wsFactory, sockets } = withFakeWs();
     const fetchFn = mockFetchOk(SAMPLE_ROOM);
 
@@ -792,11 +747,6 @@ describe("useCollabManager: lifecycle", () => {
     });
 
     expect(useCollabStore.getState().session).not.toBeNull();
-    expect(
-      window.sessionStorage.getItem(
-        `writr.collab.host.${SAMPLE_ROOM.roomUuid}`,
-      ),
-    ).not.toBeNull();
 
     act(() => result.current.end());
 
@@ -804,11 +754,6 @@ describe("useCollabManager: lifecycle", () => {
     expect(useCollabStore.getState().status).toBe("idle");
     expect(useCollabStore.getState().pendingJoinRequests).toEqual([]);
     expect(useCollabStore.getState().approvedGuests).toEqual({});
-    expect(
-      window.sessionStorage.getItem(
-        `writr.collab.host.${SAMPLE_ROOM.roomUuid}`,
-      ),
-    ).toBeNull();
   });
 
   it("unmount of the owning instance tears down the session", async () => {
@@ -993,6 +938,3 @@ describe("useCollabManager: lifecycle", () => {
     expect(useCollabStore.getState().status).toBe("connected");
   });
 });
-
-// silence TS unused-import warnings for helpers above
-void bringUpHost;

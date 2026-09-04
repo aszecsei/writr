@@ -13,9 +13,8 @@ import type {
  *   - `<selected-text>` wrapping when the editor selection was captured
  *   - image attachments composed as a multi-part content array
  *
- * Previously this lived inside `prompts.ts/buildMessages` (for the chat side)
- * and `AiPanel.messagesToAiHistory` (for the legacy multi-turn replay). With
- * the canonical ChatMessage history, this is the single conversion site.
+ * The single conversion site from the canonical ChatMessage history to the
+ * wire format.
  */
 function userToAiMessage(m: UserChatMessage): AiMessage {
   const selectionTag = m.selectedChapterId
@@ -75,10 +74,8 @@ function toolToAiMessage(m: ToolChatMessage): AiMessage | null {
 }
 
 /**
- * Single conversion site from the canonical `ChatMessage[]` history to the
- * wire-format `AiMessage[]` array sent to the model. Replaces the prior
- * dual-conversion (UI's `messagesToAiHistory` + the runner's tool-row
- * synthesis inside `extendHistoryWithIteration`).
+ * Convert the canonical `ChatMessage[]` history to the wire-format
+ * `AiMessage[]` array sent to the model.
  *
  * Pending/approved tool messages are dropped from the wire format because
  * they have no result to send yet — they only exist in the chat history to

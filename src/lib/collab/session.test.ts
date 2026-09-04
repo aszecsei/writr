@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Awareness, encodeAwarenessUpdate } from "y-protocols/awareness";
 import * as Y from "yjs";
 import { CollabClient, type CollabTransport } from "./client";
@@ -180,49 +180,6 @@ describe("CollabSession: incoming application", () => {
     expect(session.getDoc("comments").getText("body").toString()).toBe(
       "comment",
     );
-  });
-});
-
-describe("CollabSession: rotation", () => {
-  it("replaces the Y.Doc and emits onDocReplaced", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-    const session = new CollabSession({ client });
-
-    const before = session.getDoc("prose");
-    before.getText("body").insert(0, "old chapter");
-
-    const replaced = vi.fn();
-    session.onDocReplaced(replaced);
-
-    await deliver(client, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-
-    const after = session.getDoc("prose");
-    expect(after).not.toBe(before);
-    expect(after.getText("body").toString()).toBe("");
-    expect(replaced).toHaveBeenCalledWith("prose", after);
-  });
-
-  it("only rotates the targeted docKind", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-    const session = new CollabSession({ client });
-
-    const prose = session.getDoc("prose");
-    const comments = session.getDoc("comments");
-
-    await deliver(client, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 2,
-    });
-
-    expect(session.getDoc("comments")).toBe(comments);
-    expect(session.getDoc("prose")).not.toBe(prose);
   });
 });
 

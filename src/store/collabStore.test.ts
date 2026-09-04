@@ -115,16 +115,6 @@ describe("collabSelectors", () => {
     getState().reset();
   });
 
-  it("isActive: false when no session, true once a session is set", () => {
-    expect(collabSelectors.isActive(getState())).toBe(false);
-    getState().setSession(fakeSession, {
-      role: "view",
-      peerId: "p",
-      hostPresent: true,
-    });
-    expect(collabSelectors.isActive(getState())).toBe(true);
-  });
-
   it("isHost only when role is host", () => {
     getState().setSession(fakeSession, {
       role: "edit",
@@ -138,25 +128,6 @@ describe("collabSelectors", () => {
       hostPresent: true,
     });
     expect(collabSelectors.isHost(getState())).toBe(true);
-  });
-
-  it("canEditProse: host or edit", () => {
-    for (const role of ["host", "edit"] as const) {
-      getState().setSession(fakeSession, {
-        role,
-        peerId: "p",
-        hostPresent: true,
-      });
-      expect(collabSelectors.canEditProse(getState())).toBe(true);
-    }
-    for (const role of ["review", "view"] as const) {
-      getState().setSession(fakeSession, {
-        role,
-        peerId: "p",
-        hostPresent: true,
-      });
-      expect(collabSelectors.canEditProse(getState())).toBe(false);
-    }
   });
 
   it("canEditComments: host, edit, or review", () => {

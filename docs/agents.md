@@ -65,4 +65,4 @@ Two auto-execute tools back the panel:
 ## Conventions
 
 - New agent kinds: add a builtin prompt in `builtins/`, an entry in `defaults.ts` + the `AgentKind` enum in `schemas.ts`, and (if it needs new tools) extend `tool-permissions.ts` and the tool registry.
-- Adding an AI tool also means wiring `agent-tool-picker.ts`, `AI_TOOLS` (`tool-calling/tools.ts`), the per-agent permission lists, and the `tools.test.ts` count.
+- Adding an AI tool also means wiring `agent-tool-picker.ts`, `AI_TOOLS` (`tool-calling/tools.ts`), and the per-agent permission lists.

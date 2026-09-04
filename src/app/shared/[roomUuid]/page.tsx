@@ -110,7 +110,6 @@ export default function SharedSessionPage() {
   useEffect(() => {
     if (shareMode !== "project") return;
     if (!session) return;
-    if (role === "host") return;
     let detach: (() => void) | null = null;
     void import("@/lib/collab/projectReader").then(
       ({ attachProjectReader }) => {
@@ -123,7 +122,7 @@ export default function SharedSessionPage() {
     return () => {
       if (detach) detach();
     };
-  }, [shareMode, session, role]);
+  }, [shareMode, session]);
 
   // Once the host's project meta arrives, redirect into the read-only
   // project shell. The URL lands on the active chapter if one exists;
@@ -153,14 +152,6 @@ export default function SharedSessionPage() {
     if (!enabled) return { kind: "disabled" };
     if (!token) return { kind: "missing-token" };
     if (hostPubResolved && !hostPubEncoded) return { kind: "missing-host-key" };
-    if (status === "connected" && session && role) {
-      return {
-        kind: "connected",
-        role,
-        peerCount,
-        hostPresent,
-      };
-    }
     if (status === "denied") {
       return { kind: "denied", reason: deniedReason };
     }
@@ -184,10 +175,6 @@ export default function SharedSessionPage() {
     hostPubResolved,
     hostPubEncoded,
     status,
-    session,
-    role,
-    peerCount,
-    hostPresent,
     collabError,
     deniedReason,
   ]);
@@ -209,7 +196,7 @@ export default function SharedSessionPage() {
   // editor width, comment margin alongside. Non-connected states keep
   // the card-style GuestSessionShell so error/connecting/ended UIs are
   // legible.
-  if (state.kind === "connected" && session && role && role !== "host") {
+  if (status === "connected" && session && role && role !== "host") {
     return (
       <ConnectedSessionLayout
         role={role}

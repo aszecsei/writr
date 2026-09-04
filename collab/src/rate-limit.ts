@@ -1,4 +1,4 @@
-export interface RateLimiterOptions {
+interface RateLimiterOptions {
   windowMs: number;
   max: number;
   now?: () => number;

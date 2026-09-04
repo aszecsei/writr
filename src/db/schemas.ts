@@ -58,9 +58,7 @@ export type CharacterRelationshipId = z.infer<
   typeof CharacterRelationshipIdSchema
 >;
 
-const OutlineGridColumnIdSchema = z
-  .uuid()
-  .brand<"OutlineGridColumnId">();
+const OutlineGridColumnIdSchema = z.uuid().brand<"OutlineGridColumnId">();
 export type OutlineGridColumnId = z.infer<typeof OutlineGridColumnIdSchema>;
 
 const OutlineGridRowIdSchema = z.uuid().brand<"OutlineGridRowId">();
@@ -84,9 +82,7 @@ export type CommentId = z.infer<typeof CommentIdSchema>;
 const ChapterSnapshotIdSchema = z.uuid().brand<"ChapterSnapshotId">();
 export type ChapterSnapshotId = z.infer<typeof ChapterSnapshotIdSchema>;
 
-const ProjectDictionaryIdSchema = z
-  .uuid()
-  .brand<"ProjectDictionaryId">();
+const ProjectDictionaryIdSchema = z.uuid().brand<"ProjectDictionaryId">();
 export type ProjectDictionaryId = z.infer<typeof ProjectDictionaryIdSchema>;
 
 const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
@@ -621,13 +617,7 @@ const PrimaryColorEnum = z.enum([
 ]);
 export type PrimaryColor = z.infer<typeof PrimaryColorEnum>;
 
-const NeutralColorEnum = z.enum([
-  "zinc",
-  "slate",
-  "gray",
-  "stone",
-  "neutral",
-]);
+const NeutralColorEnum = z.enum(["zinc", "slate", "gray", "stone", "neutral"]);
 export type NeutralColor = z.infer<typeof NeutralColorEnum>;
 
 const EditorWidthEnum = z.enum(["narrow", "medium", "wide"]);
@@ -761,12 +751,7 @@ export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
 // ─── Writing Sprint ─────────────────────────────────────────────────
 
-const SprintStatusEnum = z.enum([
-  "active",
-  "paused",
-  "completed",
-  "abandoned",
-]);
+const SprintStatusEnum = z.enum(["active", "paused", "completed", "abandoned"]);
 
 export const WritingSprintSchema = z.object({
   id: WritingSprintIdSchema,
@@ -836,13 +821,7 @@ export type ChapterSnapshot = z.infer<typeof ChapterSnapshotSchema>;
 
 // ─── Comment ─────────────────────────────────────────────────────────
 
-const CommentColorEnum = z.enum([
-  "yellow",
-  "blue",
-  "green",
-  "red",
-  "purple",
-]);
+const CommentColorEnum = z.enum(["yellow", "blue", "green", "red", "purple"]);
 export type CommentColor = z.infer<typeof CommentColorEnum>;
 
 const CommentStatusEnum = z.enum(["active", "orphaned", "resolved"]);

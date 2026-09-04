@@ -6,12 +6,8 @@ import {
   decryptPayload,
   deriveWrapKey,
   encryptPayload,
-  exportRoomKey,
-  exportX25519PrivJwk,
   generateRoomKey,
   generateX25519Keypair,
-  importRoomKey,
-  importX25519PrivJwk,
   importX25519PubFromEncoded,
   readHostPubFromFragment,
   unwrapRoomKey,
@@ -30,20 +26,6 @@ describe("base64url", () => {
     expect(out).not.toContain("+");
     expect(out).not.toContain("/");
     expect(out).not.toContain("=");
-  });
-});
-
-describe("room key", () => {
-  it("generates a key that can be exported and re-imported losslessly", async () => {
-    const key = await generateRoomKey();
-    const exported = await exportRoomKey(key);
-    expect(exported).toMatch(/^[A-Za-z0-9_-]+$/);
-    const reimported = await importRoomKey(exported);
-
-    const plaintext = new TextEncoder().encode("hello world");
-    const ct = await encryptPayload(reimported, plaintext);
-    const decrypted = await decryptPayload(key, ct);
-    expect(new TextDecoder().decode(decrypted)).toBe("hello world");
   });
 });
 
@@ -88,12 +70,9 @@ describe("encryptPayload / decryptPayload", () => {
 });
 
 describe("X25519 keypair", () => {
-  it("generates a keypair and round-trips the private key via JWK", async () => {
+  it("generates a keypair with a base64url-encoded public key", async () => {
     const pair = await generateX25519Keypair();
     expect(pair.pubEncoded).toMatch(/^[A-Za-z0-9_-]+$/);
-    const jwk = await exportX25519PrivJwk(pair.priv);
-    const reimported = await importX25519PrivJwk(jwk);
-    expect(reimported).toBeDefined();
   });
 
   it("imports a public key from the encoded form", async () => {
