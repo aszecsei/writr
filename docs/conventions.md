@@ -20,6 +20,10 @@ Project-wide rules. Domain-specific conventions live with their docs (`docs/data
 - `ChapterEditor` uses `"use no memo"` to opt out of the React Compiler.
 - TipTap storage access requires casting through `unknown`.
 
+## React Compiler
+
+- `reactCompiler` is on. A hook passed as a value (a parameter, a variable, a property) must be named `use*` at the call site, or the compiler treats the call as a plain function and memoises it, which changes the hook order between renders. Import aliases keep their imported name, so `import { useX as dexieUseX }` is fine; a parameter named `dexieHook` is not.
+
 ## Stores
 
 - Zustand stores hold **ephemeral UI state only**. Persistent data goes in Dexie.
