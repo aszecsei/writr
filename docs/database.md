@@ -36,22 +36,33 @@ Dexie subclass with table definitions, compound indexes, and **46 migration vers
 
 ## Operations (`src/db/operations/`)
 
-One file per entity (22 entity files plus `helpers.ts` and `index.ts`). Every write validates with Zod; project deletes cascade through related tables.
+One file per entity (22 entity files plus `helpers.ts`, `outline-sync.ts`, and `index.ts`). Every write validates with Zod; project deletes cascade through related tables.
 
 Files:
 
 ```
 agents.ts             brainstorm.ts        chapterSummaries.ts  chapters.ts
 characters.ts         comments.ts          dictionary.ts        guardrails.ts
-indexedChunks.ts      locations.ts         outline.ts           playlist.ts
-projects.ts           savedPrompts.ts      scenes.ts            scope.ts
-settings.ts           snapshots.ts         sprints.ts           style-guide.ts
-timeline.ts           worldbuilding.ts     helpers.ts           index.ts
+indexedChunks.ts      locations.ts         outline.ts           outline-sync.ts
+playlist.ts           projects.ts          savedPrompts.ts      scenes.ts
+scope.ts              settings.ts          snapshots.ts         sprints.ts
+style-guide.ts        timeline.ts          worldbuilding.ts     helpers.ts
+index.ts
 ```
 
-`helpers.ts` exports `generateId()` and `now()`. `@/db/operations` resolves to `index.ts`.
+`projects.ts` derives its project-scoped cascade (`deleteAllProjectData` / `deleteProject`) from a single `PROJECT_SCOPED_TABLES` list, computed from every Dexie table indexed by `projectId` minus a documented exemption list (`savedPrompts`, and the pre-v9 `outlineColumns`/`outlineCards` stores) — a new project-scoped table is cascaded automatically rather than needing both functions' hand-written lists kept in sync.
 
-## Chapter-outline sync (`src/db/chapter-outline-sync.ts`)
+`helpers.ts` exports `generateId()` and `now()`, plus the shared order/CRUD primitives every entity file routes through instead of hand-rolling its own copy:
+
+- `nextOrder(table, scope, explicitOrder, extraScope?)` — the next order value (max existing + 1, or 0) among rows matching `scope`, or `explicitOrder` if given. `scope` values may be `null` (falls back to a JS scan, since IndexedDB can't index a null key); `extraScope` narrows further within `scope` by an arbitrary predicate.
+- `renumber(table, orderedIds, { touchUpdatedAt? })` — assigns `order` = index within `orderedIds` to every row in that sequence.
+- `compact(table, rows, { touchUpdatedAt? })` — closes gaps in an already-sorted `rows` array so orders occupy a contiguous `0..n-1` range, skipping rows that are already correct.
+- `reorderEntities(table, orderedIds)` — `renumber` wrapped in its own transaction; used by entities with no other order-adjacent writes.
+- `createCrud(table)` — returns `{ get, delete }` for entities whose get/delete have no extra logic (no cascade, no validation). Not used for `db.agents` specifically: `operations/agents.ts` is imported by `database.ts` for the built-in agent seed, and a factory call at module scope there would dereference the table before `db` (which the factory closes over) is assigned.
+
+None of `renumber`/`compact` touch `updatedAt` unless the caller passes `touchUpdatedAt: true` — each call site opts in exactly where the pre-consolidation code already bumped it (e.g. scene renumbering, chapter/scene moves), and stays silent where it didn't (plain reorders, outline-row/chapter order compaction after a delete).
+
+## Chapter-outline sync (`src/db/operations/outline-sync.ts`)
 
 Bidirectional sync between chapters and outline rows: creating a chapter creates a corresponding outline row, deleting a chapter cleans up the row, and edits stay in sync. Never duplicate this logic in components.
 

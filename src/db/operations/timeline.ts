@@ -6,8 +6,9 @@ import {
   TimelineEventSchema,
 } from "../schemas";
 import {
+  createCrud,
   generateId,
-  getNextOrder,
+  nextOrder,
   now,
   reorderEntities,
   stripUndefined,
@@ -21,11 +22,10 @@ export async function getTimelineByProject(
   return db.timelineEvents.where({ projectId }).sortBy("order");
 }
 
-export async function getTimelineEvent(
-  id: TimelineEventId,
-): Promise<TimelineEvent | undefined> {
-  return db.timelineEvents.get(id);
-}
+const timelineEventCrud = createCrud<TimelineEvent, TimelineEventId>(
+  db.timelineEvents,
+);
+export const getTimelineEvent = timelineEventCrud.get;
 
 export async function createTimelineEvent(
   data: Pick<TimelineEvent, "projectId" | "title"> &
@@ -40,7 +40,7 @@ export async function createTimelineEvent(
       >
     >,
 ): Promise<TimelineEvent> {
-  const order = await getNextOrder(
+  const order = await nextOrder(
     db.timelineEvents,
     { projectId: data.projectId },
     data.order,
@@ -71,9 +71,7 @@ export async function updateTimelineEvent(
   });
 }
 
-export async function deleteTimelineEvent(id: TimelineEventId): Promise<void> {
-  await db.timelineEvents.delete(id);
-}
+export const deleteTimelineEvent = timelineEventCrud.delete;
 
 export async function reorderTimelineEvents(
   orderedIds: TimelineEventId[],

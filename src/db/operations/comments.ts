@@ -1,12 +1,10 @@
 import { db } from "../database";
 import { type Comment, type CommentId, CommentSchema } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import { createCrud, generateId, now, stripUndefined } from "./helpers";
 
 // ─── Comments ────────────────────────────────────────────────────────
 
-export async function getComment(id: CommentId): Promise<Comment | undefined> {
-  return db.comments.get(id);
-}
+export const getComment = createCrud<Comment, CommentId>(db.comments).get;
 
 export async function createComment(
   data: Pick<Comment, "projectId" | "chapterId" | "fromOffset" | "toOffset"> &
@@ -121,7 +119,7 @@ function buildCommentUpdates(
     }
 
     if (changed) {
-      changes.updatedAt = new Date().toISOString();
+      changes.updatedAt = now();
       updates.push({ key: comment.id, changes });
     }
   }
@@ -156,7 +154,7 @@ export async function updateCommentPositions(
     .where("parentCommentId")
     .anyOf(rootIds)
     .toArray();
-  const timestamp = new Date().toISOString();
+  const timestamp = now();
   for (const reply of replies) {
     if (reply.parentCommentId === null) continue;
     const rootPos = positionMap.get(reply.parentCommentId);

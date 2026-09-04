@@ -1,10 +1,13 @@
+import { BUILTIN_SAVED_PROMPTS } from "@/lib/savedPrompts/builtins";
 import { db } from "../database";
 import {
+  type ProjectId,
   type SavedPrompt,
   type SavedPromptId,
   SavedPromptSchema,
 } from "../schemas";
 import { generateId, now, stripUndefined } from "./helpers";
+import { appliesToProject } from "./scope";
 
 export type CreateSavedPromptInput = {
   title: string;
@@ -24,6 +27,20 @@ export async function createSavedPrompt(
   });
   await db.savedPrompts.add(prompt);
   return prompt;
+}
+
+/**
+ * Saved prompts available in a project context: all global prompts
+ * (projectId=null) plus those scoped to `projectId`, most-recently updated
+ * first.
+ */
+export async function listAvailableSavedPrompts(
+  projectId: ProjectId | null,
+): Promise<SavedPrompt[]> {
+  const all = await db.savedPrompts.toArray();
+  return all
+    .filter((p) => appliesToProject(p, projectId))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function updateSavedPrompt(
@@ -58,7 +75,6 @@ export async function resetSavedPromptToDefault(
   const existing = await db.savedPrompts.get(id);
   if (!existing || existing.builtinKey === null) return;
 
-  const { BUILTIN_SAVED_PROMPTS } = await import("@/lib/savedPrompts/builtins");
   const def = BUILTIN_SAVED_PROMPTS[existing.builtinKey];
   if (!def) return;
 
@@ -67,4 +83,28 @@ export async function resetSavedPromptToDefault(
     body: def.body,
     updatedAt: now(),
   });
+}
+
+/**
+ * Idempotent built-in saved-prompt seed (keyed by `builtinKey`). Edits to an
+ * existing built-in are preserved; only absent keys are added.
+ */
+export async function seedBuiltinPrompts(): Promise<void> {
+  const timestamp = now();
+  const existing = await db.savedPrompts.toArray();
+  const presentKeys = new Set(
+    existing.map((p) => p.builtinKey).filter((k): k is string => k != null),
+  );
+  for (const [builtinKey, def] of Object.entries(BUILTIN_SAVED_PROMPTS)) {
+    if (presentKeys.has(builtinKey)) continue;
+    await db.savedPrompts.add({
+      id: generateId() as SavedPromptId,
+      projectId: null,
+      title: def.title,
+      body: def.body,
+      builtinKey,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
 }

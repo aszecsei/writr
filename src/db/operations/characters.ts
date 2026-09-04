@@ -8,7 +8,7 @@ import {
   CharacterSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import { createCrud, generateId, now, stripUndefined } from "./helpers";
 
 // ─── Characters ──────────────────────────────────────────────────────
 
@@ -18,11 +18,9 @@ export async function getCharactersByProject(
   return db.characters.where({ projectId }).sortBy("name");
 }
 
-export async function getCharacter(
-  id: CharacterId,
-): Promise<Character | undefined> {
-  return db.characters.get(id);
-}
+export const getCharacter = createCrud<Character, CharacterId>(
+  db.characters,
+).get;
 
 export async function createCharacter(
   data: Pick<Character, "projectId" | "name"> &
@@ -159,8 +157,7 @@ export async function updateRelationship(
   });
 }
 
-export async function deleteRelationship(
-  id: CharacterRelationshipId,
-): Promise<void> {
-  await db.characterRelationships.delete(id);
-}
+export const deleteRelationship = createCrud<
+  CharacterRelationship,
+  CharacterRelationshipId
+>(db.characterRelationships).delete;

@@ -1,5 +1,4 @@
 import { APP_DICTIONARY_ID } from "@/lib/constants";
-import { generateId } from "@/lib/id";
 import { db } from "../database";
 import {
   type AppDictionary,
@@ -8,7 +7,7 @@ import {
   ProjectDictionarySchema,
   type ProjectId,
 } from "../schemas";
-import { now } from "./helpers";
+import { generateId, now } from "./helpers";
 
 // ─── Shared helper ──────────────────────────────────────────────────
 

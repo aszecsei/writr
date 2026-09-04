@@ -1,15 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  createChapterFromRow,
-  linkChapterToRow,
-  syncDeleteOutlineRow,
-  syncReorderOutlineRows,
-  unlinkChapterFromRow,
-  updateRowLabel,
-} from "./chapter-outline-sync";
-import { db } from "./database";
+import { db } from "../database";
 import {
   createChapter,
+  createChapterFromRow,
   createComment,
   createOutlineGridRow,
   createProject,
@@ -18,8 +11,13 @@ import {
   getChaptersByProject,
   getOutlineGridRowsByProject,
   getScenesByChapter,
+  linkChapterToRow,
   putIndexedChunk,
-} from "./operations";
+  syncDeleteOutlineRow,
+  syncReorderOutlineRows,
+  unlinkChapterFromRow,
+  updateRowLabel,
+} from "./index";
 
 beforeEach(async () => {
   await db.projects.clear();

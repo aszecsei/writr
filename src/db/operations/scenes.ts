@@ -6,7 +6,15 @@ import {
   type SceneId,
   SceneSchema,
 } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import {
+  compact,
+  createCrud,
+  generateId,
+  nextOrder,
+  now,
+  renumber,
+  stripUndefined,
+} from "./helpers";
 
 // ─── Scenes ──────────────────────────────────────────────────────────
 //
@@ -23,18 +31,14 @@ export async function getScenesByChapter(
   return db.scenes.where({ chapterId }).sortBy("order");
 }
 
-export async function getScene(id: SceneId): Promise<Scene | undefined> {
-  return db.scenes.get(id);
-}
+export const getScene = createCrud<Scene, SceneId>(db.scenes).get;
 
 /**
  * Next order for a scene appended to a chapter: max existing order + 1, or 0
  * when the chapter has no scenes yet (the first, core scene).
  */
 export async function nextSceneOrder(chapterId: ChapterId): Promise<number> {
-  const scenes = await db.scenes.where({ chapterId }).toArray();
-  if (scenes.length === 0) return 0;
-  return Math.max(...scenes.map((s) => s.order)) + 1;
+  return nextOrder(db.scenes, { chapterId }, undefined);
 }
 
 export async function createScene(
@@ -144,12 +148,7 @@ export async function deleteScene(id: SceneId): Promise<void> {
 /** Renumber a chapter's scenes to a contiguous 0..N-1 in current order. */
 async function renumberChapterScenes(chapterId: ChapterId): Promise<void> {
   const scenes = await db.scenes.where({ chapterId }).sortBy("order");
-  const ts = now();
-  for (let i = 0; i < scenes.length; i++) {
-    if (scenes[i].order !== i) {
-      await db.scenes.update(scenes[i].id, { order: i, updatedAt: ts });
-    }
-  }
+  await compact(db.scenes, scenes, { touchUpdatedAt: true });
 }
 
 /** Reorder a chapter's scenes to match `orderedSceneIds`. */
@@ -158,10 +157,7 @@ export async function reorderScenes(
   orderedSceneIds: SceneId[],
 ): Promise<void> {
   await db.transaction("rw", db.scenes, async () => {
-    const ts = now();
-    for (let i = 0; i < orderedSceneIds.length; i++) {
-      await db.scenes.update(orderedSceneIds[i], { order: i, updatedAt: ts });
-    }
+    await renumber(db.scenes, orderedSceneIds, { touchUpdatedAt: true });
     await renumberChapterScenes(chapterId);
   });
 }
@@ -214,9 +210,7 @@ export async function moveScene(
       chapterId: destChapterId,
       updatedAt: ts,
     });
-    for (let i = 0; i < orderedIds.length; i++) {
-      await db.scenes.update(orderedIds[i], { order: i, updatedAt: ts });
-    }
+    await renumber(db.scenes, orderedIds, { touchUpdatedAt: true });
     if (sourceChapterId !== destChapterId) {
       await renumberChapterScenes(sourceChapterId);
     }

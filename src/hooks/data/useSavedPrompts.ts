@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/db/database";
+import { listAvailableSavedPrompts } from "@/db/operations/savedPrompts";
 import type { ProjectId, SavedPrompt } from "@/db/schemas";
 
 /**
@@ -13,14 +13,5 @@ import type { ProjectId, SavedPrompt } from "@/db/schemas";
 export function useAvailableSavedPrompts(
   projectId: ProjectId | null,
 ): SavedPrompt[] | undefined {
-  return useLiveQuery(async () => {
-    const all = await db.savedPrompts.toArray();
-    return all
-      .filter(
-        (p) =>
-          p.projectId === null ||
-          (projectId !== null && p.projectId === projectId),
-      )
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }, [projectId]);
+  return useLiveQuery(() => listAvailableSavedPrompts(projectId), [projectId]);
 }

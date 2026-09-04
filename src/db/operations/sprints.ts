@@ -8,7 +8,7 @@ import {
   type WritingSprintId,
   WritingSprintSchema,
 } from "../schemas";
-import { generateId, now, toLocalDateString } from "./helpers";
+import { createCrud, generateId, now, toLocalDateString } from "./helpers";
 
 // ─── Writing Sprints ────────────────────────────────────────────────
 
@@ -100,9 +100,9 @@ export async function endSprint(
   });
 }
 
-export async function deleteSprint(id: WritingSprintId): Promise<void> {
-  await db.writingSprints.delete(id);
-}
+export const deleteSprint = createCrud<WritingSprint, WritingSprintId>(
+  db.writingSprints,
+).delete;
 
 // ─── Writing Sessions ────────────────────────────────────────────────
 

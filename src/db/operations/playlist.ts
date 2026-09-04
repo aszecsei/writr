@@ -4,7 +4,13 @@ import {
   type PlaylistTrackId,
   PlaylistTrackSchema,
 } from "../schemas";
-import { generateId, getNextOrder, now, reorderEntities } from "./helpers";
+import {
+  createCrud,
+  generateId,
+  nextOrder,
+  now,
+  reorderEntities,
+} from "./helpers";
 
 // ─── Playlist Tracks ─────────────────────────────────────────────────
 
@@ -12,7 +18,7 @@ export async function createPlaylistTrack(
   data: Pick<PlaylistTrack, "projectId" | "title" | "url" | "source"> &
     Partial<Pick<PlaylistTrack, "thumbnailUrl" | "duration" | "order">>,
 ): Promise<PlaylistTrack> {
-  const order = await getNextOrder(
+  const order = await nextOrder(
     db.playlistTracks,
     { projectId: data.projectId },
     data.order,
@@ -33,9 +39,9 @@ export async function createPlaylistTrack(
   return track;
 }
 
-export async function deletePlaylistTrack(id: PlaylistTrackId): Promise<void> {
-  await db.playlistTracks.delete(id);
-}
+export const deletePlaylistTrack = createCrud<PlaylistTrack, PlaylistTrackId>(
+  db.playlistTracks,
+).delete;
 
 export async function reorderPlaylistTracks(
   orderedIds: PlaylistTrackId[],
