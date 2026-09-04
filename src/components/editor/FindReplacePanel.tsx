@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { ToolbarButton } from "@/components/ui/ToolbarButton";
+import { scrollToPos } from "@/lib/editor/scroll";
 import { useFindReplaceStore } from "@/store/findReplaceStore";
 import { getSearchState } from "./extensions/SearchAndReplace";
 
@@ -102,15 +103,7 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
       if (s && s.matches.length > 0) {
         const match = s.matches[s.currentIndex];
         editor.commands.setTextSelection(match.from);
-        const view = editor.view;
-        const coords = view.coordsAtPos(match.from);
-        const dom = view.dom.closest(".overflow-y-auto");
-        if (dom) {
-          const rect = dom.getBoundingClientRect();
-          const targetY =
-            coords.top - rect.top + dom.scrollTop - rect.height / 2;
-          dom.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
-        }
+        scrollToPos(editor, match.from, { center: true });
       }
     }, 0);
   }, [editor]);

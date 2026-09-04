@@ -3,6 +3,7 @@ import type { MutableRefObject } from "react";
 import { useEffect, useRef } from "react";
 import type * as Y from "yjs";
 import type { Chapter, ChapterId, SceneId } from "@/db/schemas";
+import { scrollToPos } from "@/lib/editor/scroll";
 import { getWordCount } from "@/lib/editor/tiptap-storage";
 import { fountainToProseMirror, parseFountain } from "@/lib/fountain";
 
@@ -21,19 +22,13 @@ function findSceneMarkerPos(editor: Editor, sceneId: string): number | null {
   return pos;
 }
 
-/** The nearest HTMLElement for a DOM node (itself if already an element). */
-function elementFor(node: Node | null | undefined): HTMLElement | null {
-  if (!node) return null;
-  return node instanceof HTMLElement ? node : node.parentElement;
-}
-
 /**
  * Scroll the editor to a scene and place the caret at its start. Returns false
  * (a no-op) when the scene doesn't belong to this chapter's loaded rows — the
  * caller then leaves the scroll request pending for the right chapter's editor.
  * The core scene (no marker) scrolls to the top.
  *
- * Scrolls via the DOM `scrollIntoView` (not ProseMirror's transaction-level
+ * Scrolls via `scrollToPos` (not ProseMirror's transaction-level
  * scrollIntoView, which doesn't reliably walk the editor's nested overflow
  * containers), deferred a frame so it runs against post-seed layout.
  */
@@ -53,11 +48,7 @@ function scrollEditorToScene(
     .run();
   requestAnimationFrame(() => {
     if (editor.isDestroyed) return;
-    const target =
-      markerPos !== null
-        ? elementFor(editor.view.nodeDOM(markerPos))
-        : elementFor(editor.view.domAtPos(1).node);
-    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    scrollToPos(editor, markerPos ?? 1, { center: true });
   });
   return true;
 }
