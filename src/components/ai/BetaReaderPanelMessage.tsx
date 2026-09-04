@@ -87,7 +87,7 @@ export function BetaReaderPanelMessage({
  * persona; missing personas are omitted from the result. Tolerates extra
  * whitespace and content outside the persona blocks (which is dropped).
  */
-export function parsePanelSections(
+function parsePanelSections(
   content: string,
 ): Partial<Record<BetaReaderPersonaId, string>> {
   const out: Partial<Record<BetaReaderPersonaId, string>> = {};

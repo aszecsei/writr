@@ -11,8 +11,7 @@
 
 /**
  * Broad read-only toolset for chat-mode agents. Mirrors `ALL_READ_TOOL_IDS`
- * in the AgentEditor's tool picker minus the pipeline-only groups (reader
- * bible, reader notes/questions) which require an active pipeline run.
+ * in the AgentEditor's tool picker.
  *
  * Spans every project read surface a writing-room collaborator might want:
  * the full story bible (per-category scoped ids), chapter metadata and

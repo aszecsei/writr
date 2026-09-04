@@ -9,7 +9,7 @@ import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
  */
 export type AccessorMessageId = string;
 
-export interface AccessorToolCallRef {
+interface AccessorToolCallRef {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
@@ -84,8 +84,8 @@ export interface ChatHistoryAccessor {
   ): void;
 
   /**
-   * Mark the assistant turn complete. Implementations persist the duration,
-   * finishReason, and (in the pipeline path) accumulate token usage.
+   * Mark the assistant turn complete. Implementations persist the duration
+   * and finishReason.
    */
   finalizeAssistantTurn(
     id: AccessorMessageId,
@@ -100,8 +100,8 @@ export interface ChatHistoryAccessor {
 
   /**
    * Optional gate for tool calls whose definition has `requiresApproval:
-   * true`. The chat UI presents Approve/Deny buttons; the pipeline path
-   * auto-approves (returns `true`).
+   * true`. The chat UI presents Approve/Deny buttons; when unset, the runner
+   * auto-approves.
    */
   approveToolCall?: (toolMessageId: AccessorMessageId) => Promise<boolean>;
 }

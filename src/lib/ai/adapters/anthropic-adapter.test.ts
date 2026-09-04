@@ -262,13 +262,11 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("preserves tool message content when wrapped in a cache_control text part", async () => {
-      // Regression: `withTrailingCacheControl` wraps the most recent history
-      // message's string content into a TextContentPart array so Anthropic
-      // prompt caching spans tool-calling iterations. Previously the tool
-      // branch checked `typeof content === "string"` and silently dropped the
-      // array, sending an empty tool_result back to the model on every
-      // follow-up turn — exactly what reproduced as "I received an empty
-      // result" after a successful list call.
+      // `withTrailingCacheControl` wraps the most recent history message's
+      // string content into a TextContentPart array so Anthropic prompt
+      // caching spans tool-calling iterations. The tool branch must not
+      // check `typeof content === "string"` and drop the array, or an empty
+      // tool_result reaches the model on every follow-up turn.
       mockCreate.mockResolvedValueOnce({
         content: [{ type: "text", text: "ok" }],
         model: "claude-sonnet-4-5-20250929",

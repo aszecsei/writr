@@ -40,7 +40,6 @@ describe("propose_edit (render-only diff payload)", () => {
     );
 
     expect(result.success).toBe(true);
-    expect(result.data?.mode).toBe("chat");
     expect(result.data?.chapterId).toBe(chapter.id);
     expect(result.data?.chapterTitle).toBe("Chapter 1");
     expect(result.data?.kind).toBe("replace");
@@ -140,7 +139,6 @@ describe("propose_edit (render-only diff payload)", () => {
     );
 
     expect(result.success).toBe(true);
-    expect(result.data?.mode).toBe("chat");
     expect(result.data?.originalText).toBe("Original chapter content.");
     expect(result.data?.anchorFound).toBe(true);
   });

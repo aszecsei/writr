@@ -1,10 +1,9 @@
 /**
  * Consolidated read tools: `list` and `get` cover the simple list-by-project
- * and get-by-id patterns that previously needed a tool per entity (12 tools
- * → 2). Categories with non-uniform read shapes — chapter content
- * (read_chapter / read_chapter_range / search_chapter / get_chapter_structure),
- * the path-based reader bible (bible_read / bible_list), and project-wide
- * search — keep their own tools.
+ * and get-by-id patterns shared across bible entity categories. Categories
+ * with non-uniform read shapes — chapter content (read_chapter /
+ * read_chapter_range / search_chapter / get_chapter_structure) and
+ * project-wide search — keep their own tools.
  *
  * Per-category permission gating: agents whitelist scoped ids
  * (`list:character`, `get:summary`, ...) instead of the unscoped `list` /
@@ -65,7 +64,7 @@ import { ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
 // ─── Categories ────────────────────────────────────────────────────────
 
 /** All categories supported by either `list` or `get`. */
-export const READ_CATEGORIES = [
+const READ_CATEGORIES = [
   "character",
   "location",
   "timeline",
@@ -460,7 +459,6 @@ const listInputSchema = z
 
 export const listTool = defineTool({
   id: "list",
-  category: "read",
   name: "List Entries",
   description:
     "List all entries of one category in the project. Returns each entry's id and a small set of summary fields. " +
@@ -518,7 +516,6 @@ interface GetResultEntry {
 
 export const getTool = defineTool({
   id: "get",
-  category: "read",
   name: "Get Entries",
   description:
     "Fetch full details for one or more entries in one or more categories. " +

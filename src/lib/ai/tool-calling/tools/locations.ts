@@ -11,7 +11,6 @@ import { fail, ok } from "./helpers";
 
 export const createLocationTool = defineTool({
   id: "create_location",
-  category: "location",
   name: "Create Location",
   description:
     "Create a new location in the story bible. Use when the user asks to add a setting or place.",
@@ -48,7 +47,6 @@ export const createLocationTool = defineTool({
 
 export const updateLocationTool = defineTool({
   id: "update_location",
-  category: "location",
   name: "Update Location",
   description:
     "Update fields on an existing location. Only include fields to change. " +
@@ -83,7 +81,6 @@ export const updateLocationTool = defineTool({
 
 export const deleteLocationTool = defineTool({
   id: "delete_location",
-  category: "location",
   name: "Delete Location",
   description:
     "Delete a location from the story bible. Use the `list` and `get` tools " +

@@ -1,14 +1,9 @@
 import type {
-  Character,
-  CharacterRelationship,
   GuardrailEntry,
-  Location,
   OutlineGridCell,
   OutlineGridColumn,
   OutlineGridRow,
   StyleGuideEntry,
-  TimelineEvent,
-  WorldbuildingDoc,
 } from "@/db/schemas";
 import { escapeAttr, escapeText } from "./xml";
 
@@ -21,94 +16,6 @@ export function buildNameMap<T extends { id: string }>(
     map.set(item.id, getName(item));
   }
   return map;
-}
-
-function resolveNames(ids: string[], nameMap: Map<string, string>): string[] {
-  return ids
-    .map((id) => nameMap.get(id))
-    .filter((name): name is string => name !== undefined);
-}
-
-export function serializeCharacter(c: Character): string {
-  const attrs = c.pronouns
-    ? ` role="${c.role}" pronouns="${c.pronouns}"`
-    : ` role="${c.role}"`;
-
-  const lines: string[] = [`<character name="${c.name}"${attrs}>`];
-
-  if (c.aliases.length > 0)
-    lines.push(`<aliases>${c.aliases.join(", ")}</aliases>`);
-  if (c.summary) lines.push(`<summary>${c.summary}</summary>`);
-  if (c.description)
-    lines.push(`<physical-description>${c.description}</physical-description>`);
-  if (c.personality) lines.push(`<personality>${c.personality}</personality>`);
-  if (c.motivations) lines.push(`<motivations>${c.motivations}</motivations>`);
-  if (c.strengths) lines.push(`<strengths>${c.strengths}</strengths>`);
-  if (c.weaknesses) lines.push(`<weaknesses>${c.weaknesses}</weaknesses>`);
-  if (c.internalConflict)
-    lines.push(`<internal-conflict>${c.internalConflict}</internal-conflict>`);
-  if (c.characterArcs)
-    lines.push(`<character-arcs>${c.characterArcs}</character-arcs>`);
-  if (c.dialogueStyle)
-    lines.push(`<dialogue-style>${c.dialogueStyle}</dialogue-style>`);
-  if (c.backstory) lines.push(`<backstory>${c.backstory}</backstory>`);
-
-  const captionedImages = c.images.filter((img) => img.caption);
-  if (captionedImages.length > 0) {
-    lines.push("<images>");
-    for (const img of captionedImages) {
-      lines.push(`<image caption="${img.caption}" />`);
-    }
-    lines.push("</images>");
-  }
-
-  lines.push("</character>");
-  return lines.join("\n");
-}
-
-export function serializeLocation(
-  l: Location,
-  charMap: Map<string, string>,
-): string {
-  const lines: string[] = [`<location name="${l.name}">`];
-
-  if (l.description) lines.push(`<description>${l.description}</description>`);
-  if (l.notes) lines.push(`<notes>${l.notes}</notes>`);
-
-  const charNames = resolveNames(l.linkedCharacterIds, charMap);
-  if (charNames.length > 0)
-    lines.push(`<characters-here>${charNames.join(", ")}</characters-here>`);
-
-  const captionedImages = l.images.filter((img) => img.caption);
-  if (captionedImages.length > 0) {
-    lines.push("<images>");
-    for (const img of captionedImages) {
-      lines.push(`<image caption="${img.caption}" />`);
-    }
-    lines.push("</images>");
-  }
-
-  lines.push("</location>");
-  return lines.join("\n");
-}
-
-export function serializeTimelineEvent(
-  e: TimelineEvent,
-  charMap: Map<string, string>,
-): string {
-  const dateAttr = e.date ? ` date="${e.date}"` : "";
-  const lines: string[] = [`<event title="${e.title}"${dateAttr}>`];
-
-  if (e.description) lines.push(`<description>${e.description}</description>`);
-
-  const charNames = resolveNames(e.linkedCharacterIds, charMap);
-  if (charNames.length > 0)
-    lines.push(
-      `<characters-involved>${charNames.join(", ")}</characters-involved>`,
-    );
-
-  lines.push("</event>");
-  return lines.join("\n");
 }
 
 export function serializeStyleGuideEntry(s: StyleGuideEntry): string {
@@ -135,51 +42,6 @@ export function serializeGuardrailEntry(g: GuardrailEntry): string {
     lines.push(`<positive-fix>${escapeText(g.positiveFix)}</positive-fix>`);
   lines.push("</guardrail>");
   return lines.join("\n");
-}
-
-export function serializeWorldbuildingTree(docs: WorldbuildingDoc[]): string {
-  const childrenOf = new Map<string | null, WorldbuildingDoc[]>();
-  for (const d of docs) {
-    const key = d.parentDocId;
-    const list = childrenOf.get(key);
-    if (list) list.push(d);
-    else childrenOf.set(key, [d]);
-  }
-
-  function renderNode(doc: WorldbuildingDoc): string {
-    const tagsAttr =
-      doc.tags.length > 0 ? ` tags="${doc.tags.join(", ")}"` : "";
-    const lines: string[] = [`<doc title="${doc.title}"${tagsAttr}>`];
-
-    if (doc.content) {
-      lines.push(doc.content);
-    }
-
-    const children = childrenOf.get(doc.id);
-    if (children) {
-      for (const child of children) {
-        lines.push(renderNode(child));
-      }
-    }
-
-    lines.push("</doc>");
-    return lines.join("\n");
-  }
-
-  const roots = childrenOf.get(null) ?? [];
-  return roots.map(renderNode).join("\n");
-}
-
-export function serializeRelationship(
-  r: CharacterRelationship,
-  charMap: Map<string, string>,
-): string {
-  const sourceName = charMap.get(r.sourceCharacterId);
-  const targetName = charMap.get(r.targetCharacterId);
-  if (!sourceName || !targetName) return "";
-
-  const label = r.type === "custom" && r.customLabel ? r.customLabel : r.type;
-  return `<relationship source="${sourceName}" target="${targetName}" type="${label}" />`;
 }
 
 /**

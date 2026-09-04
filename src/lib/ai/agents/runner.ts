@@ -88,13 +88,10 @@ export async function runAgent(
   const toolDefinitions: ToolDefinitionForModel[] | undefined =
     getToolDefinitionsForAgent(agent);
 
-  const allToolCalls: ToolCallEntry[] = [];
   let iteration = 0;
   const maxIterations = agent.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 
   let lastContent = "";
-  let lastReasoning: string | undefined;
-  let lastFinishReason: FinishReason | undefined;
   let aborted = false;
 
   while (iteration < maxIterations) {
@@ -134,7 +131,6 @@ export async function runAgent(
     };
 
     let assistantContent = "";
-    let assistantReasoning: string | undefined;
     let finishReason: FinishReason | undefined;
     let iterationUsage: AiUsage | undefined;
     const collectedToolCalls: ToolCallPayload[] = [];
@@ -201,8 +197,7 @@ export async function runAgent(
                 input: c.input,
               });
             })
-            .with({ type: "reasoning" }, (c) => {
-              assistantReasoning = (assistantReasoning ?? "") + c.text;
+            .with({ type: "reasoning" }, () => {
               history.appendChunk(assistantId, chunk as AiStreamChunk);
             })
             .with({ type: "content" }, (c) => {
@@ -215,7 +210,6 @@ export async function runAgent(
     } else {
       const data: AiResponse = await response.json();
       assistantContent = data.content;
-      assistantReasoning = data.reasoning;
       finishReason = data.finishReason;
       iterationUsage = data.usage;
       // Replay the non-streamed content as a single chunk so the accessor's
@@ -245,8 +239,6 @@ export async function runAgent(
 
     const durationMs = Date.now() - startTime;
     lastContent = assistantContent;
-    lastReasoning = assistantReasoning;
-    lastFinishReason = finishReason;
 
     if (signal?.aborted) {
       // Abort during streaming — drop the in-progress assistant turn so the
@@ -402,17 +394,11 @@ export async function runAgent(
       }
     }
 
-    allToolCalls.push(...entries);
-
     if (aborted) break;
   }
 
   return {
-    iterations: iteration,
     content: lastContent,
-    reasoning: lastReasoning,
-    finishReason: lastFinishReason,
-    toolCalls: allToolCalls,
     aborted,
   };
 }

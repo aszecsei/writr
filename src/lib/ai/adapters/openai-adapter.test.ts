@@ -162,10 +162,10 @@ describe("createOpenAiAdapter", () => {
     });
 
     it("preserves tool message content when wrapped in a cache_control text part", async () => {
-      // Regression: `withTrailingCacheControl` wraps the most recent tool
-      // result into a TextContentPart array. Previously the tool branch
-      // checked `typeof content === "string"` and dropped the array, sending
-      // empty content for the tool result.
+      // `withTrailingCacheControl` wraps the most recent tool result into a
+      // TextContentPart array. The tool branch must not check
+      // `typeof content === "string"` and drop the array, or the tool
+      // result comes through empty.
       mockCreate.mockResolvedValueOnce({
         choices: [
           {

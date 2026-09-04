@@ -131,7 +131,6 @@ export async function executeAgentTool(
 
   const context: ToolExecutionContext = {
     ...agent.agentContext,
-    agentKind: agent.agentContext.agentKind ?? agent.kind,
     ...(toolMessageId ? { toolMessageId } : {}),
   };
 

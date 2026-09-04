@@ -7,7 +7,7 @@ import { fail, ok } from "./helpers";
  * a cap of 2 allows orchestrator → sub-agent → sub-sub-agent and no further.
  * Keeps runaway recursion (and token cost) bounded even with the cycle guard.
  */
-export const DELEGATE_MAX_DEPTH = 2;
+const DELEGATE_MAX_DEPTH = 2;
 
 export const delegateTool = defineTool({
   id: "delegate",

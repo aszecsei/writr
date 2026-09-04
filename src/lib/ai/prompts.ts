@@ -4,11 +4,11 @@ import { serializeGuardrailEntry, serializeStyleGuideEntry } from "./serialize";
 import type { AiContext, AiMessage, ContentPart } from "./types";
 import { escapeAttr } from "./xml";
 
-export const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
+const DEFAULT_SYSTEM_PROMPT = "You are a creative writing assistant.";
 
 function buildTableOfContents(chapters: readonly Chapter[]): string {
   if (chapters.length === 0) return "";
-  // `order` is the flattened manuscript position (raw chapter.order is now
+  // `order` is the flattened manuscript position (chapter.order is
   // sibling-scoped and ambiguous under nesting); `depth` conveys hierarchy.
   const items = [...chapters];
   const indexOf = manuscriptIndexMap(items);
@@ -21,12 +21,12 @@ function buildTableOfContents(chapters: readonly Chapter[]): string {
 }
 
 /**
- * Build the cache-stable initial project context for chat-mode and pipeline
- * agents. Includes top-level project details (title, description, genre,
- * mode) plus the style guide and a chapter table of contents so the model
- * knows the manuscript's shape before reaching for tools. Everything else
- * (characters, locations, timeline, worldbuilding, outline grid, chapter
- * prose) is fetched on demand via tool calls.
+ * Build the cache-stable initial project context for chat-mode agents.
+ * Includes top-level project details (title, description, genre, mode) plus
+ * the style guide and a chapter table of contents so the model knows the
+ * manuscript's shape before reaching for tools. Everything else (characters,
+ * locations, timeline, worldbuilding, outline grid, chapter prose) is
+ * fetched on demand via tool calls.
  */
 export function buildAgenticContext(context: AiContext): string {
   const isScreenplay = context.projectMode === "screenplay";
@@ -159,8 +159,7 @@ export function buildMessages(
     },
   ];
 
-  // Story bible context as a user message (cacheable). Tool-calling agents
-  // and chat agents now share the same minimal shape — top-level project
+  // Story bible context as a user message (cacheable): top-level project
   // details, style guide, and chapter TOC. Anything richer (characters,
   // locations, etc.) is fetched on demand via tools.
   const contextXml = buildAgenticContext(context);
@@ -209,9 +208,10 @@ export function buildMessages(
     // In agentic mode, normalize ALL history content to ContentPart[] form so
     // the wire shape stays byte-stable across tool-calling iterations, then
     // mark the last message's last text part with cache_control. If we only
-    // wrapped on `isLast`, the previously-trailing message would flip from
-    // array form (iter N) to string form (iter N+1), invalidating Anthropic's
-    // prefix-byte match and busting the cache between iterations.
+    // wrapped on `isLast`, the message trailing in iteration N would flip
+    // from array form (iter N) to string form (iter N+1), invalidating
+    // Anthropic's prefix-byte match and busting the cache between
+    // iterations.
     let content = msg.content;
     if (enableToolCalling) {
       content = toContentParts(content);
@@ -300,8 +300,9 @@ function toContentParts(content: string | ContentPart[]): ContentPart[] {
 function withTrailingCacheControl(parts: ContentPart[]): ContentPart[] {
   const out = [...parts];
   for (let j = out.length - 1; j >= 0; j--) {
-    if (out[j].type === "text") {
-      out[j] = { ...out[j], cache_control: { type: "ephemeral" } };
+    const part = out[j];
+    if (part.type === "text") {
+      out[j] = { ...part, cache_control: { type: "ephemeral" } };
       break;
     }
   }
