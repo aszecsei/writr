@@ -196,7 +196,13 @@ export default function SharedSessionPage() {
   // editor width, comment margin alongside. Non-connected states keep
   // the card-style GuestSessionShell so error/connecting/ended UIs are
   // legible.
-  if (status === "connected" && session && role && role !== "host") {
+  if (
+    status === "connected" &&
+    session &&
+    role &&
+    role !== "host" &&
+    identity
+  ) {
     return (
       <ConnectedSessionLayout
         role={role}
@@ -208,8 +214,8 @@ export default function SharedSessionPage() {
           doc={session.getDoc("prose")}
           awareness={session.awareness}
           editable={role === "edit"}
-          userName={identity?.name}
-          userColor={identity?.color}
+          userName={identity.name}
+          userColor={identity.color}
           commentsDoc={commentsDoc ?? undefined}
           chapterId={commentsMeta.chapterId ?? undefined}
           projectId={commentsMeta.projectId ?? undefined}

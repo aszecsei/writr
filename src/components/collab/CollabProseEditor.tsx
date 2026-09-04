@@ -24,9 +24,9 @@ interface CollabProseEditorProps {
   awareness: Awareness;
   editable: boolean;
   /** Display name surfaced over the user's caret. */
-  userName?: string;
+  userName: string;
   /** Hex color for the caret + selection highlight. */
-  userColor?: string;
+  userColor: string;
   /**
    * Comments Y.Doc from the same session. When provided alongside
    * `chapterId` and `projectId`, the editor mounts the Comments extension
@@ -46,8 +46,8 @@ export function CollabProseEditor(props: CollabProseEditorProps) {
     doc,
     awareness,
     editable,
-    userName = "Guest",
-    userColor = "#888888",
+    userName,
+    userColor,
     commentsDoc,
     chapterId,
     projectId,

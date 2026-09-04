@@ -16,6 +16,7 @@ import { Markdown } from "tiptap-markdown";
 import type { Awareness } from "y-protocols/awareness";
 import type * as Y from "yjs";
 import type { Comment } from "@/db/schemas";
+import { HOST_DEFAULT_COLOR, HOST_DEFAULT_NAME } from "@/lib/collab/identity";
 import type { GrammarResult, GrammarService } from "@/lib/grammar";
 import {
   countWordsExcludingHoles,
@@ -209,8 +210,8 @@ export function createExtensions(options?: ExtensionOptions) {
             // into this instance, so a stub provider is sufficient.
             provider: { awareness: collab.awareness },
             user: {
-              name: collab.userName ?? "Host",
-              color: collab.userColor ?? "#10b981",
+              name: collab.userName ?? HOST_DEFAULT_NAME,
+              color: collab.userColor ?? HOST_DEFAULT_COLOR,
             },
           }),
         ]
