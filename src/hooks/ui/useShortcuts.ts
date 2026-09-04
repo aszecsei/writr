@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   bufferMatches,
   ChordTracker,
@@ -36,7 +37,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function useShortcuts(): void {
   const router = useRouter();
   const projectId = useProjectStore((s) => s.activeProjectId);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   // Latest context, read by the stable listener so it never needs rebinding.
   const ctxRef = useRef<CommandContext>({ router, projectId, projectMode });

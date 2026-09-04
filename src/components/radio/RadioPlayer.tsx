@@ -3,6 +3,7 @@
 import { type SyntheticEvent, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
 import type { PlaylistTrackId } from "@/db/schemas";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
 import { useRadioStore } from "@/store/radioStore";
 
@@ -23,6 +24,7 @@ export function RadioPlayer() {
   const setCurrentTime = useRadioStore((s) => s.setCurrentTime);
   const setDuration = useRadioStore((s) => s.setDuration);
   const onTrackEnded = useRadioStore((s) => s.onTrackEnded);
+  const hydrateFromSettings = useRadioStore((s) => s.hydrateFromSettings);
 
   const track = usePlaylistTrack(currentTrackId as PlaylistTrackId | null);
 
@@ -36,6 +38,19 @@ export function RadioPlayer() {
       lastSeekRef.current = currentTime;
     }
   }, [currentTime]);
+
+  const settings = useAppSettings();
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (settings && !hydratedRef.current) {
+      hydrateFromSettings(settings.radio);
+      hydratedRef.current = true;
+    }
+  }, [settings, hydrateFromSettings]);
+
+  useEffect(() => {
+    localStorage.removeItem("writr-radio");
+  }, []);
 
   if (!track) {
     return null;

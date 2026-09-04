@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTextAnalysis } from "@/hooks/analysis/useTextAnalysis";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { getTerm } from "@/lib/terminology";
 import type { AnalysisScope } from "@/lib/text-analysis";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
@@ -22,7 +23,7 @@ type AnalysisTab = "chapter" | "project" | "all";
 export function AnalysisPanel() {
   const activeChapterId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   const [tab, setTab] = useState<AnalysisTab>(
     activeChapterId ? "chapter" : activeProjectId ? "project" : "all",

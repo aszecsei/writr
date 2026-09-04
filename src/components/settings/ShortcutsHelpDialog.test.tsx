@@ -1,14 +1,23 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { db } from "@/db/database";
+import type { ProjectId } from "@/db/schemas";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { makeProject } from "@/test/helpers";
 import { ShortcutsHelpDialog } from "./ShortcutsHelpDialog";
 
+const projectId = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
+
 describe("ShortcutsHelpDialog", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     useUiStore.getState().closeModal();
-    useProjectStore.setState({ activeProjectMode: "prose" });
+    await db.projects.clear();
+    await db.projects.add(
+      makeProject({ id: projectId, title: "Draft", mode: "prose" }),
+    );
+    useProjectStore.setState({ activeProjectId: projectId });
   });
 
   afterEach(() => {
@@ -31,11 +40,15 @@ describe("ShortcutsHelpDialog", () => {
     expect(screen.getByText("G then C")).toBeInTheDocument();
   });
 
-  it("uses screenplay terminology for create commands", () => {
-    useProjectStore.setState({ activeProjectMode: "screenplay" });
+  it("uses screenplay terminology for create commands", async () => {
+    await db.projects.put(
+      makeProject({ id: projectId, title: "Draft", mode: "screenplay" }),
+    );
     useUiStore.getState().openModal({ id: "shortcuts-help" });
     render(<ShortcutsHelpDialog />);
 
-    expect(screen.getByText("Add Sequence")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Add Sequence")).toBeInTheDocument(),
+    );
   });
 });

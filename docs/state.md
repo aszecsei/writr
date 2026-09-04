@@ -6,12 +6,12 @@ All Zustand stores use Immer middleware and are intended for **ephemeral UI stat
 
 - **`uiStore`** — sidebar (`open` + active panel: `chapters | bible | agents`), modal (discriminated union — see below), AI panel toggle, focus-mode toggle.
 - **`editorStore`** — active document, dirty/save state, word count, selection, content version (used to invalidate derived state).
-- **`projectStore`** — active project context (id, title, mode).
+- **`projectStore`** — active project id, set once by the project layout. `activeProjectTitle`/`activeProjectMode` are a compatibility shim still populated for a handful of readers not yet migrated off the store (see below); every other reader derives title/mode from the live `Project` row via `useActiveProject()` (`src/hooks/data/useProject.ts`).
 - **`commentStore`** — selected comment, comment-margin visibility.
-- **`sprintStore`** — active sprint timer, word tracking.
-- **`spellcheckStore`** / **`grammarStore`** — enabled state (spellcheck) / persisted-in-AppSettings enabled state (grammar), ignored keys, context menu, scanner state. Both build on the shared `createCheckerSlice` in `src/store/createCheckerStore.ts` (context menu, scanner current-index + items, ignored-keys set, wraparound `next`/`prev`/`removeAt`, `addToIgnored`) and add their own domain-specific fields on top.
+- **`sprintStore`** — ephemeral ticker state only (`elapsedMs`, `remainingMs`, `wordsWritten`). The active sprint itself (id, running/paused status) is a live Dexie query via `useActiveSprint()` (`src/hooks/writing/useActiveSprint.ts`), not store state.
+- **`spellcheckStore`** / **`grammarStore`** — `enabled` state mirrors `AppSettings.spellcheckEnabled` / `AppSettings.grammarCheckerEnabled` (spellcheck's `toggleEnabled` writes through; grammar's toggle in the toolbar calls `updateAppSettings` directly), plus ignored keys, context menu, scanner state. Both build on the shared `createCheckerSlice` in `src/store/createCheckerStore.ts` (context menu, scanner current-index + items, ignored-keys set, wraparound `next`/`prev`/`removeAt`, `addToIgnored`) and add their own domain-specific fields on top.
 - **`findReplaceStore`** — search/replace terms, regex/case/whole-word modes, match tracking.
-- **`radioStore`** — playlist playback (queue, volume, shuffle, loop). **Persisted** to localStorage.
+- **`radioStore`** — playlist playback (queue, volume, shuffle, loop). Volume/muted/shuffleEnabled/loopMode mirror `AppSettings.radio`, hydrated once at mount by `RadioPlayer` and written through on every change; playback/queue state stays store-only ephemeral state.
 - **`collabStore`** — collab session state, connection lifecycle, peer identity, share URLs, approval queue.
 
 ## Modal system

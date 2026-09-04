@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useActiveSprint } from "@/hooks/writing/useActiveSprint";
 import { formatCountdownClock } from "@/lib/format-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useSprintStore } from "@/store/sprintStore";
@@ -10,13 +11,13 @@ export function FocusModeOverlay() {
   const wordCount = useEditorStore((s) => s.wordCount);
   const setFocusMode = useUiStore((s) => s.setFocusMode);
 
-  const activeSprintId = useSprintStore((s) => s.activeSprintId);
-  const isRunning = useSprintStore((s) => s.isRunning);
-  const isPaused = useSprintStore((s) => s.isPaused);
+  const activeSprint = useActiveSprint();
   const remainingMs = useSprintStore((s) => s.remainingMs);
   const wordsWritten = useSprintStore((s) => s.wordsWritten);
 
-  const hasActiveSprint = activeSprintId !== null;
+  const hasActiveSprint = !!activeSprint;
+  const isRunning = activeSprint?.status === "active";
+  const isPaused = activeSprint?.status === "paused";
 
   return (
     <div className="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-lg border border-neutral-200/50 bg-white/80 px-4 py-2 shadow-sm backdrop-blur-sm transition-opacity hover:opacity-100 dark:border-neutral-700/50 dark:bg-neutral-900/80">

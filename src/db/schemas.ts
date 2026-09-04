@@ -642,6 +642,14 @@ const HoleDelimitersSchema = z.object({
   close: z.string().min(1).default("]"),
 });
 
+const RadioSettingsSchema = z.object({
+  volume: z.number().min(0).max(100).default(80),
+  muted: z.boolean().default(false),
+  shuffleEnabled: z.boolean().default(false),
+  loopMode: z.enum(["off", "all", "one"]).default("off"),
+});
+export type RadioSettings = z.infer<typeof RadioSettingsSchema>;
+
 /**
  * Grammar categories (lint kinds) switched off by default. "Style" is noisy for
  * fiction prose, so it's off until the user opts in via the Grammar Rules modal.
@@ -717,6 +725,8 @@ export const AppSettingsSchema = z.object({
    * Only explicit overrides are stored; absent keys use harper's default.
    */
   grammarRuleOverrides: z.record(z.string(), z.boolean()).default({}),
+  /** Master switch for the built-in spellchecker in the editor. */
+  spellcheckEnabled: z.boolean().default(true),
   debugMode: z.boolean().default(false),
   streamResponses: z.boolean().default(true),
   reasoningEffort: ReasoningEffortEnum.default("medium"),
@@ -745,6 +755,13 @@ export const AppSettingsSchema = z.object({
   sceneTopK: z.number().int().nonnegative().default(3),
   /** Minimum cosine similarity score [−1, 1] for a chunk to be included. */
   similarityFloor: z.number().min(-1).max(1).default(0.3),
+  /** Radio player preferences (volume, mute, shuffle, loop). */
+  radio: RadioSettingsSchema.default({
+    volume: 80,
+    muted: false,
+    shuffleEnabled: false,
+    loopMode: "off",
+  }),
   updatedAt: timestamp,
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;

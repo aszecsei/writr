@@ -3,8 +3,8 @@
 import { Columns3, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import type { ProjectId } from "@/db/schemas";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { BinderSection } from "./BinderSection";
 
 export function ChapterList({
@@ -14,7 +14,7 @@ export function ChapterList({
   projectId: ProjectId;
   pathname: string;
 }) {
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProjectMode = useActiveProject()?.mode ?? null;
   const overviewHref = `/projects/${projectId}`;
   const isOverviewActive = pathname === overviewHref;
 

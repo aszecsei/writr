@@ -11,8 +11,8 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
-import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 
 const DURATION_PRESETS = [
@@ -27,7 +27,7 @@ export function SprintConfigDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const openModal = useUiStore((s) => s.openModal);
-  const projectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const projectTitle = useActiveProject()?.title ?? null;
 
   const { start } = useWritingSprint();
 

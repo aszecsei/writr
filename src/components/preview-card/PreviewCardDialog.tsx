@@ -13,13 +13,13 @@ import { CloseFooter } from "@/components/ui/CloseFooter";
 import { CHECKBOX_CLASS, LEGEND_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { triggerDownload } from "@/lib/download";
 import { getEditorFont } from "@/lib/fonts";
 import { generatePreviewImage } from "@/lib/preview-card/generate";
 import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
 import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { isPreviewCardModal, useUiStore } from "@/store/uiStore";
 import { PreviewCardCanvas } from "./PreviewCardCanvas";
 
@@ -42,7 +42,7 @@ export function PreviewCardDialog() {
   const closeModal = useUiStore((s) => s.closeModal);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   const [template, setTemplate] = useState<CardTemplate>("minimal");
   const [aspectRatio, setAspectRatio] = useState<CardAspectRatio>("square");

@@ -7,8 +7,8 @@ import { useEffect } from "react";
 import { MusicControlBar } from "@/components/radio/MusicControlBar";
 import type { ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
 import { AgentsNav } from "./AgentsNav";
 import { BibleNav } from "./BibleNav";
@@ -30,7 +30,7 @@ export function Sidebar() {
   const openModal = useUiStore((s) => s.openModal);
   const settings = useAppSettings();
   const aiEnabled = settings?.enableAiFeatures ?? false;
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   const allPanels: PanelDef[] = [
     { id: "chapters", label: getTerm(projectMode, "chapters"), icon: FileText },
