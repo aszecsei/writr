@@ -15,9 +15,12 @@ import {
   createComment,
   createOutlineGridRow,
   createProject,
+  createScene,
   createSnapshot,
   getChaptersByProject,
   getOutlineGridRowsByProject,
+  getScenesByChapter,
+  putIndexedChunk,
 } from "./operations";
 
 beforeEach(async () => {
@@ -27,6 +30,8 @@ beforeEach(async () => {
   await db.outlineGridCells.clear();
   await db.comments.clear();
   await db.chapterSnapshots.clear();
+  await db.scenes.clear();
+  await db.indexedChunks.clear();
 });
 
 describe("linkChapterToRow", () => {
@@ -99,6 +104,20 @@ describe("createChapterFromRow", () => {
     const updatedRow = await db.outlineGridRows.get(row.id);
     expect(updatedRow?.linkedChapterId).toBe(chapterId);
     expect(updatedRow?.label).toBe("");
+  });
+
+  it("seeds the core scene, matching the Model D invariant", async () => {
+    const project = await createProject({ title: "P" });
+    const row = await createOutlineGridRow({
+      projectId: project.id,
+      label: "My Chapter",
+    });
+
+    const chapterId = await createChapterFromRow(row.id, project.id);
+
+    const scenes = await getScenesByChapter(chapterId);
+    expect(scenes).toHaveLength(1);
+    expect(scenes[0].order).toBe(0);
   });
 
   it("uses 'New Chapter' when row label is empty", async () => {
@@ -377,6 +396,40 @@ describe("syncDeleteOutlineRow", () => {
       .where({ chapterId: chapter.id })
       .toArray();
     expect(snapshots).toHaveLength(0);
+  });
+
+  it("cascades to scenes and indexed chunks when deleting linked chapter", async () => {
+    const project = await createProject({ title: "P" });
+    const chapter = await createChapter({
+      projectId: project.id,
+      title: "Ch1",
+    });
+    const row = await createOutlineGridRow({
+      projectId: project.id,
+      linkedChapterId: chapter.id,
+    });
+
+    await createScene({ projectId: project.id, chapterId: chapter.id });
+    await putIndexedChunk({
+      projectId: project.id,
+      sourceType: "chapter",
+      sourceId: chapter.id,
+      chunkIndex: 0,
+      text: "t0",
+      contentHash: "h0",
+      vector: [0.1, 0.2],
+      embeddingModel: "fake-v1",
+    });
+
+    await syncDeleteOutlineRow(row.id, true);
+
+    const scenes = await db.scenes.where({ chapterId: chapter.id }).toArray();
+    expect(scenes).toHaveLength(0);
+
+    const chunks = await db.indexedChunks
+      .where({ sourceId: chapter.id })
+      .toArray();
+    expect(chunks).toHaveLength(0);
   });
 
   it("compacts row orders after deleting middle row (cascade=false)", async () => {

@@ -4,7 +4,10 @@ import { makeWorldbuildingDoc, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";
 import type { ProjectId } from "../schemas";
 import { getIndexedChunksBySource, putIndexedChunk } from "./indexedChunks";
-import { deleteWorldbuildingDoc } from "./worldbuilding";
+import {
+  createWorldbuildingDoc,
+  deleteWorldbuildingDoc,
+} from "./worldbuilding";
 
 const projectId = "b2222222-2222-4222-a222-222222222222" as ProjectId;
 
@@ -75,5 +78,26 @@ describe("deleteWorldbuildingDoc", () => {
     expect(
       await getIndexedChunksBySource(projectId, "worldbuilding", child.id),
     ).toHaveLength(1);
+  });
+});
+
+describe("createWorldbuildingDoc", () => {
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.worldbuildingDocs.clear();
+  });
+
+  it("assigns a fresh order after a middle sibling is deleted, not colliding with an existing one", async () => {
+    const first = await createWorldbuildingDoc({ projectId, title: "A" });
+    const middle = await createWorldbuildingDoc({ projectId, title: "B" });
+    const last = await createWorldbuildingDoc({ projectId, title: "C" });
+    expect([first.order, middle.order, last.order]).toEqual([0, 1, 2]);
+
+    await deleteWorldbuildingDoc(middle.id);
+
+    const fourth = await createWorldbuildingDoc({ projectId, title: "D" });
+
+    expect(fourth.order).not.toBe(last.order);
+    expect(fourth.order).toBe(3);
   });
 });

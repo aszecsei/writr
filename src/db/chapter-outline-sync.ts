@@ -13,18 +13,14 @@
  *    model, so reordering outline rows reorders rows alone and does not move the
  *    linked chapters.
  * 4. Delete operations support a `cascade` flag: true deletes both sides plus
- *    dependents (cells, comments, snapshots); false unlinks and preserves the
+ *    dependents (cells, comments, snapshots, scenes, indexed chunks) via the
+ *    same cascade `deleteChapter` uses; false unlinks and preserves the
  *    "other side" with invariant #2.
  */
 
-import { generateId } from "@/lib/id";
 import { db } from "./database";
-import {
-  type ChapterId,
-  ChapterSchema,
-  type OutlineGridRowId,
-  type ProjectId,
-} from "./schemas";
+import { createChapter, deleteRowAndDependents } from "./operations/chapters";
+import type { ChapterId, OutlineGridRowId, ProjectId } from "./schemas";
 
 function now(): string {
   return new Date().toISOString();
@@ -106,51 +102,43 @@ export async function createChapterFromRow(
   rowId: OutlineGridRowId,
   projectId: ProjectId,
 ): Promise<ChapterId> {
-  return db.transaction("rw", [db.chapters, db.outlineGridRows], async () => {
-    const row = await db.outlineGridRows.get(rowId);
-    if (!row) throw new Error("Row not found");
+  return db.transaction(
+    "rw",
+    [db.chapters, db.outlineGridRows, db.scenes],
+    async () => {
+      const row = await db.outlineGridRows.get(rowId);
+      if (!row) throw new Error("Row not found");
 
-    const title = row.label.trim() || "New Chapter";
+      const title = row.label.trim() || "New Chapter";
 
-    // Calculate order based on linked chapters
-    const allRows = await db.outlineGridRows
-      .where({ projectId })
-      .sortBy("order");
-    const linkedRowsBefore = allRows
-      .slice(
-        0,
-        allRows.findIndex((r) => r.id === rowId),
-      )
-      .filter((r) => r.linkedChapterId != null);
-    const order = linkedRowsBefore.length;
+      // Calculate order based on linked chapters
+      const allRows = await db.outlineGridRows
+        .where({ projectId })
+        .sortBy("order");
+      const linkedRowsBefore = allRows
+        .slice(
+          0,
+          allRows.findIndex((r) => r.id === rowId),
+        )
+        .filter((r) => r.linkedChapterId != null);
+      const order = linkedRowsBefore.length;
 
-    const chapter = ChapterSchema.parse({
-      id: generateId(),
-      projectId,
-      title,
-      order,
-      content: "",
-      synopsis: "",
-      status: "draft",
-      wordCount: 0,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-    await db.chapters.add(chapter);
+      const chapter = await createChapter({ projectId, title, order });
 
-    // Link row to chapter
-    await db.outlineGridRows.update(rowId, {
-      linkedChapterId: chapter.id,
-      label: "",
-      updatedAt: now(),
-    });
+      // Link row to chapter
+      await db.outlineGridRows.update(rowId, {
+        linkedChapterId: chapter.id,
+        label: "",
+        updatedAt: now(),
+      });
 
-    // Reorder all chapters to match outline order
-    const orderedRowIds = allRows.map((r) => r.id);
-    await syncChapterOrderFromRows(orderedRowIds);
+      // Reorder all chapters to match outline order
+      const orderedRowIds = allRows.map((r) => r.id);
+      await syncChapterOrderFromRows(orderedRowIds);
 
-    return chapter.id;
-  });
+      return chapter.id;
+    },
+  );
 }
 
 // ─── Label/Title Update ─────────────────────────────────────────────────
@@ -249,6 +237,8 @@ export async function syncDeleteOutlineRow(
       db.chapters,
       db.comments,
       db.chapterSnapshots,
+      db.indexedChunks,
+      db.scenes,
     ],
     async () => {
       const row = await db.outlineGridRows.get(rowId);
@@ -257,16 +247,11 @@ export async function syncDeleteOutlineRow(
       const cascadedChapter = !!(row.linkedChapterId && cascade);
 
       if (cascadedChapter) {
-        const linkedChapterId = row.linkedChapterId as ChapterId;
-        await db.comments.where({ chapterId: linkedChapterId }).delete();
-        await db.chapterSnapshots
-          .where({ chapterId: linkedChapterId })
-          .delete();
-        await db.chapters.delete(linkedChapterId);
+        await deleteRowAndDependents(row.linkedChapterId as ChapterId);
+      } else {
+        await db.outlineGridCells.where({ rowId }).delete();
+        await db.outlineGridRows.delete(rowId);
       }
-
-      await db.outlineGridCells.where({ rowId }).delete();
-      await db.outlineGridRows.delete(rowId);
 
       await compactRowOrders(projectId);
       if (cascadedChapter) await compactChapterOrders(projectId);
