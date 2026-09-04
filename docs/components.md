@@ -22,7 +22,7 @@ Components live under `src/components/` and are organized by feature area. Befor
 - **`sprint/`** — Writing-sprint UI: `SprintWidget`, `SprintConfigDialog`, `SprintHistoryDialog`.
 - **`stats/`** — Writing analytics: `WritingStatsDashboard`, `DailyWordChart`, `TimeOfDayChart`, `StatCard`, `StreakDisplay`.
 - **`ui/`** — Reusable primitives (see below).
-- **`worldbuilding/`** — Worldbuilding doc editor: `WorldbuildingDocDialog`, `CompiledView`.
+- **`worldbuilding/`** — Worldbuilding doc editor: `WorldbuildingTree` (the tree view — the `bible/worldbuilding` page is a thin wrapper around it), `WorldbuildingDocDialog`, `CompiledView`.
 
 ## Reusable primitives (`src/components/ui/`)
 
