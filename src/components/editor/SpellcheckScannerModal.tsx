@@ -1,26 +1,21 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
-import {
-  BookPlus,
-  BookType,
-  ChevronLeft,
-  ChevronRight,
-  SkipForward,
-  X,
-} from "lucide-react";
+import { BookPlus, BookType, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   addWordToAppDictionary,
   addWordToProjectDictionary,
 } from "@/db/operations";
 import type { ProjectId } from "@/db/schemas";
+import { scrollToPos } from "@/lib/editor/scroll";
 import { getSpellcheckService } from "@/lib/spellcheck";
 import {
   type MisspelledWord,
   useSpellcheckStore,
 } from "@/store/spellcheckStore";
+import { isSpellcheckScannerModal, useUiStore } from "@/store/uiStore";
+import { IssueScannerModal } from "./IssueScannerModal";
 
 interface SpellcheckScannerModalProps {
   editor: Editor | null;
@@ -31,16 +26,17 @@ export function SpellcheckScannerModal({
   editor,
   projectId,
 }: SpellcheckScannerModalProps) {
-  const scannerOpen = useSpellcheckStore((s) => s.scannerOpen);
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
   const scanner = useSpellcheckStore((s) => s.scanner);
-  const closeScanner = useSpellcheckStore((s) => s.closeScanner);
-  const nextMisspelling = useSpellcheckStore((s) => s.nextMisspelling);
-  const prevMisspelling = useSpellcheckStore((s) => s.prevMisspelling);
-  const removeMisspellingAt = useSpellcheckStore((s) => s.removeMisspellingAt);
+  const nextMisspelling = useSpellcheckStore((s) => s.next);
+  const prevMisspelling = useSpellcheckStore((s) => s.prev);
+  const removeMisspellingAt = useSpellcheckStore((s) => s.removeAt);
   const addToIgnored = useSpellcheckStore((s) => s.addToIgnored);
 
+  const isOpen = isSpellcheckScannerModal(modal);
   const currentWord: MisspelledWord | null =
-    scanner.misspellings[scanner.currentIndex] ?? null;
+    scanner.items[scanner.currentIndex] ?? null;
 
   // Compute suggestions on-demand for the current word
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
@@ -54,60 +50,10 @@ export function SpellcheckScannerModal({
     setCurrentSuggestions(service.getSuggestions(currentWord.word));
   }, [currentWord?.word, currentWord?.from]);
 
-  const getContext = useCallback(() => {
-    if (!editor || !currentWord) return "";
-
-    const doc = editor.state.doc;
-    const docSize = doc.content.size;
-
-    const contextBefore = 30;
-    const contextAfter = 30;
-
-    const from = Math.max(1, currentWord.from - contextBefore);
-    const to = Math.min(docSize, currentWord.to + contextAfter);
-
-    const text = doc.textBetween(from, to, " ");
-
-    // Find the word within the extracted text (position math doesn't work
-    // reliably due to how textBetween handles block boundaries)
-    const wordIndex = text.indexOf(currentWord.word);
-    if (wordIndex === -1) {
-      // Fallback: just show the whole text with the word from our data
-      return {
-        before: text,
-        word: currentWord.word,
-        after: "",
-      };
-    }
-
-    return {
-      before: text.slice(0, wordIndex),
-      word: text.slice(wordIndex, wordIndex + currentWord.word.length),
-      after: text.slice(wordIndex + currentWord.word.length),
-    };
-  }, [editor, currentWord]);
-
-  const context = getContext();
-
-  // Scroll to the current word
   useEffect(() => {
-    if (!editor || !currentWord) return;
-
-    const view = editor.view;
-    const coords = view.coordsAtPos(currentWord.from);
-
-    // Calculate scroll position to center the word
-    const scrollContainer = view.dom.closest(".overflow-y-auto");
-    if (scrollContainer) {
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const scrollTop =
-        coords.top -
-        containerRect.top +
-        scrollContainer.scrollTop -
-        containerRect.height / 2;
-      scrollContainer.scrollTo({ top: scrollTop, behavior: "smooth" });
-    }
-  }, [editor, currentWord]);
+    if (!isOpen || !editor || !currentWord) return;
+    scrollToPos(editor, currentWord.from, { center: true });
+  }, [isOpen, editor, currentWord]);
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
@@ -129,14 +75,14 @@ export function SpellcheckScannerModal({
 
   const handleAddToAppDictionary = useCallback(async () => {
     if (!currentWord) return;
-    addToIgnored(currentWord.word);
+    addToIgnored(currentWord.word.toLowerCase());
     await addWordToAppDictionary(currentWord.word);
     removeMisspellingAt(scanner.currentIndex);
   }, [currentWord, addToIgnored, removeMisspellingAt, scanner.currentIndex]);
 
   const handleAddToProjectDictionary = useCallback(async () => {
     if (!currentWord) return;
-    addToIgnored(currentWord.word);
+    addToIgnored(currentWord.word.toLowerCase());
     await addWordToProjectDictionary(projectId, currentWord.word);
     removeMisspellingAt(scanner.currentIndex);
   }, [
@@ -149,7 +95,7 @@ export function SpellcheckScannerModal({
 
   const handleIgnore = useCallback(() => {
     if (!currentWord) return;
-    addToIgnored(currentWord.word);
+    addToIgnored(currentWord.word.toLowerCase());
     removeMisspellingAt(scanner.currentIndex);
   }, [currentWord, addToIgnored, removeMisspellingAt, scanner.currentIndex]);
 
@@ -157,223 +103,93 @@ export function SpellcheckScannerModal({
     nextMisspelling();
   }, [nextMisspelling]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    if (!scannerOpen) return;
+  if (!isOpen) return null;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeScanner();
-        return;
-      }
+  const context = (() => {
+    if (!editor || !currentWord) return null;
 
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        prevMisspelling();
-        return;
-      }
+    const doc = editor.state.doc;
+    const docSize = doc.content.size;
 
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        nextMisspelling();
-        return;
-      }
+    const contextBefore = 30;
+    const contextAfter = 30;
 
-      // Number keys 1-5 for suggestions
-      const num = Number.parseInt(e.key, 10);
-      if (num >= 1 && num <= 5 && currentSuggestions[num - 1]) {
-        e.preventDefault();
-        handleSuggestionClick(currentSuggestions[num - 1]);
-        return;
-      }
+    const from = Math.max(1, currentWord.from - contextBefore);
+    const to = Math.min(docSize, currentWord.to + contextAfter);
 
-      // Enter for first suggestion
-      if (e.key === "Enter" && currentSuggestions[0]) {
-        e.preventDefault();
-        handleSuggestionClick(currentSuggestions[0]);
-        return;
-      }
+    const text = doc.textBetween(from, to, " ");
+
+    // Find the word within the extracted text (position math doesn't work
+    // reliably due to how textBetween handles block boundaries)
+    const wordIndex = text.indexOf(currentWord.word);
+    if (wordIndex === -1) {
+      return { before: text, highlighted: currentWord.word, after: "" };
+    }
+
+    return {
+      before: text.slice(0, wordIndex),
+      highlighted: text.slice(wordIndex, wordIndex + currentWord.word.length),
+      after: text.slice(wordIndex + currentWord.word.length),
     };
+  })();
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    scannerOpen,
-    closeScanner,
-    prevMisspelling,
-    nextMisspelling,
-    currentSuggestions,
-    handleSuggestionClick,
-  ]);
-
-  if (!scannerOpen) return null;
-
-  if (scanner.misspellings.length === 0) {
-    return createPortal(
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Spellcheck Complete
-            </h2>
-            <button
-              type="button"
-              onClick={closeScanner}
-              className="rounded p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-700"
-            >
-              <X size={18} />
-            </button>
+  return (
+    <IssueScannerModal
+      title="Spellcheck Scanner"
+      currentIndex={scanner.currentIndex}
+      total={scanner.items.length}
+      headline={
+        <>
+          <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            Word
           </div>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            No spelling errors found.
-          </p>
-          <button
-            type="button"
-            onClick={closeScanner}
-            className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-          >
-            Close
-          </button>
-        </div>
-      </div>,
-      document.body,
-    );
-  }
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-700">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            Spellcheck Scanner
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-500">
-              {scanner.currentIndex + 1} of {scanner.misspellings.length}
-            </span>
-            <button
-              type="button"
-              onClick={closeScanner}
-              className="rounded p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-700"
-            >
-              <X size={18} />
-            </button>
+          <div className="text-xl font-semibold text-red-600 dark:text-red-400">
+            {currentWord?.word}
           </div>
-        </div>
-
-        <div className="p-4">
-          <div className="mb-4">
-            <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-              Word
-            </div>
-            <div className="text-xl font-semibold text-red-600 dark:text-red-400">
-              {currentWord?.word}
-            </div>
-          </div>
-
-          {context && typeof context === "object" && (
-            <div className="mb-4">
-              <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                Context
-              </div>
-              <div className="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-900">
-                <span className="text-neutral-600 dark:text-neutral-400">
-                  ...{context.before}
-                </span>
-                <span className="rounded bg-red-100 px-0.5 font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                  {context.word}
-                </span>
-                <span className="text-neutral-600 dark:text-neutral-400">
-                  {context.after}...
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="mb-4">
-            <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-              Suggestions
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {currentSuggestions.map((suggestion, index) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-                >
-                  <span className="text-xs text-neutral-400">{index + 1}</span>
-                  {suggestion}
-                </button>
-              ))}
-              {currentSuggestions.length === 0 && (
-                <span className="text-sm italic text-neutral-500">
-                  No suggestions available
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleAddToAppDictionary}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-700"
-            >
-              <BookType size={14} />
-              Add to App
-            </button>
-            <button
-              type="button"
-              onClick={handleAddToProjectDictionary}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-700"
-            >
-              <BookPlus size={14} />
-              Add to Project
-            </button>
-            <button
-              type="button"
-              onClick={handleIgnore}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-700"
-            >
-              Ignore
-            </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-700"
-            >
-              <SkipForward size={14} />
-              Skip
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
-          <button
-            type="button"
-            onClick={prevMisspelling}
-            disabled={scanner.misspellings.length <= 1}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-700"
-          >
-            <ChevronLeft size={16} />
-            Previous
-          </button>
-          <div className="text-xs text-neutral-500">
-            Use ← → to navigate, 1-5 for suggestions
-          </div>
-          <button
-            type="button"
-            onClick={nextMisspelling}
-            disabled={scanner.misspellings.length <= 1}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-700"
-          >
-            Next
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+        </>
+      }
+      context={
+        context
+          ? {
+              ...context,
+              highlightClassName:
+                "rounded bg-red-100 px-0.5 font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400",
+            }
+          : null
+      }
+      suggestions={currentSuggestions.map((suggestion) => ({
+        key: suggestion,
+        label: suggestion,
+        onSelect: () => handleSuggestionClick(suggestion),
+      }))}
+      actions={[
+        {
+          key: "app-dictionary",
+          label: "Add to App",
+          icon: BookType,
+          onClick: handleAddToAppDictionary,
+        },
+        {
+          key: "project-dictionary",
+          label: "Add to Project",
+          icon: BookPlus,
+          onClick: handleAddToProjectDictionary,
+        },
+        { key: "ignore", label: "Ignore", onClick: handleIgnore },
+        {
+          key: "skip",
+          label: "Skip",
+          icon: SkipForward,
+          onClick: handleSkip,
+        },
+      ]}
+      onNext={nextMisspelling}
+      onPrev={prevMisspelling}
+      onClose={closeModal}
+      emptyState={{
+        title: "Spellcheck Complete",
+        message: "No spelling errors found.",
+      }}
+    />
   );
 }
