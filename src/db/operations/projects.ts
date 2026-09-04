@@ -104,7 +104,3 @@ export async function deleteProject(id: ProjectId): Promise<void> {
 export async function getProject(id: ProjectId): Promise<Project | undefined> {
   return db.projects.get(id);
 }
-
-export async function getAllProjects(): Promise<Project[]> {
-  return db.projects.orderBy("updatedAt").reverse().toArray();
-}

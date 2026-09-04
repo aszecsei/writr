@@ -101,38 +101,6 @@ export async function endSprint(
   });
 }
 
-export async function getSprintsByProject(
-  projectId: ProjectId | null,
-  limit?: number,
-): Promise<WritingSprint[]> {
-  let query = projectId
-    ? db.writingSprints.where({ projectId }).reverse()
-    : db.writingSprints.orderBy("startedAt").reverse();
-
-  query = query.filter(
-    (s) => s.status === "completed" || s.status === "abandoned",
-  );
-
-  if (limit) {
-    return query.limit(limit).toArray();
-  }
-  return query.toArray();
-}
-
-export async function getAllCompletedSprints(
-  limit?: number,
-): Promise<WritingSprint[]> {
-  const query = db.writingSprints
-    .orderBy("startedAt")
-    .reverse()
-    .filter((s) => s.status === "completed" || s.status === "abandoned");
-
-  if (limit) {
-    return query.limit(limit).toArray();
-  }
-  return query.toArray();
-}
-
 export async function deleteSprint(id: WritingSprintId): Promise<void> {
   await db.writingSprints.delete(id);
 }
@@ -208,24 +176,3 @@ export async function recordWritingSession(
   }
 }
 
-export async function getSessionsByProject(
-  projectId: ProjectId,
-  days = 30,
-): Promise<WritingSession[]> {
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - days);
-  const cutoffStr = toLocalDateString(cutoffDate);
-
-  return db.writingSessions
-    .where("[projectId+date]")
-    .between([projectId, cutoffStr], [projectId, "\uffff"])
-    .toArray();
-}
-
-export async function getAllSessions(days = 30): Promise<WritingSession[]> {
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - days);
-  const cutoffStr = toLocalDateString(cutoffDate);
-
-  return db.writingSessions.where("date").aboveOrEqual(cutoffStr).toArray();
-}

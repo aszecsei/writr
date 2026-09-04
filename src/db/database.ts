@@ -105,7 +105,7 @@ export async function backfillCoreScenesV44(tx: Transaction): Promise<void> {
   if (rows.length) await tx.table("scenes").bulkAdd(rows);
 }
 
-export class WritrDatabase extends Dexie {
+class WritrDatabase extends Dexie {
   projects!: EntityTable<Project, "id">;
   chapters!: EntityTable<Chapter, "id">;
   characters!: EntityTable<Character, "id">;
@@ -602,8 +602,8 @@ export class WritrDatabase extends Dexie {
       snapshotManifests: "id, projectId, runId, [runId+tierNumber]",
     });
 
-    // v27 (legacy): user-defined "custom agents" — this table was renamed to
-    // `agents` in v32 with seeded built-in rows for spark/scene/reader/editor/
+    // v27: user-defined "custom agents" — this table was renamed to `agents`
+    // in v32 with seeded built-in rows for spark/scene/reader/editor/
     // character-dialogue/brainstorm/chat/orchestrator/verifier.
     this.version(27).stores({
       projects: "id, title, updatedAt",
@@ -1192,9 +1192,8 @@ export class WritrDatabase extends Dexie {
             );
           }
 
-          // Idempotent built-in agent seed. Covers fresh installs (where the
-          // v32 migration didn't run because there was nothing to migrate)
-          // and any case where a built-in row went missing.
+          // Idempotent built-in agent seed: covers fresh installs and any
+          // case where a built-in row went missing.
           const existingAgents = await this.agents.toArray();
           const presentKinds = new Set(
             existingAgents.filter((a) => a.kind !== "user").map((a) => a.kind),

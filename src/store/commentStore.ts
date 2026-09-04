@@ -9,7 +9,6 @@ interface CommentState {
   selectComment: (id: CommentId | null) => void;
   clearSelection: () => void;
   toggleMargin: () => void;
-  setMarginVisible: (visible: boolean) => void;
 }
 
 export const useCommentStore = create<CommentState>()(
@@ -30,11 +29,6 @@ export const useCommentStore = create<CommentState>()(
     toggleMargin: () =>
       set((s) => {
         s.marginVisible = !s.marginVisible;
-      }),
-
-    setMarginVisible: (visible) =>
-      set((s) => {
-        s.marginVisible = visible;
       }),
   })),
 );

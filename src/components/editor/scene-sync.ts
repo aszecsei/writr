@@ -144,7 +144,7 @@ export async function reconcileSceneRows(
     });
   }
   for (const id of plan.toDelete) {
-    await deleteScene(id as SceneId, "merge");
+    await deleteScene(id as SceneId);
   }
   await reorderScenes(chapterId, plan.orderedIds as SceneId[]);
 

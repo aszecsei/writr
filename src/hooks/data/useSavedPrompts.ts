@@ -3,14 +3,12 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import type { ProjectId, SavedPrompt } from "@/db/schemas";
-import { createEntityHook } from "../factories";
 
 /**
  * Saved prompts available in a project context: all global prompts
  * (projectId=null) plus those scoped to `projectId`, most-recently updated
  * first. The project-list factory only matches an exact projectId, so it
- * can't include globals — hence this custom query, modeled on
- * `useChatAgents`.
+ * can't include globals — hence this custom query.
  */
 export function useAvailableSavedPrompts(
   projectId: ProjectId | null,
@@ -26,5 +24,3 @@ export function useAvailableSavedPrompts(
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [projectId]);
 }
-
-export const useSavedPrompt = createEntityHook(db.savedPrompts);

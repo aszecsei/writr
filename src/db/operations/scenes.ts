@@ -2,7 +2,6 @@ import { db } from "../database";
 import {
   type ChapterId,
   type CommentId,
-  type ProjectId,
   type Scene,
   type SceneId,
   SceneSchema,
@@ -22,13 +21,6 @@ export async function getScenesByChapter(
   chapterId: ChapterId,
 ): Promise<Scene[]> {
   return db.scenes.where({ chapterId }).sortBy("order");
-}
-
-/** Every scene of a project — for cascade, backup, and strand aggregation. */
-export async function getScenesByProject(
-  projectId: ProjectId,
-): Promise<Scene[]> {
-  return db.scenes.where({ projectId }).toArray();
 }
 
 export async function getScene(id: SceneId): Promise<Scene | undefined> {
@@ -139,15 +131,8 @@ export async function updateSceneWordCounts(
   });
 }
 
-/**
- * Delete a scene row. `"merge"` is a no-op on prose (the removed marker's text
- * simply joins the previous scene in the single doc); it exists to make the
- * caller's intent explicit. Remaining scenes are renumbered to stay contiguous.
- */
-export async function deleteScene(
-  id: SceneId,
-  _mode: "delete" | "merge" = "delete",
-): Promise<void> {
+/** Delete a scene row. Remaining scenes are renumbered to stay contiguous. */
+export async function deleteScene(id: SceneId): Promise<void> {
   const scene = await db.scenes.get(id);
   if (!scene) return;
   await db.transaction("rw", db.scenes, async () => {

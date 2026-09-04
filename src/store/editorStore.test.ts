@@ -15,7 +15,6 @@ describe("editorStore", () => {
       activeDocumentType: null,
       isDirty: false,
       saveStatus: "idle",
-      lastSavedAt: null,
       wordCount: 0,
       selectedText: null,
       selectedRange: null,
@@ -88,14 +87,13 @@ describe("editorStore", () => {
     expect(getState().saveStatus).toBe("saving");
   });
 
-  it("markSaved clears dirty and sets saved status with timestamp", () => {
+  it("markSaved clears dirty and sets saved status", () => {
     getState().markDirty();
     getState().markSaving();
     getState().markSaved();
     const s = getState();
     expect(s.isDirty).toBe(false);
     expect(s.saveStatus).toBe("saved");
-    expect(s.lastSavedAt).toBeTruthy();
   });
 
   it("markSaveError sets error status", () => {
