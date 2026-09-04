@@ -36,9 +36,15 @@ function bestScore(chunk: IndexedChunk, queryVectors: number[][]): number {
   return best;
 }
 
+/** Descending -1/0/1 compare; a plain `Math.sign(b - a)` is NaN when both are the Infinity entity-link sentinel. */
+function compareScoreDesc(a: number, b: number): number {
+  if (a === b) return 0;
+  return a > b ? -1 : 1;
+}
+
 function topK(hits: RetrievalHit[], k: number): RetrievalHit[] {
   return [...hits]
-    .sort((a, b) => (a.score === b.score ? 0 : a.score > b.score ? -1 : 1))
+    .sort((a, b) => compareScoreDesc(a.score, b.score))
     .slice(0, k);
 }
 

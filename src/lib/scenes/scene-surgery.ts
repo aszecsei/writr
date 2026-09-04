@@ -178,8 +178,7 @@ export async function reorderScenesInChapter(
   const newCore = orderedSceneIds[0];
 
   const comments = await db.comments.where({ chapterId }).toArray();
-  const { newContentFinal, wc, newBounds } = withDoc(newContent, (ed) => ({
-    newContentFinal: newContent,
+  const { wc, newBounds } = withDoc(newContent, (ed) => ({
     wc: wordCountOf(ed),
     newBounds: computeBounds(ed, newCore),
   }));
@@ -193,7 +192,7 @@ export async function reorderScenesInChapter(
     .map((c) => remapComment(c, oldBounds, locate))
     .filter((w): w is CommentWrite => w !== null && w !== "delete");
 
-  await updateChapterContent(chapterId, newContentFinal, wc);
+  await updateChapterContent(chapterId, newContent, wc);
   await reorderScenes(chapterId, orderedSceneIds);
   await applyCommentWrites(writes);
   reseedIfActive(chapterId);

@@ -9,6 +9,12 @@ export interface Replacement {
   marks: readonly Mark[];
 }
 
+/** Smart-quote glyph for each straight quote character, by context. */
+const SMART_QUOTES: Record<string, { open: string; close: string }> = {
+  '"': { open: "“", close: "”" },
+  "'": { open: "‘", close: "’" },
+};
+
 /**
  * Scans a ProseMirror document for straight quotes and returns
  * replacements to convert them to typographic ("smart") quotes.
@@ -44,46 +50,21 @@ export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
         const next = i < text.length - 1 ? text[i + 1] : "";
         const absPos = run.from + i;
 
-        if (ch === '"') {
-          if (isOpeningContext(prev)) {
-            replacements.push({
-              from: absPos,
-              to: absPos + 1,
-              replacement: "“",
-              marks,
-            });
-          } else {
-            replacements.push({
-              from: absPos,
-              to: absPos + 1,
-              replacement: "”",
-              marks,
-            });
-          }
-        } else if (ch === "'") {
-          // Apostrophe inside a word (don't, it's)
-          if (isWordChar(prev) && isWordChar(next)) {
-            replacements.push({
-              from: absPos,
-              to: absPos + 1,
-              replacement: "’",
-              marks,
-            });
-          } else if (isOpeningContext(prev)) {
-            replacements.push({
-              from: absPos,
-              to: absPos + 1,
-              replacement: "‘",
-              marks,
-            });
-          } else {
-            replacements.push({
-              from: absPos,
-              to: absPos + 1,
-              replacement: "’",
-              marks,
-            });
-          }
+        if (ch === '"' || ch === "'") {
+          // An apostrophe inside a word (don't, it's) always closes, even
+          // when the preceding character would otherwise open a quote.
+          const isApostrophe =
+            ch === "'" && isWordChar(prev) && isWordChar(next);
+          const replacement =
+            !isApostrophe && isOpeningContext(prev)
+              ? SMART_QUOTES[ch].open
+              : SMART_QUOTES[ch].close;
+          replacements.push({
+            from: absPos,
+            to: absPos + 1,
+            replacement,
+            marks,
+          });
         }
       }
 

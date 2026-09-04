@@ -6,43 +6,37 @@ import {
   PRIMARY_PALETTES,
   type PrimaryColorName,
   SHADE_KEYS,
+  type ShadeMap,
   type UiDensity,
 } from "./palettes";
 
-// ─── Primary color ──────────────────────────────────────────────────
+// ─── Color palette (primary / neutral) ──────────────────────────────
 
-export function applyPrimaryColor(name: PrimaryColorName): void {
-  const palette = PRIMARY_PALETTES[name];
+function applyColorPalette(
+  slot: "primary" | "neutral",
+  name: string,
+  palette: ShadeMap,
+): void {
   const style = document.documentElement.style;
   const cache: Record<string, string> = {};
 
   for (const shade of SHADE_KEYS) {
-    const prop = `--primary-${shade}`;
+    const prop = `--${slot}-${shade}`;
     const value = palette[shade];
     style.setProperty(prop, value);
     cache[prop] = value;
   }
 
-  localStorage.setItem("writr-primary-vars", JSON.stringify(cache));
-  localStorage.setItem("writr-primary-color", name);
+  localStorage.setItem(`writr-${slot}-vars`, JSON.stringify(cache));
+  localStorage.setItem(`writr-${slot}-color`, name);
 }
 
-// ─── Neutral color ──────────────────────────────────────────────────
+export function applyPrimaryColor(name: PrimaryColorName): void {
+  applyColorPalette("primary", name, PRIMARY_PALETTES[name]);
+}
 
 export function applyNeutralColor(name: NeutralColorName): void {
-  const palette = NEUTRAL_PALETTES[name];
-  const style = document.documentElement.style;
-  const cache: Record<string, string> = {};
-
-  for (const shade of SHADE_KEYS) {
-    const prop = `--neutral-${shade}`;
-    const value = palette[shade];
-    style.setProperty(prop, value);
-    cache[prop] = value;
-  }
-
-  localStorage.setItem("writr-neutral-vars", JSON.stringify(cache));
-  localStorage.setItem("writr-neutral-color", name);
+  applyColorPalette("neutral", name, NEUTRAL_PALETTES[name]);
 }
 
 // ─── Editor width ───────────────────────────────────────────────────

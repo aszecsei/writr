@@ -25,65 +25,59 @@ function elementsToContent(elements: FountainElement[]): Content[] {
     match(el)
       .with(
         { type: "scene_heading" },
-        (e): Content =>
-          ({
-            text: e.text.toUpperCase(),
-            bold: true,
-            margin: [0, 12, 0, 6],
-          }) as Content,
+        (e): Content => ({
+          text: e.text.toUpperCase(),
+          bold: true,
+          margin: [0, 12, 0, 6],
+        }),
       )
       .with(
         { type: "action" },
-        (e): Content =>
-          ({
-            text: e.text,
-            margin: [0, 6, 0, 0],
-          }) as Content,
+        (e): Content => ({
+          text: e.text,
+          margin: [0, 6, 0, 0],
+        }),
       )
       .with(
         { type: "character" },
-        (e): Content =>
-          ({
-            text: e.text.toUpperCase(),
-            margin: [CHARACTER_INDENT, 6, 0, 0],
-          }) as Content,
+        (e): Content => ({
+          text: e.text.toUpperCase(),
+          margin: [CHARACTER_INDENT, 6, 0, 0],
+        }),
       )
       .with(
         { type: "dialogue" },
-        (e): Content =>
-          ({
-            text: e.text,
-            margin: [DIALOGUE_LEFT, 0, DIALOGUE_RIGHT, 0],
-          }) as Content,
+        (e): Content => ({
+          text: e.text,
+          margin: [DIALOGUE_LEFT, 0, DIALOGUE_RIGHT, 0],
+        }),
       )
       .with({ type: "parenthetical" }, (e): Content => {
         const text = e.text.startsWith("(") ? e.text : `(${e.text})`;
         return {
           text,
           margin: [PAREN_LEFT, 0, PAREN_RIGHT, 0],
-        } as Content;
+        };
       })
       .with(
         { type: "transition" },
-        (e): Content =>
-          ({
-            text: e.text.toUpperCase(),
-            alignment: "right",
-            margin: [0, 6, 0, 0],
-          }) as Content,
+        (e): Content => ({
+          text: e.text.toUpperCase(),
+          alignment: "right",
+          margin: [0, 6, 0, 0],
+        }),
       )
       .with(
         { type: "centered" },
-        (e): Content =>
-          ({
-            text: e.text,
-            alignment: "center",
-            margin: [0, 6, 0, 0],
-          }) as Content,
+        (e): Content => ({
+          text: e.text,
+          alignment: "center",
+          margin: [0, 6, 0, 0],
+        }),
       )
       .with(
         { type: "page_break" },
-        (): Content => ({ text: "", pageBreak: "before" }) as Content,
+        (): Content => ({ text: "", pageBreak: "before" }),
       )
       .exhaustive(),
   );
@@ -100,15 +94,15 @@ export async function exportScreenplayPdf(
   // Title page
   if (options.includeTitlePage && options.scope === "book") {
     allContent.push(
-      { text: "", margin: [0, 200, 0, 0] } as Content,
+      { text: "", margin: [0, 200, 0, 0] },
       {
         text: content.projectTitle,
         fontSize: 24,
         bold: true,
         alignment: "center",
         margin: [0, 0, 0, 0],
-      } as Content,
-      { text: "", pageBreak: "after" } as Content,
+      },
+      { text: "", pageBreak: "after" },
     );
   }
 
@@ -117,7 +111,7 @@ export async function exportScreenplayPdf(
     const chapter = sequences[i];
 
     if (i > 0) {
-      allContent.push({ text: "", pageBreak: "before" } as Content);
+      allContent.push({ text: "", pageBreak: "before" });
     }
 
     // Parse Fountain content and convert to PDF

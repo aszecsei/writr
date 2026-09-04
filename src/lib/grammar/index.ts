@@ -1,5 +1,11 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import type { Lint, LintConfig, Linter } from "harper.js";
+import type {
+  Lint,
+  LintConfig,
+  Linter,
+  Suggestion,
+  SuggestionKind,
+} from "harper.js";
 import { createLazyService } from "@/lib/lazy-service";
 import { extractBlocks, mapSpanToRange } from "./extractor";
 
@@ -56,12 +62,11 @@ const SPELLING_RULE_KEYS = new Set(["SpellCheck", "SpelledNumbers"]);
 
 /** Build the per-span replacement string + display label from a harper suggestion. */
 function readSuggestion(
-  // biome-ignore lint/suspicious/noExplicitAny: harper's Suggestion type isn't re-exported cleanly across the worker boundary
-  suggestion: any,
+  suggestion: Suggestion,
   problemText: string,
 ): GrammarSuggestion {
   // SuggestionKind: 0 = Replace, 1 = Remove, 2 = InsertAfter
-  const kind: number = suggestion.kind();
+  const kind: SuggestionKind = suggestion.kind();
   const replacementText: string = suggestion.get_replacement_text();
   if (kind === 1) {
     return { label: "Remove", replacement: "" };

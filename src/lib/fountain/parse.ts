@@ -1,4 +1,4 @@
-import { Fountain } from "fountain-js";
+import { Fountain, type Token } from "fountain-js";
 import type { FountainElement, FountainElementType } from "./types";
 
 const ELEMENT_TYPES = new Set<string>([
@@ -12,11 +12,10 @@ const ELEMENT_TYPES = new Set<string>([
   "page_break",
 ]);
 
-interface FountainToken {
-  type: string;
-  text?: string;
-  scene_number?: string;
-  dual?: string;
+function isFountainElementToken(
+  token: Token,
+): token is Token & { type: FountainElementType } {
+  return ELEMENT_TYPES.has(token.type);
 }
 
 /**
@@ -26,7 +25,7 @@ interface FountainToken {
 export function parseFountain(text: string): FountainElement[] {
   const f = new Fountain();
   const result = f.parse(text, true);
-  const tokens: FountainToken[] = result.tokens ?? [];
+  const tokens: Token[] = result.tokens ?? [];
 
   const elements: FountainElement[] = [];
   let currentDual: "left" | "right" | undefined;
@@ -51,10 +50,10 @@ export function parseFountain(text: string): FountainElement[] {
       continue;
     }
 
-    if (!ELEMENT_TYPES.has(token.type)) continue;
+    if (!isFountainElementToken(token)) continue;
 
     const el: FountainElement = {
-      type: token.type as FountainElementType,
+      type: token.type,
       text: token.text ?? "",
     };
 
