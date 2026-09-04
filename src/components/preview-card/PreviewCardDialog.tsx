@@ -9,6 +9,7 @@ import {
   RADIO_BASE,
   RADIO_INACTIVE,
 } from "@/components/ui/button-styles";
+import { CHECKBOX_CLASS, LEGEND_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { getEditorFont } from "@/lib/fonts";
@@ -121,9 +122,7 @@ export function PreviewCardDialog() {
         </div>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Template
-          </legend>
+          <legend className={LEGEND_CLASS}>Template</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {TEMPLATE_OPTIONS.map((opt) => (
               <button
@@ -139,9 +138,7 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Aspect Ratio
-          </legend>
+          <legend className={LEGEND_CLASS}>Aspect Ratio</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {ASPECT_RATIO_OPTIONS.map((opt) => (
               <button
@@ -157,16 +154,14 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Attribution
-          </legend>
+          <legend className={LEGEND_CLASS}>Attribution</legend>
           <div className="mt-2 flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={showWorkTitle}
                 onChange={(e) => setShowWorkTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
               Work title
             </label>
@@ -175,7 +170,7 @@ export function PreviewCardDialog() {
                 type="checkbox"
                 checked={showChapterTitle}
                 onChange={(e) => setShowChapterTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
               Chapter title
             </label>

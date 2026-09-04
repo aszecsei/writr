@@ -3,6 +3,7 @@
 import { History, Play, Timer } from "lucide-react";
 import { useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
+import { Fieldset } from "@/components/ui/Fieldset";
 import {
   INPUT_CLASS,
   RADIO_ACTIVE,
@@ -86,10 +87,7 @@ export function SprintConfigDialog() {
     >
       <div className="mt-5 space-y-5">
         {/* Duration */}
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Duration
-          </legend>
+        <Fieldset legend="Duration">
           <div className="mt-2 flex flex-wrap gap-2">
             {DURATION_PRESETS.map((preset) => (
               <button
@@ -128,13 +126,10 @@ export function SprintConfigDialog() {
               </span>
             </div>
           )}
-        </fieldset>
+        </Fieldset>
 
         {/* Word Goal */}
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Word Goal (optional)
-          </legend>
+        <Fieldset legend="Word Goal (optional)">
           <div className="mt-2">
             <input
               type="number"
@@ -145,7 +140,7 @@ export function SprintConfigDialog() {
               className={`w-32 ${INPUT_CLASS}`}
             />
           </div>
-        </fieldset>
+        </Fieldset>
 
         {/* Error */}
         {error && (

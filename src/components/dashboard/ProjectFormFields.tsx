@@ -1,5 +1,6 @@
 "use client";
 
+import { Fieldset } from "@/components/ui/Fieldset";
 import {
   INPUT_CLASS,
   LABEL_CLASS,
@@ -45,10 +46,7 @@ export function ProjectFormFields({
   return (
     <>
       {!hideMode && (
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Project Type
-          </legend>
+        <Fieldset legend="Project Type">
           <div className="mt-2 flex gap-2">
             {MODE_OPTIONS.map((opt) => (
               <button
@@ -61,7 +59,7 @@ export function ProjectFormFields({
               </button>
             ))}
           </div>
-        </fieldset>
+        </Fieldset>
       )}
       <ProjectCoverField
         value={values.coverImageUrl}
