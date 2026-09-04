@@ -29,8 +29,7 @@ interface MarkdownState {
  * content while the `> ` line prefixes are already in the output, so the blank
  * `>` separator between blockquote paragraphs gets misread as inline context
  * and the next paragraph's emphasis delimiter is shifted into the prefix —
- * producing `*> ...` that round-trips into literal text. See the project
- * memory note on this bug.
+ * producing `*> ...` that round-trips into literal text.
  *
  * Fix: serialize the children in a fresh sub-state (clean inline context, no
  * `> ` prefix present during trimming), then add the `> ` prefixes afterward.

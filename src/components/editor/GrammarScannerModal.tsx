@@ -9,7 +9,7 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { setGrammarRuleEnabled } from "@/db/operations";
 import type { GrammarResult } from "@/lib/grammar";
@@ -29,12 +29,9 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
   const removeIssuesByRule = useGrammarStore((s) => s.removeIssuesByRule);
   const ignoreLint = useGrammarStore((s) => s.ignoreLint);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-
   const current: GrammarResult | null =
     scanner.issues[scanner.currentIndex] ?? null;
 
-  // Get context around the flagged span.
   const getContext = useCallback(() => {
     if (!editor || !current) return null;
 
@@ -142,10 +139,7 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
   if (scanner.issues.length === 0) {
     return createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div
-          ref={modalRef}
-          className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
-        >
+        <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               Grammar Check Complete
@@ -176,11 +170,7 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div
-        ref={modalRef}
-        className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
-      >
-        {/* Header */}
+      <div className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             Grammar Scanner
@@ -199,9 +189,7 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-4">
-          {/* Message */}
           <div className="mb-4">
             <div className="mb-1 text-xs font-medium uppercase tracking-wide text-blue-600 dark:text-blue-400">
               {current?.kind}
@@ -211,7 +199,6 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
             </div>
           </div>
 
-          {/* Context */}
           {context && (
             <div className="mb-4">
               <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
@@ -231,7 +218,6 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
             </div>
           )}
 
-          {/* Suggestions */}
           <div className="mb-4">
             <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
               Suggestions
@@ -256,7 +242,6 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -287,7 +272,6 @@ export function GrammarScannerModal({ editor }: GrammarScannerModalProps) {
           </div>
         </div>
 
-        {/* Footer - Navigation */}
         <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
           <button
             type="button"

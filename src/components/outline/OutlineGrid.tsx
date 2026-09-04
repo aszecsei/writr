@@ -38,17 +38,14 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   const cellsMap = useOutlineGridCellsMap(projectId);
   const chapters = useChaptersByProject(projectId);
 
-  // Drag and drop state
   const { localRows, onDragStart, onDragOver, onDragEnd } =
     useOutlineGridDragDrop(rows);
 
-  // Context menu state
   const [contextMenu, setContextMenu] = useState<{
     position: { x: number; y: number };
     target: ContextMenuTarget;
   } | null>(null);
 
-  // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{
     rowId: OutlineGridRowId;
     linkedChapterId: ChapterId;
@@ -62,7 +59,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     [chapters],
   );
 
-  // Build chapter lookup map (id -> { title, status })
   const chapterMap = useMemo(() => {
     return new Map(
       manuscriptChapters.map((c) => [
@@ -75,7 +71,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   // Nesting depth of each chapter, so linked rows can indent to mirror the binder.
   const chapterDepth = useMemo(() => depthMap(chapters ?? []), [chapters]);
 
-  // Get chapters not already linked to a row (for linking menu)
   const availableChapters = useMemo(() => {
     if (!rows) return [];
     const linkedChapterIds = new Set(
@@ -84,7 +79,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     return manuscriptChapters.filter((c) => !linkedChapterIds.has(c.id));
   }, [manuscriptChapters, rows]);
 
-  // Get current cell color for context menu
   const currentCellColor = useMemo(() => {
     if (contextMenu?.target.type !== "cell" || !cellsMap) {
       return undefined;
@@ -97,7 +91,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     setContextMenu(null);
   }, []);
 
-  // Operations hook
   const operations = useOutlineGridOperations({
     projectId,
     localRows,
@@ -108,7 +101,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     setDeleteConfirm,
   });
 
-  // Context menu handler
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, target: ContextMenuTarget) => {
       e.preventDefault();
@@ -117,7 +109,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     [],
   );
 
-  // Delete confirmation handlers
   const handleConfirmDeleteRow = useCallback(async () => {
     if (!deleteConfirm) return;
     await syncDeleteOutlineRow(deleteConfirm.rowId, false);
@@ -130,7 +121,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
     setDeleteConfirm(null);
   }, [deleteConfirm]);
 
-  // Loading state
   if (!columns || !rows || !cellsMap) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -141,7 +131,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-700">
         <OutlineGridToolbar
           onAddRow={operations.handleAddRow}
@@ -149,7 +138,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
         />
       </div>
 
-      {/* Grid */}
       <div className="flex-1 overflow-auto">
         <DragDropProvider
           onDragStart={onDragStart}
@@ -159,11 +147,10 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-20">
               <tr>
-                {/* Row number/title header */}
                 <th className="sticky left-0 z-30 min-w-[180px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
                   Chapter
                 </th>
-                {/* Status column header (fixed, non-editable) */}
+                {/* Fixed, non-editable */}
                 <th className="min-w-[90px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
                   Status
                 </th>
@@ -234,7 +221,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
           </table>
         </DragDropProvider>
 
-        {/* Empty state */}
         {localRows.length === 0 && columns.length === 0 && (
           <div className="flex h-64 items-center justify-center text-neutral-500">
             <p>
@@ -244,7 +230,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
         )}
       </div>
 
-      {/* Context menu */}
       {contextMenu && (
         <OutlineGridContextMenu
           position={contextMenu.position}
@@ -266,7 +251,6 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
         />
       )}
 
-      {/* Delete confirmation dialog */}
       {deleteConfirm && (
         <ConfirmDialog
           title="Delete linked row?"

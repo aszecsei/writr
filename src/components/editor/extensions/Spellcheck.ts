@@ -19,9 +19,7 @@ export interface SpellcheckOptions {
   ) => void;
 }
 
-export const spellcheckPluginKey = new PluginKey<SpellcheckPluginState>(
-  "spellcheck",
-);
+const spellcheckPluginKey = new PluginKey<SpellcheckPluginState>("spellcheck");
 
 /** Metadata key used to signal that spellcheck should rebuild. */
 export const SPELLCHECK_UPDATED_META = "spellcheckUpdated";
@@ -117,7 +115,6 @@ export const Spellcheck = Extension.create<SpellcheckOptions>({
 
       if (!enabled || !spellchecker?.isLoaded()) return;
 
-      // Update custom words on the spellchecker
       if (customWordsRef?.current) {
         spellchecker.setCustomWords(customWordsRef.current);
       }

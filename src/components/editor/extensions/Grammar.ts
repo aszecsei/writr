@@ -12,7 +12,7 @@ export interface GrammarOptions {
   onContextMenu?: (result: GrammarResult, rect: DOMRect) => void;
 }
 
-export const grammarPluginKey = new PluginKey<GrammarPluginState>("grammar");
+const grammarPluginKey = new PluginKey<GrammarPluginState>("grammar");
 
 /** Metadata key used to signal that grammar checking should rebuild. */
 export const GRAMMAR_UPDATED_META = "grammarUpdated";

@@ -9,7 +9,7 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   addWordToAppDictionary,
@@ -39,8 +39,6 @@ export function SpellcheckScannerModal({
   const removeMisspellingAt = useSpellcheckStore((s) => s.removeMisspellingAt);
   const addToIgnored = useSpellcheckStore((s) => s.addToIgnored);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-
   const currentWord: MisspelledWord | null =
     scanner.misspellings[scanner.currentIndex] ?? null;
 
@@ -56,7 +54,6 @@ export function SpellcheckScannerModal({
     setCurrentSuggestions(service.getSuggestions(currentWord.word));
   }, [currentWord?.word, currentWord?.from]);
 
-  // Get context around the word
   const getContext = useCallback(() => {
     if (!editor || !currentWord) return "";
 
@@ -96,7 +93,6 @@ export function SpellcheckScannerModal({
   useEffect(() => {
     if (!editor || !currentWord) return;
 
-    // Scroll to position
     const view = editor.view;
     const coords = view.coordsAtPos(currentWord.from);
 
@@ -126,7 +122,6 @@ export function SpellcheckScannerModal({
         )
         .run();
 
-      // Remove from list and advance
       removeMisspellingAt(scanner.currentIndex);
     },
     [editor, currentWord, removeMisspellingAt, scanner.currentIndex],
@@ -213,14 +208,10 @@ export function SpellcheckScannerModal({
 
   if (!scannerOpen) return null;
 
-  // If no misspellings left, show completion message
   if (scanner.misspellings.length === 0) {
     return createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div
-          ref={modalRef}
-          className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
-        >
+        <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               Spellcheck Complete
@@ -251,11 +242,7 @@ export function SpellcheckScannerModal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div
-        ref={modalRef}
-        className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
-      >
-        {/* Header */}
+      <div className="w-full max-w-lg rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
             Spellcheck Scanner
@@ -274,9 +261,7 @@ export function SpellcheckScannerModal({
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-4">
-          {/* Word and context */}
           <div className="mb-4">
             <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
               Word
@@ -286,7 +271,6 @@ export function SpellcheckScannerModal({
             </div>
           </div>
 
-          {/* Context */}
           {context && typeof context === "object" && (
             <div className="mb-4">
               <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
@@ -306,7 +290,6 @@ export function SpellcheckScannerModal({
             </div>
           )}
 
-          {/* Suggestions */}
           <div className="mb-4">
             <div className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
               Suggestions
@@ -331,7 +314,6 @@ export function SpellcheckScannerModal({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -367,7 +349,6 @@ export function SpellcheckScannerModal({
           </div>
         </div>
 
-        {/* Footer - Navigation */}
         <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
           <button
             type="button"

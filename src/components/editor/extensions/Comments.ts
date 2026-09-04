@@ -10,7 +10,7 @@ export interface CommentsOptions {
   commentsRef: { current: Comment[] } | undefined;
 }
 
-export const commentsPluginKey = new PluginKey<CommentsPluginState>("comments");
+const commentsPluginKey = new PluginKey<CommentsPluginState>("comments");
 
 /** Metadata key used to signal that comments have changed. */
 export const COMMENTS_UPDATED_META = "commentsUpdated";
@@ -21,7 +21,7 @@ interface CommentsPluginState {
 }
 
 /** Map all positions through a ProseMirror Mapping, clamping to valid range. */
-export function mapPositions(
+function mapPositions(
   oldMap: Map<string, { from: number; to: number }>,
   mapping: Mapping,
 ): Map<string, { from: number; to: number }> {

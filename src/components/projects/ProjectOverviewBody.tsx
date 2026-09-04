@@ -15,7 +15,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ImageLightbox } from "@/components/bible/ImageLightbox";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
-import { WritingStatsDashboard } from "@/components/stats";
+import { WritingStatsDashboard } from "@/components/stats/WritingStatsDashboard";
 import { ProjectCover } from "@/components/ui/ProjectCover";
 import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data/source";

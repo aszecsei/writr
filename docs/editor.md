@@ -35,7 +35,6 @@ Located in `src/components/editor/extensions/`.
 - **`Grammar`** — blue squiggle decorations for grammar/style issues, integrates with `harper.js` (web worker) via `grammarStore`. Async check; spelling lints are filtered (nspell owns spelling). Toggle persists in the `grammarCheckerEnabled` AppSettings field.
 - **`Indent`** — paragraph indentation marks.
 - **`Ruby`** — ruby-text annotations (CJK reading hints).
-- **`SelectionPreserver`** — preserves selection across blur/focus, used for toolbar dialogs.
 
 ### Screenplay extensions (`extensions/screenplay/`)
 

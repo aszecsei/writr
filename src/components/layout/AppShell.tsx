@@ -28,7 +28,7 @@ import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useShortcuts } from "@/hooks/ui/useShortcuts";
 import { isCollabEnabled } from "@/lib/collab/config";
 import { useUiStore } from "@/store/uiStore";
-import { Sidebar } from "./sidebar";
+import { Sidebar } from "./sidebar/Sidebar";
 import { TopBar } from "./TopBar";
 
 interface AppShellProps {
@@ -56,7 +56,6 @@ export function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     async function handleFullscreen() {
       if (focusModeEnabled) {
-        // Enter fullscreen
         if (!document.fullscreenElement) {
           try {
             await document.documentElement.requestFullscreen();
@@ -65,7 +64,6 @@ export function AppShell({ children }: AppShellProps) {
           }
         }
       } else {
-        // Exit fullscreen
         if (document.fullscreenElement) {
           try {
             await document.exitFullscreen();

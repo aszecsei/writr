@@ -381,11 +381,6 @@ ruby rt {
   cursor: pointer;
 }
 
-.spelling-error-active {
-  background-color: rgba(239, 68, 68, 0.2);
-  border-radius: 2px;
-}
-
 /* Grammar checking styling — distinct blue underline so grammar/style issues
    are visually separable from red spelling errors. */
 .grammar-error {
@@ -393,11 +388,6 @@ ruby rt {
   text-decoration-color: rgb(59, 130, 246);
   text-underline-offset: 2px;
   cursor: pointer;
-}
-
-.grammar-error-active {
-  background-color: rgba(59, 130, 246, 0.2);
-  border-radius: 2px;
 }
 
 /* Collaboration carets (TipTap @tiptap/extension-collaboration-caret) */

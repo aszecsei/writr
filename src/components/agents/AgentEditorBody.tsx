@@ -68,11 +68,8 @@ interface AgentEditorBodyProps {
 }
 
 /**
- * Full-page agent editor. Reuses the tool picker and model-override controls
- * that previously lived in the `AgentEditor` modal, plus the built-in reset /
- * user delete actions from the old `AgentsManager` modal. Handles built-in
- * agents (scope locked global, reset instead of delete) and user agents
- * (scope selectable, deletable).
+ * Full-page agent editor. Handles built-in agents (scope locked global,
+ * reset instead of delete) and user agents (scope selectable, deletable).
  */
 export function AgentEditorBody({
   projectId,

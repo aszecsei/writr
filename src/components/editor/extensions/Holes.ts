@@ -17,7 +17,7 @@ export interface HolesOptions {
   delimitersRef: { current: HoleDelimiters } | undefined;
 }
 
-export const holesPluginKey = new PluginKey<HolesPluginState>("holes");
+const holesPluginKey = new PluginKey<HolesPluginState>("holes");
 
 /** Metadata key used to signal that hole decorations should rebuild. */
 export const HOLES_UPDATED_META = "holesUpdated";

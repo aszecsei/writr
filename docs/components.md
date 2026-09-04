@@ -4,7 +4,7 @@ Components live under `src/components/` and are organized by feature area. Befor
 
 ## Feature directories
 
-- **`agents/`** — `AgentEditorBody`: the full-page agent-definition editor behind the `/agents/definitions` routes.
+- **`agents/`** — `AgentEditorBody`: the full-page agent-definition editor behind the `/agents/definitions` routes. `AgentsPageBody`: the Agent list (Global / Project) body.
 - **`ai/`** — AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `DelegatedAgentCard`, `PendingGatesBar`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`. Sub-agent delegation renders nested transcripts (`DelegatedAgentCard`) and user gates (`PendingGatesBar`).
 - **`bible/`** — Story-bible building blocks: `AddImageDialog`, `ImageGallery`, `ImageLightbox`, `CollapsibleSection`, `DragHandle`, `RoleBadge`, `SortableTimelineCard`.
 - **`collab/`** — Real-time collaboration UI: `ShareSessionButton`, `ShareDialog`, `CollabBanner`, `DisplayNamePrompt`, `ApproveJoinDialog`, `ManageParticipantsDialog`, `GuestSessionShell`, `CollabProseEditor`. All gated on `NEXT_PUBLIC_COLLAB_URL`.
@@ -18,7 +18,7 @@ Components live under `src/components/` and are organized by feature area. Befor
 - **`providers/`** — App-wide context providers (settings, theme, etc.).
 - **`radio/`** — YouTube-backed mood playlist UI.
 - **`search/`** — Project-wide search UI (backed by `src/lib/search/`).
-- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`. (Agent editing moved to `agents/AgentEditorBody` + the `/agents/definitions` routes.)
+- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`, `GrammarRulesDialog`, `SavedPromptsManager`, `ShortcutsHelpDialog`. `agent-tool-picker` holds the allowed-tools picker config shared by the agent editor. (Agent editing moved to `agents/AgentEditorBody` + the `/agents/definitions` routes.)
 - **`sprint/`** — Writing-sprint UI: `SprintWidget`, `SprintConfigDialog`, `SprintHistoryDialog`.
 - **`stats/`** — Writing analytics: `WritingStatsDashboard`, `DailyWordChart`, `TimeOfDayChart`, `StatCard`, `StreakDisplay`.
 - **`ui/`** — Reusable primitives (see below).
@@ -32,14 +32,14 @@ Always check here before building new UI:
 - **`ConfirmDialog`** — Yes/no with optional third action. Props: `title`, `message`, `onConfirm`, `onCancel`, `variant`, `extraAction?`.
 - **`ContextMenu`** — Positioned right-click menu with viewport flipping. Compound: `ContextMenu`, `ContextMenuItem`, `ContextMenuSeparator`, `ContextMenuLabel`.
 - **`Badge`** — Simple styled span. Props: `label`, `className?`.
-- **`AutoResizeTextarea`** — Auto-growing textarea. Also exports `useHeightSync()` for syncing heights across fields.
+- **`AutoResizeTextarea`** — Auto-growing textarea.
 - **`DialogFooter`** — Standard Cancel + Submit footer with optional left slot.
-- **`TriStateCheckbox`** — Three-state checkbox (`true | false | "indeterminate"`).
+- **`TriStateCheckbox`** — Three-state checkbox (`"off" | "on" | "partial"`).
 
 ### Style exports
 
 - `button-styles.ts` → `BUTTON_PRIMARY`, `BUTTON_CANCEL`, `BUTTON_DANGER`, `RADIO_BASE/ACTIVE/INACTIVE`.
-- `form-styles.ts` → `INPUT_CLASS`, `LABEL_CLASS` (also re-exports button styles).
+- `form-styles.ts` → `INPUT_CLASS`, `LABEL_CLASS` (also re-exports `BUTTON_PRIMARY`, `BUTTON_CANCEL`, `RADIO_BASE/ACTIVE/INACTIVE`).
 
 ## CSS / theming conventions
 

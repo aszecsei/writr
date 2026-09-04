@@ -79,7 +79,6 @@ export default function WorldbuildingListPage() {
       parentDocId,
     });
     setExpanded((prev) => new Set(prev).add(doc.id));
-    // Start inline editing for the new doc
     setEditingDocId(doc.id);
     setEditingTitle("New Document");
   }
@@ -301,7 +300,6 @@ export default function WorldbuildingListPage() {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="mt-6 flex border-b border-neutral-200 dark:border-neutral-800">
         <button
           type="button"
@@ -327,7 +325,6 @@ export default function WorldbuildingListPage() {
         </button>
       </div>
 
-      {/* Content */}
       <div className="mt-6">
         {tab === "tree" ? (
           isEmpty ? (
@@ -344,7 +341,6 @@ export default function WorldbuildingListPage() {
         )}
       </div>
 
-      {/* Doc editor dialog */}
       {selectedDocId && (
         <WorldbuildingDocDialog
           docId={selectedDocId}

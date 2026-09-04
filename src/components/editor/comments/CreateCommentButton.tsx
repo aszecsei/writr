@@ -25,7 +25,6 @@ export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
     empty: true,
   });
 
-  // Track editor selection changes
   useEffect(() => {
     if (!editor) return;
 
@@ -53,15 +52,12 @@ export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
     // Extract anchor text from the ProseMirror document
     let anchorText = "";
     if (from !== to) {
-      // Range selection - get the selected text
       anchorText = editor.state.doc.textBetween(from, to, "\n");
-      // Truncate if too long
       if (anchorText.length > 100) {
         const half = 48;
         anchorText = `${anchorText.slice(0, half)}...${anchorText.slice(-half)}`;
       }
     } else {
-      // Point comment - get surrounding context
       const contextStart = Math.max(1, from - 20);
       const contextEnd = Math.min(editor.state.doc.content.size, from + 20);
       anchorText = editor.state.doc.textBetween(contextStart, contextEnd, "\n");

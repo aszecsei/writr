@@ -14,27 +14,6 @@ interface HeightSyncGroup {
   sync: () => void;
 }
 
-export function useHeightSync(): HeightSyncGroup {
-  const elements = useRef(new Set<HTMLTextAreaElement>());
-
-  const sync = useCallback(() => {
-    const els = [...elements.current];
-    if (els.length === 0) return;
-    for (const el of els) el.style.height = "auto";
-    const max = Math.max(...els.map((el) => el.scrollHeight));
-    for (const el of els) el.style.height = `${max}px`;
-  }, []);
-
-  const register = useCallback((el: HTMLTextAreaElement) => {
-    elements.current.add(el);
-    return () => {
-      elements.current.delete(el);
-    };
-  }, []);
-
-  return { register, sync };
-}
-
 interface AutoResizeTextareaProps {
   label?: string;
   value: string;
