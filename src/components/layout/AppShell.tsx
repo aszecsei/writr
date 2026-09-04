@@ -3,25 +3,10 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
-import { ApproveJoinDialog } from "@/components/collab/ApproveJoinDialog";
 import { CollabBanner } from "@/components/collab/CollabBanner";
-import { ManageParticipantsDialog } from "@/components/collab/ManageParticipantsDialog";
-import { ShareDialog } from "@/components/collab/ShareDialog";
-import { ChapterPropertiesDialog } from "@/components/editor/ChapterPropertiesDialog";
 import { FocusModeOverlay } from "@/components/editor/FocusModeOverlay";
-import { VersionHistoryDialog } from "@/components/editor/VersionHistoryDialog";
-import { ExportDialog } from "@/components/export/ExportDialog";
-import { SeparatorSettingsDialog } from "@/components/layout/sidebar/SeparatorSettingsDialog";
 import { RightPanel } from "@/components/panels/RightPanel";
-import { PreviewCardDialog } from "@/components/preview-card/PreviewCardDialog";
-import { SavedPromptsManager } from "@/components/settings/SavedPromptsManager";
-import { SettingsModals } from "@/components/settings/SettingsModals";
-import { ShortcutsHelpDialog } from "@/components/settings/ShortcutsHelpDialog";
-import {
-  SprintConfigDialog,
-  SprintHistoryDialog,
-  SprintWidget,
-} from "@/components/sprint";
+import { SprintWidget } from "@/components/sprint";
 import { TtsPlayerBar } from "@/components/tts/TtsPlayerBar";
 import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -106,14 +91,6 @@ export function AppShell({ children }: AppShellProps) {
         <FocusModeOverlay />
         <main className="h-full overflow-y-auto">{children}</main>
         <SprintWidget />
-        <SettingsModals />
-        <SavedPromptsManager />
-        <VersionHistoryDialog />
-        <ChapterPropertiesDialog />
-        <SeparatorSettingsDialog />
-        <SprintConfigDialog />
-        <SprintHistoryDialog />
-        <ShortcutsHelpDialog />
       </div>
     );
   }
@@ -144,20 +121,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       </Group>
       <TtsPlayerBar />
-      <SettingsModals />
-      <SavedPromptsManager />
-      <VersionHistoryDialog />
-      <ChapterPropertiesDialog />
-      <SeparatorSettingsDialog />
-      <ExportDialog />
-      <PreviewCardDialog />
-      <SprintConfigDialog />
-      <SprintHistoryDialog />
       <SprintWidget />
-      <ShortcutsHelpDialog />
-      {isCollabEnabled() && <ShareDialog />}
-      {isCollabEnabled() && <ApproveJoinDialog />}
-      {isCollabEnabled() && <ManageParticipantsDialog />}
     </div>
   );
 }
