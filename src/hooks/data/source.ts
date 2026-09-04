@@ -64,27 +64,32 @@ function useSharedEntity<T extends { id: string }>(
   }, [map, id]);
 }
 
-/** Reads a single entity by id, from Dexie or the shared project store. */
+/**
+ * Reads a single entity by id, from Dexie or the shared project store.
+ * The hook parameter must be named `use*`: the React Compiler identifies hook
+ * calls by name, and would otherwise memoise the call away on re-render and
+ * break the hook order.
+ */
 function useSourcedEntity<T extends { id: string }>(
-  dexieHook: (id: T["id"] | null) => T | undefined,
+  useDexie: (id: T["id"] | null) => T | undefined,
   table: ProjectDocTable,
   id: T["id"] | null,
 ): T | undefined {
   const source = useDataSource();
-  const dexie = dexieHook(source.kind === "dexie" ? id : null);
+  const dexie = useDexie(source.kind === "dexie" ? id : null);
   const shared = useSharedEntity<T>(table, id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
 /** Reads a project-scoped list, from Dexie or the shared project store. */
 function useSourcedList<T extends { id: string }>(
-  dexieHook: (projectId: ProjectId | null) => T[] | undefined,
+  useDexie: (projectId: ProjectId | null) => T[] | undefined,
   table: ProjectDocTable,
   projectId: ProjectId | null,
   sortField?: keyof T & string,
 ): T[] | undefined {
   const source = useDataSource();
-  const dexie = dexieHook(source.kind === "dexie" ? projectId : null);
+  const dexie = useDexie(source.kind === "dexie" ? projectId : null);
   const shared = useSharedList<T>(table, projectId, sortField);
   return source.kind === "dexie" ? dexie : shared;
 }
