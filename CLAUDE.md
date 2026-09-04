@@ -34,7 +34,7 @@ Read the docs that match the area you're touching:
 ## Critical always-on rules
 
 - **All entity data lives in IndexedDB.** Pages are `"use client"`. The only server route is `/api/ai`.
-- **Schemas first.** Add or change a Zod schema in `src/db/schemas.ts` before touching tables, operations, or UI.
+- **Schemas first.** Add or change a Zod schema in `src/db/schemas/` (domain modules re-exported from `@/db/schemas`) before touching tables, operations, or UI.
 - **Components don't import Dexie.** Go through `src/hooks/data/` or `src/db/operations/`.
 - **Use the hook factories.** `createEntityHook` / `createProjectListHook` in `src/hooks/factories.ts` — don't write bespoke `useLiveQuery` calls.
 - **Reuse UI primitives.** Check `src/components/ui/` (`Modal`, `ConfirmDialog`, `ContextMenu`, `DialogFooter`, `AutoResizeTextarea`, `TriStateCheckbox`, plus `button-styles.ts` / `form-styles.ts`) before building new components.
