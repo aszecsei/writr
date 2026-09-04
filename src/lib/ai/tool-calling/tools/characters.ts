@@ -14,34 +14,32 @@ export const createCharacterTool = defineTool({
   name: "Create Character",
   description:
     "Create a new character in the story bible. Use when the user asks to add a character.",
-  inputSchema: z
-    .object({
-      name: z.string().min(1).describe("Character name"),
-      role: CharacterRoleEnum.describe("Character role").optional(),
-      summary: z
-        .string()
-        .describe("Brief overview of who the character is")
-        .optional(),
-      description: z
-        .string()
-        .describe(
-          "Physical description — appearance, distinguishing features, mannerisms",
-        )
-        .optional(),
-      personality: z.string().describe("Personality traits").optional(),
-      backstory: z.string().describe("Character backstory").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    name: z.string().min(1).describe("Character name"),
+    role: CharacterRoleEnum.describe("Character role").optional(),
+    summary: z
+      .string()
+      .describe("Brief overview of who the character is")
+      .optional(),
+    description: z
+      .string()
+      .describe(
+        "Physical description — appearance, distinguishing features, mannerisms",
+      )
+      .optional(),
+    personality: z.string().describe("Personality traits").optional(),
+    backstory: z.string().describe("Character backstory").optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const character = await createCharacter({
       projectId: context.projectId,
       name: params.name,
-      role: params.role ?? undefined,
-      summary: params.summary ?? undefined,
-      description: params.description ?? undefined,
-      personality: params.personality ?? undefined,
-      backstory: params.backstory ?? undefined,
+      role: params.role,
+      summary: params.summary,
+      description: params.description,
+      personality: params.personality,
+      backstory: params.backstory,
     });
     return ok(`Created character "${character.name}"`, {
       id: character.id,
@@ -56,27 +54,25 @@ export const updateCharacterTool = defineTool({
   description:
     "Update fields on an existing character. Only include fields to change. " +
     "Use the `list` and `get` tools first to discover the character id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Character ID"),
-      name: z.string().describe("New name").optional(),
-      role: CharacterRoleEnum.describe("New role").optional(),
-      summary: z
-        .string()
-        .describe("New summary — a brief overview of who the character is")
-        .optional(),
-      description: z
-        .string()
-        .describe("New physical description (appearance)")
-        .optional(),
-      personality: z.string().describe("New personality").optional(),
-      backstory: z.string().describe("New backstory").optional(),
-      motivations: z.string().describe("New motivations").optional(),
-      strengths: z.string().describe("New strengths").optional(),
-      weaknesses: z.string().describe("New weaknesses").optional(),
-      dialogueStyle: z.string().describe("New dialogue style").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Character ID"),
+    name: z.string().describe("New name").optional(),
+    role: CharacterRoleEnum.describe("New role").optional(),
+    summary: z
+      .string()
+      .describe("New summary — a brief overview of who the character is")
+      .optional(),
+    description: z
+      .string()
+      .describe("New physical description (appearance)")
+      .optional(),
+    personality: z.string().describe("New personality").optional(),
+    backstory: z.string().describe("New backstory").optional(),
+    motivations: z.string().describe("New motivations").optional(),
+    strengths: z.string().describe("New strengths").optional(),
+    weaknesses: z.string().describe("New weaknesses").optional(),
+    dialogueStyle: z.string().describe("New dialogue style").optional(),
+  }),
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
@@ -93,11 +89,9 @@ export const deleteCharacterTool = defineTool({
   description:
     "Delete a character from the story bible. Also removes the character's " +
     "relationships. Use the `list` and `get` tools first to confirm the id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Character ID"),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Character ID"),
+  }),
   requiresApproval: true,
   async execute(params) {
     const existing = await getCharacter(params.id as CharacterId);

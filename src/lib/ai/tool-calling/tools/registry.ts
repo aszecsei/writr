@@ -451,11 +451,9 @@ export function permittedCategories(
 
 // ─── Tools ─────────────────────────────────────────────────────────────
 
-const listInputSchema = z
-  .object({
-    category: ListCategoryEnum.describe("Entity category to list."),
-  })
-  .strip();
+const listInputSchema = z.object({
+  category: ListCategoryEnum.describe("Entity category to list."),
+});
 
 export const listTool = defineTool({
   id: "list",
@@ -482,26 +480,22 @@ export const listTool = defineTool({
   },
 });
 
-const getRequestSchema = z
-  .object({
-    category: ReadCategoryEnum.describe("Entity category."),
-    ids: z
-      .array(z.string().min(1))
-      .describe(
-        "Ids to fetch. Required for non-singleton categories; ignored for outline.",
-      )
-      .optional(),
-  })
-  .strip();
+const getRequestSchema = z.object({
+  category: ReadCategoryEnum.describe("Entity category."),
+  ids: z
+    .array(z.string().min(1))
+    .describe(
+      "Ids to fetch. Required for non-singleton categories; ignored for outline.",
+    )
+    .optional(),
+});
 
-const getInputSchema = z
-  .object({
-    requests: z
-      .array(getRequestSchema)
-      .min(1)
-      .describe("Per-category lookup requests."),
-  })
-  .strip();
+const getInputSchema = z.object({
+  requests: z
+    .array(getRequestSchema)
+    .min(1)
+    .describe("Per-category lookup requests."),
+});
 
 interface GetResultEntry {
   category: ReadCategory;

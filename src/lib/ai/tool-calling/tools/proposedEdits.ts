@@ -60,7 +60,7 @@ export const proposeEditTool = defineTool({
     "kind=append appends to the chapter end. " +
     "kind=full_chapter replaces the whole chapter.",
   inputSchema: z.object({
-    chapterId: z.string().uuid().describe("Target chapter id"),
+    chapterId: z.string().min(1).describe("Target chapter id"),
     kind: z.enum(["replace", "insert_at", "append", "full_chapter"]),
     fromOffset: z
       .number()

@@ -199,11 +199,11 @@ export async function runAgent(
               });
             })
             .with({ type: "reasoning" }, () => {
-              history.appendChunk(assistantId, chunk as AiStreamChunk);
+              history.appendChunk(assistantId, chunk);
             })
             .with({ type: "content" }, (c) => {
               assistantContent += c.text;
-              history.appendChunk(assistantId, chunk as AiStreamChunk);
+              history.appendChunk(assistantId, chunk);
             })
             .exhaustive();
         }

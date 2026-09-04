@@ -207,7 +207,7 @@ describe("chapter tools", () => {
       expect(empty.data?.totalMatches).toBe(0);
     });
 
-    it("respects context_paragraphs parameter", async () => {
+    it("respects contextParagraphs parameter", async () => {
       const ch = makeChapter({
         projectId,
         title: "Test",
@@ -216,7 +216,7 @@ describe("chapter tools", () => {
       await db.chapters.add(ch);
       const result = await executeTool(
         "search_chapter",
-        { id: ch.id, query: "Target", context_paragraphs: 0 },
+        { id: ch.id, query: "Target", contextParagraphs: 0 },
         ctx,
       );
       const matches = result.data?.matches as {

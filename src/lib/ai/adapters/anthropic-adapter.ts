@@ -47,7 +47,7 @@ function toAnthropicContent(
         type: "text",
         text: part.text,
         ...(part.cache_control ? { cache_control: part.cache_control } : {}),
-      } as Anthropic.TextBlockParam);
+      });
     } else if (part.type === "image_url") {
       const parsed = parseBase64ImageDataUrl(part.image_url.url);
       if (parsed) {
@@ -63,7 +63,7 @@ function toAnthropicContent(
         blocks.push({
           type: "image",
           source: { type: "url", url: part.image_url.url },
-        } as Anthropic.ImageBlockParam);
+        });
       }
     }
   }
@@ -92,7 +92,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
               ...(part.cache_control
                 ? { cache_control: part.cache_control }
                 : {}),
-            } as Anthropic.TextBlockParam);
+            });
           }
         }
       }
@@ -111,7 +111,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
             ...(cacheControl ? { cache_control: cacheControl } : {}),
           },
         ],
-      } as Anthropic.MessageParam);
+      });
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
       // Assistant message with tool use blocks
       const content: Anthropic.ContentBlockParam[] = [];
@@ -125,7 +125,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
           id: tc.id,
           name: tc.name,
           input: tc.arguments,
-        } as Anthropic.ContentBlockParam);
+        });
       }
       nonSystemMessages.push({ role: "assistant", content });
     } else if (typeof msg.content === "string") {

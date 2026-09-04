@@ -16,20 +16,18 @@ export const createTimelineEventTool = defineTool({
   name: "Create Timeline Event",
   description:
     "Add a timeline event. Use when the user asks to add events or plot points.",
-  inputSchema: z
-    .object({
-      title: z.string().min(1).describe("Event title"),
-      description: z.string().describe("Event description").optional(),
-      date: z.string().describe("In-story date (freeform string)").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    title: z.string().min(1).describe("Event title"),
+    description: z.string().describe("Event description").optional(),
+    date: z.string().describe("In-story date (freeform string)").optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const event = await createTimelineEvent({
       projectId: context.projectId,
       title: params.title,
-      description: params.description ?? undefined,
-      date: params.date ?? undefined,
+      description: params.description,
+      date: params.date,
     });
     return ok(`Created timeline event "${event.title}"`, {
       id: event.id,
@@ -44,14 +42,12 @@ export const updateTimelineEventTool = defineTool({
   description:
     "Update fields on an existing timeline event. Only include fields to change. " +
     "Use the `list` and `get` tools first to discover the event id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Timeline event ID"),
-      title: z.string().describe("New title").optional(),
-      description: z.string().describe("New description").optional(),
-      date: z.string().describe("New date").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Timeline event ID"),
+    title: z.string().describe("New title").optional(),
+    description: z.string().describe("New description").optional(),
+    date: z.string().describe("New date").optional(),
+  }),
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
@@ -68,11 +64,9 @@ export const deleteTimelineEventTool = defineTool({
   description:
     "Delete a timeline event. Use the `list` and `get` tools first to " +
     "confirm the id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Timeline event ID"),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Timeline event ID"),
+  }),
   requiresApproval: true,
   async execute(params) {
     const existing = await getTimelineEvent(params.id as TimelineEventId);
@@ -88,15 +82,13 @@ export const moveTimelineEventTool = defineTool({
   description:
     "Reposition a timeline event by moving it directly before or after " +
     "another event. Use the `list` / `get` tools first to discover the ids.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Id of the event to move"),
-      targetId: z.string().min(1).describe("Id of the event to move next to"),
-      position: z
-        .enum(["before", "after"])
-        .describe("Place the moved event before or after the target"),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Id of the event to move"),
+    targetId: z.string().min(1).describe("Id of the event to move next to"),
+    position: z
+      .enum(["before", "after"])
+      .describe("Place the moved event before or after the target"),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const { id, targetId, position } = params;

@@ -20,28 +20,26 @@ export const createWorldbuildingDocTool = defineTool({
     "history, lore. `content` is markdown. Pass `parentDocId` to nest the " +
     "doc under an existing one (omit for a top-level doc); `list` the " +
     "worldbuilding category first to discover parent ids.",
-  inputSchema: z
-    .object({
-      title: z.string().min(1).describe("Document title"),
-      content: z.string().describe("Document body (markdown)").optional(),
-      tags: z
-        .array(z.string())
-        .describe("Free-form tags for categorization")
-        .optional(),
-      parentDocId: z
-        .string()
-        .describe("Id of the parent doc to nest under. Omit for top level.")
-        .optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    title: z.string().min(1).describe("Document title"),
+    content: z.string().describe("Document body (markdown)").optional(),
+    tags: z
+      .array(z.string())
+      .describe("Free-form tags for categorization")
+      .optional(),
+    parentDocId: z
+      .string()
+      .describe("Id of the parent doc to nest under. Omit for top level.")
+      .optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const doc = await createWorldbuildingDoc({
       projectId: context.projectId,
       title: params.title,
-      content: params.content ?? undefined,
-      tags: params.tags ?? undefined,
-      parentDocId: (params.parentDocId as WorldbuildingDocId) ?? undefined,
+      content: params.content,
+      tags: params.tags,
+      parentDocId: params.parentDocId as WorldbuildingDocId,
     });
     return ok(`Created worldbuilding doc "${doc.title}"`, {
       id: doc.id,
@@ -58,19 +56,17 @@ export const updateWorldbuildingDocTool = defineTool({
     "fields to change. Set `parentDocId` to a doc id to re-nest, or to null " +
     "to move it to the top level (moving a doc under one of its own " +
     "descendants is rejected). Use `list` / `get` first to discover the id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Worldbuilding doc id"),
-      title: z.string().min(1).describe("New title").optional(),
-      content: z.string().describe("New body (markdown)").optional(),
-      tags: z.array(z.string()).describe("Replacement tag list").optional(),
-      parentDocId: z
-        .string()
-        .describe("New parent doc id, or null to move to the top level.")
-        .nullable()
-        .optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Worldbuilding doc id"),
+    title: z.string().min(1).describe("New title").optional(),
+    content: z.string().describe("New body (markdown)").optional(),
+    tags: z.array(z.string()).describe("Replacement tag list").optional(),
+    parentDocId: z
+      .string()
+      .describe("New parent doc id, or null to move to the top level.")
+      .nullable()
+      .optional(),
+  }),
   requiresApproval: true,
   async execute(params) {
     const { id, parentDocId, ...rest } = params;
@@ -97,11 +93,9 @@ export const deleteWorldbuildingDocTool = defineTool({
     "Delete a worldbuilding document. Any child docs are re-parented to the " +
     "deleted doc's parent (they are NOT deleted). Use `list` / `get` first " +
     "to confirm the id.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Worldbuilding doc id"),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Worldbuilding doc id"),
+  }),
   requiresApproval: true,
   async execute(params) {
     const existing = await getWorldbuildingDoc(params.id as WorldbuildingDocId);
@@ -119,18 +113,16 @@ export const moveWorldbuildingDocTool = defineTool({
     "sibling doc. Both docs must share the same parent — to move a doc under " +
     "a different parent, use update_worldbuilding_doc to re-nest it first. " +
     "Use the `list` / `get` tools first to discover the ids.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Id of the doc to move"),
-      targetId: z
-        .string()
-        .min(1)
-        .describe("Id of the sibling doc to move next to"),
-      position: z
-        .enum(["before", "after"])
-        .describe("Place the moved doc before or after the target"),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Id of the doc to move"),
+    targetId: z
+      .string()
+      .min(1)
+      .describe("Id of the sibling doc to move next to"),
+    position: z
+      .enum(["before", "after"])
+      .describe("Place the moved doc before or after the target"),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const { id, targetId, position } = params;

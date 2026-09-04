@@ -22,18 +22,16 @@ export const createChapterTool = defineTool({
   name: "Create Chapter",
   description:
     "Create a new chapter. Use when the user asks to add a chapter to the project.",
-  inputSchema: z
-    .object({
-      title: z.string().min(1).describe("Chapter title"),
-      synopsis: z.string().describe("Brief chapter synopsis").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    title: z.string().min(1).describe("Chapter title"),
+    synopsis: z.string().describe("Brief chapter synopsis").optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const chapter = await createChapter({
       projectId: context.projectId,
       title: params.title,
-      synopsis: params.synopsis ?? undefined,
+      synopsis: params.synopsis,
     });
     return ok(`Created chapter "${chapter.title}"`, {
       id: chapter.id,
@@ -47,14 +45,12 @@ export const updateChapterTool = defineTool({
   name: "Update Chapter",
   description:
     "Update a chapter's title, synopsis, or status. Only include fields to change.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Chapter ID"),
-      title: z.string().describe("New title").optional(),
-      synopsis: z.string().describe("New synopsis").optional(),
-      status: ChapterStatusEnum.describe("New status").optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Chapter ID"),
+    title: z.string().describe("New title").optional(),
+    synopsis: z.string().describe("New synopsis").optional(),
+    status: ChapterStatusEnum.describe("New status").optional(),
+  }),
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
@@ -74,9 +70,9 @@ export const searchChaptersTool = defineTool({
     "ranked by relevance. Prefix matches and small typos are tolerated. Wrap " +
     'text in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
     "Returns matching chapter titles, IDs, and snippets.",
-  inputSchema: z
-    .object({ query: z.string().min(1).describe("Search phrase or keywords") })
-    .strip(),
+  inputSchema: z.object({
+    query: z.string().min(1).describe("Search phrase or keywords"),
+  }),
   requiresApproval: false,
   async execute(params, context) {
     const matches = await searchChaptersKeyword(
@@ -93,9 +89,7 @@ export const readChapterTool = defineTool({
   description:
     "Read the full markdown content of a chapter by ID. " +
     "For large chapters, prefer read_chapter_range or search_chapter to reduce token usage.",
-  inputSchema: z
-    .object({ id: z.string().min(1).describe("Chapter ID") })
-    .strip(),
+  inputSchema: z.object({ id: z.string().min(1).describe("Chapter ID") }),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
@@ -115,24 +109,22 @@ export const readChapterRangeTool = defineTool({
   description:
     "Read a range of paragraphs from a chapter (1-indexed, inclusive). " +
     "Default window is 20 paragraphs, max 50. Use after `get` (category=chapter) to discover totalParagraphs.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Chapter ID"),
-      start: z
-        .number()
-        .int()
-        .min(1)
-        .describe("Start paragraph number (1-indexed)"),
-      end: z
-        .number()
-        .int()
-        .min(1)
-        .describe(
-          "End paragraph number (1-indexed, inclusive). Defaults to start + 19.",
-        )
-        .optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Chapter ID"),
+    start: z
+      .number()
+      .int()
+      .min(1)
+      .describe("Start paragraph number (1-indexed)"),
+    end: z
+      .number()
+      .int()
+      .min(1)
+      .describe(
+        "End paragraph number (1-indexed, inclusive). Defaults to start + 19.",
+      )
+      .optional(),
+  }),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
@@ -167,21 +159,19 @@ export const searchChapterTool = defineTool({
     'in double quotes (e.g. "moonlit garden") to require an exact phrase. ' +
     "Returns matching paragraph numbers with surrounding context. " +
     "Use this instead of read_chapter when looking for a specific passage.",
-  inputSchema: z
-    .object({
-      id: z.string().min(1).describe("Chapter ID"),
-      query: z.string().min(1).describe("Search keywords or phrase"),
-      context_paragraphs: z
-        .number()
-        .int()
-        .min(0)
-        .max(3)
-        .describe(
-          "Number of surrounding paragraphs to include (default 1, max 3)",
-        )
-        .optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Chapter ID"),
+    query: z.string().min(1).describe("Search keywords or phrase"),
+    contextParagraphs: z
+      .number()
+      .int()
+      .min(0)
+      .max(3)
+      .describe(
+        "Number of surrounding paragraphs to include (default 1, max 3)",
+      )
+      .optional(),
+  }),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);
@@ -190,7 +180,7 @@ export const searchChapterTool = defineTool({
       params.id as ChapterId,
       params.query,
       {
-        contextParagraphs: params.context_paragraphs ?? 1,
+        contextParagraphs: params.contextParagraphs ?? 1,
         maxResults: 10,
       },
     );
@@ -212,9 +202,7 @@ export const getChapterStructureTool = defineTool({
   description:
     "Get the structural map of a chapter: scene boundaries with paragraph numbers and previews. " +
     "Use this to understand chapter layout before reading specific sections.",
-  inputSchema: z
-    .object({ id: z.string().min(1).describe("Chapter ID") })
-    .strip(),
+  inputSchema: z.object({ id: z.string().min(1).describe("Chapter ID") }),
   requiresApproval: false,
   async execute(params) {
     const chapter = await getChapter(params.id as ChapterId);

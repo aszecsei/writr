@@ -7,13 +7,7 @@ import {
   Telescope,
   Trash2,
 } from "lucide-react";
-import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAppSettings, isActiveInProject } from "@/db/operations";
 import { getAgent, listAgents } from "@/db/operations/agents";
 import type { AgentDefinition, AgentDefinitionId } from "@/db/schemas";
@@ -520,8 +514,7 @@ export function AiPanel() {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     if ((!prompt.trim() && pendingImages.length === 0) || loading) return;
 
     const userText = prompt.trim();

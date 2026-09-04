@@ -52,7 +52,7 @@ export const addCommentTool = defineTool({
     "persona stamps the comment with the beta-reader author + color. " +
     "Always selection comments (anchorText is highlighted); no point comments.",
   inputSchema: z.object({
-    chapterId: z.string().uuid().describe("Target chapter id"),
+    chapterId: z.string().min(1).describe("Target chapter id"),
     anchorText: z
       .string()
       .min(1)
@@ -154,7 +154,7 @@ export const replyToCommentTool = defineTool({
   inputSchema: z.object({
     parentCommentId: z
       .string()
-      .uuid()
+      .min(1)
       .describe(
         "The id of the comment you are replying to. Must be a root comment, not a reply.",
       ),
