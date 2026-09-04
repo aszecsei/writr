@@ -5,7 +5,7 @@ import { GLUE_WORDS } from "../word-lists";
 export const STICKY_THRESHOLD = 0.6;
 
 /** Very short sentences are all glue by nature; don't flag them. */
-export const STICKY_MIN_WORDS = 8;
+const STICKY_MIN_WORDS = 8;
 
 const EXCERPT_MAX_LENGTH = 80;
 

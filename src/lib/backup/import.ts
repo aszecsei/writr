@@ -263,9 +263,9 @@ export function remapProjectIds(data: ProjectBackupData): ProjectBackupData {
       }
     : undefined;
 
-  // Remap helpers return plain `string` ids; the schemas now use branded types.
-  // Brands are erased at runtime, so the assertion is safe — the cast lives at
-  // this boundary instead of every entity-shape cast above.
+  // Remap helpers return plain `string` ids, while the schemas use branded
+  // id types. Brands are erased at runtime, so the cast is safe here rather
+  // than at every entity-shape cast above.
   return {
     project: {
       ...data.project,

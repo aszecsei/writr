@@ -28,7 +28,7 @@ import {
 } from "@/db/schemas";
 import { BACKUP_VERSION } from "./types";
 
-export const BackupMetadataSchema = z.object({
+const BackupMetadataSchema = z.object({
   version: z.number().int().positive(),
   type: z.enum(["full", "project"]),
   exportedAt: z.iso.datetime(),
@@ -59,7 +59,7 @@ export const ProjectBackupDataSchema = z.object({
   scenes: z.array(SceneSchema).default([]),
 });
 
-export const GlobalsBackupDataSchema = z.object({
+const GlobalsBackupDataSchema = z.object({
   savedPrompts: z.array(SavedPromptSchema).default([]),
   brainstormSetups: z.array(BrainstormSetupSchema).default([]),
   brainstormIdeas: z.array(BrainstormIdeaSchema).default([]),
@@ -82,9 +82,7 @@ export const ProjectBackupSchema = z.object({
   data: ProjectBackupDataSchema,
 });
 
-export const BackupSchema = z.union([FullBackupSchema, ProjectBackupSchema]);
-
-export type BackupType = z.infer<typeof BackupSchema>;
+const BackupSchema = z.union([FullBackupSchema, ProjectBackupSchema]);
 
 export function validateBackup(data: unknown) {
   // Normalize old-format appSettings (individual API key fields → records)

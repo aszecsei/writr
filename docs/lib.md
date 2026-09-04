@@ -8,7 +8,7 @@ Generates exports for the entire book or a single chapter.
 
 - `gather.ts` — Collects chapter content (and optional bible context) for an export job.
 - `markdown-to-nodes.ts` — Parses Markdown into a neutral document-node tree.
-- DOCX, PDF (`pdfmake`), Markdown, and HTML emitters.
+- DOCX, PDF (`pdfmake`), and Markdown emitters.
 - `clipboard.ts` — Copies selection as Markdown plus AO3-compatible HTML.
 
 ## `spellcheck/` — Spellchecking
@@ -23,7 +23,7 @@ Users filter which checks run via the **Grammar Rules** modal (`GrammarRulesDial
 
 ## `search/` — Project-wide search
 
-Paginated full-text search across 7 entity types (chapters, characters, locations, timeline events, style guide, worldbuilding docs, comments). Backs `/projects/[projectId]/search`.
+Paginated full-text search across 8 entity types (chapters, characters, locations, timeline events, style guide entries, guardrails, worldbuilding docs, outline grid cells). Backs `/projects/[projectId]/search`.
 
 ## `backup/` — Backup & restore
 
@@ -93,4 +93,4 @@ Chunks are stored in the `indexedChunks` Dexie table (see `src/db/schemas.ts`). 
 - `worldbuilding-tree.ts` — Hierarchical worldbuilding doc tree utilities.
 - `fonts.ts` — Available fonts and their CSS metadata.
 - `id.ts` — UUID helpers.
-- `constants.ts` — Default intervals, font sizes, default model, singleton row IDs.
+- `constants.ts` — Singleton row IDs.

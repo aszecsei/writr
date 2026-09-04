@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/database";
 import { getIndexedChunksBySource } from "@/db/operations/indexedChunks";
 import type { Chapter, ProjectId, WorldbuildingDoc } from "@/db/schemas";
-import { FakeEmbeddingProvider } from "./embedding/fake-provider";
+import { FakeEmbeddingProvider } from "@/test/fake-embedding-provider";
 import { indexSource, reindexProject } from "./indexer";
 
 const projectId = crypto.randomUUID() as ProjectId;
@@ -30,6 +30,8 @@ describe("indexSource", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].vector).toHaveLength(8);
     expect(rows[0].embeddingModel).toBe("fake-v1");
+    const norm = Math.sqrt(rows[0].vector.reduce((s, x) => s + x * x, 0));
+    expect(norm).toBeCloseTo(1, 6);
   });
 
   it("skips re-embedding unchanged chunks", async () => {

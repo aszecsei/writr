@@ -14,7 +14,7 @@ export function fleschReadingEase(
   return Math.min(100, Math.max(0, score));
 }
 
-export interface ReadabilityBand {
+interface ReadabilityBand {
   label: string;
   /** Inclusive lower bound of the band. */
   min: number;

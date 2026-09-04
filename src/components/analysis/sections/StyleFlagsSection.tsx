@@ -1,8 +1,7 @@
 "use client";
 
 import { AccordionSection } from "@/components/ui/AccordionSection";
-import type { DerivedMetrics } from "@/lib/text-analysis";
-import { STICKY_THRESHOLD } from "@/lib/text-analysis/metrics/glue";
+import { type DerivedMetrics, STICKY_THRESHOLD } from "@/lib/text-analysis";
 import { formatPct, StatRow } from "./shared";
 
 // Guidance thresholds, not rules: tint the number when prose drifts past

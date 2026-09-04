@@ -13,7 +13,7 @@ export interface GrammarRuleInfo {
 }
 
 /** A single applicable fix for a grammar issue. */
-export interface GrammarSuggestion {
+interface GrammarSuggestion {
   /** Human-readable label shown in the UI (e.g. the replacement, or "Remove"). */
   label: string;
   /** The text to substitute for the flagged span. Empty string = deletion. */

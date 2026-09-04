@@ -305,7 +305,6 @@ export async function searchChapterParagraphsKeyword(
   if (!query.trim()) return { chapter, matches: [] };
 
   const scored = runParagraphQuery(built, query);
-  const { phrases } = parseQuery(query);
   const ctxSize = opts.contextParagraphs ?? 1;
   const max = opts.maxResults ?? 10;
 
@@ -325,10 +324,6 @@ export async function searchChapterParagraphsKeyword(
     const snippet = paragraphs.slice(from, to + 1).join("\n\n");
     matches.push({ paragraph: s.paragraphNumber, snippet });
   }
-
-  // If there are still results to fill (rare — only with small chapters),
-  // ignore. The matchField/phrase visualisation lives on the snippet itself.
-  void phrases;
 
   return { chapter: { id: chapter.id, title: chapter.title }, matches };
 }

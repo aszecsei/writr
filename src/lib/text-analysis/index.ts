@@ -1,27 +1,18 @@
 export { aggregateAnalyses } from "./aggregate";
+export { analyzeSentences } from "./analyze";
 export {
-  analyzeSentences,
-  type ChapterAnalysisSource,
-  deriveMetrics,
-} from "./analyze";
-export {
-  clearAnalysisCache,
   getCachedAnalysis,
   makeAnalysisCacheKey,
   setCachedAnalysis,
 } from "./cache";
 export {
   ECHO_WINDOW_SENTENCES,
-  type EchoProximity,
   type EchoSeverity,
   echoProximity,
   echoSeverity,
 } from "./metrics/frequency";
-export {
-  DENSITY_STEPS,
-  type DensityLevel,
-  paragraphDensityLevel,
-} from "./metrics/paragraphs";
+export { STICKY_THRESHOLD } from "./metrics/glue";
+export { type DensityLevel, paragraphDensityLevel } from "./metrics/paragraphs";
 export { readabilityBand } from "./metrics/readability";
 export {
   bucketForLength,
@@ -39,16 +30,11 @@ export type {
   AnalysisCounts,
   AnalysisScope,
   AnalyzedSentence,
-  AnalyzedTerm,
   ChapterAnalysis,
   DerivedMetrics,
   Echo,
-  EchoOccurrence,
   OpenerCategory,
   ParagraphSummary,
   SentenceLengthBuckets,
   StickySentence,
-  VocabularyMetrics,
-  WordCount,
 } from "./types";
-export { OPENER_CATEGORIES } from "./types";

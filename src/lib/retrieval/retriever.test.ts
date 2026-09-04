@@ -6,7 +6,7 @@ import type {
   ProjectId,
   WorldbuildingDoc,
 } from "@/db/schemas";
-import { FakeEmbeddingProvider } from "./embedding/fake-provider";
+import { FakeEmbeddingProvider } from "@/test/fake-embedding-provider";
 import { indexSource } from "./indexer";
 import { retrieveContext } from "./retriever";
 

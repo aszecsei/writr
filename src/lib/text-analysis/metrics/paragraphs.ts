@@ -1,8 +1,5 @@
 import type { ParagraphSummary } from "../types";
 
-/** Number of shades in the paragraph-density heatmap scale. */
-export const DENSITY_STEPS = 5;
-
 export type DensityLevel = 0 | 1 | 2 | 3 | 4;
 
 /**

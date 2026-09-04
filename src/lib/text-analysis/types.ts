@@ -130,7 +130,7 @@ export interface DerivedMetrics {
   topWords: WordCount[];
 }
 
-export interface EchoOccurrence {
+interface EchoOccurrence {
   sentenceIndex: number;
   excerpt: string;
 }
@@ -192,7 +192,7 @@ export interface AggregateAnalysis {
   paragraphSummaries: ParagraphSummary[];
 }
 
-export function emptyOpenerCounts(): Record<OpenerCategory, number> {
+function emptyOpenerCounts(): Record<OpenerCategory, number> {
   return Object.fromEntries(OPENER_CATEGORIES.map((c) => [c, 0])) as Record<
     OpenerCategory,
     number
