@@ -58,11 +58,11 @@ export function LinkEditorDialog({ onApply, onRemove }: LinkEditorDialogProps) {
   if (!isOpen) return null;
 
   return (
-    <Modal onClose={handleClose} maxWidth="max-w-sm">
-      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        {currentHref ? "Edit Link" : "Insert Link"}
-      </h3>
-
+    <Modal
+      onClose={handleClose}
+      maxWidth="max-w-sm"
+      title={currentHref ? "Edit Link" : "Insert Link"}
+    >
       <div className="mt-4">
         <label htmlFor="link-url" className={LABEL_CLASS}>
           URL

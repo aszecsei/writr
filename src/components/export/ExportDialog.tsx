@@ -92,12 +92,15 @@ export function ExportDialog() {
   }
 
   return (
-    <Modal onClose={closeModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <Download size={18} />
-        Export
-      </h2>
-
+    <Modal
+      onClose={closeModal}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <Download size={18} />
+          Export
+        </span>
+      }
+    >
       <div className="mt-5 space-y-5">
         {/* Format */}
         <fieldset>

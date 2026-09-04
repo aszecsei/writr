@@ -116,11 +116,7 @@ export function ImportBackupDialog({
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-md">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Import Backup
-      </h2>
-
+    <Modal onClose={onClose} maxWidth="max-w-md" title="Import Backup">
       <div className="mt-4 space-y-4">
         <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
           <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">

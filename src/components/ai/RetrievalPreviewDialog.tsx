@@ -123,19 +123,21 @@ export function RetrievalPreviewDialog({
     result.futureEvents.length === 0;
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-2xl">
-      <div className="flex max-h-[85vh] flex-col">
-        <h2 className="mb-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Retrieved Context Preview
-        </h2>
-        <p className="mb-4 text-xs text-neutral-500 dark:text-neutral-400">
+    <Modal
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+      title="Retrieved Context Preview"
+      description={
+        <>
           What vector search would include for{" "}
           <span className="font-medium text-neutral-700 dark:text-neutral-300">
             {chapter.title}
           </span>
           .
-        </p>
-
+        </>
+      }
+    >
+      <div className="flex max-h-[85vh] flex-col">
         {settings && (
           <div className="mb-4 flex flex-wrap gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
             <span>floor {settings.similarityFloor}</span>

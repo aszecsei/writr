@@ -60,10 +60,7 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-lg">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Add Image
-      </h3>
+    <Modal onClose={onClose} maxWidth="max-w-lg" title="Add Image">
       <div className="space-y-4">
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Image URL

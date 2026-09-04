@@ -4,12 +4,18 @@ import { X } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef } from "react";
 
 interface ModalProps {
+  title?: ReactNode;
+  description?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
   onClose: () => void;
   maxWidth?: string;
 }
 
 export function Modal({
+  title,
+  description,
+  footer,
   children,
   onClose,
   maxWidth = "max-w-md",
@@ -56,7 +62,22 @@ export function Modal({
         >
           <X size={16} />
         </button>
+        {(title || description) && (
+          <div className="mb-4">
+            {title && (
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                {description}
+              </p>
+            )}
+          </div>
+        )}
         {children}
+        {footer && <div className="mt-6">{footer}</div>}
       </div>
     </div>
   );

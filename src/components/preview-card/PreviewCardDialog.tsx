@@ -56,11 +56,15 @@ export function PreviewCardDialog() {
 
   if (!selectedHtml) {
     return (
-      <Modal onClose={closeModal}>
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          <ImagePlus size={18} />
-          Preview Card
-        </h2>
+      <Modal
+        onClose={closeModal}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <ImagePlus size={18} />
+            Preview Card
+          </span>
+        }
+      >
         <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
           Select some text in the editor to create a preview card.
         </p>
@@ -91,12 +95,16 @@ export function PreviewCardDialog() {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-2xl">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <ImagePlus size={18} />
-        Preview Card
-      </h2>
-
+    <Modal
+      onClose={closeModal}
+      maxWidth="max-w-2xl"
+      title={
+        <span className="inline-flex items-center gap-2">
+          <ImagePlus size={18} />
+          Preview Card
+        </span>
+      }
+    >
       <div className="mt-5 space-y-5">
         <div className="flex justify-center rounded-lg bg-neutral-100 p-4 dark:bg-neutral-800">
           <PreviewCardCanvas

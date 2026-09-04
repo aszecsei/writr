@@ -74,18 +74,16 @@ export function SprintConfigDialog() {
   }
 
   return (
-    <Modal onClose={closeConfigModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <Timer size={18} />
-        Start Writing Sprint
-      </h2>
-
-      {projectTitle && (
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Project: {projectTitle}
-        </p>
-      )}
-
+    <Modal
+      onClose={closeConfigModal}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <Timer size={18} />
+          Start Writing Sprint
+        </span>
+      }
+      description={projectTitle ? `Project: ${projectTitle}` : undefined}
+    >
       <div className="mt-5 space-y-5">
         {/* Duration */}
         <fieldset>

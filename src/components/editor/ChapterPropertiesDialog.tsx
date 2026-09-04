@@ -103,11 +103,7 @@ function ChapterPropertiesDialogInner({ chapterId }: { chapterId: ChapterId }) {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        {term} Summary
-      </h3>
-
+    <Modal onClose={closeModal} maxWidth="max-w-lg" title={`${term} Summary`}>
       <AutoResizeTextarea
         label="Summary"
         labelClassName={LABEL_CLASS}

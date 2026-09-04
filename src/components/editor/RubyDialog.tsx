@@ -58,20 +58,20 @@ export function RubyDialog({ onApply, onRemove }: RubyDialogProps) {
   if (!isOpen) return null;
 
   return (
-    <Modal onClose={handleClose} maxWidth="max-w-sm">
-      <div className="flex items-center gap-2">
-        <Languages
-          size={20}
-          className="text-neutral-600 dark:text-neutral-400"
-        />
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+    <Modal
+      onClose={handleClose}
+      maxWidth="max-w-sm"
+      title={
+        <span className="inline-flex items-center gap-2">
+          <Languages
+            size={20}
+            className="text-neutral-600 dark:text-neutral-400"
+          />
           {currentAnnotation ? "Edit Ruby Text" : "Insert Ruby Text"}
-        </h3>
-      </div>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        Add reading guides or annotations above selected text
-      </p>
-
+        </span>
+      }
+      description="Add reading guides or annotations above selected text"
+    >
       <div className="mt-4">
         <label htmlFor="ruby-annotation" className={LABEL_CLASS}>
           Annotation

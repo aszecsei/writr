@@ -43,11 +43,7 @@ function SeparatorSettingsDialogInner({ chapterId }: { chapterId: ChapterId }) {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-md">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Separator
-      </h3>
-
+    <Modal onClose={closeModal} maxWidth="max-w-md" title="Separator">
       <label className={LABEL_CLASS} htmlFor="separator-label">
         Label
       </label>
