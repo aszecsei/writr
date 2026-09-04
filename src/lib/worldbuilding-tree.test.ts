@@ -4,6 +4,8 @@ import { makeWorldbuildingDoc } from "@/test/helpers";
 import {
   buildWorldbuildingTree,
   compileWorldbuildingToMarkdown,
+  descendantIds,
+  isDescendant,
 } from "./worldbuilding-tree";
 
 const pid = "00000000-0000-4000-8000-000000000001" as ProjectId;
@@ -215,5 +217,85 @@ describe("compileWorldbuildingToMarkdown", () => {
     const md = compileWorldbuildingToMarkdown(tree);
     expect(md).toContain("spaced");
     expect(md).not.toContain("  spaced  ");
+  });
+});
+
+describe("descendantIds", () => {
+  const idC = "00000000-0000-4000-8000-cccccccccccc" as WorldbuildingDocId;
+
+  it("returns an empty set for a leaf doc", () => {
+    const doc = makeWorldbuildingDoc({ id: idA, projectId: pid, title: "A" });
+    const tree = buildWorldbuildingTree([doc]);
+    expect(descendantIds(tree, idA)).toEqual(new Set());
+  });
+
+  it("returns an empty set for an id not in the tree", () => {
+    const doc = makeWorldbuildingDoc({ id: idA, projectId: pid, title: "A" });
+    const tree = buildWorldbuildingTree([doc]);
+    expect(descendantIds(tree, idB)).toEqual(new Set());
+  });
+
+  it("collects direct children", () => {
+    const parent = makeWorldbuildingDoc({
+      id: idA,
+      projectId: pid,
+      title: "Parent",
+    });
+    const child = makeWorldbuildingDoc({
+      id: idB,
+      projectId: pid,
+      title: "Child",
+      parentDocId: idA,
+    });
+    const tree = buildWorldbuildingTree([parent, child]);
+    expect(descendantIds(tree, idA)).toEqual(new Set([idB]));
+  });
+
+  it("collects multi-level descendants", () => {
+    const root = makeWorldbuildingDoc({
+      id: idA,
+      projectId: pid,
+      title: "Root",
+    });
+    const mid = makeWorldbuildingDoc({
+      id: idB,
+      projectId: pid,
+      title: "Mid",
+      parentDocId: idA,
+    });
+    const leaf = makeWorldbuildingDoc({
+      id: idC,
+      projectId: pid,
+      title: "Leaf",
+      parentDocId: idB,
+    });
+    const tree = buildWorldbuildingTree([root, mid, leaf]);
+    expect(descendantIds(tree, idA)).toEqual(new Set([idB, idC]));
+    expect(descendantIds(tree, idB)).toEqual(new Set([idC]));
+    expect(descendantIds(tree, idC)).toEqual(new Set());
+  });
+});
+
+describe("isDescendant", () => {
+  it("is true for a nested descendant and false for an unrelated doc", () => {
+    const root = makeWorldbuildingDoc({
+      id: idA,
+      projectId: pid,
+      title: "Root",
+    });
+    const child = makeWorldbuildingDoc({
+      id: idB,
+      projectId: pid,
+      title: "Child",
+      parentDocId: idA,
+    });
+    const other = makeWorldbuildingDoc({
+      projectId: pid,
+      title: "Other",
+    });
+    const tree = buildWorldbuildingTree([root, child, other]);
+    expect(isDescendant(tree, idA, idB)).toBe(true);
+    expect(isDescendant(tree, idA, other.id)).toBe(false);
+    expect(isDescendant(tree, idB, idA)).toBe(false);
   });
 });
