@@ -110,9 +110,15 @@ export const EDITOR_FONTS: EditorFont[] = [
 
 export const DEFAULT_EDITOR_FONT = "literata";
 
+const LEGACY_FONT_ID_ALIASES: Record<string, string> = {
+  "source-sans-3": "source-sans",
+  "atkinson-hyperlegible": "atkinson",
+};
+
 export function getEditorFont(id: string): EditorFont {
+  const resolvedId = LEGACY_FONT_ID_ALIASES[id] ?? id;
   return (
-    EDITOR_FONTS.find((f) => f.id === id) ??
+    EDITOR_FONTS.find((f) => f.id === resolvedId) ??
     EDITOR_FONTS.find((f) => f.id === DEFAULT_EDITOR_FONT) ??
     EDITOR_FONTS[0]
   );
