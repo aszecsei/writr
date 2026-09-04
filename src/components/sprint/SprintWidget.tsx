@@ -2,14 +2,8 @@
 
 import { Pause, Play, Square } from "lucide-react";
 import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
+import { formatCountdownClock } from "@/lib/format-time";
 import { useSprintStore } from "@/store/sprintStore";
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
 
 export function SprintWidget() {
   const activeSprintId = useSprintStore((s) => s.activeSprintId);
@@ -48,7 +42,7 @@ export function SprintWidget() {
             }`}
           />
           <span className="font-mono text-lg font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
-            {formatTime(remainingMs)}
+            {formatCountdownClock(remainingMs)}
           </span>
         </div>
 

@@ -1,3 +1,5 @@
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
+
 /**
  * Split text into TTS-sized chunks, preferring natural boundaries.
  *
@@ -46,13 +48,6 @@ export function chunkTextForTts(text: string, maxChars = 4000): string[] {
 
   if (current) chunks.push(current);
   return chunks;
-}
-
-function splitParagraphs(text: string): string[] {
-  return text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
 }
 
 function splitOversized(block: string, maxChars: number): string[] {

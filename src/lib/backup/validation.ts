@@ -86,12 +86,16 @@ const BackupSchema = z.union([FullBackupSchema, ProjectBackupSchema]);
 
 export function validateBackup(data: unknown) {
   // Normalize old-format appSettings (individual API key fields → records)
+  // before parsing, without mutating the caller's object.
   if (data && typeof data === "object" && "appSettings" in data) {
     const raw = data as Record<string, unknown>;
     if (raw.appSettings && typeof raw.appSettings === "object") {
-      raw.appSettings = normalizeAppSettings(
-        raw.appSettings as Record<string, unknown>,
-      );
+      data = {
+        ...raw,
+        appSettings: normalizeAppSettings(
+          raw.appSettings as Record<string, unknown>,
+        ),
+      };
     }
   }
   return BackupSchema.safeParse(data);

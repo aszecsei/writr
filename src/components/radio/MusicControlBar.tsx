@@ -13,14 +13,8 @@ import {
 } from "lucide-react";
 import type { PlaylistTrackId } from "@/db/schemas";
 import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
+import { formatPlaybackTime } from "@/lib/format-time";
 import { type LoopMode, useRadioStore } from "@/store/radioStore";
-
-function formatTime(seconds: number): string {
-  if (!seconds || !Number.isFinite(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
 
 function LoopButton({
   loopMode,
@@ -94,7 +88,7 @@ export function MusicControlBar() {
       {/* Progress bar */}
       <div className="mb-2 flex items-center gap-2">
         <span className="w-8 text-right text-[10px] tabular-nums text-neutral-400">
-          {formatTime(currentTime)}
+          {formatPlaybackTime(currentTime)}
         </span>
         <input
           type="range"
@@ -105,7 +99,7 @@ export function MusicControlBar() {
           className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-neutral-200 dark:bg-neutral-700 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-neutral-500"
         />
         <span className="w-8 text-[10px] tabular-nums text-neutral-400">
-          {formatTime(duration)}
+          {formatPlaybackTime(duration)}
         </span>
       </div>
 

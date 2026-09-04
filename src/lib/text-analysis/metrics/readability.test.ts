@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fleschReadingEase, readabilityBand } from "./readability";
+import { fleschReadingEase } from "./readability";
 
 describe("fleschReadingEase", () => {
   it("matches a hand-computed score", () => {
@@ -19,23 +19,5 @@ describe("fleschReadingEase", () => {
     expect(fleschReadingEase(0, 0, 0)).toBe(0);
     expect(fleschReadingEase(0, 1, 0)).toBe(0);
     expect(fleschReadingEase(10, 0, 12)).toBe(0);
-  });
-});
-
-describe("readabilityBand", () => {
-  it("switches bands at each documented threshold", () => {
-    expect(readabilityBand(90)).toBe("Very easy");
-    expect(readabilityBand(89.9)).toBe("Easy");
-    expect(readabilityBand(80)).toBe("Easy");
-    expect(readabilityBand(79.9)).toBe("Fairly easy");
-    expect(readabilityBand(70)).toBe("Fairly easy");
-    expect(readabilityBand(69.9)).toBe("Standard");
-    expect(readabilityBand(60)).toBe("Standard");
-    expect(readabilityBand(59.9)).toBe("Fairly difficult");
-    expect(readabilityBand(50)).toBe("Fairly difficult");
-    expect(readabilityBand(49.9)).toBe("Difficult");
-    expect(readabilityBand(30)).toBe("Difficult");
-    expect(readabilityBand(29.9)).toBe("Very difficult");
-    expect(readabilityBand(0)).toBe("Very difficult");
   });
 });

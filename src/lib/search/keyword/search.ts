@@ -1,3 +1,5 @@
+import type MiniSearch from "minisearch";
+import type { SearchResult as MiniSearchResult } from "minisearch";
 import type { ChapterId } from "@/db/schemas";
 import { entityConfigs, entityTypeOrder } from "../entity-config";
 import { extractSnippet } from "../highlight";
@@ -17,11 +19,48 @@ import {
 import type { IndexedDoc } from "./document";
 import { parseQuery } from "./parse-query";
 
-interface MiniSearchResultRow {
-  id: string;
-  score: number;
-  terms: string[];
-  match: Record<string, string[]>;
+/**
+ * Pipeline shared by entity and paragraph search: parseQuery → BM25
+ * candidates (or all docs if pure phrase) → post-filter by quoted phrases →
+ * sort by score with a caller-supplied tie-break. Returns the parsed phrases
+ * alongside the scored results so callers don't need to re-parse the query.
+ */
+function runScoredQuery<TDoc, TScored extends { score: number }>(
+  built: { index: MiniSearch; docs: Map<string, TDoc> },
+  raw: string,
+  hooks: {
+    toScored: (doc: TDoc, row: MiniSearchResult) => TScored;
+    zeroScored: (doc: TDoc) => TScored;
+    matchesPhrase: (scored: TScored, phrase: string) => boolean;
+    compareTie: (a: TScored, b: TScored) => number;
+  },
+): { scored: TScored[]; phrases: string[] } {
+  const { phrases, tokens } = parseQuery(raw);
+
+  let scored: TScored[];
+  if (tokens) {
+    scored = built.index.search(tokens).flatMap((row) => {
+      const doc = built.docs.get(row.id);
+      return doc ? [hooks.toScored(doc, row)] : [];
+    });
+  } else {
+    // Pure quoted-phrase query: minisearch has nothing to score on, so every
+    // doc is a candidate and ranking falls to the post-filter.
+    scored = Array.from(built.docs.values()).map(hooks.zeroScored);
+  }
+
+  if (phrases.length) {
+    scored = scored.filter((s) =>
+      phrases.every((phrase) => hooks.matchesPhrase(s, phrase)),
+    );
+  }
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return hooks.compareTie(a, b);
+  });
+
+  return { scored, phrases };
 }
 
 /**
@@ -69,16 +108,13 @@ function buildSnippet(
   return extractSnippet(text, matchedTerms[0] ?? "");
 }
 
-function docMatchesPhrases(doc: IndexedDoc, phrases: string[]): boolean {
-  if (phrases.length === 0) return true;
+function docMatchesPhrase(doc: IndexedDoc, phrase: string): boolean {
+  const needle = phrase.toLowerCase();
   const haystacks = [
     doc.displayTitle.toLowerCase(),
     ...Object.values(doc.fields).map((v) => v.toLowerCase()),
   ];
-  return phrases.every((p) => {
-    const needle = p.toLowerCase();
-    return haystacks.some((h) => h.includes(needle));
-  });
+  return haystacks.some((h) => h.includes(needle));
 }
 
 interface ScoredDoc {
@@ -88,45 +124,23 @@ interface ScoredDoc {
   terms: string[];
 }
 
-/**
- * Pipeline: parseQuery → BM25 candidates (or all docs if pure phrase) →
- * post-filter by quoted phrases. Returns scored docs sorted by relevance,
- * with deterministic tie-break by entity-type order.
- */
-function runQuery(built: BuiltIndex, raw: string): ScoredDoc[] {
-  const { phrases, tokens } = parseQuery(raw);
-
-  let scored: ScoredDoc[];
-  if (tokens) {
-    const rows = built.index.search(tokens) as unknown as MiniSearchResultRow[];
-    scored = rows.flatMap((r) => {
-      const doc = built.docs.get(r.id);
-      if (!doc) return [];
-      return [{ doc, score: r.score, match: r.match, terms: r.terms }];
-    });
-  } else {
-    // Pure quoted-phrase query: minisearch has nothing to score on, so every
-    // doc is a candidate and ranking falls to the post-filter.
-    scored = Array.from(built.docs.values()).map((doc) => ({
+function runQuery(
+  built: BuiltIndex,
+  raw: string,
+): { scored: ScoredDoc[]; phrases: string[] } {
+  return runScoredQuery(built, raw, {
+    toScored: (doc, row) => ({
       doc,
-      score: 0,
-      match: {},
-      terms: [],
-    }));
-  }
-
-  if (phrases.length) {
-    scored = scored.filter((s) => docMatchesPhrases(s.doc, phrases));
-  }
-
-  scored.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    const ai = entityTypeOrder.indexOf(a.doc.entityType);
-    const bi = entityTypeOrder.indexOf(b.doc.entityType);
-    return ai - bi;
+      score: row.score,
+      match: row.match,
+      terms: row.terms,
+    }),
+    zeroScored: (doc) => ({ doc, score: 0, match: {}, terms: [] }),
+    matchesPhrase: (s, phrase) => docMatchesPhrase(s.doc, phrase),
+    compareTie: (a, b) =>
+      entityTypeOrder.indexOf(a.doc.entityType) -
+      entityTypeOrder.indexOf(b.doc.entityType),
   });
-
-  return scored;
 }
 
 function toSearchResult(scored: ScoredDoc, phrases: string[]): SearchResult {
@@ -154,8 +168,7 @@ export async function searchProjectKeywordPaginated(
     return { results: [], totalCount: 0, page, pageSize, totalPages: 0 };
   }
   const built = await buildProjectIndex(projectId, entityTypeFilter);
-  const scored = runQuery(built, query);
-  const { phrases } = parseQuery(query);
+  const { scored, phrases } = runQuery(built, query);
   const results = scored.map((s) => toSearchResult(s, phrases));
 
   const totalCount = results.length;
@@ -178,8 +191,7 @@ export async function searchProjectKeywordGrouped(
   if (!query.trim()) return [];
 
   const built = await buildProjectIndex(projectId);
-  const scored = runQuery(built, query);
-  const { phrases } = parseQuery(query);
+  const { scored, phrases } = runQuery(built, query);
 
   // Bucket scored docs by entity type, preserving relevance order within each
   // bucket. Then emit groups in entityTypeOrder so the UI's grouping order
@@ -222,8 +234,7 @@ export async function searchChaptersKeyword(
 ): Promise<ChapterKeywordMatch[]> {
   if (!query.trim()) return [];
   const built = await buildChaptersIndex(projectId, opts.readableChapterIds);
-  const scored = runQuery(built, query);
-  const { phrases } = parseQuery(query);
+  const { scored, phrases } = runQuery(built, query);
   return scored.map((s) => {
     const matchField = pickMatchField(s.doc.entityType, s.match);
     return {
@@ -250,45 +261,23 @@ function runParagraphQuery(
   built: BuiltParagraphIndex,
   raw: string,
 ): ParagraphScored[] {
-  const { phrases, tokens } = parseQuery(raw);
-
-  let scored: ParagraphScored[];
-  if (tokens) {
-    const rows = built.index.search(tokens) as unknown as MiniSearchResultRow[];
-    scored = rows.flatMap((r) => {
-      const doc = built.docs.get(r.id);
-      if (!doc) return [];
-      return [
-        {
-          paragraphNumber: doc.paragraphNumber,
-          text: doc.text,
-          score: r.score,
-          terms: r.terms,
-        },
-      ];
-    });
-  } else {
-    scored = Array.from(built.docs.values()).map((d) => ({
-      paragraphNumber: d.paragraphNumber,
-      text: d.text,
+  const { scored } = runScoredQuery(built, raw, {
+    toScored: (doc, row) => ({
+      paragraphNumber: doc.paragraphNumber,
+      text: doc.text,
+      score: row.score,
+      terms: row.terms,
+    }),
+    zeroScored: (doc) => ({
+      paragraphNumber: doc.paragraphNumber,
+      text: doc.text,
       score: 0,
       terms: [],
-    }));
-  }
-
-  if (phrases.length) {
-    scored = scored.filter((p) =>
-      phrases.every((phrase) =>
-        p.text.toLowerCase().includes(phrase.toLowerCase()),
-      ),
-    );
-  }
-
-  scored.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return a.paragraphNumber - b.paragraphNumber;
+    }),
+    matchesPhrase: (s, phrase) =>
+      s.text.toLowerCase().includes(phrase.toLowerCase()),
+    compareTie: (a, b) => a.paragraphNumber - b.paragraphNumber,
   });
-
   return scored;
 }
 

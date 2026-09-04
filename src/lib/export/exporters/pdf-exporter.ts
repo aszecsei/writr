@@ -5,6 +5,7 @@ import type {
 } from "pdfmake/interfaces";
 import { match } from "ts-pattern";
 import type { InlineSpan, TextAlignment, TextSpan } from "../markdown-to-nodes";
+import { loadPdfMake } from "../pdfmake";
 import { HR_TEXT, imagePlaceholder } from "../shared";
 import type {
   BlockquoteNode,
@@ -32,6 +33,16 @@ type PdfAlignment = "left" | "center" | "right" | "justify";
 
 function mapAlignment(alignment?: TextAlignment): PdfAlignment | undefined {
   return alignment as PdfAlignment | undefined;
+}
+
+/** Typed `[left, top, right, bottom]` margin tuple, pdfmake's 4-value form. */
+function margin(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): [number, number, number, number] {
+  return [left, top, right, bottom];
 }
 
 type PdfTextPart = {
@@ -101,7 +112,7 @@ export class PdfExporter implements Exporter {
       fontSize: HEADING_SIZES[node.level] ?? 12,
       bold: true,
       alignment: mapAlignment(node.alignment),
-      margin: [leftMargin, 12, 0, 4] as [number, number, number, number],
+      margin: margin(leftMargin, 12, 0, 4),
     });
   }
 
@@ -110,7 +121,7 @@ export class PdfExporter implements Exporter {
     this.content.push({
       ...spansToPdfText(node.spans),
       alignment: mapAlignment(node.alignment),
-      margin: [leftMargin, 0, 0, 8] as [number, number, number, number],
+      margin: margin(leftMargin, 0, 0, 8),
     });
   }
 
@@ -118,11 +129,11 @@ export class PdfExporter implements Exporter {
     const inner = new PdfExporter();
     visitNodes(node.children, inner);
     this.content.push({
-      margin: [20, 0, 0, 8] as [number, number, number, number],
+      margin: margin(20, 0, 0, 8),
       stack: inner.content,
       italics: true,
       color: "#555555",
-    } as Content);
+    });
   }
 
   visitList(node: ListNode): void {
@@ -131,18 +142,18 @@ export class PdfExporter implements Exporter {
       visitNodes(itemNodes, inner);
       return inner.content.length === 1
         ? inner.content[0]
-        : ({ stack: inner.content } as Content);
+        : { stack: inner.content };
     });
     if (node.ordered) {
       this.content.push({
         ol: listItems,
-        margin: [0, 0, 0, 8] as [number, number, number, number],
-      } as Content);
+        margin: margin(0, 0, 0, 8),
+      });
     } else {
       this.content.push({
         ul: listItems,
-        margin: [0, 0, 0, 8] as [number, number, number, number],
-      } as Content);
+        margin: margin(0, 0, 0, 8),
+      });
     }
   }
 
@@ -152,8 +163,8 @@ export class PdfExporter implements Exporter {
       font: "Courier",
       fontSize: 9,
       background: "#f5f5f5",
-      margin: [0, 0, 0, 8] as [number, number, number, number],
-    } as Content);
+      margin: margin(0, 0, 0, 8),
+    });
   }
 
   visitHr(_node: HrNode): void {
@@ -162,8 +173,8 @@ export class PdfExporter implements Exporter {
       alignment: "center",
       color: "#666666",
       fontSize: 12,
-      margin: [0, 12, 0, 12] as [number, number, number, number],
-    } as Content);
+      margin: margin(0, 12, 0, 12),
+    });
   }
 
   visitImage(node: ImageNode): void {
@@ -172,25 +183,25 @@ export class PdfExporter implements Exporter {
       italics: true,
       color: "#666666",
       alignment: "center",
-      margin: [0, 8, 0, 8] as [number, number, number, number],
-    } as Content);
+      margin: margin(0, 8, 0, 8),
+    });
   }
 
   visitPageBreak(_node: PageBreakNode): void {
-    this.content.push({ text: "", pageBreak: "before" } as Content);
+    this.content.push({ text: "", pageBreak: "before" });
   }
 
   addTitlePage(title: string): void {
     this.content.push(
-      { text: "", margin: [0, 200, 0, 0] } as Content,
+      { text: "", margin: margin(0, 200, 0, 0) },
       {
         text: title,
         fontSize: 28,
         bold: true,
         alignment: "center",
-        margin: [0, 0, 0, 0],
-      } as Content,
-      { text: "", pageBreak: "after" } as Content,
+        margin: margin(0, 0, 0, 0),
+      },
+      { text: "", pageBreak: "after" },
     );
   }
 
@@ -199,27 +210,16 @@ export class PdfExporter implements Exporter {
       text: title,
       fontSize: 24,
       bold: true,
-      margin: [0, 0, 0, 12],
-    } as Content);
+      margin: margin(0, 0, 0, 12),
+    });
   }
 
   addPageBreak(): void {
-    this.content.push({ text: "", pageBreak: "before" } as Content);
+    this.content.push({ text: "", pageBreak: "before" });
   }
 
   async toBlob(): Promise<Blob> {
-    const pdfMakeModule = await import("pdfmake/build/pdfmake");
-    const pdfFontsModule = await import("pdfmake/build/vfs_fonts");
-    const courierFontModule = await import(
-      "pdfmake/build/standard-fonts/Courier"
-    );
-
-    const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
-    const vfs = pdfFontsModule.default ?? pdfFontsModule;
-    pdfMake.addVirtualFileSystem(vfs);
-
-    const courierFont = courierFontModule.default ?? courierFontModule;
-    pdfMake.addFontContainer(courierFont);
+    const pdfMake = await loadPdfMake();
 
     const docDefinition: TDocumentDefinitions = {
       content: this.content,

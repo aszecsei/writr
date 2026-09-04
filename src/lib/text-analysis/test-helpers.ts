@@ -1,4 +1,4 @@
-import type { AnalyzedSentence, AnalyzedTerm } from "./types";
+import type { AnalyzedSentence, AnalyzedTerm, Echo } from "./types";
 
 export function term(normal: string, ...tags: string[]): AnalyzedTerm {
   return { normal, root: normal, tags: new Set(tags), syllables: 1 };
@@ -21,5 +21,17 @@ export function sentence(
     text: terms.map((t) => t.normal).join(" "),
     terms,
     paragraphIndex,
+  };
+}
+
+/** A synthetic echo with occurrences at the given sentence indexes. */
+export function echoAt(sentenceIndexes: number[]): Echo {
+  return {
+    word: "gleaming",
+    count: sentenceIndexes.length,
+    occurrences: sentenceIndexes.map((sentenceIndex) => ({
+      sentenceIndex,
+      excerpt: "…",
+    })),
   };
 }

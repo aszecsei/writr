@@ -11,6 +11,9 @@
  * excludes the open delimiter and newlines).
  */
 
+import { escapeRegExp } from "@/lib/text/escape-reg-exp";
+import { wordsOf } from "@/lib/text/words-of";
+
 export interface HoleDelimiters {
   open: string;
   close: string;
@@ -28,11 +31,6 @@ export interface HoleMatch {
   length: number;
   /** The full matched text, delimiters included. */
   text: string;
-}
-
-/** Escape a string so it can be embedded literally in a RegExp. */
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Fall back to the default delimiters when either side is empty/blank. */
@@ -61,20 +59,11 @@ export function findHoles(
   text: string,
   delimiters: HoleDelimiters,
 ): HoleMatch[] {
-  const regex = buildHoleRegex(delimiters);
-  const matches: HoleMatch[] = [];
-  let match = regex.exec(text);
-  while (match !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      text: match[0],
-    });
-    // Guard against zero-length matches looping forever.
-    if (match[0].length === 0) regex.lastIndex += 1;
-    match = regex.exec(text);
-  }
-  return matches;
+  return [...text.matchAll(buildHoleRegex(delimiters))].map((match) => ({
+    index: match.index,
+    length: match[0].length,
+    text: match[0],
+  }));
 }
 
 /** Count the holes in `text`. */
@@ -92,6 +81,5 @@ export function countWordsExcludingHoles(
   text: string,
   delimiters: HoleDelimiters,
 ): number {
-  return stripHoles(text, delimiters).trim().split(/\s+/).filter(Boolean)
-    .length;
+  return wordsOf(stripHoles(text, delimiters)).length;
 }

@@ -29,8 +29,8 @@ function fieldToString(value: unknown): string {
   return "";
 }
 
-export function entityToDoc(args: {
-  entity: Record<string, unknown> & { id: string };
+export function entityToDoc<T extends { id: string }>(args: {
+  entity: T;
   entityType: SearchableEntityType;
   projectId: string;
   titleField: string;
@@ -38,18 +38,19 @@ export function entityToDoc(args: {
 }): IndexedDoc {
   const { entity, entityType, projectId, titleField, subtitleField } = args;
   const config = entityConfigs[entityType];
+  const record = entity as unknown as Record<string, unknown>;
   const fields: Record<string, string> = {};
   for (const f of config.searchableFields) {
-    const s = fieldToString(entity[f]);
+    const s = fieldToString(record[f]);
     if (s) fields[f] = s;
   }
   return {
     docId: makeDocId(entityType, entity.id),
     entityId: entity.id,
     entityType,
-    displayTitle: (entity[titleField] as string | undefined) ?? "",
+    displayTitle: (record[titleField] as string | undefined) ?? "",
     subtitle: subtitleField
-      ? ((entity[subtitleField] as string | undefined) ?? undefined)
+      ? ((record[subtitleField] as string | undefined) ?? undefined)
       : undefined,
     url: config.buildUrl(projectId, entity.id),
     fields,

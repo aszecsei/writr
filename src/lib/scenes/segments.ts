@@ -36,16 +36,13 @@ export function splitSegments(content: string): RawSegment[] {
   const segments: RawSegment[] = [];
   let lastIndex = 0;
   let precedingSceneId: string | null = null;
-  MARKER_RE.lastIndex = 0;
-  let match: RegExpExecArray | null = MARKER_RE.exec(content);
-  while (match !== null) {
+  for (const match of content.matchAll(MARKER_RE)) {
     segments.push({
       markerSceneId: precedingSceneId,
       body: content.slice(lastIndex, match.index).trim(),
     });
     precedingSceneId = extractSceneId(match[0]);
     lastIndex = match.index + match[0].length;
-    match = MARKER_RE.exec(content);
   }
   segments.push({
     markerSceneId: precedingSceneId,
@@ -87,6 +84,19 @@ export function assembleSegments(segments: OrderedSegment[]): string {
 }
 
 /**
+ * The core scene id of `content`: the one id in `sceneIds` that no marker
+ * references.
+ */
+export function resolveCoreId(sceneIds: string[], content: string): string {
+  const markerIds = new Set(
+    splitSegments(content)
+      .map((s) => s.markerSceneId)
+      .filter((id): id is string => id !== null),
+  );
+  return sceneIds.find((id) => !markerIds.has(id)) ?? sceneIds[0] ?? "";
+}
+
+/**
  * Map a chapter's split segments onto its scene rows, resolving the core
  * segment (which has no marker) to the row whose id appears in no marker.
  * Returns ordered `{ sceneId, body }` for every scene in document order.
@@ -100,13 +110,7 @@ export function mapSegmentsToScenes(
   sceneIds: string[],
 ): OrderedSegment[] {
   const segments = splitSegments(content);
-  const markerIds = new Set(
-    segments
-      .map((s) => s.markerSceneId)
-      .filter((id): id is string => id !== null),
-  );
-  // The core row is the one scene id that no marker references.
-  const coreId = sceneIds.find((id) => !markerIds.has(id)) ?? sceneIds[0] ?? "";
+  const coreId = resolveCoreId(sceneIds, content);
   return segments.map((seg) => ({
     sceneId: seg.markerSceneId ?? coreId,
     body: seg.body,

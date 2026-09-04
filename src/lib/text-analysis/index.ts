@@ -5,26 +5,27 @@ export {
   makeAnalysisCacheKey,
   setCachedAnalysis,
 } from "./cache";
-export {
-  ECHO_WINDOW_SENTENCES,
-  type EchoSeverity,
-  echoProximity,
-  echoSeverity,
-} from "./metrics/frequency";
-export { STICKY_THRESHOLD } from "./metrics/glue";
-export { type DensityLevel, paragraphDensityLevel } from "./metrics/paragraphs";
-export { readabilityBand } from "./metrics/readability";
+export { echoProximity } from "./metrics/frequency";
+export { parseParagraph } from "./nlp";
 export {
   bucketForLength,
-  LONG_MAX,
-  MEDIUM_MAX,
-  SHORT_MAX,
-} from "./metrics/sentences";
-export { parseParagraph } from "./nlp";
+  type DensityLevel,
+  type EchoSeverity,
+  echoSeverity,
+  paragraphDensityLevel,
+  readabilityBand,
+} from "./presentation";
 export {
   markdownToPlainParagraphs,
   screenplayToPlainParagraphs,
 } from "./strip";
+export {
+  ECHO_WINDOW_SENTENCES,
+  LONG_MAX,
+  MEDIUM_MAX,
+  SHORT_MAX,
+  STICKY_THRESHOLD,
+} from "./thresholds";
 export type {
   AggregateAnalysis,
   AnalysisCounts,

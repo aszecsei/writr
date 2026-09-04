@@ -1,5 +1,6 @@
 import { type DocNode, markdownToNodes } from "@/lib/export/markdown-to-nodes";
 import { type HoleDelimiters, stripHoles } from "@/lib/holes";
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
 
 function spanText(node: Extract<DocNode, { type: "paragraph" }>): string {
   return node.spans
@@ -65,8 +66,7 @@ export function screenplayToPlainParagraphs(
   content: string,
   delimiters: HoleDelimiters,
 ): string[] {
-  return stripHoles(content, delimiters)
-    .split(/\n{2,}/)
+  return splitParagraphs(stripHoles(content, delimiters))
     .map((block) =>
       block
         .split("\n")

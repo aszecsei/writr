@@ -9,8 +9,9 @@ import {
   searchChapterParagraphsKeyword,
   searchChaptersKeyword,
 } from "@/lib/search/keyword/search";
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
 import { defineTool } from "../types";
-import { fail, ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
+import { fail, ok, SCENE_BREAK_RE } from "./helpers";
 
 // CRUD: chapter create/update plus the chapter-content read tools
 // (read_chapter / read_chapter_range / search_chapter / search_chapters /

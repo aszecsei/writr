@@ -1,5 +1,12 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import type { Lint, LintConfig, Linter } from "harper.js";
+import type {
+  Lint,
+  LintConfig,
+  Linter,
+  Suggestion,
+  SuggestionKind,
+} from "harper.js";
+import { createLazyService } from "@/lib/lazy-service";
 import { extractBlocks, mapSpanToRange } from "./extractor";
 
 /** Metadata for a single harper lint rule, for rendering the rule-filter UI. */
@@ -55,12 +62,11 @@ const SPELLING_RULE_KEYS = new Set(["SpellCheck", "SpelledNumbers"]);
 
 /** Build the per-span replacement string + display label from a harper suggestion. */
 function readSuggestion(
-  // biome-ignore lint/suspicious/noExplicitAny: harper's Suggestion type isn't re-exported cleanly across the worker boundary
-  suggestion: any,
+  suggestion: Suggestion,
   problemText: string,
 ): GrammarSuggestion {
   // SuggestionKind: 0 = Replace, 1 = Remove, 2 = InsertAfter
-  const kind: number = suggestion.kind();
+  const kind: SuggestionKind = suggestion.kind();
   const replacementText: string = suggestion.get_replacement_text();
   if (kind === 1) {
     return { label: "Remove", replacement: "" };
@@ -86,28 +92,17 @@ function readSuggestion(
  * assets need bundler configuration.
  */
 export class GrammarService {
-  private linter: Linter | null = null;
-  private loading = false;
-  private loadPromise: Promise<void> | null = null;
+  private lazy = createLazyService(() => this.loadLinter());
   /** Lint kinds (categories) the user has switched off — filtered post-hoc. */
   private disabledKinds: Set<string> = new Set();
   /** Per-rule overrides (rule key → enabled), applied via harper's config. */
   private ruleOverrides: Record<string, boolean> = {};
 
   async load(): Promise<void> {
-    if (this.linter) return;
-    if (this.loadPromise) return this.loadPromise;
-
-    this.loading = true;
-    this.loadPromise = this.doLoad();
-    try {
-      await this.loadPromise;
-    } finally {
-      this.loading = false;
-    }
+    return this.lazy.load();
   }
 
-  private async doLoad(): Promise<void> {
+  private async loadLinter(): Promise<Linter> {
     try {
       const [{ WorkerLinter, Dialect }, { binaryInlined }] = await Promise.all([
         import("harper.js"),
@@ -123,7 +118,7 @@ export class GrammarService {
       await linter.setup();
       // Apply any overrides captured before the linter finished loading.
       await this.writeRuleConfig(linter);
-      this.linter = linter;
+      return linter;
     } catch (error) {
       console.error("Failed to load grammar checker:", error);
       throw error;
@@ -131,11 +126,11 @@ export class GrammarService {
   }
 
   isLoaded(): boolean {
-    return this.linter !== null;
+    return this.lazy.isLoaded();
   }
 
   isLoading(): boolean {
-    return this.loading;
+    return this.lazy.isLoading();
   }
 
   /**
@@ -154,8 +149,9 @@ export class GrammarService {
    */
   async applyRuleOverrides(overrides: Record<string, boolean>): Promise<void> {
     this.ruleOverrides = overrides;
-    if (this.linter) {
-      await this.writeRuleConfig(this.linter);
+    const linter = this.lazy.get();
+    if (linter) {
+      await this.writeRuleConfig(linter);
     }
   }
 
@@ -173,7 +169,7 @@ export class GrammarService {
    * Spelling-only rules are omitted. Requires the linter to be loaded.
    */
   async getRuleInfo(): Promise<GrammarRuleInfo[]> {
-    const linter = this.linter;
+    const linter = this.lazy.get();
     if (!linter) return [];
 
     const [defaults, descriptions] = await Promise.all([
@@ -208,7 +204,7 @@ export class GrammarService {
     doc: ProseMirrorNode,
     ignoredLints?: Set<string>,
   ): Promise<GrammarResult[]> {
-    const linter = this.linter;
+    const linter = this.lazy.get();
     if (!linter) return [];
 
     const blocks = extractBlocks(doc);

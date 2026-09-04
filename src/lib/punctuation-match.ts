@@ -17,6 +17,8 @@
  * intentionally NOT applied here. Those need an offset-mapping matcher.
  */
 
+import { escapeRegExp } from "@/lib/text/escape-reg-exp";
+
 const PUNCT_MAP: Record<string, string> = {
   "‘": "'", // left single quotation mark
   "’": "'", // right single quotation mark / apostrophe
@@ -31,7 +33,11 @@ const PUNCT_MAP: Record<string, string> = {
   " ": " ", // non-breaking space
 };
 
-const PUNCT_RE = /[‘’‚‛′“”„‟″ ]/g;
+/** Derived from PUNCT_MAP's keys, so the two never drift out of sync. */
+const PUNCT_RE = new RegExp(
+  `[${Object.keys(PUNCT_MAP).map(escapeRegExp).join("")}]`,
+  "g",
+);
 
 export function normalizePunctuation(s: string): string {
   return s.replace(PUNCT_RE, (ch) => PUNCT_MAP[ch] ?? ch);

@@ -1,3 +1,4 @@
+import { forEachExportItem } from "./for-each-export-item";
 import type { ExportContent, ExportOptions } from "./types";
 
 export function exportMarkdown(
@@ -6,23 +7,22 @@ export function exportMarkdown(
 ): Blob {
   const parts: string[] = [];
 
-  if (options.includeTitlePage && options.scope === "book") {
-    parts.push(`# ${content.projectTitle}\n\n---\n`);
-  }
-
-  for (const chapter of content.chapters) {
-    if (chapter.isSeparator) {
-      parts.push(`# ${chapter.title}\n`);
-      parts.push("");
-      continue;
-    }
-    if (options.includeChapterHeadings) {
-      const level = Math.min(6, 2 + (chapter.level ?? 0));
-      parts.push(`${"#".repeat(level)} ${chapter.title}\n`);
-    }
-    parts.push(chapter.content);
-    parts.push(""); // blank line between chapters
-  }
+  forEachExportItem(content, options, {
+    titlePage: (title) => parts.push(`# ${title}\n\n---\n`),
+    chapterHeading: (item) => {
+      if (item.isSeparator) {
+        parts.push(`# ${item.title}\n`);
+        parts.push("");
+        return;
+      }
+      const level = Math.min(6, 2 + (item.level ?? 0));
+      parts.push(`${"#".repeat(level)} ${item.title}\n`);
+    },
+    chapter: (item) => {
+      parts.push(item.content);
+      parts.push(""); // blank line between chapters
+    },
+  });
 
   return new Blob([parts.join("\n")], { type: "text/markdown;charset=utf-8" });
 }

@@ -1,6 +1,8 @@
 import { match } from "ts-pattern";
-import { triggerDownload } from "./download";
-import { createExporter } from "./exporters";
+import { triggerDownload } from "@/lib/download";
+import { sanitizeFilename } from "@/lib/filename";
+import { DocxExporter } from "./exporters/docx-exporter";
+import { PdfExporter } from "./exporters/pdf-exporter";
 import { exportFountain } from "./exportFountain";
 import { exportMarkdown } from "./exportMarkdown";
 import { exportScreenplayPdf } from "./exportScreenplayPdf";
@@ -13,10 +15,6 @@ export {
   copyChapterMarkdownToClipboard,
 } from "./clipboard";
 export { type ExportHoleScan, scanExportHoles } from "./holes-scan";
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "export";
-}
 
 const FORMAT_EXTENSIONS: Record<ExportOptions["format"], string> = {
   markdown: ".md",
@@ -35,10 +33,10 @@ export async function performExport(options: ExportOptions): Promise<void> {
       exportScreenplayPdf(content, options),
     )
     .with({ format: "docx" }, () =>
-      runExport(createExporter(options), content, options),
+      runExport(new DocxExporter(), content, options),
     )
     .with({ format: "pdf" }, () =>
-      runExport(createExporter(options), content, options),
+      runExport(new PdfExporter(), content, options),
     )
     .exhaustive();
 

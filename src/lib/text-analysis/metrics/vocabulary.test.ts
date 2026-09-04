@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MTLD_MIN_TOKENS, mtld, ttrFromFrequency } from "./vocabulary";
+import { MTLD_MIN_TOKENS } from "../thresholds";
+import { mtld, ttrFromFrequency } from "./vocabulary";
 
 describe("ttrFromFrequency", () => {
   it("is 1 when every word is unique", () => {

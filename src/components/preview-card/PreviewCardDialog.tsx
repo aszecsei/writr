@@ -13,11 +13,9 @@ import { CloseFooter } from "@/components/ui/CloseFooter";
 import { CHECKBOX_CLASS, LEGEND_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { triggerDownload } from "@/lib/download";
 import { getEditorFont } from "@/lib/fonts";
-import {
-  downloadBlob,
-  generatePreviewImage,
-} from "@/lib/preview-card/generate";
+import { generatePreviewImage } from "@/lib/preview-card/generate";
 import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
 import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
 import { getTerm } from "@/lib/terminology";
@@ -89,7 +87,7 @@ export function PreviewCardDialog() {
     try {
       const blob = await generatePreviewImage(canvasRef.current);
       const filename = `${projectTitle.toLowerCase().replace(/\s+/g, "-")}-preview.png`;
-      downloadBlob(blob, filename);
+      triggerDownload(blob, filename);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate image");
     } finally {

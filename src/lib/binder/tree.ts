@@ -247,19 +247,30 @@ export function isManuscriptDocument(
 }
 
 /**
- * Total word count of each node's subtree (the node's own `wordCount` plus every
- * descendant's). Used for the binder's folder rollup display.
+ * Total per-node value of each node's subtree (the node's own value plus every
+ * descendant's), via a caller-supplied per-chapter count.
  */
-export function subtreeWordCounts(nodes: BinderNode[]): Map<ChapterId, number> {
+function subtreeCounts(
+  nodes: BinderNode[],
+  countOf: (chapter: Chapter) => number,
+): Map<ChapterId, number> {
   const map = new Map<ChapterId, number>();
   const visit = (node: BinderNode): number => {
-    let total = node.chapter.wordCount;
+    let total = countOf(node.chapter);
     for (const child of node.children) total += visit(child);
     map.set(node.chapter.id, total);
     return total;
   };
   for (const node of nodes) visit(node);
   return map;
+}
+
+/**
+ * Total word count of each node's subtree (the node's own `wordCount` plus every
+ * descendant's). Used for the binder's folder rollup display.
+ */
+export function subtreeWordCounts(nodes: BinderNode[]): Map<ChapterId, number> {
+  return subtreeCounts(nodes, (chapter) => chapter.wordCount);
 }
 
 /**
@@ -272,15 +283,9 @@ export function subtreeHoleCounts(
   nodes: BinderNode[],
   delimiters: HoleDelimiters,
 ): Map<ChapterId, number> {
-  const map = new Map<ChapterId, number>();
-  const visit = (node: BinderNode): number => {
-    let total = countHoles(node.chapter.content, delimiters);
-    for (const child of node.children) total += visit(child);
-    map.set(node.chapter.id, total);
-    return total;
-  };
-  for (const node of nodes) visit(node);
-  return map;
+  return subtreeCounts(nodes, (chapter) =>
+    countHoles(chapter.content, delimiters),
+  );
 }
 
 /** The given node plus every descendant, regardless of section (for cascade ops). */

@@ -1,4 +1,5 @@
 import type { Mark, Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { extractTextBlocks } from "@/lib/prosemirror/extract-text-blocks";
 
 export interface Replacement {
   from: number;
@@ -7,6 +8,12 @@ export interface Replacement {
   /** Marks active on the source text node, so the replacement preserves formatting. */
   marks: readonly Mark[];
 }
+
+/** Smart-quote glyph for each straight quote character, by context. */
+const SMART_QUOTES: Record<string, { open: string; close: string }> = {
+  '"': { open: "“", close: "”" },
+  "'": { open: "‘", close: "’" },
+};
 
 /**
  * Scans a ProseMirror document for straight quotes and returns
@@ -18,94 +25,52 @@ export interface Replacement {
  * Quote classification (opening vs. closing) is driven by the preceding
  * character within the same block, threaded across text-node boundaries so
  * that mark splits (e.g. `"*italic*"`) don't reset the context. Block
- * boundaries and non-text inline nodes (hardBreak, image, …) do reset it.
+ * boundaries and non-text inline runs (hardBreak, image, …) do reset it —
+ * their single placeholder character is whitespace-equivalent, which the
+ * classifiers below treat the same as a hard reset.
  */
 export function convertToSmartQuotes(doc: ProseMirrorNode): Replacement[] {
   const replacements: Replacement[] = [];
-  let prevChar = "";
 
-  doc.descendants((node, pos) => {
-    // Skip code blocks entirely
-    if (node.type.name === "codeBlock") {
-      prevChar = "";
-      return false;
-    }
+  for (const block of extractTextBlocks(doc)) {
+    let prevChar = "";
 
-    // Entering a new block — the previous block's trailing punctuation must
-    // not bleed into this one (e.g. ending one paragraph on `."` shouldn't
-    // make the next paragraph's opening `"` look like a closing quote).
-    if (node.isBlock) {
-      prevChar = "";
-      return;
-    }
+    for (const run of block.runs) {
+      if (run.kind !== "text") {
+        prevChar = run.text;
+        continue;
+      }
 
-    // Non-text inline node (hardBreak, image, mention, …) — treat as a
-    // context break: the character after a line break should be free to open.
-    if (!node.isText || !node.text) {
-      prevChar = "";
-      return;
-    }
+      const text = run.text;
+      const marks = run.marks;
 
-    // Skip text with inline code mark; don't let code chars leak as context.
-    if (node.marks.some((m) => m.type.name === "code")) {
-      prevChar = "";
-      return;
-    }
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const prev = i > 0 ? text[i - 1] : prevChar;
+        const next = i < text.length - 1 ? text[i + 1] : "";
+        const absPos = run.from + i;
 
-    const text = node.text;
-    const marks = node.marks;
-
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      const prev = i > 0 ? text[i - 1] : prevChar;
-      const next = i < text.length - 1 ? text[i + 1] : "";
-      const absPos = pos + i;
-
-      if (ch === '"') {
-        if (isOpeningContext(prev)) {
+        if (ch === '"' || ch === "'") {
+          // An apostrophe inside a word (don't, it's) always closes, even
+          // when the preceding character would otherwise open a quote.
+          const isApostrophe =
+            ch === "'" && isWordChar(prev) && isWordChar(next);
+          const replacement =
+            !isApostrophe && isOpeningContext(prev)
+              ? SMART_QUOTES[ch].open
+              : SMART_QUOTES[ch].close;
           replacements.push({
             from: absPos,
             to: absPos + 1,
-            replacement: "“",
-            marks,
-          });
-        } else {
-          replacements.push({
-            from: absPos,
-            to: absPos + 1,
-            replacement: "”",
-            marks,
-          });
-        }
-      } else if (ch === "'") {
-        // Apostrophe inside a word (don't, it's)
-        if (isWordChar(prev) && isWordChar(next)) {
-          replacements.push({
-            from: absPos,
-            to: absPos + 1,
-            replacement: "’",
-            marks,
-          });
-        } else if (isOpeningContext(prev)) {
-          replacements.push({
-            from: absPos,
-            to: absPos + 1,
-            replacement: "‘",
-            marks,
-          });
-        } else {
-          replacements.push({
-            from: absPos,
-            to: absPos + 1,
-            replacement: "’",
+            replacement,
             marks,
           });
         }
       }
-    }
 
-    prevChar = text[text.length - 1];
-  });
+      prevChar = text[text.length - 1];
+    }
+  }
 
   return replacements;
 }
