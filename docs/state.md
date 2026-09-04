@@ -6,7 +6,7 @@ All Zustand stores use Immer middleware and are intended for **ephemeral UI stat
 
 - **`uiStore`** — sidebar (`open` + active panel: `chapters | bible | agents`), modal (discriminated union — see below), AI panel toggle, focus-mode toggle.
 - **`editorStore`** — active document, dirty/save state, word count, selection, content version (used to invalidate derived state).
-- **`projectStore`** — active project/chapter context, chapter order.
+- **`projectStore`** — active project context (id, title, mode).
 - **`commentStore`** — selected comment, comment-margin visibility.
 - **`sprintStore`** — active sprint timer, word tracking, config & history modal state.
 - **`spellcheckStore`** — enabled state, ignored words, context menu, scanner state.
