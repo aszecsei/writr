@@ -1,26 +1,18 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  applyEditorWidth,
+  applyHoleHighlightOpacity,
+  applyNeutralColor,
+  applyPrimaryColor,
+  applyUiDensity,
+} from "./apply-theme";
 import { NEUTRAL_PALETTES, PRIMARY_PALETTES, SHADE_KEYS } from "./palettes";
 
-// Mock DOM globals
-const styleProps = new Map<string, string>();
-const attrs = new Map<string, string>();
+// jsdom provides a real `document`, but Node's own experimental global
+// `localStorage` getter (undefined without --localstorage-file) shadows
+// jsdom's implementation, so storage still needs a stand-in.
 const storage = new Map<string, string>();
-
-const mockStyle = {
-  setProperty: vi.fn((k: string, v: string) => styleProps.set(k, v)),
-  getPropertyValue: vi.fn((k: string) => styleProps.get(k) ?? ""),
-  removeProperty: vi.fn((k: string) => styleProps.delete(k)),
-};
-
-vi.stubGlobal("document", {
-  documentElement: {
-    style: mockStyle,
-    setAttribute: vi.fn((k: string, v: string) => attrs.set(k, v)),
-    getAttribute: vi.fn((k: string) => attrs.get(k) ?? null),
-    removeAttribute: vi.fn((k: string) => attrs.delete(k)),
-  },
-});
-
 vi.stubGlobal("localStorage", {
   getItem: vi.fn((k: string) => storage.get(k) ?? null),
   setItem: vi.fn((k: string, v: string) => storage.set(k, v)),
@@ -28,144 +20,93 @@ vi.stubGlobal("localStorage", {
   clear: vi.fn(() => storage.clear()),
 });
 
-// Import after mocking
-const {
-  applyPrimaryColor,
-  applyNeutralColor,
-  applyEditorWidth,
-  applyUiDensity,
-  applyHoleHighlightOpacity,
-} = await import("./apply-theme");
+beforeEach(() => {
+  document.documentElement.removeAttribute("style");
+  document.documentElement.removeAttribute("data-density");
+  storage.clear();
+});
 
 describe("applyPrimaryColor", () => {
-  beforeEach(() => {
-    styleProps.clear();
-    storage.clear();
-  });
-
-  it("sets --primary-* CSS variables on document element", () => {
-    applyPrimaryColor("blue");
-    expect(styleProps.get("--primary-500")).toBe(PRIMARY_PALETTES.blue[500]);
-    expect(styleProps.get("--primary-600")).toBe(PRIMARY_PALETTES.blue[600]);
-  });
-
-  it("sets all 11 shade variables", () => {
+  it("sets all shade CSS variables and caches them to localStorage", () => {
     applyPrimaryColor("rose");
     for (const shade of SHADE_KEYS) {
-      expect(styleProps.get(`--primary-${shade}`)).toBe(
-        PRIMARY_PALETTES.rose[shade],
-      );
+      expect(
+        document.documentElement.style.getPropertyValue(`--primary-${shade}`),
+      ).toBe(PRIMARY_PALETTES.rose[shade]);
     }
-  });
-
-  it("caches variables to localStorage", () => {
-    applyPrimaryColor("rose");
     const cached = JSON.parse(storage.get("writr-primary-vars") ?? "{}");
     expect(cached["--primary-500"]).toBe("#f43f5e");
-  });
-
-  it("stores the color name in localStorage", () => {
-    applyPrimaryColor("emerald");
-    expect(storage.get("writr-primary-color")).toBe("emerald");
+    expect(storage.get("writr-primary-color")).toBe("rose");
   });
 });
 
 describe("applyNeutralColor", () => {
-  beforeEach(() => {
-    styleProps.clear();
-    storage.clear();
-  });
-
-  it("sets --neutral-* CSS variables on document element", () => {
-    applyNeutralColor("slate");
-    expect(styleProps.get("--neutral-500")).toBe(NEUTRAL_PALETTES.slate[500]);
-  });
-
-  it("sets all 11 shade variables", () => {
+  it("sets all shade CSS variables and caches them to localStorage", () => {
     applyNeutralColor("stone");
     for (const shade of SHADE_KEYS) {
-      expect(styleProps.get(`--neutral-${shade}`)).toBe(
-        NEUTRAL_PALETTES.stone[shade],
-      );
+      expect(
+        document.documentElement.style.getPropertyValue(`--neutral-${shade}`),
+      ).toBe(NEUTRAL_PALETTES.stone[shade]);
     }
-  });
-
-  it("caches variables to localStorage", () => {
-    applyNeutralColor("stone");
     const cached = JSON.parse(storage.get("writr-neutral-vars") ?? "{}");
     expect(cached["--neutral-500"]).toBe("#78716c");
-  });
-
-  it("stores the color name in localStorage", () => {
-    applyNeutralColor("gray");
-    expect(storage.get("writr-neutral-color")).toBe("gray");
+    expect(storage.get("writr-neutral-color")).toBe("stone");
   });
 });
 
 describe("applyEditorWidth", () => {
-  beforeEach(() => {
-    styleProps.clear();
-    storage.clear();
-  });
-
-  it("sets --editor-content-width CSS variable", () => {
-    applyEditorWidth("wide");
-    expect(styleProps.get("--editor-content-width")).toBe("1200px");
-  });
-
-  it("handles narrow width", () => {
+  it("sets --editor-content-width for each width and stores it", () => {
     applyEditorWidth("narrow");
-    expect(styleProps.get("--editor-content-width")).toBe("720px");
-  });
-
-  it("handles medium width (default)", () => {
-    applyEditorWidth("medium");
-    expect(styleProps.get("--editor-content-width")).toBe("900px");
-  });
-
-  it("stores width in localStorage", () => {
-    applyEditorWidth("narrow");
+    expect(
+      document.documentElement.style.getPropertyValue("--editor-content-width"),
+    ).toBe("720px");
     expect(storage.get("writr-editor-width")).toBe("narrow");
+
+    applyEditorWidth("medium");
+    expect(
+      document.documentElement.style.getPropertyValue("--editor-content-width"),
+    ).toBe("900px");
+
+    applyEditorWidth("wide");
+    expect(
+      document.documentElement.style.getPropertyValue("--editor-content-width"),
+    ).toBe("1200px");
   });
 });
 
 describe("applyUiDensity", () => {
-  beforeEach(() => {
-    attrs.clear();
-    storage.clear();
-  });
-
-  it("sets data-density attribute on html element", () => {
+  it("sets data-density on the html element and stores it", () => {
     applyUiDensity("compact");
-    expect(attrs.get("data-density")).toBe("compact");
-  });
-
-  it("stores density in localStorage", () => {
-    applyUiDensity("comfortable");
-    expect(storage.get("writr-density")).toBe("comfortable");
+    expect(document.documentElement.getAttribute("data-density")).toBe(
+      "compact",
+    );
+    expect(storage.get("writr-density")).toBe("compact");
   });
 });
 
 describe("applyHoleHighlightOpacity", () => {
-  beforeEach(() => {
-    styleProps.clear();
-    storage.clear();
-  });
-
-  it("sets --hole-highlight-opacity CSS variable", () => {
+  it("sets --hole-highlight-opacity and stores it", () => {
     applyHoleHighlightOpacity(0.4);
-    expect(styleProps.get("--hole-highlight-opacity")).toBe("0.4");
-  });
-
-  it("stores the opacity in localStorage", () => {
-    applyHoleHighlightOpacity(0.4);
+    expect(
+      document.documentElement.style.getPropertyValue(
+        "--hole-highlight-opacity",
+      ),
+    ).toBe("0.4");
     expect(storage.get("writr-hole-opacity")).toBe("0.4");
   });
 
   it("clamps values outside 0–1", () => {
     applyHoleHighlightOpacity(1.5);
-    expect(styleProps.get("--hole-highlight-opacity")).toBe("1");
+    expect(
+      document.documentElement.style.getPropertyValue(
+        "--hole-highlight-opacity",
+      ),
+    ).toBe("1");
     applyHoleHighlightOpacity(-0.3);
-    expect(styleProps.get("--hole-highlight-opacity")).toBe("0");
+    expect(
+      document.documentElement.style.getPropertyValue(
+        "--hole-highlight-opacity",
+      ),
+    ).toBe("0");
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { analyzeSentences, type ChapterAnalysisSource } from "./analyze";
-import type { AnalyzedSentence, AnalyzedTerm } from "./types";
+import { sentence, term } from "./test-helpers";
 
 const SOURCE: ChapterAnalysisSource = {
   chapterId: "chapter-1" as ChapterId,
@@ -9,39 +9,23 @@ const SOURCE: ChapterAnalysisSource = {
   updatedAt: "2026-06-10T00:00:00.000Z",
 };
 
-function term(
-  normal: string,
-  tags: string[] = [],
-  syllables = 1,
-): AnalyzedTerm {
-  return { normal, root: normal, tags: new Set(tags), syllables };
-}
-
-function sentence(terms: AnalyzedTerm[], paragraphIndex = 0): AnalyzedSentence {
-  return {
-    text: terms.map((t) => t.normal).join(" "),
-    terms,
-    paragraphIndex,
-  };
-}
-
 describe("analyzeSentences", () => {
   it("tallies counts across sentences and paragraphs", () => {
     const analysis = analyzeSentences(SOURCE, [
       sentence(
         [
-          term("she", ["Pronoun"]),
-          term("ran", ["Verb", "PastTense"]),
-          term("home", ["Noun"]),
+          term("she", "Pronoun"),
+          term("ran", "Verb", "PastTense"),
+          term("home", "Noun"),
         ],
         0,
       ),
       sentence(
         [
-          term("the", ["Determiner"]),
-          term("door", ["Noun"]),
-          term("was", ["Verb", "Copula"]),
-          term("locked", ["Verb", "PastTense"]),
+          term("the", "Determiner"),
+          term("door", "Noun"),
+          term("was", "Verb", "Copula"),
+          term("locked", "Verb", "PastTense"),
         ],
         1,
       ),
@@ -61,9 +45,9 @@ describe("analyzeSentences", () => {
   it("derives percentages consistent with the counts", () => {
     const analysis = analyzeSentences(SOURCE, [
       sentence([
-        term("slowly", ["Adverb"]),
-        term("she", ["Pronoun"]),
-        term("walked", ["Verb", "PastTense"]),
+        term("slowly", "Adverb"),
+        term("she", "Pronoun"),
+        term("walked", "Verb", "PastTense"),
       ]),
     ]);
 

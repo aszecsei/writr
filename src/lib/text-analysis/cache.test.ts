@@ -4,6 +4,7 @@ import { analyzeSentences } from "./analyze";
 import {
   clearAnalysisCache,
   getCachedAnalysis,
+  MAX_ENTRIES,
   makeAnalysisCacheKey,
   setCachedAnalysis,
 } from "./cache";
@@ -57,15 +58,19 @@ describe("analysis cache", () => {
 
   it("evicts the least recently used entry beyond the cap", () => {
     const key = makeAnalysisCacheKey("2026-06-10", DELIMITERS);
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < MAX_ENTRIES; i++) {
       setCachedAnalysis(`ch-${i}`, key, makeAnalysis(`ch-${i}`));
     }
     // Touch ch-0 so ch-1 becomes the oldest, then overflow the cap.
     getCachedAnalysis("ch-0", key);
-    setCachedAnalysis("ch-500", key, makeAnalysis("ch-500"));
+    setCachedAnalysis(
+      `ch-${MAX_ENTRIES}`,
+      key,
+      makeAnalysis(`ch-${MAX_ENTRIES}`),
+    );
 
     expect(getCachedAnalysis("ch-0", key)).not.toBeNull();
     expect(getCachedAnalysis("ch-1", key)).toBeNull();
-    expect(getCachedAnalysis("ch-500", key)).not.toBeNull();
+    expect(getCachedAnalysis(`ch-${MAX_ENTRIES}`, key)).not.toBeNull();
   });
 });

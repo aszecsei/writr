@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AnalyzedSentence, AnalyzedTerm, Echo } from "../types";
+import { rootedTerm, sentence, term } from "../test-helpers";
+import type { Echo } from "../types";
 import {
   detectEchoes,
   ECHO_WINDOW_SENTENCES,
@@ -7,30 +8,6 @@ import {
   echoSeverity,
   topContentWords,
 } from "./frequency";
-
-function term(normal: string, ...tags: string[]): AnalyzedTerm {
-  return { normal, root: normal, tags: new Set(tags), syllables: 1 };
-}
-
-/** Term whose lemma differs from its surface form (e.g. "wonders" → "wonder"). */
-function rootedTerm(
-  normal: string,
-  root: string,
-  ...tags: string[]
-): AnalyzedTerm {
-  return { normal, root, tags: new Set(tags), syllables: 1 };
-}
-
-function sentenceOf(
-  terms: AnalyzedTerm[],
-  paragraphIndex = 0,
-): AnalyzedSentence {
-  return {
-    text: terms.map((t) => t.normal).join(" "),
-    terms,
-    paragraphIndex,
-  };
-}
 
 describe("topContentWords", () => {
   it("excludes stopwords, numbers and short words", () => {
@@ -60,13 +37,13 @@ describe("topContentWords", () => {
 
 describe("detectEchoes", () => {
   const filler = (i: number) =>
-    sentenceOf([term(`filler${i}a`), term(`filler${i}b`)]);
+    sentence([term(`filler${i}a`), term(`filler${i}b`)]);
 
   it("flags a content word repeated within the window", () => {
     const sentences = [
-      sentenceOf([term("gleaming"), term("blade")]),
+      sentence([term("gleaming"), term("blade")]),
       filler(1),
-      sentenceOf([term("gleaming"), term("armor")]),
+      sentence([term("gleaming"), term("armor")]),
     ];
     const echoes = detectEchoes(sentences);
     expect(echoes).toHaveLength(1);
@@ -79,9 +56,9 @@ describe("detectEchoes", () => {
     // "I wonder ... she wonders" — different surface forms, same lemma. Keyed
     // on the surface form these would never pair; on the root they echo.
     const sentences = [
-      sentenceOf([term("wonder"), term("aloud")]),
+      sentence([term("wonder"), term("aloud")]),
       filler(1),
-      sentenceOf([rootedTerm("wonders", "wonder", "Verb"), term("quietly")]),
+      sentence([rootedTerm("wonders", "wonder", "Verb"), term("quietly")]),
     ];
     const echoes = detectEchoes(sentences);
     expect(echoes).toHaveLength(1);
@@ -91,8 +68,8 @@ describe("detectEchoes", () => {
 
   it("collapses singular and plural nouns onto the lemma", () => {
     const sentences = [
-      sentenceOf([rootedTerm("dogs", "dog", "Noun", "Plural"), term("barked")]),
-      sentenceOf([term("dog"), term("howled")]),
+      sentence([rootedTerm("dogs", "dog", "Noun", "Plural"), term("barked")]),
+      sentence([term("dog"), term("howled")]),
     ];
     const echoes = detectEchoes(sentences);
     expect(echoes).toHaveLength(1);
@@ -104,25 +81,25 @@ describe("detectEchoes", () => {
     // A name compromise mis-roots (e.g. "Rose" → "rise") stays exempt as long
     // as the proper-noun tag pins the same lemma the membership check uses.
     const sentences = [
-      sentenceOf([rootedTerm("rose", "rise", "ProperNoun"), term("smiled")]),
-      sentenceOf([rootedTerm("rose", "rise", "Noun"), term("waved")]),
+      sentence([rootedTerm("rose", "rise", "ProperNoun"), term("smiled")]),
+      sentence([rootedTerm("rose", "rise", "Noun"), term("waved")]),
     ];
     expect(detectEchoes(sentences)).toEqual([]);
   });
 
   it("does not flag repeats outside the window", () => {
     const sentences = [
-      sentenceOf([term("gleaming"), term("blade")]),
+      sentence([term("gleaming"), term("blade")]),
       ...Array.from({ length: 6 }, (_, i) => filler(i)),
-      sentenceOf([term("gleaming"), term("armor")]),
+      sentence([term("gleaming"), term("armor")]),
     ];
     expect(detectEchoes(sentences)).toEqual([]);
   });
 
   it("excludes stopwords and proper nouns", () => {
     const sentences = [
-      sentenceOf([term("the"), term("john", "ProperNoun"), term("smiled")]),
-      sentenceOf([term("the"), term("john", "ProperNoun"), term("laughed")]),
+      sentence([term("the"), term("john", "ProperNoun"), term("smiled")]),
+      sentence([term("the"), term("john", "ProperNoun"), term("laughed")]),
     ];
     expect(detectEchoes(sentences)).toEqual([]);
   });
@@ -132,28 +109,24 @@ describe("detectEchoes", () => {
     // sentence start. The two bare-noun occurrences below would otherwise echo
     // each other; the proper-noun tag on the third marks the whole name exempt.
     const sentences = [
-      sentenceOf([term("macmanus", "Noun"), term("frowned")]),
-      sentenceOf([term("macmanus", "Noun"), term("nodded")]),
-      sentenceOf([
-        term("she"),
-        term("trusted"),
-        term("macmanus", "ProperNoun"),
-      ]),
+      sentence([term("macmanus", "Noun"), term("frowned")]),
+      sentence([term("macmanus", "Noun"), term("nodded")]),
+      sentence([term("she"), term("trusted"), term("macmanus", "ProperNoun")]),
     ];
     expect(detectEchoes(sentences)).toEqual([]);
   });
 
   it("requires at least two occurrences in a group", () => {
-    const sentences = [sentenceOf([term("gleaming"), term("blade")])];
+    const sentences = [sentence([term("gleaming"), term("blade")])];
     expect(detectEchoes(sentences)).toEqual([]);
   });
 
   it("splits distant clusters into separate groups and keeps echoed ones", () => {
     const sentences = [
-      sentenceOf([term("crimson"), term("sky")]),
-      sentenceOf([term("crimson"), term("sea")]),
+      sentence([term("crimson"), term("sky")]),
+      sentence([term("crimson"), term("sea")]),
       ...Array.from({ length: 6 }, (_, i) => filler(i)),
-      sentenceOf([term("crimson"), term("cloak")]),
+      sentence([term("crimson"), term("cloak")]),
     ];
     const echoes = detectEchoes(sentences);
     // The first two echo each other; the distant third stands alone and is
@@ -165,14 +138,14 @@ describe("detectEchoes", () => {
   it("reports only the densest cluster when a word echoes in several places", () => {
     const sentences = [
       // Cluster A: a loose pair.
-      sentenceOf([term("gleaming"), term("blade")]),
-      sentenceOf([term("gleaming"), term("hilt")]),
+      sentence([term("gleaming"), term("blade")]),
+      sentence([term("gleaming"), term("hilt")]),
       // Far enough to break the window between clusters.
       ...Array.from({ length: 6 }, (_, i) => filler(i)),
       // Cluster B: a tighter triple, denser than the pair above.
-      sentenceOf([term("gleaming"), term("sky")]),
-      sentenceOf([term("gleaming"), term("sea")]),
-      sentenceOf([term("gleaming"), term("shore")]),
+      sentence([term("gleaming"), term("sky")]),
+      sentence([term("gleaming"), term("sea")]),
+      sentence([term("gleaming"), term("shore")]),
     ];
     const echoes = detectEchoes(sentences);
     // One row for the word, representing its densest cluster — not a merged

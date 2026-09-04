@@ -9,6 +9,7 @@ import type {
 import { FakeEmbeddingProvider } from "@/test/fake-embedding-provider";
 import { indexSource } from "./indexer";
 import { retrieveContext } from "./retriever";
+import type { RetrievalSettings } from "./types";
 
 const projectId = crypto.randomUUID() as ProjectId;
 
@@ -23,6 +24,18 @@ function chapter(id: string, order: number, title: string, content: string) {
     section: "manuscript",
     kind: "document",
   } as unknown as Chapter;
+}
+
+function settings(
+  overrides: Partial<RetrievalSettings> = {},
+): RetrievalSettings {
+  return {
+    omniscient: false,
+    loreTopK: 5,
+    sceneTopK: 5,
+    similarityFloor: -1,
+    ...overrides,
+  };
 }
 
 describe("retrieveContext", () => {
@@ -50,12 +63,7 @@ describe("retrieveContext", () => {
       characters: [],
       locations: [],
       worldbuildingDocs: [],
-      settings: {
-        omniscient: false,
-        loreTopK: 5,
-        sceneTopK: 5,
-        similarityFloor: -1,
-      },
+      settings: settings(),
     });
     expect(result.pastEvents.every((h) => h.sourceId !== "cur")).toBe(true);
   });
@@ -84,12 +92,7 @@ describe("retrieveContext", () => {
     };
     const forward = await retrieveContext({
       ...base,
-      settings: {
-        omniscient: false,
-        loreTopK: 5,
-        sceneTopK: 5,
-        similarityFloor: -1,
-      },
+      settings: settings(),
     });
     expect(forward.futureEvents).toHaveLength(0);
     expect(forward.pastEvents.map((h) => h.sourceId)).toContain("c1");
@@ -97,12 +100,7 @@ describe("retrieveContext", () => {
 
     const omni = await retrieveContext({
       ...base,
-      settings: {
-        omniscient: true,
-        loreTopK: 5,
-        sceneTopK: 5,
-        similarityFloor: -1,
-      },
+      settings: settings({ omniscient: true }),
     });
     expect(omni.futureEvents.map((h) => h.sourceId)).toContain("c3");
     expect(omni.pastEvents.map((h) => h.sourceId)).not.toContain("c3");
@@ -135,12 +133,7 @@ describe("retrieveContext", () => {
       locations: [],
       worldbuildingDocs: [doc],
       // Floor of 2 is unreachable by cosine (max 1) → only entity link can include it.
-      settings: {
-        omniscient: false,
-        loreTopK: 5,
-        sceneTopK: 5,
-        similarityFloor: 2,
-      },
+      settings: settings({ similarityFloor: 2 }),
     });
     expect(result.lore.map((h) => h.sourceId)).toContain("doc1");
   });
@@ -172,12 +165,7 @@ describe("retrieveContext", () => {
       characters: [],
       locations: [],
       worldbuildingDocs: [],
-      settings: {
-        omniscient: true,
-        loreTopK: 5,
-        sceneTopK: 5,
-        similarityFloor: -1,
-      },
+      settings: settings({ omniscient: true }),
     });
 
     expect(result.lore).toHaveLength(0);
@@ -207,12 +195,7 @@ describe("retrieveContext", () => {
       characters: [],
       locations: [],
       worldbuildingDocs: [],
-      settings: {
-        omniscient: false,
-        loreTopK: 5,
-        sceneTopK: 3,
-        similarityFloor: -1,
-      },
+      settings: settings({ sceneTopK: 3 }),
     });
     expect(result.pastEvents.length).toBeLessThanOrEqual(3);
   });

@@ -23,13 +23,19 @@ describe("fleschReadingEase", () => {
 });
 
 describe("readabilityBand", () => {
-  it("maps scores to standard Flesch bands", () => {
-    expect(readabilityBand(95)).toBe("Very easy");
+  it("switches bands at each documented threshold", () => {
     expect(readabilityBand(90)).toBe("Very easy");
-    expect(readabilityBand(75)).toBe("Fairly easy");
+    expect(readabilityBand(89.9)).toBe("Easy");
+    expect(readabilityBand(80)).toBe("Easy");
+    expect(readabilityBand(79.9)).toBe("Fairly easy");
+    expect(readabilityBand(70)).toBe("Fairly easy");
+    expect(readabilityBand(69.9)).toBe("Standard");
     expect(readabilityBand(60)).toBe("Standard");
     expect(readabilityBand(59.9)).toBe("Fairly difficult");
-    expect(readabilityBand(45)).toBe("Difficult");
+    expect(readabilityBand(50)).toBe("Fairly difficult");
+    expect(readabilityBand(49.9)).toBe("Difficult");
+    expect(readabilityBand(30)).toBe("Difficult");
+    expect(readabilityBand(29.9)).toBe("Very difficult");
     expect(readabilityBand(0)).toBe("Very difficult");
   });
 });

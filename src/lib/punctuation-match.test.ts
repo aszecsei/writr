@@ -73,15 +73,10 @@ describe("normalizedIndexOf", () => {
     expect(second).toBeGreaterThan(first);
     expect(haystack.slice(second, second + 3)).toBe("“b”");
   });
-});
 
-describe("normalizedIncludes", () => {
-  it("is true for cross-form matches", () => {
+  it("normalizedIncludes is true for cross-form matches and false when text genuinely differs", () => {
     expect(normalizedIncludes("She said “hi”.", 'said "hi"')).toBe(true);
     expect(normalizedIncludes("don’t", "don't")).toBe(true);
-  });
-
-  it("is false when text genuinely differs", () => {
     expect(normalizedIncludes("She said “hi”.", 'said "bye"')).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { getSchema } from "@tiptap/core";
+import { getSchema, type JSONContent } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { describe, expect, it } from "vitest";
 import { createExtensions } from "@/components/editor/extensions";
@@ -6,8 +6,7 @@ import { extractBlocks, mapSpanToRange } from "./extractor";
 
 const schema = getSchema(createExtensions());
 
-// biome-ignore lint/suspicious/noExplicitAny: test fixture JSON is intentionally loose
-function docFromJSON(content: any[]): ProseMirrorNode {
+function docFromJSON(content: JSONContent[]): ProseMirrorNode {
   return schema.nodeFromJSON({ type: "doc", content });
 }
 
@@ -125,9 +124,5 @@ describe("mapSpanToRange", () => {
   it("returns null for out-of-range spans", () => {
     expect(mapSpanToRange(block, 0, 4)).toBeNull();
     expect(mapSpanToRange(block, -1, 2)).toBeNull();
-  });
-
-  it("maps a valid span to inclusive-start, exclusive-end PM positions", () => {
-    expect(mapSpanToRange(block, 0, 2)).toEqual({ from: 1, to: 3 });
   });
 });

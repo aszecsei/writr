@@ -38,6 +38,7 @@ import type {
   WritingSprint,
   WritingSprintId,
 } from "@/db/schemas";
+import { type AppSettings, AppSettingsSchema } from "@/db/schemas";
 import type { AiContext } from "@/lib/ai/types";
 
 const ts = "2024-01-01T00:00:00.000Z";
@@ -402,4 +403,12 @@ export function makeAiContext(overrides: Partial<AiContext> = {}): AiContext {
     chapters: [],
     ...overrides,
   };
+}
+
+export function makeAppSettings(overrides?: Partial<AppSettings>): AppSettings {
+  return AppSettingsSchema.parse({
+    id: "app-settings",
+    updatedAt: ts,
+    ...overrides,
+  });
 }

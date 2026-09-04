@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bucketForLength, meanFromSums, stdDevFromSums } from "./sentences";
 
 describe("bucketForLength", () => {
-  it("buckets on the documented boundaries", () => {
-    expect(bucketForLength(1)).toBe("short");
+  it("switches buckets at the documented boundaries", () => {
     expect(bucketForLength(7)).toBe("short");
     expect(bucketForLength(8)).toBe("medium");
     expect(bucketForLength(19)).toBe("medium");

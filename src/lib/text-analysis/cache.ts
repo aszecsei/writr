@@ -10,7 +10,7 @@ import type { ChapterAnalysis } from "./types";
  * updatedAt and the configured hole delimiters both match.
  */
 
-const MAX_ENTRIES = 500;
+export const MAX_ENTRIES = 500;
 
 interface CacheEntry {
   key: string;

@@ -3,22 +3,14 @@ import { fountainToProseMirror } from "./fountain-to-prosemirror";
 import type { FountainElement } from "./types";
 
 describe("fountainToProseMirror", () => {
-  it("converts scene heading", () => {
-    const elements: FountainElement[] = [
-      { type: "scene_heading", text: "INT. OFFICE - DAY" },
-    ];
-    const doc = fountainToProseMirror(elements);
+  it("converts a scene heading and preserves its scene number attribute", () => {
+    const doc = fountainToProseMirror([
+      { type: "scene_heading", text: "INT. OFFICE - DAY", sceneNumber: "1" },
+    ]);
     expect(doc.type).toBe("doc");
     expect(doc.content).toHaveLength(1);
     expect(doc.content?.[0].type).toBe("sceneHeading");
     expect(doc.content?.[0].content?.[0].text).toBe("INT. OFFICE - DAY");
-  });
-
-  it("preserves scene number attribute", () => {
-    const elements: FountainElement[] = [
-      { type: "scene_heading", text: "INT. OFFICE - DAY", sceneNumber: "1" },
-    ];
-    const doc = fountainToProseMirror(elements);
     expect(doc.content?.[0].attrs?.sceneNumber).toBe("1");
   });
 
