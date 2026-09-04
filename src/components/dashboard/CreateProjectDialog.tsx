@@ -6,22 +6,19 @@ import { DialogFooter } from "@/components/ui/DialogFooter";
 import { Modal } from "@/components/ui/Modal";
 import { createProject } from "@/db/operations";
 import { useUiStore } from "@/store/uiStore";
-import { type ProjectFormData, ProjectFormFields } from "./ProjectFormFields";
-
-const initialValues: ProjectFormData = {
-  title: "",
-  description: "",
-  genre: "",
-  targetWordCount: 0,
-  mode: "prose",
-  coverImageUrl: "",
-};
+import {
+  DEFAULT_PROJECT_FORM_VALUES,
+  type ProjectFormData,
+  ProjectFormFields,
+} from "./ProjectFormFields";
 
 export function CreateProjectDialog() {
   const router = useRouter();
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
-  const [values, setValues] = useState<ProjectFormData>(initialValues);
+  const [values, setValues] = useState<ProjectFormData>(
+    DEFAULT_PROJECT_FORM_VALUES,
+  );
 
   // Seed the form from the modal's prefill when it transitions to open. The
   // dialog stays mounted, so without this the previous open's edits persist.
@@ -30,7 +27,7 @@ export function CreateProjectDialog() {
   useEffect(() => {
     const open = modal.id === "create-project";
     if (open && !wasOpen.current) {
-      setValues({ ...initialValues, ...(prefill ?? {}) });
+      setValues({ ...DEFAULT_PROJECT_FORM_VALUES, ...(prefill ?? {}) });
     }
     wasOpen.current = open;
   }, [modal.id, prefill]);
@@ -50,7 +47,7 @@ export function CreateProjectDialog() {
       coverImageUrl: values.coverImageUrl,
     });
 
-    setValues(initialValues);
+    setValues(DEFAULT_PROJECT_FORM_VALUES);
     closeModal();
     router.push(`/projects/${project.id}`);
   }

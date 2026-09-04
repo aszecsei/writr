@@ -49,6 +49,16 @@ function FamilyTreeCanvas() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const prevFingerprint = useRef("");
 
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateIsDark = () => setIsDarkMode(root.classList.contains("dark"));
+    updateIsDark();
+    const observer = new MutationObserver(updateIsDark);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const edges: Edge[] = useMemo(() => {
     if (!relationships) return [];
     return relationships.map((r) => ({
@@ -124,7 +134,7 @@ function FamilyTreeCanvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        colorMode="dark"
+        colorMode={isDarkMode ? "dark" : "light"}
         proOptions={{ hideAttribution: true }}
         className="bg-neutral-50 dark:bg-neutral-950"
       >

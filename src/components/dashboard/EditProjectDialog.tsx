@@ -6,16 +6,11 @@ import { Modal } from "@/components/ui/Modal";
 import { updateProject } from "@/db/operations";
 import { useProject } from "@/hooks/data/useProject";
 import { isEditProjectModal, useUiStore } from "@/store/uiStore";
-import { type ProjectFormData, ProjectFormFields } from "./ProjectFormFields";
-
-const initialValues: ProjectFormData = {
-  title: "",
-  description: "",
-  genre: "",
-  targetWordCount: 0,
-  mode: "prose",
-  coverImageUrl: "",
-};
+import {
+  DEFAULT_PROJECT_FORM_VALUES,
+  type ProjectFormData,
+  ProjectFormFields,
+} from "./ProjectFormFields";
 
 export function EditProjectDialog() {
   const modal = useUiStore((s) => s.modal);
@@ -24,7 +19,9 @@ export function EditProjectDialog() {
   const projectId = isEditProjectModal(modal) ? modal.projectId : null;
   const project = useProject(projectId);
 
-  const [values, setValues] = useState<ProjectFormData>(initialValues);
+  const [values, setValues] = useState<ProjectFormData>(
+    DEFAULT_PROJECT_FORM_VALUES,
+  );
 
   useEffect(() => {
     if (project) {
