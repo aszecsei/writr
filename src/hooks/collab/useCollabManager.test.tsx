@@ -98,6 +98,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // The shared connection state in useCollabManager.ts lives at module
+  // scope, not per hook instance, so it survives past a test's own
+  // unmount unless something calls end() on it explicitly.
+  const { result: cleanupResult } = renderHook(() => useCollabManager());
+  act(() => {
+    cleanupResult.current.end();
+  });
   if (ORIGINAL_ENV === undefined) delete process.env.NEXT_PUBLIC_COLLAB_URL;
   else process.env.NEXT_PUBLIC_COLLAB_URL = ORIGINAL_ENV;
   useCollabStore.getState().reset();
@@ -804,11 +811,13 @@ describe("useCollabManager: lifecycle", () => {
     ).toBeNull();
   });
 
-  it("unmount tears down the session", async () => {
+  it("unmount of the owning instance tears down the session", async () => {
     const { wsFactory, sockets } = withFakeWs();
     const fetchFn = mockFetchOk(SAMPLE_ROOM);
 
-    const { result, unmount } = renderHook(() => useCollabManager());
+    const { result, unmount } = renderHook(() =>
+      useCollabManager({ ownsLifecycle: true }),
+    );
 
     let promise!: Promise<void>;
     act(() => {
@@ -845,6 +854,143 @@ describe("useCollabManager: lifecycle", () => {
     const { result } = renderHook(() => useCollabManager());
     expect(() => result.current.end()).not.toThrow();
     expect(useCollabStore.getState().status).toBe("idle");
+  });
+
+  it("end() called from a second hook instance closes the shared socket and resets the store", async () => {
+    const { wsFactory, sockets } = withFakeWs();
+    const fetchFn = mockFetchOk(SAMPLE_ROOM);
+
+    const { result: hostResult } = renderHook(() => useCollabManager());
+
+    let promise!: Promise<void>;
+    act(() => {
+      promise = hostResult.current.startAsHost({
+        appOrigin: "https://app.example",
+        fetchFn,
+        wsFactory,
+      });
+    });
+    await flush();
+    const ws = sockets[0];
+    if (!ws) throw new Error("no socket");
+    ws.fireOpen();
+    ws.fireServer({
+      type: "welcome",
+      peerId: "p-host",
+      role: "host" as Role,
+      peerCount: 1,
+      hostPresent: true,
+    });
+    await act(async () => {
+      await promise;
+    });
+    expect(useCollabStore.getState().session).not.toBeNull();
+
+    const closeSpy = vi.spyOn(ws, "close");
+    const { result: otherResult } = renderHook(() => useCollabManager());
+
+    act(() => otherResult.current.end());
+
+    expect(closeSpy).toHaveBeenCalled();
+    expect(useCollabStore.getState().session).toBeNull();
+    expect(useCollabStore.getState().status).toBe("idle");
+  });
+
+  it("approveJoinRequest called from a second hook instance sends the approval on the shared socket", async () => {
+    const { wsFactory, sockets } = withFakeWs();
+    const fetchFn = mockFetchOk(SAMPLE_ROOM);
+    const guestKeypair = await generateX25519Keypair();
+
+    const { result: hostResult } = renderHook(() => useCollabManager());
+
+    let promise!: Promise<void>;
+    act(() => {
+      promise = hostResult.current.startAsHost({
+        appOrigin: "https://app.example",
+        fetchFn,
+        wsFactory,
+      });
+    });
+    await flush();
+    const ws = sockets[0];
+    if (!ws) throw new Error("no socket");
+    ws.fireOpen();
+    ws.fireServer({
+      type: "welcome",
+      peerId: "p-host",
+      role: "host" as Role,
+      peerCount: 1,
+      hostPresent: true,
+    });
+    await act(async () => {
+      await promise;
+    });
+
+    act(() => {
+      ws.fireServer({
+        type: "join-request",
+        requestId: "req-shared-1",
+        guestPub: guestKeypair.pubEncoded,
+        displayName: "Shared",
+        color: "#123456",
+        from: "p-guest-shared",
+      });
+    });
+    await flush();
+    expect(useCollabStore.getState().pendingJoinRequests).toHaveLength(1);
+
+    const { result: otherResult } = renderHook(() => useCollabManager());
+
+    await act(async () => {
+      await otherResult.current.approveJoinRequest("req-shared-1");
+    });
+
+    expect(useCollabStore.getState().pendingJoinRequests).toHaveLength(0);
+    expect(
+      useCollabStore.getState().approvedGuests[guestKeypair.pubEncoded],
+    ).toBeDefined();
+    const approvedMsg = ws.sent.find((s) => s.includes("join-approved"));
+    expect(approvedMsg).toBeDefined();
+  });
+
+  it("unmounting a non-owning instance does NOT close the shared socket", async () => {
+    const { wsFactory, sockets } = withFakeWs();
+    const fetchFn = mockFetchOk(SAMPLE_ROOM);
+
+    const { result: hostResult } = renderHook(() => useCollabManager());
+
+    let promise!: Promise<void>;
+    act(() => {
+      promise = hostResult.current.startAsHost({
+        appOrigin: "https://app.example",
+        fetchFn,
+        wsFactory,
+      });
+    });
+    await flush();
+    const ws = sockets[0];
+    if (!ws) throw new Error("no socket");
+    ws.fireOpen();
+    ws.fireServer({
+      type: "welcome",
+      peerId: "p-host",
+      role: "host" as Role,
+      peerCount: 1,
+      hostPresent: true,
+    });
+    await act(async () => {
+      await promise;
+    });
+    expect(useCollabStore.getState().session).not.toBeNull();
+
+    const closeSpy = vi.spyOn(ws, "close");
+    const { unmount: unmountOther } = renderHook(() => useCollabManager());
+
+    unmountOther();
+
+    expect(closeSpy).not.toHaveBeenCalled();
+    expect(useCollabStore.getState().session).not.toBeNull();
+    expect(useCollabStore.getState().status).toBe("connected");
   });
 });
 

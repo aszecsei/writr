@@ -23,6 +23,7 @@ import {
   SprintWidget,
 } from "@/components/sprint";
 import { TtsPlayerBar } from "@/components/tts/TtsPlayerBar";
+import { useCollabManager } from "@/hooks/collab/useCollabManager";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useShortcuts } from "@/hooks/ui/useShortcuts";
 import { isCollabEnabled } from "@/lib/collab/config";
@@ -41,6 +42,11 @@ export function AppShell({ children }: AppShellProps) {
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const setFocusMode = useUiStore((s) => s.setFocusMode);
   const settings = useAppSettings();
+
+  // AppShell owns the collab session's lifecycle: it's the outermost
+  // component that wraps every project route, so its unmount is the
+  // signal that the host has left the project context entirely.
+  useCollabManager({ ownsLifecycle: true });
 
   // Register the global keyboard-shortcut dispatcher (navigation, create
   // commands, focus mode, search, help overlay).

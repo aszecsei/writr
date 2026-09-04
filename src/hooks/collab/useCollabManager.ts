@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { attachClientToStore } from "@/lib/collab/attach";
 import type { CollabClient } from "@/lib/collab/client";
 import { getCollabBaseUrl, isCollabEnabled } from "@/lib/collab/config";
@@ -51,6 +51,16 @@ export interface JoinAsGuestOptions {
    *  should pre-set this from the URL before calling joinAsGuest so the
    *  shell knows which layout to render before the project meta arrives. */
   projectMode?: boolean;
+}
+
+export interface UseCollabManagerOptions {
+  /**
+   * Only the call site responsible for the session's lifecycle (AppShell
+   * for a host, the guest page for a guest) should pass true. That's the
+   * only instance whose unmount tears the shared session down; every other
+   * instance reads and drives the same session without owning it.
+   */
+  ownsLifecycle?: boolean;
 }
 
 export interface UseCollabManager {
@@ -128,41 +138,70 @@ function clearHostKey(roomUuid: string | null): void {
 }
 
 /**
- * Owns the imperative lifecycle of a single CollabSession on behalf of a
- * component tree. Composes the lifecycle helpers with the store-event
- * bridge and guarantees teardown on unmount.
+ * The imperative connection state for the collab session, shared across
+ * every mounted `useCollabManager()` instance. Only one session can be
+ * live in a tab at a time, and the components that observe or drive it
+ * (ShareDialog, CollabBanner, ApproveJoinDialog, ManageParticipantsDialog,
+ * the guest page) each call the hook independently — so this state can't
+ * live in a per-instance ref without call sites other than the one that
+ * started the session losing access to it.
+ */
+interface LiveCollabState {
+  session: CollabSession | null;
+  client: CollabClient | null;
+  joinHandle: JoinRequestHandle | null;
+  detach: (() => void) | null;
+  roomUuid: string | null;
+}
+
+const live: LiveCollabState = {
+  session: null,
+  client: null,
+  joinHandle: null,
+  detach: null,
+  roomUuid: null,
+};
+
+/**
+ * Owns the imperative lifecycle of the collab session on behalf of every
+ * mounted call site. Composes the lifecycle helpers with the store-event
+ * bridge; teardown on unmount is opt-in via `{ ownsLifecycle: true }` (see
+ * `UseCollabManagerOptions`) since the session must outlive any single
+ * dialog and end only via `end()`, a fatal transport error, or the owning
+ * component's unmount.
  *
  * UI components should branch on `enabled` so that no collab affordances
  * render when the feature isn't configured.
  */
-export function useCollabManager(): UseCollabManager {
-  const sessionRef = useRef<CollabSession | null>(null);
-  const detachRef = useRef<(() => void) | null>(null);
-  const joinHandleRef = useRef<JoinRequestHandle | null>(null);
-  const roomUuidRef = useRef<string | null>(null);
-  const clientRef = useRef<CollabClient | null>(null);
+export function useCollabManager(
+  options?: UseCollabManagerOptions,
+): UseCollabManager {
+  const ownsLifecycle = options?.ownsLifecycle === true;
 
   const teardown = useCallback(() => {
-    joinHandleRef.current?.detach();
-    joinHandleRef.current = null;
-    detachRef.current?.();
-    detachRef.current = null;
-    sessionRef.current?.destroy();
-    sessionRef.current = null;
-    clientRef.current = null;
-    clearHostKey(roomUuidRef.current);
-    roomUuidRef.current = null;
+    live.joinHandle?.detach();
+    live.joinHandle = null;
+    live.detach?.();
+    live.detach = null;
+    live.session?.destroy();
+    live.session = null;
+    live.client = null;
+    clearHostKey(live.roomUuid);
+    live.roomUuid = null;
     useCollabStore.getState().reset();
   }, []);
 
-  // Cleanup on unmount.
-  useEffect(() => teardown, [teardown]);
+  // Cleanup on unmount, only for the call site that owns the lifecycle.
+  useEffect(() => {
+    if (!ownsLifecycle) return;
+    return teardown;
+  }, [ownsLifecycle, teardown]);
 
   const startAsHost = useCallback<UseCollabManager["startAsHost"]>(
     async (opts) => {
       const baseUrl = getCollabBaseUrl();
       if (!baseUrl) throw new CollabNotEnabledError();
-      if (sessionRef.current) throw new CollabAlreadyActiveError();
+      if (live.session) throw new CollabAlreadyActiveError();
 
       useCollabStore.getState().setStatus("connecting");
       // Set identity BEFORE the session connects so editors that read from
@@ -177,10 +216,10 @@ export function useCollabManager(): UseCollabManager {
       try {
         const conn = await connectAsHost({ baseUrl, ...connectOpts });
         const detach = attachClientToStore(conn.client, useCollabStore);
-        detachRef.current = detach;
-        sessionRef.current = conn.session;
-        roomUuidRef.current = conn.roomUuid;
-        clientRef.current = conn.client;
+        live.detach = detach;
+        live.session = conn.session;
+        live.roomUuid = conn.roomUuid;
+        live.client = conn.client;
 
         // Track peer_left so we know when an approved guest goes offline
         // (and clear their tracked peerId so a stale kick-peer can't fire).
@@ -189,8 +228,8 @@ export function useCollabManager(): UseCollabManager {
             useCollabStore.getState().clearGuestPeerId(event.peerId);
           }
         });
-        const previousDetach = detachRef.current;
-        detachRef.current = () => {
+        const previousDetach = live.detach;
+        live.detach = () => {
           offSystemForPeerLeft();
           previousDetach?.();
         };
@@ -206,7 +245,7 @@ export function useCollabManager(): UseCollabManager {
         store.setShareUrls(conn.shareUrls);
         store.setPeerCount(conn.peerCount);
 
-        joinHandleRef.current = attachJoinRequestHandler({
+        live.joinHandle = attachJoinRequestHandler({
           client: conn.client,
           hostPriv: conn.hostPriv,
           roomKey: conn.roomKey,
@@ -276,7 +315,7 @@ export function useCollabManager(): UseCollabManager {
     async (opts) => {
       const baseUrl = getCollabBaseUrl();
       if (!baseUrl) throw new CollabNotEnabledError();
-      if (sessionRef.current) throw new CollabAlreadyActiveError();
+      if (live.session) throw new CollabAlreadyActiveError();
 
       useCollabStore.getState().setIdentity(opts.identity);
       useCollabStore.getState().setStatus("awaiting_approval");
@@ -299,8 +338,8 @@ export function useCollabManager(): UseCollabManager {
       try {
         const conn = await connectAsGuest(connectOpts);
         const detach = attachClientToStore(conn.client, useCollabStore);
-        detachRef.current = detach;
-        sessionRef.current = conn.session;
+        live.detach = detach;
+        live.session = conn.session;
 
         const store = useCollabStore.getState();
         store.setSession(conn.session, {
@@ -340,7 +379,7 @@ export function useCollabManager(): UseCollabManager {
   const approveJoinRequest = useCallback<
     UseCollabManager["approveJoinRequest"]
   >(async (requestId) => {
-    const handle = joinHandleRef.current;
+    const handle = live.joinHandle;
     if (!handle) return;
     const collab = useCollabStore.getState();
     const req = collab.pendingJoinRequests.find(
@@ -366,7 +405,7 @@ export function useCollabManager(): UseCollabManager {
 
   const denyJoinRequest = useCallback<UseCollabManager["denyJoinRequest"]>(
     (requestId, reason) => {
-      const handle = joinHandleRef.current;
+      const handle = live.joinHandle;
       if (!handle) return;
       handle.deny(requestId, reason);
       const collab = useCollabStore.getState();
@@ -388,8 +427,8 @@ export function useCollabManager(): UseCollabManager {
     useCollabStore.getState().revokeGuestPub(pub);
     // If the guest is currently connected, evict them server-side so
     // they actually drop out of the session (not just lose auto-approve).
-    if (entry?.peerId && clientRef.current) {
-      clientRef.current.sendKickPeer(entry.peerId);
+    if (entry?.peerId && live.client) {
+      live.client.sendKickPeer(entry.peerId);
     }
   }, []);
 
