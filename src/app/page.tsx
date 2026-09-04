@@ -14,6 +14,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
+import { Spinner } from "@/components/ui/Spinner";
 import type { ProjectId } from "@/db/schemas";
 import { useAllProjects } from "@/hooks/data/useProject";
 import { useUiStore } from "@/store/uiStore";
@@ -75,7 +76,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         {projects === undefined ? (
           <div className="flex justify-center py-24">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+            <Spinner />
           </div>
         ) : (
           <>
