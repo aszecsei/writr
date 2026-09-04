@@ -4,15 +4,12 @@ import {
   buildShareUrl,
   generateRoomKey,
   generateX25519Keypair,
+  type ShareMode,
 } from "./crypto";
 import { runGuestHandshake } from "./handshake";
-import type { Role } from "./protocol";
+import { isFatalErrorKind, type Role } from "./protocol";
 import { CollabSession } from "./session";
-import {
-  createWebSocketTransport,
-  type WebSocketLike,
-  wireWebSocketToClient,
-} from "./transport";
+import { type WebSocketLike, wireWebSocketToClient } from "./transport";
 
 interface MintedRoom {
   roomUuid: string;
@@ -86,8 +83,6 @@ interface ConnectAsHostOptions {
   projectMode?: boolean;
 }
 
-type ShareMode = "chapter" | "project";
-
 export interface ShareUrls {
   mode: ShareMode;
   edit: string;
@@ -120,8 +115,11 @@ export async function connectAsHost(
 
   const wsUrl = `${opts.baseUrl}/room/${room.roomUuid}?t=${encodeURIComponent(room.hostToken)}`;
   const ws = (opts.wsFactory ?? defaultWsFactory)(wsUrl);
-  const transport = createWebSocketTransport(ws);
-  const client = new CollabClient({ transport, key: roomKey, role: "host" });
+  const client = new CollabClient({
+    transport: ws,
+    key: roomKey,
+    role: "host",
+  });
   wireWebSocketToClient(ws, client);
 
   let hostWelcome: Awaited<ReturnType<typeof waitForWelcome>>;
@@ -221,9 +219,8 @@ export async function connectAsGuest(
     throw err;
   }
 
-  const transport = createWebSocketTransport(ws);
   const client = new CollabClient({
-    transport,
+    transport: ws,
     key: result.roomKey,
     role: result.welcome.role,
   });
@@ -251,15 +248,6 @@ interface WelcomeData {
   peerCount: number;
   hostPresent: boolean;
 }
-
-const FATAL_ERROR_KINDS = new Set([
-  "transport",
-  "unauthorized",
-  "room-not-found",
-  "room-full",
-  "rate-limited",
-  "invalid-token",
-]);
 
 function waitForWelcome(
   client: CollabClient,
@@ -291,7 +279,7 @@ function waitForWelcome(
     );
     cleanups.push(
       client.on("error", (event) => {
-        if (FATAL_ERROR_KINDS.has(event.kind)) {
+        if (isFatalErrorKind(event.kind)) {
           cleanup();
           reject(new Error(`Collab connection failed: ${event.kind}`));
         }

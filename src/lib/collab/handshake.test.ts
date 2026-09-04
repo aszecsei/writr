@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CollabClient, type CollabTransport } from "./client";
+import { CollabClient } from "./client";
 import {
   deriveWrapKey,
   generateRoomKey,
@@ -190,8 +190,8 @@ describe("attachJoinRequestHandler", () => {
     inject: (msg: ServerMessage) => Promise<void>;
   } {
     const sent: string[] = [];
-    const transport: CollabTransport = {
-      send: (data) => sent.push(data),
+    const transport = {
+      send: (data: string) => sent.push(data),
       close: () => {},
     };
     const client = new CollabClient({

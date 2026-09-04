@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type ClientMessage,
-  canSendClient,
+  canSend,
   type Role,
   serverMessageSchema,
 } from "./protocol";
@@ -72,7 +72,7 @@ describe("serverMessageSchema (handshake variants)", () => {
   });
 });
 
-describe("canSendClient (role x message matrix)", () => {
+describe("canSend (role x message matrix)", () => {
   const joinReq: ClientMessage = {
     type: "join-request",
     requestId: "r",
@@ -135,7 +135,7 @@ describe("canSendClient (role x message matrix)", () => {
   ] as const)(
     "%s sending %s -> allowed=%s",
     (role, _label, message, expected) => {
-      expect(canSendClient(role as Role, message)).toBe(expected);
+      expect(canSend(role as Role, message)).toBe(expected);
     },
   );
 });

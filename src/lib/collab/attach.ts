@@ -1,27 +1,9 @@
 import { match } from "ts-pattern";
 import type { CollabError, useCollabStore } from "@/store/collabStore";
 import type { CollabClient } from "./client";
-import { CLOSE_CODES } from "./protocol";
+import { CLOSE_CODES, isFatalErrorKind } from "./protocol";
 
 type CollabStoreApi = typeof useCollabStore;
-
-/**
- * Subset of error kinds that should propagate to the store as terminal
- * errors. `decrypt` and `send-not-allowed` are intentionally excluded —
- * a single bad payload from a malicious peer shouldn't tear down the
- * whole UI; we just drop the message and keep going.
- */
-const FATAL_ERROR_KINDS: ReadonlySet<string> = new Set([
-  "transport",
-  "unauthorized",
-  "room-not-found",
-  "room-full",
-  "rate-limited",
-  "invalid-token",
-  "invalid-message",
-  "internal",
-  "payload-too-large",
-]);
 
 /**
  * Subscribe a CollabClient to the collabStore so that all state mutations
@@ -90,10 +72,13 @@ export function attachClientToStore(
 
   unsubs.push(
     client.on("error", (event) => {
-      if (!FATAL_ERROR_KINDS.has(event.kind)) return;
+      // `decrypt` and `send-not-allowed` are intentionally excluded — a
+      // single bad payload from a malicious peer shouldn't tear down the
+      // whole UI; we just drop the message and keep going.
+      if (!isFatalErrorKind(event.kind)) return;
       const s = store.getState();
       if (s.error) return;
-      // Both unions share the kinds gated by FATAL_ERROR_KINDS.
+      // Both unions share the kinds gated by isFatalErrorKind.
       s.setError({
         kind: event.kind as CollabError["kind"],
         message: event.message,

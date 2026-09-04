@@ -8,7 +8,6 @@ import type {
   ProjectId,
 } from "@/db/schemas";
 import { makeChapter, makeCharacter, makeProject } from "@/test/helpers";
-import type { CollabTransport } from "./client";
 import type { ProjectSnapshot } from "./projectMirror";
 import type { ClientMessage, ServerMessage } from "./protocol";
 import type { WebSocketLike } from "./transport";
@@ -96,6 +95,12 @@ export class FakeWebSocket {
     this.listeners[type] = bucket;
   }
 
+  removeEventListener(type: string, listener: (event: unknown) => void): void {
+    const bucket = this.listeners[type];
+    if (!bucket) return;
+    this.listeners[type] = bucket.filter((l) => l !== listener);
+  }
+
   fireOpen(): void {
     this.dispatch("open", undefined);
   }
@@ -121,8 +126,8 @@ export function asWebSocketLike(fake: FakeWebSocket): WebSocketLike {
   return fake as unknown as WebSocketLike;
 }
 
-/** In-memory `CollabTransport` for client/session-level tests. */
-export class MockTransport implements CollabTransport {
+/** In-memory transport for client/session-level tests. */
+export class MockTransport implements Pick<WebSocketLike, "send" | "close"> {
   sent: ClientMessage[] = [];
   closed: { code?: number; reason?: string } | null = null;
 
