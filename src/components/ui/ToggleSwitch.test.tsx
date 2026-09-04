@@ -5,14 +5,17 @@ import { ToggleSwitch } from "./ToggleSwitch";
 
 describe("ToggleSwitch", () => {
   it("renders unchecked", () => {
-    const { container } = render(
+    render(
       <ToggleSwitch checked={false} onChange={() => {}} label="Preview" />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "false");
+    expect(
+      screen.queryByText("Highlight sentences in the editor by length"),
+    ).toBeNull();
   });
 
   it("renders checked with a caption", () => {
-    const { container } = render(
+    render(
       <ToggleSwitch
         checked={true}
         onChange={() => {}}
@@ -20,7 +23,10 @@ describe("ToggleSwitch", () => {
         caption="Highlight sentences in the editor by length"
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "true");
+    expect(
+      screen.queryByText("Highlight sentences in the editor by length"),
+    ).toBeInTheDocument();
   });
 
   it("reports the inverted state on click", () => {

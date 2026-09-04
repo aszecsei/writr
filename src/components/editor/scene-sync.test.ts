@@ -75,19 +75,26 @@ describe("activeSceneAt", () => {
     return editor;
   }
 
-  it("returns the core id when the caret is before the first marker", () => {
-    const editor = editorWithBreak();
-    editor.commands.setTextSelection(2); // inside "Core scene."
-    expect(activeSceneAt(editor, ["core", "scene-2"])).toBe("core");
-    editor.destroy();
-  });
-
-  it("returns the second scene id when the caret is after the marker", () => {
-    const editor = editorWithBreak();
-    editor.commands.setTextSelection(editor.state.doc.content.size - 2);
-    expect(activeSceneAt(editor, ["core", "scene-2"])).toBe("scene-2");
-    editor.destroy();
-  });
+  it.each([
+    {
+      desc: "before the first marker",
+      getPosition: () => 2, // inside "Core scene."
+      expected: "core",
+    },
+    {
+      desc: "after the marker",
+      getPosition: (editor: Editor) => editor.state.doc.content.size - 2,
+      expected: "scene-2",
+    },
+  ])(
+    "returns the active scene id when the caret is $desc",
+    ({ getPosition, expected }) => {
+      const editor = editorWithBreak();
+      editor.commands.setTextSelection(getPosition(editor));
+      expect(activeSceneAt(editor, ["core", "scene-2"])).toBe(expected);
+      editor.destroy();
+    },
+  );
 
   it("returns null when there are no scenes loaded", () => {
     const editor = editorWithBreak();

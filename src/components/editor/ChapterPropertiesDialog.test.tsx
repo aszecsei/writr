@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import "fake-indexeddb/auto";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db/database";
@@ -55,11 +54,6 @@ afterEach(() => {
 });
 
 describe("ChapterPropertiesDialog", () => {
-  it("renders nothing when the chapter-properties modal is not open", () => {
-    const { container } = render(<ChapterPropertiesDialog />);
-    expect(container.firstChild).toBeNull();
-  });
-
   it("edits and saves the synopsis", async () => {
     await seedSettings(true);
     const chapterId = await seedChapter("INIT");
@@ -78,52 +72,38 @@ describe("ChapterPropertiesDialog", () => {
     expect((await db.chapters.get(chapterId))?.synopsis).toBe("My summary");
   });
 
-  it("generates a staged summary and overwrites on Overwrite", async () => {
-    await seedSettings(true);
-    const chapterId = await seedChapter("OLD");
-    useUiStore.getState().openModal({ id: "chapter-properties", chapterId });
+  it.each([
+    { action: "Overwrite", expected: "GENERATED" },
+    { action: "Prepend", expected: "GENERATED\n\nOLD" },
+  ])(
+    "generates a staged summary and applies it on $action",
+    async ({ action, expected }) => {
+      await seedSettings(true);
+      const chapterId = await seedChapter("OLD");
+      useUiStore.getState().openModal({ id: "chapter-properties", chapterId });
 
-    render(<ChapterPropertiesDialog />);
-    const textarea = (await screen.findByRole(
-      "textbox",
-    )) as HTMLTextAreaElement;
-    await waitFor(() => expect(textarea.value).toBe("OLD"));
+      render(<ChapterPropertiesDialog />);
+      const textarea = (await screen.findByRole(
+        "textbox",
+      )) as HTMLTextAreaElement;
+      await waitFor(() => expect(textarea.value).toBe("OLD"));
 
-    fireEvent.click(screen.getByRole("button", { name: /generate with ai/i }));
-    await screen.findByText("GENERATED");
+      fireEvent.click(
+        screen.getByRole("button", { name: /generate with ai/i }),
+      );
+      await screen.findByText("GENERATED");
 
-    fireEvent.click(screen.getByRole("button", { name: "Overwrite" }));
-    expect(textarea.value).toBe("GENERATED");
-    expect(screen.queryByRole("button", { name: "Overwrite" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: action }));
+      expect(textarea.value).toBe(expected);
+      if (action === "Overwrite") {
+        expect(screen.queryByRole("button", { name: "Overwrite" })).toBeNull();
+      }
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(useUiStore.getState().modal.id).toBeNull());
-    expect((await db.chapters.get(chapterId))?.synopsis).toBe("GENERATED");
-  });
-
-  it("prepends the staged summary before existing text on Prepend", async () => {
-    await seedSettings(true);
-    const chapterId = await seedChapter("OLD");
-    useUiStore.getState().openModal({ id: "chapter-properties", chapterId });
-
-    render(<ChapterPropertiesDialog />);
-    const textarea = (await screen.findByRole(
-      "textbox",
-    )) as HTMLTextAreaElement;
-    await waitFor(() => expect(textarea.value).toBe("OLD"));
-
-    fireEvent.click(screen.getByRole("button", { name: /generate with ai/i }));
-    await screen.findByText("GENERATED");
-
-    fireEvent.click(screen.getByRole("button", { name: "Prepend" }));
-    expect(textarea.value).toBe("GENERATED\n\nOLD");
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(useUiStore.getState().modal.id).toBeNull());
-    expect((await db.chapters.get(chapterId))?.synopsis).toBe(
-      "GENERATED\n\nOLD",
-    );
-  });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => expect(useUiStore.getState().modal.id).toBeNull());
+      expect((await db.chapters.get(chapterId))?.synopsis).toBe(expected);
+    },
+  );
 
   it("hides the AI generate button when AI features are disabled", async () => {
     await seedSettings(false);

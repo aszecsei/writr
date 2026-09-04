@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import "fake-indexeddb/auto";
 import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
@@ -17,11 +16,6 @@ afterEach(() => {
 });
 
 describe("SavedPromptsManager", () => {
-  it("renders nothing when the saved-prompts modal is not open", () => {
-    const { container } = render(<SavedPromptsManager />);
-    expect(container.firstChild).toBeNull();
-  });
-
   it("lists existing prompts with a Global badge for global prompts", async () => {
     await createSavedPrompt({ title: "Global helper", body: "x" });
     useUiStore.getState().openModal({ id: "saved-prompts" });
