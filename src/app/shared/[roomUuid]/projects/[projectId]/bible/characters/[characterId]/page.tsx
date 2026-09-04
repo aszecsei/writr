@@ -6,7 +6,6 @@ import type { CharacterId, ProjectId } from "@/db/schemas";
 
 export default function SharedCharacterDetailPage() {
   const params = useParams<{
-    roomUuid: string;
     projectId: ProjectId;
     characterId: CharacterId;
   }>();
@@ -14,8 +13,6 @@ export default function SharedCharacterDetailPage() {
     <CharacterDetailBody
       projectId={params.projectId}
       characterId={params.characterId}
-      basePath={`/shared/${params.roomUuid}/projects/${params.projectId}`}
-      readOnly={true}
     />
   );
 }

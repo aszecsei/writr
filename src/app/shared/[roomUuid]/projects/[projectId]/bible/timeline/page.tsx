@@ -6,5 +6,5 @@ import type { ProjectId } from "@/db/schemas";
 
 export default function SharedTimelinePage() {
   const params = useParams<{ projectId: ProjectId }>();
-  return <TimelinePageBody projectId={params.projectId} readOnly={true} />;
+  return <TimelinePageBody projectId={params.projectId} />;
 }
