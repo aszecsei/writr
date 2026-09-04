@@ -1,10 +1,14 @@
 import type {
+  BrainstormSetup,
+  BrainstormSetupId,
   Chapter,
   ChapterId,
   Character,
   CharacterId,
   CharacterRelationship,
   CharacterRelationshipId,
+  Comment,
+  CommentId,
   GuardrailEntry,
   GuardrailEntryId,
   Location,
@@ -17,6 +21,8 @@ import type {
   OutlineGridRowId,
   Project,
   ProjectId,
+  SavedPrompt,
+  SavedPromptId,
   Scene,
   SceneId,
   StyleGuideEntry,
@@ -25,6 +31,10 @@ import type {
   TimelineEventId,
   WorldbuildingDoc,
   WorldbuildingDocId,
+  WritingSession,
+  WritingSessionId,
+  WritingSprint,
+  WritingSprintId,
 } from "@/db/schemas";
 
 const ts = "2024-01-01T00:00:00.000Z";
@@ -274,6 +284,93 @@ export function makeRelationship(
   return {
     id: nextId<CharacterRelationshipId>(),
     customLabel: "",
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeComment(
+  overrides: Partial<Comment> & { projectId: ProjectId; chapterId: ChapterId },
+): Comment {
+  return {
+    id: nextId<CommentId>(),
+    content: "",
+    color: "yellow",
+    fromOffset: 0,
+    toOffset: 0,
+    anchorText: "",
+    status: "active",
+    resolvedAt: null,
+    parentCommentId: null,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeWritingSession(
+  overrides: Partial<WritingSession> & {
+    projectId: ProjectId;
+    chapterId: ChapterId;
+  },
+): WritingSession {
+  return {
+    id: nextId<WritingSessionId>(),
+    date: "2024-01-01",
+    hourOfDay: 0,
+    wordCountStart: 0,
+    wordCountEnd: 0,
+    durationMs: 0,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeWritingSprint(
+  overrides: Partial<WritingSprint> = {},
+): WritingSprint {
+  return {
+    id: nextId<WritingSprintId>(),
+    projectId: null,
+    chapterId: null,
+    durationMs: 1500000,
+    wordCountGoal: null,
+    status: "active",
+    startedAt: ts,
+    pausedAt: null,
+    endedAt: null,
+    totalPausedMs: 0,
+    startWordCount: 0,
+    endWordCount: null,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeSavedPrompt(
+  overrides: Partial<SavedPrompt> & { title: string },
+): SavedPrompt {
+  return {
+    id: nextId<SavedPromptId>(),
+    projectId: null,
+    body: "",
+    builtinKey: null,
+    createdAt: ts,
+    updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeBrainstormSetup(
+  overrides: Partial<BrainstormSetup> & { name: string },
+): BrainstormSetup {
+  return {
+    id: nextId<BrainstormSetupId>(),
+    columns: [],
+    pattern: "",
     createdAt: ts,
     updatedAt: ts,
     ...overrides,

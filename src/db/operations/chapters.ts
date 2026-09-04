@@ -165,7 +165,12 @@ export async function updateChapterContent(
 
   // Record writing session if word count changed
   if (chapter && wordCount !== previousWordCount) {
-    recordWritingSession(chapter.projectId, id, previousWordCount, wordCount);
+    await recordWritingSession(
+      chapter.projectId,
+      id,
+      previousWordCount,
+      wordCount,
+    );
   }
 }
 

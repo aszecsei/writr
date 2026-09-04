@@ -11,6 +11,7 @@ import type {
   ProjectId,
 } from "@/db/schemas";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
+import { makeChapter, makeCharacter } from "@/test/helpers";
 import {
   useChapter,
   useChaptersByProject,
@@ -21,57 +22,23 @@ const PROJECT_ID = "00000000-0000-4000-8000-0000000000aa" as ProjectId;
 const CHAPTER_ID_1 = "00000000-0000-4000-8000-000000000001" as ChapterId;
 const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
 const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
-const NOW = "2026-05-06T12:00:00.000Z";
 
-function chapter(
-  id: ChapterId,
-  order = 0,
-  title = `Ch ${id.slice(-1)}`,
-): Chapter {
-  return {
+function chapter(id: ChapterId, order = 0): Chapter {
+  return makeChapter({
     id,
     projectId: PROJECT_ID,
-    title,
+    title: `Ch ${id.slice(-1)}`,
     order,
-    content: "",
-    synopsis: "",
-    status: "draft",
-    wordCount: 0,
-    parentChapterId: null,
-    section: "manuscript",
-    kind: "document",
-    includeInCompile: true,
-    pageBreakBefore: false,
-    createdAt: NOW,
-    updatedAt: NOW,
-  };
+  });
 }
 
 function character(id: CharacterId, name = "Alice"): Character {
-  return {
+  return makeCharacter({
     id,
     projectId: PROJECT_ID,
     name,
     role: "protagonist",
-    pronouns: "",
-    aliases: [],
-    summary: "",
-    description: "",
-    personality: "",
-    motivations: "",
-    internalConflict: "",
-    strengths: "",
-    weaknesses: "",
-    characterArcs: "",
-    dialogueStyle: "",
-    backstory: "",
-    notes: "",
-    linkedCharacterIds: [],
-    linkedLocationIds: [],
-    images: [],
-    createdAt: NOW,
-    updatedAt: NOW,
-  };
+  });
 }
 
 const SharedWrapper = ({ children }: { children: ReactNode }) => (

@@ -5,8 +5,8 @@ import {
   resetIdCounter,
 } from "@/test/helpers";
 import { db } from "../database";
-import type { CharacterId, ProjectId } from "../schemas";
-import { deleteCharacter } from "./characters";
+import type { ProjectId } from "../schemas";
+import { createRelationship, deleteCharacter } from "./characters";
 
 const projectA = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const projectB = "b1111111-1111-4111-a111-111111111111" as ProjectId;
@@ -122,12 +122,13 @@ describe("deleteCharacter", () => {
   it("does not affect characters in other projects", async () => {
     const alice = makeCharacter({ projectId: projectA, name: "Alice" });
     const otherChar = makeCharacter({ projectId: projectB, name: "Other" });
-    await db.characters.bulkAdd([alice, otherChar]);
+    const otherChar2 = makeCharacter({ projectId: projectB, name: "Other2" });
+    await db.characters.bulkAdd([alice, otherChar, otherChar2]);
 
     const otherRel = makeRelationship({
       projectId: projectB,
       sourceCharacterId: otherChar.id,
-      targetCharacterId: otherChar.id.replace(/1$/, "9") as CharacterId,
+      targetCharacterId: otherChar2.id,
       type: "sibling",
     });
     await db.characterRelationships.add(otherRel);
@@ -139,5 +140,117 @@ describe("deleteCharacter", () => {
 
     const otherRels = await db.characterRelationships.toArray();
     expect(otherRels).toHaveLength(1);
+  });
+});
+
+describe("createRelationship (duplicate & self-ref prevention)", () => {
+  beforeEach(async () => {
+    resetIdCounter();
+    await db.characters.clear();
+    await db.characterRelationships.clear();
+  });
+
+  it("throws on self-relationship", async () => {
+    const char = makeCharacter({ projectId: projectA, name: "Solo" });
+    await db.characters.add(char);
+
+    await expect(
+      createRelationship({
+        projectId: projectA,
+        sourceCharacterId: char.id,
+        targetCharacterId: char.id,
+        type: "sibling",
+      }),
+    ).rejects.toThrow("A character cannot have a relationship with itself.");
+  });
+
+  it("throws on exact duplicate (same direction)", async () => {
+    const a = makeCharacter({ projectId: projectA, name: "A" });
+    const b = makeCharacter({ projectId: projectA, name: "B" });
+    await db.characters.bulkAdd([a, b]);
+
+    await createRelationship({
+      projectId: projectA,
+      sourceCharacterId: a.id,
+      targetCharacterId: b.id,
+      type: "sibling",
+    });
+
+    await expect(
+      createRelationship({
+        projectId: projectA,
+        sourceCharacterId: a.id,
+        targetCharacterId: b.id,
+        type: "sibling",
+      }),
+    ).rejects.toThrow("This exact relationship already exists.");
+  });
+
+  it("throws on bidirectional duplicate (reversed direction)", async () => {
+    const a = makeCharacter({ projectId: projectA, name: "A" });
+    const b = makeCharacter({ projectId: projectA, name: "B" });
+    await db.characters.bulkAdd([a, b]);
+
+    await createRelationship({
+      projectId: projectA,
+      sourceCharacterId: a.id,
+      targetCharacterId: b.id,
+      type: "sibling",
+    });
+
+    await expect(
+      createRelationship({
+        projectId: projectA,
+        sourceCharacterId: b.id,
+        targetCharacterId: a.id,
+        type: "sibling",
+      }),
+    ).rejects.toThrow("This exact relationship already exists.");
+  });
+
+  it("allows same pair with a different type", async () => {
+    const a = makeCharacter({ projectId: projectA, name: "A" });
+    const b = makeCharacter({ projectId: projectA, name: "B" });
+    await db.characters.bulkAdd([a, b]);
+
+    await createRelationship({
+      projectId: projectA,
+      sourceCharacterId: a.id,
+      targetCharacterId: b.id,
+      type: "sibling",
+    });
+
+    await expect(
+      createRelationship({
+        projectId: projectA,
+        sourceCharacterId: a.id,
+        targetCharacterId: b.id,
+        type: "spouse",
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it("allows same pair/type with a different customLabel", async () => {
+    const a = makeCharacter({ projectId: projectA, name: "A" });
+    const b = makeCharacter({ projectId: projectA, name: "B" });
+    await db.characters.bulkAdd([a, b]);
+
+    await createRelationship({
+      projectId: projectA,
+      sourceCharacterId: a.id,
+      targetCharacterId: b.id,
+      type: "custom",
+      customLabel: "nemesis",
+    });
+
+    await expect(
+      createRelationship({
+        projectId: projectA,
+        sourceCharacterId: a.id,
+        targetCharacterId: b.id,
+        type: "custom",
+        customLabel: "rival",
+      }),
+    ).resolves.toBeDefined();
   });
 });

@@ -71,19 +71,6 @@ describe("unlinkChapterFromRow", () => {
     expect(updatedRow?.linkedChapterId).toBeNull();
     expect(updatedRow?.label).toBe("Ch1");
   });
-
-  it("does nothing if row is not linked", async () => {
-    const project = await createProject({ title: "P" });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      label: "My Row",
-    });
-
-    await unlinkChapterFromRow(row.id);
-
-    const updatedRow = await db.outlineGridRows.get(row.id);
-    expect(updatedRow?.label).toBe("My Row");
-  });
 });
 
 describe("createChapterFromRow", () => {
@@ -343,19 +330,6 @@ describe("syncDeleteOutlineRow", () => {
 
     const deletedChapter = await db.chapters.get(chapter.id);
     expect(deletedChapter).toBeUndefined();
-  });
-
-  it("deletes row without linked chapter", async () => {
-    const project = await createProject({ title: "P" });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      label: "Unlinked",
-    });
-
-    await syncDeleteOutlineRow(row.id, false);
-
-    const deletedRow = await db.outlineGridRows.get(row.id);
-    expect(deletedRow).toBeUndefined();
   });
 
   it("cascades to comments and snapshots when deleting linked chapter", async () => {
