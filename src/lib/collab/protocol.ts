@@ -2,13 +2,13 @@
 import { match, P } from "ts-pattern";
 import { z } from "zod";
 
-export const ROLES = ["view", "review", "edit", "host"] as const;
+const ROLES = ["view", "review", "edit", "host"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const DOC_KINDS = ["prose", "comments", "project"] as const;
+const DOC_KINDS = ["prose", "comments", "project"] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 
-export const ERROR_CODES = [
+const ERROR_CODES = [
   "invalid-token",
   "unauthorized",
   "invalid-message",
@@ -77,17 +77,6 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
     from: peerIdSchema,
   }),
   z.object({
-    type: z.literal("meta"),
-    streamId: streamIdSchema,
-    payload: base64Schema,
-    from: peerIdSchema,
-  }),
-  z.object({
-    type: z.literal("rotate-stream"),
-    docKind: docKindSchema,
-    newStreamId: streamIdSchema,
-  }),
-  z.object({
     type: z.literal("buffer"),
     docKind: docKindSchema,
     streamId: streamIdSchema,
@@ -133,9 +122,6 @@ export type ClientMessage =
       payload: string;
     }
   | { type: "awareness"; payload: string }
-  | { type: "meta"; streamId: number; payload: string }
-  | { type: "rotate-stream"; docKind: DocKind; newStreamId: number }
-  | { type: "request-buffer"; docKind: DocKind }
   | {
       type: "join-request";
       requestId: string;
@@ -154,13 +140,9 @@ export type ClientMessage =
 
 export const CLOSE_CODES = {
   NORMAL: 1000,
-  GOING_AWAY: 1001,
   POLICY_VIOLATION: 1008,
   MESSAGE_TOO_BIG: 1009,
-  INTERNAL_ERROR: 1011,
-  UNAUTHORIZED: 4401,
   FORBIDDEN: 4403,
-  RATE_LIMITED: 4429,
   ROOM_NOT_FOUND: 4404,
   ROOM_FULL: 4413,
   SESSION_ENDED: 4410,
@@ -168,14 +150,13 @@ export const CLOSE_CODES = {
 
 export function canSendClient(role: Role, message: ClientMessage): boolean {
   return match(message)
-    .with({ type: P.union("awareness", "request-buffer") }, () => true)
+    .with({ type: "awareness" }, () => true)
     .with({ type: "y-update" }, (m) => {
       if (m.docKind === "project") return role === "host";
       if (role === "view") return false;
       if (role === "review" && m.docKind !== "comments") return false;
       return true;
     })
-    .with({ type: P.union("meta", "rotate-stream") }, () => role === "host")
     .with({ type: "join-request" }, () => role !== "host")
     .with(
       { type: P.union("join-approved", "join-denied") },

@@ -240,7 +240,7 @@ describe("ProjectMirror.syncTable", () => {
   });
 });
 
-describe("ProjectMirror.setActiveChapterId / bumpRevision", () => {
+describe("ProjectMirror.setActiveChapterId", () => {
   it("writes activeChapterId to meta without disturbing other keys", () => {
     const doc = new Y.Doc();
     const mirror = new ProjectMirror({ doc, projectId: PROJECT_ID });
@@ -253,14 +253,6 @@ describe("ProjectMirror.setActiveChapterId / bumpRevision", () => {
     expect(meta?.activeChapterId).toBe(CHAPTER_ID_2);
     expect(meta?.projectId).toBe(PROJECT_ID);
   });
-
-  it("bumpRevision increments the meta revision", () => {
-    const doc = new Y.Doc();
-    const mirror = new ProjectMirror({ doc, projectId: PROJECT_ID });
-    mirror.seedFromSnapshot(emptySnapshot());
-    mirror.bumpRevision();
-    expect(readProjectMeta(doc)?.revision).toBe(2);
-  });
 });
 
 describe("ProjectMirror.destroy", () => {
@@ -272,23 +264,9 @@ describe("ProjectMirror.destroy", () => {
       mirror.syncTable("chapters", [chapter(CHAPTER_ID_1)]);
       mirror.seedFromSnapshot(emptySnapshot());
       mirror.setActiveChapterId(CHAPTER_ID_2);
-      mirror.bumpRevision();
     });
     expect(updates).toBe(0);
     expect(mirror.isDestroyed).toBe(true);
-  });
-});
-
-describe("ProjectMirror.resetHashes", () => {
-  it("forces the next syncTable to re-emit even unchanged rows", () => {
-    const doc = new Y.Doc();
-    const mirror = new ProjectMirror({ doc, projectId: PROJECT_ID });
-    mirror.syncTable("chapters", [chapter(CHAPTER_ID_1)]);
-    mirror.resetHashes();
-    const updates = countUpdatesDuring(doc, () => {
-      mirror.syncTable("chapters", [chapter(CHAPTER_ID_1)]);
-    });
-    expect(updates).toBe(1);
   });
 });
 

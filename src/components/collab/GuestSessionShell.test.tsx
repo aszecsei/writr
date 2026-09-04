@@ -97,36 +97,6 @@ describe("GuestSessionShell (snapshots)", () => {
     );
     expect(container.firstChild).toMatchSnapshot();
   });
-
-  it("renders the connected state for an edit guest with host present", () => {
-    const { container } = render(
-      <GuestSessionShell
-        state={{
-          kind: "connected",
-          role: "edit",
-          peerCount: 3,
-          hostPresent: true,
-        }}
-        onLeave={vi.fn()}
-      />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it("renders the connected state for a solo guest with host away", () => {
-    const { container } = render(
-      <GuestSessionShell
-        state={{
-          kind: "connected",
-          role: "view",
-          peerCount: 1,
-          hostPresent: false,
-        }}
-        onLeave={vi.fn()}
-      />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
-  });
 });
 
 describe("GuestSessionShell (interactions)", () => {
@@ -149,22 +119,5 @@ describe("GuestSessionShell (interactions)", () => {
     );
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onLeave).not.toHaveBeenCalled();
-  });
-
-  it("calls onLeave when Leave is clicked from connected", () => {
-    const onLeave = vi.fn();
-    const { container } = render(
-      <GuestSessionShell
-        state={{
-          kind: "connected",
-          role: "edit",
-          peerCount: 2,
-          hostPresent: true,
-        }}
-        onLeave={onLeave}
-      />,
-    );
-    fireEvent.click(within(container).getByRole("button", { name: /leave/i }));
-    expect(onLeave).toHaveBeenCalledTimes(1);
   });
 });

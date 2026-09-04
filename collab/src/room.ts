@@ -62,7 +62,7 @@ const DEFAULT_MAX_SOCKETS = 16;
 const DEFAULT_MAX_BUFFER_BYTES = 4 * 1024 * 1024;
 const DEFAULT_JOIN_TIMEOUT_MS = 120_000;
 
-export type AttachResult =
+type AttachResult =
   | { ok: true; peerId: string }
   | { ok: false; error: ErrorCode };
 
@@ -116,10 +116,6 @@ export class Room {
 
   get isDestroyed(): boolean {
     return this.destroyed;
-  }
-
-  get peerCount(): number {
-    return this.sockets.size;
   }
 
   get hostConnected(): boolean {
@@ -277,37 +273,6 @@ export class Room {
           type: "awareness",
           payload: m.payload,
           from: peerId,
-        });
-      })
-      .with({ type: "meta" }, (m) => {
-        this.relay(peerId, {
-          type: "meta",
-          streamId: m.streamId,
-          payload: m.payload,
-          from: peerId,
-        });
-      })
-      .with({ type: "rotate-stream" }, (m) => {
-        const stream = this.streams.get(m.docKind);
-        if (!stream) return;
-        if (m.newStreamId <= stream.currentStreamId) return;
-        stream.currentStreamId = m.newStreamId;
-        stream.buffer = [];
-        stream.bufferBytes = 0;
-        this.broadcast({
-          type: "rotate-stream",
-          docKind: m.docKind,
-          newStreamId: m.newStreamId,
-        });
-      })
-      .with({ type: "request-buffer" }, (m) => {
-        const stream = this.streams.get(m.docKind);
-        if (!stream) return;
-        this.send(entry.socket, {
-          type: "buffer",
-          docKind: m.docKind,
-          streamId: stream.currentStreamId,
-          updates: [...stream.buffer],
         });
       })
       .with({ type: "join-request" }, (m) => {
@@ -603,12 +568,6 @@ export class Room {
   private relay(fromPeerId: string, message: ServerMessage): void {
     for (const { socket, peerId } of this.sockets.values()) {
       if (peerId === fromPeerId) continue;
-      this.send(socket, message);
-    }
-  }
-
-  private broadcast(message: ServerMessage): void {
-    for (const { socket } of this.sockets.values()) {
       this.send(socket, message);
     }
   }

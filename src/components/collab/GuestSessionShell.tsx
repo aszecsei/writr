@@ -1,10 +1,8 @@
 "use client";
 
-import { AlertCircle, Loader2, LogOut } from "lucide-react";
-import type { ReactNode } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
-import type { Role } from "@/lib/collab/protocol";
 
 export type GuestState =
   | { kind: "disabled" }
@@ -14,24 +12,12 @@ export type GuestState =
   | { kind: "awaiting-approval" }
   | { kind: "denied"; reason: string | null }
   | { kind: "error"; message: string; retryable: boolean }
-  | { kind: "ended"; reason: "session_ended" | "left" }
-  | {
-      kind: "connected";
-      role: Role;
-      peerCount: number;
-      hostPresent: boolean;
-    };
+  | { kind: "ended"; reason: "session_ended" | "left" };
 
 export interface GuestSessionShellProps {
   state: GuestState;
   onRetry?: () => void;
   onLeave?: () => void;
-  /**
-   * Slot for the live editor when state is `connected`. When omitted a
-   * placeholder is shown (used for snapshots and as a fallback during
-   * the brief moment between welcome and the editor mounting).
-   */
-  connectedContent?: ReactNode;
 }
 
 /**
@@ -42,22 +28,11 @@ export function GuestSessionShell({
   state,
   onRetry,
   onLeave,
-  connectedContent,
 }: GuestSessionShellProps) {
-  // Give the connected variant breathing room for the embedded editor
-  // plus the comment margin (~16rem to the right of the prose column).
-  const cardWidth = state.kind === "connected" ? "max-w-5xl" : "max-w-md";
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <div
-        className={`w-full ${cardWidth} rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900`}
-      >
-        <Body
-          state={state}
-          onRetry={onRetry}
-          onLeave={onLeave}
-          connectedContent={connectedContent}
-        />
+      <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+        <Body state={state} onRetry={onRetry} onLeave={onLeave} />
       </div>
     </div>
   );
@@ -67,12 +42,10 @@ function Body({
   state,
   onRetry,
   onLeave,
-  connectedContent,
 }: {
   state: GuestState;
   onRetry?: () => void;
   onLeave?: () => void;
-  connectedContent?: ReactNode;
 }) {
   return match(state)
     .with({ kind: "disabled" }, () => (
@@ -178,36 +151,6 @@ function Body({
           )
         }
       />
-    ))
-    .with({ kind: "connected" }, (s) => (
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Joined as {s.role}</h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            {s.peerCount === 1
-              ? "You are the only one connected."
-              : `${s.peerCount} people connected.`}{" "}
-            {s.hostPresent ? "Host is present." : "Host is away."}
-          </p>
-        </div>
-        {connectedContent ?? (
-          <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
-            Waiting for the collaborative editor to mount…
-          </div>
-        )}
-        {onLeave && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onLeave}
-              className="inline-flex items-center gap-1 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            >
-              <LogOut size={14} aria-hidden="true" />
-              Leave
-            </button>
-          </div>
-        )}
-      </div>
     ))
     .exhaustive();
 }

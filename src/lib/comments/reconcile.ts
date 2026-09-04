@@ -2,7 +2,7 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import type { Comment } from "@/db/schemas";
 import { normalizedIndexOf } from "@/lib/punctuation-match";
 
-export interface ReconcileResult {
+interface ReconcileResult {
   found: boolean;
   newFrom?: number;
   newTo?: number;

@@ -17,19 +17,19 @@ export interface CollabTransport {
   close(code?: number, reason?: string): void;
 }
 
-export type ClientErrorKind =
+type ClientErrorKind =
   | ErrorCode
   | "transport"
   | "invalid-message"
   | "decrypt"
   | "send-not-allowed";
 
-export interface ClientErrorEvent {
+interface ClientErrorEvent {
   kind: ClientErrorKind;
   message: string;
 }
 
-export interface ClientEventMap {
+interface ClientEventMap {
   open: () => void;
   welcome: (data: {
     peerId: string;
@@ -44,12 +44,6 @@ export interface ClientEventMap {
     from: string;
   }) => void;
   awareness: (data: { update: Uint8Array; from: string }) => void;
-  meta: (data: {
-    streamId: number;
-    plaintext: Uint8Array;
-    from: string;
-  }) => void;
-  "rotate-stream": (data: { docKind: DocKind; newStreamId: number }) => void;
   buffer: (data: {
     docKind: DocKind;
     streamId: number;
@@ -72,7 +66,7 @@ export interface ClientEventMap {
   "join-denied": (data: { requestId: string; reason?: string }) => void;
 }
 
-export interface CollabClientOptions {
+interface CollabClientOptions {
   transport: CollabTransport;
   key: RoomKey;
   /**
@@ -94,10 +88,6 @@ export class CollabClient {
     keyof ClientEventMap,
     Set<(...args: unknown[]) => unknown>
   >();
-  private readonly streamIds = new Map<DocKind, number>([
-    ["prose", DEFAULT_STREAM_ID],
-    ["comments", DEFAULT_STREAM_ID],
-  ]);
   private peerIdValue: string | null = null;
   private closed = false;
 
@@ -117,10 +107,6 @@ export class CollabClient {
 
   get isClosed(): boolean {
     return this.closed;
-  }
-
-  streamIdFor(docKind: DocKind): number {
-    return this.streamIds.get(docKind) ?? DEFAULT_STREAM_ID;
   }
 
   on<K extends keyof ClientEventMap>(
@@ -190,24 +176,7 @@ export class CollabClient {
         if (!update) return;
         this.emit("awareness", { update, from: m.from });
       })
-      .with({ type: "meta" }, async (m) => {
-        const plaintext = await this.tryDecrypt(m.payload, "meta");
-        if (!plaintext) return;
-        this.emit("meta", {
-          streamId: m.streamId,
-          plaintext,
-          from: m.from,
-        });
-      })
-      .with({ type: "rotate-stream" }, async (m) => {
-        this.streamIds.set(m.docKind, m.newStreamId);
-        this.emit("rotate-stream", {
-          docKind: m.docKind,
-          newStreamId: m.newStreamId,
-        });
-      })
       .with({ type: "buffer" }, async (m) => {
-        this.streamIds.set(m.docKind, m.streamId);
         const updates: Uint8Array[] = [];
         for (const encoded of m.updates) {
           const u = await this.tryDecrypt(encoded, "buffer");
@@ -263,7 +232,7 @@ export class CollabClient {
     const message: ClientMessage = {
       type: "y-update",
       docKind,
-      streamId: this.streamIdFor(docKind),
+      streamId: DEFAULT_STREAM_ID,
       payload: await encryptPayload(this.key, update),
     };
     this.dispatch(message);
@@ -275,24 +244,6 @@ export class CollabClient {
       payload: await encryptPayload(this.key, update),
     };
     this.dispatch(message);
-  }
-
-  async sendMeta(streamId: number, plaintext: Uint8Array): Promise<void> {
-    const message: ClientMessage = {
-      type: "meta",
-      streamId,
-      payload: await encryptPayload(this.key, plaintext),
-    };
-    this.dispatch(message);
-  }
-
-  rotateStream(docKind: DocKind, newStreamId: number): void {
-    this.streamIds.set(docKind, newStreamId);
-    this.dispatch({ type: "rotate-stream", docKind, newStreamId });
-  }
-
-  requestBuffer(docKind: DocKind): void {
-    this.dispatch({ type: "request-buffer", docKind });
   }
 
   sendJoinRequest(data: {

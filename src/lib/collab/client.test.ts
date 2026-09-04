@@ -121,23 +121,6 @@ describe("CollabClient: outgoing encryption", () => {
     }
   });
 
-  it("uses the latest streamId after rotate-stream from server", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-
-    await deliver(client, {
-      type: "rotate-stream",
-      docKind: "prose",
-      newStreamId: 7,
-    });
-
-    await client.sendYUpdate("prose", new Uint8Array([1]));
-    const sent = transport.sent[0];
-    if (sent?.type === "y-update") {
-      expect(sent.streamId).toBe(7);
-    }
-  });
-
   it("encrypts awareness payload", async () => {
     const transport = new MockTransport();
     const client = new CollabClient({ transport, key, role: "view" });
@@ -176,36 +159,6 @@ describe("CollabClient: outgoing role gating", () => {
 
     await client.sendYUpdate("comments", new Uint8Array([2]));
     expect(transport.sent).toHaveLength(1);
-  });
-
-  it("blocks non-host from rotateStream and sendMeta", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-
-    client.rotateStream("prose", 2);
-    expect(
-      transport.sent.filter((m) => m.type === "rotate-stream"),
-    ).toHaveLength(0);
-
-    await client.sendMeta(1, new Uint8Array([1]));
-    expect(transport.sent.filter((m) => m.type === "meta")).toHaveLength(0);
-  });
-
-  it("permits host to rotateStream and sendMeta", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "host" });
-
-    client.rotateStream("prose", 5);
-    const rotated = transport.sent.find((m) => m.type === "rotate-stream");
-    expect(rotated).toBeDefined();
-
-    await client.sendMeta(5, new Uint8Array([42]));
-    const meta = transport.sent.find((m) => m.type === "meta");
-    expect(meta?.type).toBe("meta");
-    if (meta?.type === "meta") {
-      const decrypted = await decryptPayload(key, meta.payload);
-      expect(Array.from(decrypted)).toEqual([42]);
-    }
   });
 });
 
@@ -269,7 +222,6 @@ describe("CollabClient: incoming decryption", () => {
       updates: [a, b],
     });
 
-    expect(client.streamIdFor("prose")).toBe(3);
     expect(onBuffer).toHaveBeenCalledTimes(1);
     const ev = onBuffer.mock.calls[0]?.[0];
     expect(ev?.streamId).toBe(3);
@@ -311,36 +263,6 @@ describe("CollabClient: incoming decryption", () => {
     expect(onError).toHaveBeenCalledTimes(2);
     expect(onError.mock.calls[0]?.[0]?.kind).toBe("invalid-message");
     expect(onError.mock.calls[1]?.[0]?.kind).toBe("invalid-message");
-  });
-});
-
-describe("CollabClient: rotate-stream propagation", () => {
-  it("updates internal streamId when host rotates", () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "host" });
-
-    expect(client.streamIdFor("prose")).toBe(1);
-    client.rotateStream("prose", 4);
-    expect(client.streamIdFor("prose")).toBe(4);
-  });
-
-  it("emits rotate-stream when received from server", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-    const onRotate = vi.fn();
-    client.on("rotate-stream", onRotate);
-
-    await deliver(client, {
-      type: "rotate-stream",
-      docKind: "comments",
-      newStreamId: 9,
-    });
-
-    expect(onRotate).toHaveBeenCalledWith({
-      docKind: "comments",
-      newStreamId: 9,
-    });
-    expect(client.streamIdFor("comments")).toBe(9);
   });
 });
 

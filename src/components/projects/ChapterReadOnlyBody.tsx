@@ -17,10 +17,6 @@ export interface ChapterReadOnlyBodyProps {
  * content from the synced snapshot. The host's project mirror keeps the
  * snapshot fresh as Dexie auto-save fires, so edit-role guests viewing
  * the active chapter see updates land within debounce + diff time.
- *
- * A subsequent iteration will branch here on chapterId === active
- * chapter to bind the live prose Y.Doc instead of the snapshot, so
- * keystroke-rate updates are visible to edit/review guests.
  */
 export function ChapterReadOnlyBody({
   projectId,

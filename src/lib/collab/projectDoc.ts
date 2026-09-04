@@ -20,7 +20,7 @@ import {
 
 export const PROJECT_DOC_VERSION = 1;
 
-export const ProjectDocMetaSchema = z.object({
+const ProjectDocMetaSchema = z.object({
   mode: z.literal("project"),
   projectId: ProjectIdSchema,
   activeChapterId: ChapterIdSchema.nullable(),
@@ -44,7 +44,7 @@ export const PROJECT_DOC_TABLES = [
 ] as const;
 export type ProjectDocTable = (typeof PROJECT_DOC_TABLES)[number];
 
-export const PROJECT_DOC_TABLE_SCHEMAS = {
+const PROJECT_DOC_TABLE_SCHEMAS = {
   chapters: ChapterSchema,
   characters: CharacterSchema,
   characterRels: CharacterRelationshipSchema,
