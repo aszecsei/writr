@@ -5,6 +5,7 @@ import type {
 } from "pdfmake/interfaces";
 import { match } from "ts-pattern";
 import type { InlineSpan, TextAlignment, TextSpan } from "../markdown-to-nodes";
+import { loadPdfMake } from "../pdfmake";
 import { HR_TEXT, imagePlaceholder } from "../shared";
 import type {
   BlockquoteNode,
@@ -208,18 +209,7 @@ export class PdfExporter implements Exporter {
   }
 
   async toBlob(): Promise<Blob> {
-    const pdfMakeModule = await import("pdfmake/build/pdfmake");
-    const pdfFontsModule = await import("pdfmake/build/vfs_fonts");
-    const courierFontModule = await import(
-      "pdfmake/build/standard-fonts/Courier"
-    );
-
-    const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
-    const vfs = pdfFontsModule.default ?? pdfFontsModule;
-    pdfMake.addVirtualFileSystem(vfs);
-
-    const courierFont = courierFontModule.default ?? courierFontModule;
-    pdfMake.addFontContainer(courierFont);
+    const pdfMake = await loadPdfMake();
 
     const docDefinition: TDocumentDefinitions = {
       content: this.content,

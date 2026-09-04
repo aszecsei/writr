@@ -1,16 +1,10 @@
 "use client";
 
 import { X } from "lucide-react";
+import { formatCountdownClock } from "@/lib/format-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useSprintStore } from "@/store/sprintStore";
 import { useUiStore } from "@/store/uiStore";
-
-function formatTime(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
 
 export function FocusModeOverlay() {
   const wordCount = useEditorStore((s) => s.wordCount);
@@ -40,7 +34,7 @@ export function FocusModeOverlay() {
               }`}
             />
             <span className="font-mono text-sm font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
-              {formatTime(remainingMs)}
+              {formatCountdownClock(remainingMs)}
             </span>
           </div>
           <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-700" />

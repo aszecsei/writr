@@ -11,6 +11,9 @@
  * excludes the open delimiter and newlines).
  */
 
+import { escapeRegExp } from "@/lib/text/escape-reg-exp";
+import { wordsOf } from "@/lib/text/words-of";
+
 export interface HoleDelimiters {
   open: string;
   close: string;
@@ -28,11 +31,6 @@ export interface HoleMatch {
   length: number;
   /** The full matched text, delimiters included. */
   text: string;
-}
-
-/** Escape a string so it can be embedded literally in a RegExp. */
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Fall back to the default delimiters when either side is empty/blank. */
@@ -92,6 +90,5 @@ export function countWordsExcludingHoles(
   text: string,
   delimiters: HoleDelimiters,
 ): number {
-  return stripHoles(text, delimiters).trim().split(/\s+/).filter(Boolean)
-    .length;
+  return wordsOf(stripHoles(text, delimiters)).length;
 }

@@ -1,13 +1,12 @@
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
+import { wordsOf } from "@/lib/text/words-of";
+
 export interface ChunkOptions {
   maxWords?: number;
   overlapWords?: number;
 }
 
 const SEPARATOR_RE = /^(?:\*\s*\*\s*\*[\s*]*|-{3,}|_{3,}|#{1,6}\s*)$/;
-
-function wordsOf(s: string): string[] {
-  return s.split(/\s+/).filter(Boolean);
-}
 
 function hardSplit(
   paragraph: string,
@@ -32,10 +31,7 @@ export function chunkText(text: string, options: ChunkOptions = {}): string[] {
   const maxWords = options.maxWords ?? 180;
   const overlapWords = options.overlapWords ?? 30;
 
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
+  const paragraphs = splitParagraphs(text);
 
   const chunks: string[] = [];
   let current: string[] = [];

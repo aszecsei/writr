@@ -1,7 +1,8 @@
 import { db } from "@/db/database";
 import { updateAppSettings } from "@/db/operations";
 import type { ProjectId } from "@/db/schemas";
-import { triggerDownload } from "@/lib/export/download";
+import { triggerDownload } from "@/lib/download";
+import { sanitizeFilename } from "@/lib/filename";
 import {
   BACKUP_VERSION,
   type Backup,
@@ -132,13 +133,6 @@ export async function exportFullBackup(): Promise<FullBackup> {
 function createBackupBlob(backup: Backup): Blob {
   const json = JSON.stringify(backup, null, 2);
   return new Blob([json], { type: "application/json" });
-}
-
-function sanitizeFilename(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 function formatDate(date: Date): string {

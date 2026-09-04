@@ -1,6 +1,7 @@
 /**
- * FNV-1a 32-bit hash as zero-padded hex. Used only for change detection on
- * chunk text — not security-sensitive — so a fast non-crypto hash is correct.
+ * FNV-1a 32-bit hash as zero-padded hex. Not cryptographic — used only for
+ * cheap change detection (retrieval chunk text, TTS audio cache keys), so a
+ * fast non-crypto hash is correct.
  */
 export function hashText(text: string): string {
   let h = 0x811c9dc5;

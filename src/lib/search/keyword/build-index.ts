@@ -2,7 +2,7 @@ import MiniSearch from "minisearch";
 import { match } from "ts-pattern";
 import { db } from "@/db/database";
 import type { ChapterId } from "@/db/schemas";
-import { splitParagraphs } from "@/lib/ai/tool-calling/tools/helpers";
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
 import { entityConfigs } from "../entity-config";
 import type { SearchableEntityType } from "../types";
 import {

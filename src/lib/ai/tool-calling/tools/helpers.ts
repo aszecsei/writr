@@ -40,10 +40,6 @@ export function formatZodError(error: z.ZodError): string {
     .join("; ");
 }
 
-export function splitParagraphs(content: string): string[] {
-  return content.split(/\n\n+/).filter((p) => p.trim());
-}
-
 /**
  * Detects a scene break in a stored chapter paragraph. Matches both
  * markdown-style thematic breaks (`---`, `***`, `___`, or spaced `* * *`) —

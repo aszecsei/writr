@@ -58,8 +58,9 @@ import type {
 } from "@/db/schemas";
 import { summarizeChapter } from "@/lib/ai/client";
 import { buildNameMap, serializeOutlineGrid } from "@/lib/ai/serialize";
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
 import { defineTool, type ToolExecutionContext } from "../types";
-import { ok, SCENE_BREAK_RE, splitParagraphs } from "./helpers";
+import { ok, SCENE_BREAK_RE } from "./helpers";
 
 // ─── Categories ────────────────────────────────────────────────────────
 

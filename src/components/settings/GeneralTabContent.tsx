@@ -10,26 +10,12 @@ import type {
 } from "@/db/schemas";
 import { useAppStats } from "@/hooks/editor/useAppStats";
 import { formatBytes } from "@/lib/format-bytes";
+import { formatRelativeTime } from "@/lib/format-time";
 import { AppearanceSettings } from "./AppearanceSettings";
 import type {
   AppSettingsDraft,
   SetAppSettingsField,
 } from "./AppSettingsDialog";
-
-function formatRelativeDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffHrs = Math.floor(diffMs / 3_600_000);
-  const diffDays = Math.floor(diffMs / 86_400_000);
-
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  if (diffDays < 30) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
@@ -101,7 +87,7 @@ export function GeneralTabContent({
             value={
               stats
                 ? stats.lastExportedAt
-                  ? formatRelativeDate(stats.lastExportedAt)
+                  ? formatRelativeTime(stats.lastExportedAt)
                   : "Never"
                 : "\u2014"
             }

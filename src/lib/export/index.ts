@@ -1,5 +1,6 @@
 import { match } from "ts-pattern";
-import { triggerDownload } from "./download";
+import { triggerDownload } from "@/lib/download";
+import { sanitizeFilename } from "@/lib/filename";
 import { createExporter } from "./exporters";
 import { exportFountain } from "./exportFountain";
 import { exportMarkdown } from "./exportMarkdown";
@@ -13,10 +14,6 @@ export {
   copyChapterMarkdownToClipboard,
 } from "./clipboard";
 export { type ExportHoleScan, scanExportHoles } from "./holes-scan";
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "export";
-}
 
 const FORMAT_EXTENSIONS: Record<ExportOptions["format"], string> = {
   markdown: ".md",

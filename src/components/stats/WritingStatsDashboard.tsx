@@ -2,6 +2,7 @@
 
 import { BarChart3, Clock, TrendingUp, Type } from "lucide-react";
 import { useWritingStats } from "@/hooks/editor/useWritingStats";
+import { formatHour } from "@/lib/format-time";
 import { DailyWordChart } from "./DailyWordChart";
 import { StatCard } from "./StatCard";
 import { StreakDisplay } from "./StreakDisplay";
@@ -10,13 +11,6 @@ import { TimeOfDayChart } from "./TimeOfDayChart";
 interface WritingStatsDashboardProps {
   projectId?: string | null;
   days?: number;
-}
-
-function formatHour(hour: number): string {
-  if (hour === 0) return "12 AM";
-  if (hour === 12) return "12 PM";
-  if (hour < 12) return `${hour} AM`;
-  return `${hour - 12} PM`;
 }
 
 export function WritingStatsDashboard({

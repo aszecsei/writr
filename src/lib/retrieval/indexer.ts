@@ -9,9 +9,9 @@ import type {
   ProjectId,
   WorldbuildingDoc,
 } from "@/db/schemas";
+import { hashText } from "@/lib/hash";
 import { chunkText } from "./chunker";
 import type { EmbeddingProvider } from "./embedding/provider";
-import { hashText } from "./hash";
 
 export interface IndexSourceArgs {
   provider: EmbeddingProvider;

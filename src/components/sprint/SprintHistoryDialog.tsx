@@ -9,28 +9,9 @@ import {
   useSprintHistory,
   useSprintStats,
 } from "@/hooks/writing/useSprintHistory";
+import { formatSprintDate, formatSprintDuration } from "@/lib/format-time";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
-
-function formatDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-}
-
-function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
   const wordsWritten =
@@ -73,8 +54,8 @@ function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>{formatDate(sprint.startedAt)}</span>
-          <span>{formatDuration(actualDuration)}</span>
+          <span>{formatSprintDate(sprint.startedAt)}</span>
+          <span>{formatSprintDuration(actualDuration)}</span>
           <span>{wpm} wpm</span>
         </div>
       </div>

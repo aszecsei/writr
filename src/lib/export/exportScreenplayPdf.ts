@@ -2,6 +2,7 @@ import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { match } from "ts-pattern";
 import type { FountainElement } from "@/lib/fountain";
 import { parseFountain } from "@/lib/fountain";
+import { loadPdfMake } from "./pdfmake";
 import type { ExportContent, ExportOptions } from "./types";
 
 // Standard screenplay margins (US Letter)
@@ -92,18 +93,7 @@ export async function exportScreenplayPdf(
   content: ExportContent,
   options: ExportOptions,
 ): Promise<Blob> {
-  const pdfMakeModule = await import("pdfmake/build/pdfmake");
-  const pdfFontsModule = await import("pdfmake/build/vfs_fonts");
-  const courierFontModule = await import(
-    "pdfmake/build/standard-fonts/Courier"
-  );
-
-  const pdfMake = pdfMakeModule.default ?? pdfMakeModule;
-  const vfs = pdfFontsModule.default ?? pdfFontsModule;
-  pdfMake.addVirtualFileSystem(vfs);
-
-  const courierFont = courierFontModule.default ?? courierFontModule;
-  pdfMake.addFontContainer(courierFont);
+  const pdfMake = await loadPdfMake();
 
   const allContent: Content[] = [];
 

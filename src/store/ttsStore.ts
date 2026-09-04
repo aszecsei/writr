@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ChapterId } from "@/db/schemas";
+import { hashText } from "@/lib/hash";
 import { chunkTextForTts } from "@/lib/tts/chunk";
-import { hashTtsText } from "@/lib/tts/extract";
 
 type TtsPlaybackState = "idle" | "loading" | "playing" | "paused" | "error";
 
@@ -55,7 +55,7 @@ function cacheKey(
   voice: string,
   model: string,
 ): string {
-  return `${chapterId}:${hashTtsText(text)}:${voice}:${model}`;
+  return `${chapterId}:${hashText(text)}:${voice}:${model}`;
 }
 
 export const useTtsStore = create<TtsState>()((set, get) => ({
