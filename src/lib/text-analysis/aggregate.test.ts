@@ -2,14 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { aggregateAnalyses } from "./aggregate";
 import { analyzeSentences } from "./analyze";
-import type { AnalysisScope, AnalyzedSentence, AnalyzedTerm } from "./types";
+import { term } from "./test-helpers";
+import type { AnalysisScope, AnalyzedSentence } from "./types";
 
 const PROJECT_ID = "project-1" as ProjectId;
 const SCOPE: AnalysisScope = { level: "project", projectId: PROJECT_ID };
-
-function term(normal: string, tags: string[] = []): AnalyzedTerm {
-  return { normal, root: normal, tags: new Set(tags), syllables: 1 };
-}
 
 function sentencesFromWords(
   wordsPerSentence: string[][],

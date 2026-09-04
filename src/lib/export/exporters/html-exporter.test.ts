@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectId } from "@/db/schemas";
+import { opts } from "../test-helpers";
 import { buildExport } from "../visitor";
 import { HtmlExporter } from "./html-exporter";
-
-const PROJECT_ID = "test" as ProjectId;
 
 function renderChapter(
   content: string,
@@ -13,15 +11,7 @@ function renderChapter(
   buildExport(
     exporter,
     { projectTitle: "p", chapters: [{ title: "c", content }] },
-    {
-      format: "markdown",
-      scope: "chapter",
-      projectId: PROJECT_ID,
-      includeTitlePage: false,
-      includeChapterHeadings: false,
-      pageBreaksBetweenChapters: false,
-      ...overrides,
-    },
+    opts({ scope: "chapter", ...overrides }),
   );
   return exporter.toString();
 }
@@ -61,14 +51,7 @@ describe("HtmlExporter", () => {
         projectTitle: "My Book",
         chapters: [{ title: "Chapter 1", content: "First" }],
       },
-      {
-        format: "markdown",
-        scope: "book",
-        projectId: PROJECT_ID,
-        includeTitlePage: true,
-        includeChapterHeadings: true,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ includeTitlePage: true, includeChapterHeadings: true }),
     );
     const html = exporter.toString();
     expect(html).toContain("<h1>My Book</h1>");
@@ -93,14 +76,7 @@ describe("HtmlExporter", () => {
         projectTitle: "Tom & Jerry's <Adventure>",
         chapters: [{ title: "Chapter 1", content: "Test" }],
       },
-      {
-        format: "markdown",
-        scope: "book",
-        projectId: PROJECT_ID,
-        includeTitlePage: true,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ includeTitlePage: true }),
     );
     expect(exporter.toString()).toContain(
       "<h1>Tom &amp; Jerry's &lt;Adventure&gt;</h1>",

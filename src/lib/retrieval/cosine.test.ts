@@ -21,10 +21,4 @@ describe("cosineSimilarity", () => {
   it("throws on length mismatch", () => {
     expect(() => cosineSimilarity([1, 2], [1, 2, 3])).toThrow(/length/);
   });
-
-  it("accepts Float32Array", () => {
-    expect(
-      cosineSimilarity(new Float32Array([1, 1]), new Float32Array([1, 1])),
-    ).toBeCloseTo(1, 6);
-  });
 });

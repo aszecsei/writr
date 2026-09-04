@@ -29,12 +29,15 @@ describe("parseFountain", () => {
     });
   });
 
-  it("parses character and dialogue", () => {
+  it("parses character and dialogue, without leftover wrapper tokens", () => {
     const elements = parseFountain("JOHN\nHello there.");
     const character = elements.find((e) => e.type === "character");
     const dialogue = elements.find((e) => e.type === "dialogue");
     expect(character?.text).toBe("JOHN");
     expect(dialogue?.text).toBe("Hello there.");
+    const types = elements.map((e) => e.type);
+    expect(types).not.toContain("dialogue_begin");
+    expect(types).not.toContain("dialogue_end");
   });
 
   it("parses parentheticals", () => {
@@ -64,13 +67,6 @@ describe("parseFountain", () => {
     const pageBreak = elements.find((e) => e.type === "page_break");
     expect(pageBreak).toBeDefined();
     expect(pageBreak?.text).toBe("");
-  });
-
-  it("strips dialogue_begin/end wrapper tokens", () => {
-    const elements = parseFountain("JOHN\nHello.");
-    const types = elements.map((e) => e.type);
-    expect(types).not.toContain("dialogue_begin");
-    expect(types).not.toContain("dialogue_end");
   });
 
   it("returns empty array for empty input", () => {

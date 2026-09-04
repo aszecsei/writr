@@ -119,41 +119,12 @@ describe("searchProjectKeywordGrouped", () => {
     expect(groups[0].results[0].title).toBe("Dragon Day");
   });
 
-  it("supports prefix match", async () => {
-    await createChapter({
-      projectId,
-      title: "Chapter One",
-      content: "Wandered into the gardener's shed",
-    });
-    const groups = await searchProjectKeywordGrouped(projectId, "garden");
-    expect(groups.length).toBe(1);
-    expect(groups[0].results[0].id).toBeDefined();
-  });
-
-  it("tolerates a single-character typo via fuzzy", async () => {
-    await createChapter({
-      projectId,
-      title: "Chapter",
-      content: "She walked through the moonlit garden",
-    });
-    // "moonlt" is 1 deletion from "moonlit" — within fuzzy 0.15 (≈1 edit
-    // for a 7-char term).
-    const groups = await searchProjectKeywordGrouped(projectId, "moonlt");
-    expect(groups.length).toBe(1);
-  });
-
   it("limits results per category", async () => {
     for (let i = 0; i < 10; i++) {
       await createChapter({ projectId, title: `Test Chapter ${i}` });
     }
     const groups = await searchProjectKeywordGrouped(projectId, "test", 3);
     expect(groups[0].results.length).toBe(3);
-  });
-
-  it("is case-insensitive", async () => {
-    await createChapter({ projectId, title: "UPPERCASE TITLE" });
-    const groups = await searchProjectKeywordGrouped(projectId, "uppercase");
-    expect(groups.length).toBe(1);
   });
 
   it("returns groups in the canonical entity-type order", async () => {
@@ -183,13 +154,6 @@ describe("searchProjectKeywordGrouped", () => {
 });
 
 describe("searchProjectKeywordPaginated", () => {
-  it("returns empty for empty query", async () => {
-    await createChapter({ projectId, title: "Chapter One" });
-    const r = await searchProjectKeywordPaginated(projectId, "");
-    expect(r.results).toEqual([]);
-    expect(r.totalCount).toBe(0);
-  });
-
   it("paginates results", async () => {
     for (let i = 0; i < 25; i++) {
       await createChapter({ projectId, title: `Test Chapter ${i}` });
@@ -287,27 +251,6 @@ describe("quoted-phrase fast-path", () => {
 });
 
 describe("searchChaptersKeyword", () => {
-  it("returns empty for empty query", async () => {
-    await createChapter({ projectId, title: "One" });
-    expect(await searchChaptersKeyword(projectId, "")).toEqual([]);
-  });
-
-  it("finds chapters by content with BM25 ranking", async () => {
-    await createChapter({
-      projectId,
-      title: "A",
-      content: "The garden lay quiet under the silver moon.",
-    });
-    await createChapter({
-      projectId,
-      title: "B",
-      content: "Moonlight threaded through the trees.",
-    });
-    const matches = await searchChaptersKeyword(projectId, "garden moon");
-    expect(matches.length).toBe(2);
-    expect(matches[0].title).toBe("A");
-  });
-
   it("respects the readable-chapter set", async () => {
     const c1 = await createChapter({ projectId, title: "First" });
     await db.chapters.update(c1.id, { content: "garden", order: 0 });

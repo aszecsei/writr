@@ -65,14 +65,11 @@ describe("stripHoles", () => {
 });
 
 describe("countWordsExcludingHoles", () => {
-  it("excludes hole content from the word count", () => {
+  it("counts plain prose normally, excluding hole content", () => {
+    expect(countWordsExcludingHoles("a b c d", BRACKETS)).toBe(4);
     expect(
       countWordsExcludingHoles("one two [three four five] six", BRACKETS),
     ).toBe(3);
-  });
-
-  it("counts plain prose normally", () => {
-    expect(countWordsExcludingHoles("a b c d", BRACKETS)).toBe(4);
   });
 
   it("returns zero for empty or hole-only text", () => {

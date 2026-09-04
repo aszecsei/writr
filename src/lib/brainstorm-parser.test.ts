@@ -185,7 +185,17 @@ describe("parseAst — degrade, never throw", () => {
     ]);
   });
 
-  it("does not throw on adversarial input", () => {
-    expect(() => parseAst("{{[:|}]\\")).not.toThrow();
+  it("degrades adversarial input to a definite AST instead of throwing", () => {
+    expect(parseAst("{{[:|}]\\")).toEqual([
+      { kind: "literal", text: "{{" },
+      {
+        kind: "columnRef",
+        name: "",
+        label: "|}",
+        constraints: [],
+        raw: "[:|}]",
+      },
+      { kind: "literal", text: "\\" },
+    ]);
   });
 });

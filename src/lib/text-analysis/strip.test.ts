@@ -48,20 +48,16 @@ describe("markdownToPlainParagraphs", () => {
     expect(result).toEqual(["A quoted line.", "first item", "second item"]);
   });
 
-  it("strips holes with default delimiters", () => {
-    const result = markdownToPlainParagraphs(
-      "She opened the door. [describe the hallway] Then she ran.",
-      DEFAULT_HOLE_DELIMITERS,
-    );
-    expect(result).toEqual(["She opened the door.  Then she ran."]);
-  });
-
-  it("strips holes with custom delimiters", () => {
-    const result = markdownToPlainParagraphs(
-      "Alpha {{fix this later}} omega.",
-      BRACES,
-    );
-    expect(result).toEqual(["Alpha  omega."]);
+  it("strips holes with default or custom delimiters", () => {
+    expect(
+      markdownToPlainParagraphs(
+        "She opened the door. [describe the hallway] Then she ran.",
+        DEFAULT_HOLE_DELIMITERS,
+      ),
+    ).toEqual(["She opened the door.  Then she ran."]);
+    expect(
+      markdownToPlainParagraphs("Alpha {{fix this later}} omega.", BRACES),
+    ).toEqual(["Alpha  omega."]);
   });
 
   it("drops paragraphs that were entirely a hole", () => {

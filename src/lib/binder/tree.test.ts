@@ -76,15 +76,13 @@ describe("buildTree", () => {
     expect(scratch[0].children.map((n) => n.chapter.id)).toEqual(["S1"]);
   });
 
-  it("treats an item whose parent is absent from the section as a root", () => {
+  it("treats an item whose parent is absent from the section as a root, and an empty section as empty", () => {
     const orphan = [
       ch("X", { parentChapterId: "ghost" as ChapterId, order: 0 }),
     ];
-    const tree = buildTree(orphan, "manuscript");
-    expect(tree.map((n) => n.chapter.id)).toEqual(["X"]);
-  });
-
-  it("returns an empty array for an empty input", () => {
+    expect(buildTree(orphan, "manuscript").map((n) => n.chapter.id)).toEqual([
+      "X",
+    ]);
     expect(buildTree([], "manuscript")).toEqual([]);
   });
 });
@@ -125,14 +123,14 @@ describe("depthMap", () => {
 });
 
 describe("subtreeIds", () => {
-  it("returns the node and all of its descendants", () => {
-    const set = subtreeIds(fixture(), "A" as ChapterId);
-    expect([...set].sort()).toEqual(["A", "A1", "A2", "A2a"]);
-  });
-
-  it("returns just the node for a leaf", () => {
-    const set = subtreeIds(fixture(), "B1" as ChapterId);
-    expect([...set]).toEqual(["B1"]);
+  it("returns the node and all of its descendants, or just the node for a leaf", () => {
+    expect([...subtreeIds(fixture(), "A" as ChapterId)].sort()).toEqual([
+      "A",
+      "A1",
+      "A2",
+      "A2a",
+    ]);
+    expect([...subtreeIds(fixture(), "B1" as ChapterId)]).toEqual(["B1"]);
   });
 });
 

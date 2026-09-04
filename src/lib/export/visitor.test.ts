@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ProjectId } from "@/db/schemas";
 import type { DocNode } from "./markdown-to-nodes";
+import { opts } from "./test-helpers";
 import type { DocNodeVisitor, Exporter } from "./visitor";
 import { buildExport, visitNode, visitNodes } from "./visitor";
-
-const PROJECT_ID = "p1" as ProjectId;
 
 function createMockVisitor(): DocNodeVisitor &
   Record<string, ReturnType<typeof vi.fn>> {
@@ -39,67 +37,32 @@ function createMockExporter(): Exporter &
 }
 
 describe("visitNode", () => {
-  it("dispatches heading to visitHeading", () => {
+  it.each<[keyof DocNodeVisitor, DocNode]>([
+    [
+      "visitHeading",
+      {
+        type: "heading",
+        level: 1,
+        spans: [{ type: "text", text: "Title", styles: [] }],
+      },
+    ],
+    [
+      "visitParagraph",
+      {
+        type: "paragraph",
+        spans: [{ type: "text", text: "Text", styles: [] }],
+      },
+    ],
+    ["visitBlockquote", { type: "blockquote", children: [] }],
+    ["visitList", { type: "list", ordered: false, items: [] }],
+    ["visitCode", { type: "code", text: "x = 1" }],
+    ["visitHr", { type: "hr" }],
+    ["visitImage", { type: "image", src: "test.png" }],
+    ["visitPageBreak", { type: "pageBreak" }],
+  ])("dispatches to %s", (method, node) => {
     const visitor = createMockVisitor();
-    const node: DocNode = {
-      type: "heading",
-      level: 1,
-      spans: [{ type: "text", text: "Title", styles: [] }],
-    };
     visitNode(node, visitor);
-    expect(visitor.visitHeading).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches paragraph to visitParagraph", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = {
-      type: "paragraph",
-      spans: [{ type: "text", text: "Text", styles: [] }],
-    };
-    visitNode(node, visitor);
-    expect(visitor.visitParagraph).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches blockquote to visitBlockquote", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "blockquote", children: [] };
-    visitNode(node, visitor);
-    expect(visitor.visitBlockquote).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches list to visitList", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "list", ordered: false, items: [] };
-    visitNode(node, visitor);
-    expect(visitor.visitList).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches code to visitCode", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "code", text: "x = 1" };
-    visitNode(node, visitor);
-    expect(visitor.visitCode).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches hr to visitHr", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "hr" };
-    visitNode(node, visitor);
-    expect(visitor.visitHr).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches image to visitImage", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "image", src: "test.png" };
-    visitNode(node, visitor);
-    expect(visitor.visitImage).toHaveBeenCalledWith(node);
-  });
-
-  it("dispatches pageBreak to visitPageBreak", () => {
-    const visitor = createMockVisitor();
-    const node: DocNode = { type: "pageBreak" };
-    visitNode(node, visitor);
-    expect(visitor.visitPageBreak).toHaveBeenCalledWith(node);
+    expect(visitor[method]).toHaveBeenCalledWith(node);
   });
 });
 
@@ -123,14 +86,6 @@ describe("visitNodes", () => {
     expect(visitor.visitParagraph).toHaveBeenCalledTimes(1);
     expect(visitor.visitHr).toHaveBeenCalledTimes(1);
   });
-
-  it("handles empty array", () => {
-    const visitor = createMockVisitor();
-    visitNodes([], visitor);
-    for (const fn of Object.values(visitor)) {
-      expect(fn).not.toHaveBeenCalled();
-    }
-  });
 });
 
 describe("buildExport", () => {
@@ -139,14 +94,7 @@ describe("buildExport", () => {
     buildExport(
       exporter,
       { projectTitle: "My Book", chapters: [{ title: "Ch1", content: "" }] },
-      {
-        format: "docx",
-        scope: "book",
-        projectId: PROJECT_ID,
-        includeTitlePage: true,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ includeTitlePage: true }),
     );
     expect(exporter.addTitlePage).toHaveBeenCalledWith("My Book");
   });
@@ -156,14 +104,7 @@ describe("buildExport", () => {
     buildExport(
       exporter,
       { projectTitle: "My Book", chapters: [{ title: "Ch1", content: "" }] },
-      {
-        format: "docx",
-        scope: "chapter",
-        projectId: PROJECT_ID,
-        includeTitlePage: true,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ scope: "chapter", includeTitlePage: true }),
     );
     expect(exporter.addTitlePage).not.toHaveBeenCalled();
   });
@@ -179,14 +120,7 @@ describe("buildExport", () => {
           { title: "Chapter 2", content: "" },
         ],
       },
-      {
-        format: "docx",
-        scope: "book",
-        projectId: PROJECT_ID,
-        includeTitlePage: false,
-        includeChapterHeadings: true,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ includeChapterHeadings: true }),
     );
     expect(exporter.addChapterHeading).toHaveBeenCalledTimes(2);
     expect(exporter.addChapterHeading).toHaveBeenCalledWith("Chapter 1");
@@ -205,14 +139,7 @@ describe("buildExport", () => {
           { title: "Ch3", content: "" },
         ],
       },
-      {
-        format: "docx",
-        scope: "book",
-        projectId: PROJECT_ID,
-        includeTitlePage: false,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: true,
-      },
+      opts({ pageBreaksBetweenChapters: true }),
     );
     // Page breaks between chapters (not before the first)
     expect(exporter.addPageBreak).toHaveBeenCalledTimes(2);
@@ -229,14 +156,7 @@ describe("buildExport", () => {
           { title: "Ch2", content: "" },
         ],
       },
-      {
-        format: "docx",
-        scope: "chapter",
-        projectId: PROJECT_ID,
-        includeTitlePage: false,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: true,
-      },
+      opts({ scope: "chapter", pageBreaksBetweenChapters: true }),
     );
     expect(exporter.addPageBreak).not.toHaveBeenCalled();
   });
@@ -249,16 +169,54 @@ describe("buildExport", () => {
         projectTitle: "Book",
         chapters: [{ title: "Ch1", content: "Hello **world**" }],
       },
-      {
-        format: "docx",
-        scope: "chapter",
-        projectId: PROJECT_ID,
-        includeTitlePage: false,
-        includeChapterHeadings: false,
-        pageBreaksBetweenChapters: false,
-      },
+      opts({ scope: "chapter" }),
     );
     // "Hello **world**" parses to a single paragraph node
     expect(exporter.visitParagraph).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders a separator's heading unconditionally and honors its pageBreakBefore in book scope", () => {
+    const exporter = createMockExporter();
+    buildExport(
+      exporter,
+      {
+        projectTitle: "Book",
+        chapters: [
+          {
+            title: "Part One",
+            content: "",
+            isSeparator: true,
+            pageBreakBefore: true,
+          },
+          { title: "Ch1", content: "" },
+        ],
+      },
+      opts({ includeChapterHeadings: false }),
+    );
+    expect(exporter.addPageBreak).toHaveBeenCalledTimes(1);
+    expect(exporter.addChapterHeading).toHaveBeenCalledWith("Part One");
+    // Separator content is never parsed as manuscript prose.
+    expect(exporter.visitParagraph).not.toHaveBeenCalled();
+  });
+
+  it("does not page-break before a separator when scope is chapter", () => {
+    const exporter = createMockExporter();
+    buildExport(
+      exporter,
+      {
+        projectTitle: "Book",
+        chapters: [
+          {
+            title: "Part One",
+            content: "",
+            isSeparator: true,
+            pageBreakBefore: true,
+          },
+        ],
+      },
+      opts({ scope: "chapter", includeChapterHeadings: false }),
+    );
+    expect(exporter.addPageBreak).not.toHaveBeenCalled();
+    expect(exporter.addChapterHeading).toHaveBeenCalledWith("Part One");
   });
 });

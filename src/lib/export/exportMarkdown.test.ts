@@ -36,6 +36,7 @@ describe("exportMarkdown", () => {
     const text = await blobText(blob);
     expect(text).toContain("# My Novel");
     expect(text).toContain("---");
+    expect(blob.type).toBe("text/markdown;charset=utf-8");
   });
 
   it("excludes title page when scope=chapter", async () => {
@@ -82,10 +83,5 @@ describe("exportMarkdown", () => {
     const text = await blobText(blob);
     // Between the end of chapter 1 content and start of chapter 2 heading
     expect(text).toContain("First chapter text.\n\n");
-  });
-
-  it("returns blob with correct MIME type", () => {
-    const blob = exportMarkdown(makeContent(), makeOptions());
-    expect(blob.type).toBe("text/markdown;charset=utf-8");
   });
 });

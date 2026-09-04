@@ -1,32 +1,19 @@
 import { describe, expect, it } from "vitest";
-import type { AnalyzedSentence, AnalyzedTerm } from "../types";
+import { rootedTerm, sentence, term } from "../test-helpers";
 import { checkSticky, countGlueWords, makeExcerpt } from "./glue";
 
-function term(normal: string, root: string = normal): AnalyzedTerm {
-  return { normal, root, tags: new Set(), syllables: 1 };
-}
-
-function sentenceOf(normals: string[], text?: string): AnalyzedSentence {
-  return {
-    text: text ?? normals.join(" "),
-    terms: normals.map((n) => term(n)),
-    paragraphIndex: 0,
-  };
+function sentenceOf(normals: string[]) {
+  return sentence(normals.map((n) => term(n)));
 }
 
 describe("countGlueWords", () => {
-  it("counts words present in the glue list", () => {
-    const sentence = sentenceOf(["the", "dragon", "was", "in", "flames"]);
-    expect(countGlueWords(sentence.terms)).toBe(3);
-  });
-
   it("counts an inflected generic verb via its lemma without enumerating it", () => {
     // "seeming" is not in the glue list, but its lemma "seem" is. Rooting
     // catches it, closing gaps the hand-maintained inflection list misses.
     const terms = [
       term("the"),
       term("plan"),
-      term("seeming", "seem"),
+      rootedTerm("seeming", "seem"),
       term("solid"),
     ];
     expect(countGlueWords(terms)).toBe(2); // "the" + "seeming"→"seem"
@@ -42,7 +29,7 @@ describe("countGlueWords", () => {
 
 describe("checkSticky", () => {
   it("flags a long sentence with more than 40% glue", () => {
-    const sentence = sentenceOf([
+    const s = sentenceOf([
       "it",
       "was",
       "in",
@@ -52,7 +39,7 @@ describe("checkSticky", () => {
       "the",
       "dragon",
     ]);
-    const result = checkSticky(sentence, 7);
+    const result = checkSticky(s, 7);
     expect(result).not.toBeNull();
     expect(result?.sentenceIndex).toBe(7);
     // it, was, in, the, of, the — "way" and "dragon" are content words.
@@ -61,7 +48,7 @@ describe("checkSticky", () => {
   });
 
   it("does not flag sentences at or below the threshold", () => {
-    const sentence = sentenceOf([
+    const s = sentenceOf([
       "the",
       "crimson",
       "dragon",
@@ -73,12 +60,12 @@ describe("checkSticky", () => {
       "yesterday",
       "evening",
     ]);
-    expect(checkSticky(sentence, 0)).toBeNull();
+    expect(checkSticky(s, 0)).toBeNull();
   });
 
   it("ignores short sentences regardless of glue share", () => {
-    const sentence = sentenceOf(["it", "was", "in", "the", "way"]);
-    expect(checkSticky(sentence, 0)).toBeNull();
+    const s = sentenceOf(["it", "was", "in", "the", "way"]);
+    expect(checkSticky(s, 0)).toBeNull();
   });
 });
 

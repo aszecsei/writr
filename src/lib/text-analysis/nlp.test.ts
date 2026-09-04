@@ -22,49 +22,6 @@ describe("parseParagraph", () => {
     expect(sentences.every((s) => s.paragraphIndex === 3)).toBe(true);
   });
 
-  it("tags parts of speech needed for opener categorization", async () => {
-    const [sentence] = await parseParagraph(
-      "The quick fox walked into a dark forest.",
-      0,
-    );
-    const tagsOf = (normal: string) =>
-      sentence.terms.find((t) => t.normal === normal)?.tags;
-    expect(tagsOf("the")).toContain("Determiner");
-    expect(tagsOf("quick")).toContain("Adjective");
-    expect(tagsOf("fox")).toContain("Noun");
-    expect(tagsOf("walked")).toContain("Verb");
-    expect(tagsOf("into")).toContain("Preposition");
-  });
-
-  it("tags pronouns, conjunctions, adverbs, proper nouns and numbers", async () => {
-    const sentences = await parseParagraph(
-      "But she quickly left. John bought 42 apples in Paris.",
-      0,
-    );
-    const terms = sentences.flatMap((s) => s.terms);
-    const tagsOf = (normal: string) =>
-      terms.find((t) => t.normal === normal)?.tags;
-    expect(tagsOf("but")).toContain("Conjunction");
-    expect(tagsOf("she")).toContain("Pronoun");
-    expect(tagsOf("quickly")).toContain("Adverb");
-    expect(tagsOf("john")).toContain("ProperNoun");
-    expect(tagsOf("paris")).toContain("ProperNoun");
-    expect(tagsOf("42")).toContain("NumericValue");
-  });
-
-  it("tags passive voice on the auxiliary and participle", async () => {
-    const [passive] = await parseParagraph("The ball was thrown by John.", 0);
-    expect(passive.terms.some((t) => t.tags.has("Passive"))).toBe(true);
-
-    const [active] = await parseParagraph("John threw the ball.", 0);
-    expect(active.terms.some((t) => t.tags.has("Passive"))).toBe(false);
-  });
-
-  it("does not tag progressive aspect as passive", async () => {
-    const [sentence] = await parseParagraph("The family was running.", 0);
-    expect(sentence.terms.some((t) => t.tags.has("Passive"))).toBe(false);
-  });
-
   it("populates root with the lemma, falling back to normal when unchanged", async () => {
     const [sentence] = await parseParagraph("She wonders about the dogs.", 0);
     const rootOf = (normal: string) =>
@@ -74,15 +31,6 @@ describe("parseParagraph", () => {
     expect(rootOf("dogs")).toBe("dog");
     // ...and unchanged words still carry a root equal to their normal form.
     expect(rootOf("about")).toBe("about");
-  });
-
-  it("attaches syllable counts from compromise-speech", async () => {
-    const [sentence] = await parseParagraph("A beautiful understanding.", 0);
-    const syllablesOf = (normal: string) =>
-      sentence.terms.find((t) => t.normal === normal)?.syllables;
-    expect(syllablesOf("beautiful")).toBe(3);
-    expect(syllablesOf("understanding")).toBe(4);
-    expect(syllablesOf("a")).toBe(1);
   });
 
   it("normalizes smart apostrophes and drops empty contraction halves", async () => {

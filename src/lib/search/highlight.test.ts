@@ -55,13 +55,10 @@ describe("splitByMatch", () => {
     expect(splitByMatch("", "test")).toEqual([]);
   });
 
-  it("returns single non-match part when no query", () => {
+  it("returns a single non-match part when there's no query or no match", () => {
     expect(splitByMatch("hello", "")).toEqual([
       { text: "hello", isMatch: false },
     ]);
-  });
-
-  it("returns single non-match part when no match found", () => {
     expect(splitByMatch("hello world", "xyz")).toEqual([
       { text: "hello world", isMatch: false },
     ]);

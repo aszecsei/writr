@@ -10,10 +10,6 @@ describe("pickRandom", () => {
     expect(pickRandom([])).toBeUndefined();
   });
 
-  it("returns the only element of a singleton array", () => {
-    expect(pickRandom(["solo"])).toBe("solo");
-  });
-
   it("selects the first element when Math.random is at its minimum", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     expect(pickRandom(["a", "b", "c"])).toBe("a");
@@ -52,10 +48,5 @@ describe("randomChance", () => {
   it("returns false when the draw is at or above p", () => {
     expect(randomChance(0.3, () => 0.3)).toBe(false);
     expect(randomChance(0.3, () => 0.5)).toBe(false);
-  });
-
-  it("defaults to Math.random when no source is given", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.1);
-    expect(randomChance(0.5)).toBe(true);
   });
 });

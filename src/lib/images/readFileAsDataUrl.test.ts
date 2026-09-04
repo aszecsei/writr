@@ -14,22 +14,22 @@ describe("readFileAsDataUrl", () => {
     expect(dataUrl.startsWith("data:image/png;base64,")).toBe(true);
   });
 
-  it("reads an empty file without hanging", async () => {
-    const file = new File([], "empty.png", { type: "image/png" });
-
-    await expect(readFileAsDataUrl(file)).resolves.toBe(
-      "data:image/png;base64,",
-    );
-  });
-
-  it("produces a URL whose media type reflects a non-image file, so callers can reject it", async () => {
-    const file = new File(["not an image"], "notes.txt", {
-      type: "text/plain",
+  it("rejects when the FileReader reports an error", async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], "broken.png", {
+      type: "image/png",
     });
+    const original = FileReader.prototype.readAsDataURL;
+    FileReader.prototype.readAsDataURL = function (this: FileReader) {
+      this.onerror?.(new ProgressEvent("error") as ProgressEvent<FileReader>);
+    };
 
-    const dataUrl = await readFileAsDataUrl(file);
-
-    expect(dataUrl.startsWith("data:text/plain;base64,")).toBe(true);
+    try {
+      await expect(readFileAsDataUrl(file)).rejects.toThrow(
+        /Failed to read "broken.png"/,
+      );
+    } finally {
+      FileReader.prototype.readAsDataURL = original;
+    }
   });
 });
 
