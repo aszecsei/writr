@@ -6,16 +6,16 @@ import { formatCountdownClock } from "@/lib/format-time";
 import { useSprintStore } from "@/store/sprintStore";
 
 export function SprintWidget() {
-  const activeSprintId = useSprintStore((s) => s.activeSprintId);
-  const isRunning = useSprintStore((s) => s.isRunning);
-  const isPaused = useSprintStore((s) => s.isPaused);
   const remainingMs = useSprintStore((s) => s.remainingMs);
   const elapsedMs = useSprintStore((s) => s.elapsedMs);
   const wordsWritten = useSprintStore((s) => s.wordsWritten);
 
   const { activeSprint, pause, resume, end } = useWritingSprint();
 
-  if (!activeSprintId || !activeSprint) return null;
+  if (!activeSprint) return null;
+
+  const isRunning = activeSprint.status === "active";
+  const isPaused = activeSprint.status === "paused";
 
   const progress =
     activeSprint.durationMs > 0
