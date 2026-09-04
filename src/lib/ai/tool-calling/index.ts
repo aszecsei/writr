@@ -15,6 +15,7 @@ export type {
   ToolCallStatus,
   ToolDefinitionForModel,
   ToolExecutionContext,
+  ToolParameterProperty,
   ToolParametersSchema,
   ToolResult,
 } from "./types";
