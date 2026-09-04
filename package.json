@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "biome check",
+    "lint": "biome check && knip && node scripts/check-source.mjs",
     "format": "biome format --write",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -80,6 +80,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.0",
+    "knip": "^6.34.0",
     "tailwindcss": "^4",
     "typescript": "^7",
     "vitest": "^4.1.10"
