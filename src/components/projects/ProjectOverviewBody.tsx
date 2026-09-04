@@ -17,6 +17,7 @@ import { ImageLightbox } from "@/components/bible/ImageLightbox";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { WritingStatsDashboard } from "@/components/stats/WritingStatsDashboard";
 import { ProjectCover } from "@/components/ui/ProjectCover";
+import { useReadOnly } from "@/context/DataSourceContext";
 import type { ProjectId } from "@/db/schemas";
 import { useChaptersByProject, useProject } from "@/hooks/data/source";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -29,13 +30,10 @@ import { useUiStore } from "@/store/uiStore";
 
 export interface ProjectOverviewBodyProps {
   projectId: ProjectId;
-  readOnly: boolean;
 }
 
-export function ProjectOverviewBody({
-  projectId,
-  readOnly,
-}: ProjectOverviewBodyProps) {
+export function ProjectOverviewBody({ projectId }: ProjectOverviewBodyProps) {
+  const readOnly = useReadOnly();
   const project = useProject(projectId);
   const chapters = useChaptersByProject(projectId);
   // Writing stats and app settings come from Dexie only; guests don't see

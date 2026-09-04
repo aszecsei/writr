@@ -10,8 +10,6 @@ export default function LocationDetailPage() {
     <LocationDetailBody
       projectId={params.projectId}
       locationId={params.locationId}
-      basePath={`/projects/${params.projectId}`}
-      readOnly={false}
     />
   );
 }

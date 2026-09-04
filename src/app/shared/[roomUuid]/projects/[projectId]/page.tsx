@@ -6,5 +6,5 @@ import type { ProjectId } from "@/db/schemas";
 
 export default function SharedProjectOverviewPage() {
   const params = useParams<{ projectId: ProjectId }>();
-  return <ProjectOverviewBody projectId={params.projectId} readOnly={true} />;
+  return <ProjectOverviewBody projectId={params.projectId} />;
 }

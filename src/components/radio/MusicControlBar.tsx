@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import type { PlaylistTrackId } from "@/db/schemas";
 import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
 import { type LoopMode, useRadioStore } from "@/store/radioStore";
 
@@ -73,7 +74,7 @@ export function MusicControlBar() {
   const cycleLoopMode = useRadioStore((s) => s.cycleLoopMode);
   const seekTo = useRadioStore((s) => s.seekTo);
 
-  const track = usePlaylistTrack(currentTrackId);
+  const track = usePlaylistTrack(currentTrackId as PlaylistTrackId | null);
 
   // Don't render if no track is loaded
   if (!currentTrackId) {

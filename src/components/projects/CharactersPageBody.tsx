@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { RoleBadge } from "@/components/bible/RoleBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useProjectHref, useReadOnly } from "@/context/DataSourceContext";
 import { createCharacter, deleteCharacter } from "@/db/operations";
 import type { CharacterId, CharacterRole, ProjectId } from "@/db/schemas";
 import {
@@ -33,19 +34,12 @@ const filterTabs: { value: RoleFilter; label: string }[] = [
 export interface CharactersPageBodyProps {
   /** Real project id (or the host's project id when rendering from a shared session). */
   projectId: ProjectId;
-  /** URL prefix without trailing slash. E.g. `/projects/abc` or
-   *  `/shared/room/projects/abc`. Detail-page links append the rest. */
-  basePath: string;
-  /** When true, hide create / delete affordances. */
-  readOnly: boolean;
 }
 
-export function CharactersPageBody({
-  projectId,
-  basePath,
-  readOnly,
-}: CharactersPageBodyProps) {
+export function CharactersPageBody({ projectId }: CharactersPageBodyProps) {
   const router = useRouter();
+  const basePath = useProjectHref(projectId);
+  const readOnly = useReadOnly();
   const characters = useCharactersByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
   const [filter, setFilter] = useState<RoleFilter>("all");

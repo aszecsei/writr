@@ -3,9 +3,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { db } from "@/db/database";
-import { AppSettingsSchema } from "@/db/schemas";
+import { getAppSettings } from "@/db/operations";
 import { isManuscriptDocument } from "@/lib/binder/tree";
-import { APP_SETTINGS_ID } from "@/lib/constants";
 
 export interface AppStats {
   projectCount: number;
@@ -34,13 +33,13 @@ export function useAppStats(): AppStats | undefined {
   }, []);
 
   const stats = useLiveQuery(async () => {
-    const [projectCount, characterCount, locationCount, chapters, rawSettings] =
+    const [projectCount, characterCount, locationCount, chapters, settings] =
       await Promise.all([
         db.projects.count(),
         db.characters.count(),
         db.locations.count(),
         db.chapters.toArray(),
-        db.appSettings.get(APP_SETTINGS_ID),
+        getAppSettings(),
       ]);
 
     // Scratchpad documents and separators are not part of the manuscript, so
@@ -51,7 +50,6 @@ export function useAppStats(): AppStats | undefined {
       (sum, ch) => sum + (ch.wordCount ?? 0),
       0,
     );
-    const settings = rawSettings ? AppSettingsSchema.parse(rawSettings) : null;
 
     return {
       projectCount,
@@ -59,7 +57,7 @@ export function useAppStats(): AppStats | undefined {
       characterCount,
       locationCount,
       totalWordCount,
-      lastExportedAt: settings?.lastExportedAt ?? null,
+      lastExportedAt: settings.lastExportedAt,
     };
   });
 

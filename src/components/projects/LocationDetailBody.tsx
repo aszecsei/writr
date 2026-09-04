@@ -18,6 +18,11 @@ import { type FormEvent, useMemo, useState } from "react";
 import { ImageGallery } from "@/components/bible/ImageGallery";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { MarkdownField } from "@/components/ui/MarkdownField";
+import {
+  useDataSource,
+  useProjectHref,
+  useReadOnly,
+} from "@/context/DataSourceContext";
 import { deleteLocation, updateLocation } from "@/db/operations";
 import type {
   CharacterId,
@@ -26,24 +31,20 @@ import type {
   ProjectId,
 } from "@/db/schemas";
 import {
+  useChaptersByProject,
   useCharactersByProject,
   useLocation,
   useLocationsByProject,
+  useProject,
 } from "@/hooks/data/source";
-import { useChaptersByProject } from "@/hooks/data/useChapter";
 import { useScenesByProject } from "@/hooks/data/useScene";
 import { useLocationForm } from "@/hooks/forms/useLocationForm";
 import { getTerm } from "@/lib/terminology";
 import { useEditorStore } from "@/store/editorStore";
-import { useProjectStore } from "@/store/projectStore";
 
 export interface LocationDetailBodyProps {
   projectId: ProjectId;
   locationId: LocationId;
-  /** URL prefix without trailing slash; e.g. `/projects/abc` or
-   *  `/shared/room/projects/abc`. Used for back navigation. */
-  basePath: string;
-  readOnly: boolean;
 }
 
 /** Plain (non-collapsing) section heading: icon + title. */
@@ -101,17 +102,18 @@ function buildSubtree(
 export function LocationDetailBody({
   projectId,
   locationId,
-  basePath,
-  readOnly,
 }: LocationDetailBodyProps) {
   const router = useRouter();
+  const source = useDataSource();
+  const basePath = useProjectHref(projectId);
+  const readOnly = useReadOnly();
   const location = useLocation(locationId);
   const locations = useLocationsByProject(projectId);
   const characters = useCharactersByProject(projectId);
-  const scenes = useScenesByProject(projectId);
+  const scenes = useScenesByProject(source.kind === "dexie" ? projectId : null);
   const chapters = useChaptersByProject(projectId);
   const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useProject(projectId)?.mode ?? null;
   const {
     form,
     setField,

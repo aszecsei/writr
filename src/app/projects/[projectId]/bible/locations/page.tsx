@@ -6,11 +6,5 @@ import type { ProjectId } from "@/db/schemas";
 
 export default function LocationListPage() {
   const params = useParams<{ projectId: ProjectId }>();
-  return (
-    <LocationsPageBody
-      projectId={params.projectId}
-      basePath={`/projects/${params.projectId}`}
-      readOnly={false}
-    />
-  );
+  return <LocationsPageBody projectId={params.projectId} />;
 }

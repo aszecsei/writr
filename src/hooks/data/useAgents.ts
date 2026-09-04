@@ -3,11 +3,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { listAgents } from "@/db/operations/agents";
-import type {
-  AgentDefinition,
-  AgentDefinitionId,
-  ProjectId,
-} from "@/db/schemas";
+import type { AgentDefinition, ProjectId } from "@/db/schemas";
+import { createEntityHook } from "../factories";
 
 /**
  * List all agents for a project context: built-in chat agents (spark, scene,
@@ -29,11 +26,7 @@ export function useAllAgents(
  * the same underlying list. */
 export const useChatAgents = useAllAgents;
 
-export function useAgent(
-  id: AgentDefinitionId | null,
-): AgentDefinition | undefined {
-  return useLiveQuery(() => (id ? db.agents.get(id) : undefined), [id]);
-}
+export const useAgent = createEntityHook(db.agents);
 
 const KIND_ORDER: Record<string, number> = {
   spark: 0,

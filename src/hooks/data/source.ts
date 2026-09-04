@@ -8,13 +8,10 @@ import type {
   Character,
   CharacterId,
   CharacterRelationship,
-  GuardrailEntry,
   Location,
   LocationId,
   Project,
   ProjectId,
-  StyleGuideEntry,
-  TimelineEvent,
 } from "@/db/schemas";
 import type { ProjectDocTable } from "@/lib/collab/projectDoc";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
@@ -32,12 +29,10 @@ import {
   useTimelineByProject as dexieUseTimelineByProject,
 } from "./index";
 
-type SortFieldName = string;
-
 function useSharedList<T extends { id: string }>(
   table: ProjectDocTable,
   projectId: ProjectId | null,
-  sortField?: SortFieldName,
+  sortField?: keyof T & string,
 ): T[] {
   const map = useSharedProjectStore((s) => s.byTable[table]);
   return useMemo(() => {
@@ -48,8 +43,8 @@ function useSharedList<T extends { id: string }>(
     );
     if (sortField) {
       filtered.sort((a, b) => {
-        const av = (a as unknown as Record<string, unknown>)[sortField];
-        const bv = (b as unknown as Record<string, unknown>)[sortField];
+        const av = a[sortField];
+        const bv = b[sortField];
         if (av === bv) return 0;
         return (av as number | string) < (bv as number | string) ? -1 : 1;
       });
@@ -69,20 +64,42 @@ function useSharedEntity<T extends { id: string }>(
   }, [map, id]);
 }
 
-export function useChapter(id: ChapterId | null): Chapter | undefined {
+/** Reads a single entity by id, from Dexie or the shared project store. */
+function useSourcedEntity<T extends { id: string }>(
+  dexieHook: (id: T["id"] | null) => T | undefined,
+  table: ProjectDocTable,
+  id: T["id"] | null,
+): T | undefined {
   const source = useDataSource();
-  const dexie = dexieUseChapter(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<Chapter>("chapters", id);
+  const dexie = dexieHook(source.kind === "dexie" ? id : null);
+  const shared = useSharedEntity<T>(table, id);
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useChaptersByProject(projectId: ProjectId | null) {
+/** Reads a project-scoped list, from Dexie or the shared project store. */
+function useSourcedList<T extends { id: string }>(
+  dexieHook: (projectId: ProjectId | null) => T[] | undefined,
+  table: ProjectDocTable,
+  projectId: ProjectId | null,
+  sortField?: keyof T & string,
+): T[] | undefined {
   const source = useDataSource();
-  const dexie = dexieUseChaptersByProject(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<Chapter>("chapters", projectId, "order");
+  const dexie = dexieHook(source.kind === "dexie" ? projectId : null);
+  const shared = useSharedList<T>(table, projectId, sortField);
   return source.kind === "dexie" ? dexie : shared;
+}
+
+export function useChapter(id: ChapterId | null): Chapter | undefined {
+  return useSourcedEntity(dexieUseChapter, "chapters", id);
+}
+
+export function useChaptersByProject(projectId: ProjectId | null) {
+  return useSourcedList(
+    dexieUseChaptersByProject,
+    "chapters",
+    projectId,
+    "order",
+  );
 }
 
 export function useProject(projectId: ProjectId | null): Project | undefined {
@@ -95,80 +112,62 @@ export function useProject(projectId: ProjectId | null): Project | undefined {
 }
 
 export function useCharacter(id: CharacterId | null): Character | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseCharacter(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<Character>("characters", id);
-  return source.kind === "dexie" ? dexie : shared;
+  return useSourcedEntity(dexieUseCharacter, "characters", id);
 }
 
 export function useCharactersByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseCharactersByProject(
-    source.kind === "dexie" ? projectId : null,
+  return useSourcedList(
+    dexieUseCharactersByProject,
+    "characters",
+    projectId,
+    "name",
   );
-  const shared = useSharedList<Character>("characters", projectId, "name");
-  return source.kind === "dexie" ? dexie : shared;
 }
 
 export function useLocation(id: LocationId | null): Location | undefined {
-  const source = useDataSource();
-  const dexie = dexieUseLocation(source.kind === "dexie" ? id : null);
-  const shared = useSharedEntity<Location>("locations", id);
-  return source.kind === "dexie" ? dexie : shared;
+  return useSourcedEntity(dexieUseLocation, "locations", id);
 }
 
 export function useLocationsByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseLocationsByProject(
-    source.kind === "dexie" ? projectId : null,
+  return useSourcedList(
+    dexieUseLocationsByProject,
+    "locations",
+    projectId,
+    "name",
   );
-  const shared = useSharedList<Location>("locations", projectId, "name");
-  return source.kind === "dexie" ? dexie : shared;
 }
 
 export function useTimelineByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseTimelineByProject(
-    source.kind === "dexie" ? projectId : null,
+  return useSourcedList(
+    dexieUseTimelineByProject,
+    "timeline",
+    projectId,
+    "order",
   );
-  const shared = useSharedList<TimelineEvent>("timeline", projectId, "order");
-  return source.kind === "dexie" ? dexie : shared;
 }
 
 export function useStyleGuideByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseStyleGuideByProject(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<StyleGuideEntry>(
+  return useSourcedList(
+    dexieUseStyleGuideByProject,
     "styleGuide",
     projectId,
     "order",
   );
-  return source.kind === "dexie" ? dexie : shared;
 }
 
 export function useGuardrailsByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseGuardrailsByProject(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<GuardrailEntry>(
+  return useSourcedList(
+    dexieUseGuardrailsByProject,
     "guardrails",
     projectId,
     "order",
   );
-  return source.kind === "dexie" ? dexie : shared;
 }
 
 export function useRelationshipsByProject(projectId: ProjectId | null) {
-  const source = useDataSource();
-  const dexie = dexieUseRelationshipsByProject(
-    source.kind === "dexie" ? projectId : null,
-  );
-  const shared = useSharedList<CharacterRelationship>(
+  return useSourcedList<CharacterRelationship>(
+    dexieUseRelationshipsByProject,
     "characterRels",
     projectId,
   );
-  return source.kind === "dexie" ? dexie : shared;
 }

@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { useProjectHref } from "@/context/DataSourceContext";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useChapter, useChaptersByProject } from "@/hooks/data/source";
 import { useSharedProjectStore } from "@/store/sharedProjectStore";
@@ -9,7 +10,6 @@ import { useSharedProjectStore } from "@/store/sharedProjectStore";
 export interface ChapterReadOnlyBodyProps {
   projectId: ProjectId;
   chapterId: ChapterId;
-  basePath: string;
 }
 
 /**
@@ -21,8 +21,8 @@ export interface ChapterReadOnlyBodyProps {
 export function ChapterReadOnlyBody({
   projectId,
   chapterId,
-  basePath,
 }: ChapterReadOnlyBodyProps) {
+  const basePath = useProjectHref(projectId);
   const chapter = useChapter(chapterId);
   const chapters = useChaptersByProject(projectId);
   const meta = useSharedProjectStore((s) => s.meta);

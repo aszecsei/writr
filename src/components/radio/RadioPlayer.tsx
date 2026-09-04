@@ -2,6 +2,7 @@
 
 import { type SyntheticEvent, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
+import type { PlaylistTrackId } from "@/db/schemas";
 import { usePlaylistTrack } from "@/hooks/data/usePlaylistEntries";
 import { useRadioStore } from "@/store/radioStore";
 
@@ -23,7 +24,7 @@ export function RadioPlayer() {
   const setDuration = useRadioStore((s) => s.setDuration);
   const onTrackEnded = useRadioStore((s) => s.onTrackEnded);
 
-  const track = usePlaylistTrack(currentTrackId);
+  const track = usePlaylistTrack(currentTrackId as PlaylistTrackId | null);
 
   // Track the last seek time to detect external seeks
   const lastSeekRef = useRef<number>(0);
