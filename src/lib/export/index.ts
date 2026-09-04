@@ -1,7 +1,8 @@
 import { match } from "ts-pattern";
 import { triggerDownload } from "@/lib/download";
 import { sanitizeFilename } from "@/lib/filename";
-import { createExporter } from "./exporters";
+import { DocxExporter } from "./exporters/docx-exporter";
+import { PdfExporter } from "./exporters/pdf-exporter";
 import { exportFountain } from "./exportFountain";
 import { exportMarkdown } from "./exportMarkdown";
 import { exportScreenplayPdf } from "./exportScreenplayPdf";
@@ -32,10 +33,10 @@ export async function performExport(options: ExportOptions): Promise<void> {
       exportScreenplayPdf(content, options),
     )
     .with({ format: "docx" }, () =>
-      runExport(createExporter(options), content, options),
+      runExport(new DocxExporter(), content, options),
     )
     .with({ format: "pdf" }, () =>
-      runExport(createExporter(options), content, options),
+      runExport(new PdfExporter(), content, options),
     )
     .exhaustive();
 

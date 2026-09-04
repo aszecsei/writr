@@ -3,14 +3,18 @@ import type { ChapterId, ProjectId, ProjectMode } from "@/db/schemas";
 export type ExportFormat = "markdown" | "docx" | "pdf" | "fountain";
 export type ExportScope = "chapter" | "book";
 
-export interface ExportOptions {
-  format: ExportFormat;
+/** The fields the title-page/chapter-heading/page-break iteration order needs. */
+export interface ExportLoopOptions {
   scope: ExportScope;
-  projectId: ProjectId;
-  chapterId?: ChapterId;
   includeTitlePage: boolean;
   includeChapterHeadings: boolean;
   pageBreaksBetweenChapters: boolean;
+}
+
+export interface ExportOptions extends ExportLoopOptions {
+  format: ExportFormat;
+  projectId: ProjectId;
+  chapterId?: ChapterId;
   projectMode?: ProjectMode;
 }
 
