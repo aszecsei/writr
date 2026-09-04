@@ -725,6 +725,8 @@ export const AppSettingsSchema = z.object({
    * Only explicit overrides are stored; absent keys use harper's default.
    */
   grammarRuleOverrides: z.record(z.string(), z.boolean()).default({}),
+  /** Master switch for the built-in spellchecker in the editor. */
+  spellcheckEnabled: z.boolean().default(true),
   debugMode: z.boolean().default(false),
   streamResponses: z.boolean().default(true),
   reasoningEffort: ReasoningEffortEnum.default("medium"),

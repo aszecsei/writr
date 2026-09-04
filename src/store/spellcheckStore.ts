@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { updateAppSettings } from "@/db/operations";
 import { type CheckerSlice, createCheckerSlice } from "./createCheckerStore";
 
 export interface MisspelledWord {
@@ -21,6 +22,8 @@ interface SpellcheckState
   extends CheckerSlice<MisspelledWord, ContextMenuState> {
   enabled: boolean;
   toggleEnabled: () => void;
+  /** Mirrors `enabled` from the persisted AppSettings.spellcheckEnabled value. */
+  setEnabled: (enabled: boolean) => void;
 }
 
 export const useSpellcheckStore = create<SpellcheckState>()(
@@ -33,9 +36,17 @@ export const useSpellcheckStore = create<SpellcheckState>()(
 
     enabled: true,
 
-    toggleEnabled: () =>
+    toggleEnabled: () => {
+      const next = !get().enabled;
       set((s) => {
-        s.enabled = !s.enabled;
+        s.enabled = next;
+      });
+      void updateAppSettings({ spellcheckEnabled: next });
+    },
+
+    setEnabled: (enabled: boolean) =>
+      set((s) => {
+        s.enabled = enabled;
       }),
   })),
 );

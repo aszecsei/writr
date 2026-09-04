@@ -7,15 +7,23 @@ beforeEach(async () => {
 });
 
 describe("app settings", () => {
-  it("defaults the radio preferences", async () => {
+  it("defaults spellcheckEnabled and the radio preferences", async () => {
     const settings = await getAppSettings();
 
+    expect(settings.spellcheckEnabled).toBe(true);
     expect(settings.radio).toEqual({
       volume: 80,
       muted: false,
       shuffleEnabled: false,
       loopMode: "off",
     });
+  });
+
+  it("persists spellcheckEnabled across reads", async () => {
+    await updateAppSettings({ spellcheckEnabled: false });
+
+    const settings = await getAppSettings();
+    expect(settings.spellcheckEnabled).toBe(false);
   });
 
   it("persists radio preferences across reads", async () => {
@@ -32,13 +40,14 @@ describe("app settings", () => {
     });
   });
 
-  it("fills in radio preferences for a row written before that field existed", async () => {
+  it("fills in spellcheckEnabled and radio for a row written before those fields existed", async () => {
     await db.appSettings.add({
       id: "app-settings",
       updatedAt: new Date().toISOString(),
     } as never);
 
     const settings = await getAppSettings();
+    expect(settings.spellcheckEnabled).toBe(true);
     expect(settings.radio).toEqual({
       volume: 80,
       muted: false,
