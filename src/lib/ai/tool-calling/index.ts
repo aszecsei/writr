@@ -12,4 +12,4 @@ export type {
   ToolParametersSchema,
   ToolResult,
 } from "./types";
-export { isTerminalToolStatus } from "./types";
+export { isTerminalToolStatus, toolResultContent } from "./types";

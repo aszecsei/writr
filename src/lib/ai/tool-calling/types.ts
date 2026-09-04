@@ -27,6 +27,20 @@ export interface ToolResult {
   data?: Record<string, unknown>;
 }
 
+/**
+ * Wire-format content string for a terminal tool call: a denied call
+ * synthesizes a fixed "Denied by user" payload, otherwise the tool's own
+ * result (or a fallback when missing) is JSON-encoded.
+ */
+export function toolResultContent(
+  status: ToolCallStatus,
+  result: ToolResult | undefined,
+): string {
+  return status === "denied"
+    ? JSON.stringify({ success: false, message: "Denied by user" })
+    : JSON.stringify(result ?? { success: false, message: "No result" });
+}
+
 /** A request from an orchestrator to run a named sub-agent on a subtask. */
 export interface DelegateRequest {
   /** Name or id of the sub-agent to run. */

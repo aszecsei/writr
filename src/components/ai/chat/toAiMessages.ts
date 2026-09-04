@@ -1,5 +1,5 @@
 import { match } from "ts-pattern";
-import { isTerminalToolStatus } from "@/lib/ai/tool-calling";
+import { isTerminalToolStatus, toolResultContent } from "@/lib/ai/tool-calling";
 import type { AiMessage } from "@/lib/ai/types";
 import { escapeAttr } from "@/lib/ai/xml";
 import type {
@@ -57,11 +57,11 @@ function assistantToAiMessage(m: AssistantChatMessage): AiMessage {
  */
 function toolToAiMessage(m: ToolChatMessage): AiMessage | null {
   if (!isTerminalToolStatus(m.status)) return null;
-  const content =
-    m.status === "denied"
-      ? JSON.stringify({ success: false, message: "Denied by user" })
-      : JSON.stringify(m.result ?? { success: false, message: "No result" });
-  return { role: "tool", content, toolCallId: m.toolCallId };
+  return {
+    role: "tool",
+    content: toolResultContent(m.status, m.result),
+    toolCallId: m.toolCallId,
+  };
 }
 
 /**

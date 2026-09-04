@@ -7,7 +7,7 @@ import type {
   ToolMessagePatch,
 } from "@/lib/ai/agents/accessor";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
-import { isTerminalToolStatus } from "@/lib/ai/tool-calling";
+import { isTerminalToolStatus, toolResultContent } from "@/lib/ai/tool-calling";
 import type { AiMessage, AiToolCall } from "@/lib/ai/types";
 import { makeEmptyAssistantMessage, makePendingToolMessage } from "./factories";
 import type { AssistantChatMessage, ChatMessage, ChatMessageId } from "./types";
@@ -176,18 +176,9 @@ export function makeChatAccessorCore(
       // ids in an assistant turn are followed by their results in the wire
       // format.
       if (tool && isTerminal && !wasTerminal) {
-        const content =
-          tool.entry.status === "denied"
-            ? JSON.stringify({ success: false, message: "Denied by user" })
-            : JSON.stringify(
-                tool.entry.result ?? {
-                  success: false,
-                  message: "No result",
-                },
-              );
         buffer.push({
           role: "tool",
-          content,
+          content: toolResultContent(tool.entry.status, tool.entry.result),
           toolCallId: tool.entry.id,
         });
       }
