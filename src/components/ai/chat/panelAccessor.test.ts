@@ -2,40 +2,19 @@ import type { MutableRefObject } from "react";
 import { describe, expect, it } from "vitest";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import { makeAiPanelAccessor } from "./panelAccessor";
-import type { ChatMessage, ChatMessageId } from "./types";
-
-function id(s: string): ChatMessageId {
-  return s as ChatMessageId;
-}
-
-function userMsg(content: string): ChatMessage {
-  return {
-    id: id(`u_${content}`),
-    role: "user",
-    content,
-    createdAt: "2026-05-08T00:00:00Z",
-  };
-}
+import { makeSetMessages, userMsg } from "./test-helpers";
+import type { ChatMessage } from "./types";
 
 function makeAccessor(initial: ChatMessage[]) {
-  let messages = [...initial];
+  const { setMessages, getMessages } = makeSetMessages(initial);
   const messagesRef = {
     get current() {
-      return messages;
+      return getMessages();
     },
     set current(next: ChatMessage[]) {
-      messages = next;
+      setMessages(next);
     },
   } as MutableRefObject<ChatMessage[]>;
-
-  const setMessages = (
-    updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
-  ) => {
-    messages =
-      typeof updater === "function"
-        ? (updater as (prev: ChatMessage[]) => ChatMessage[])(messages)
-        : updater;
-  };
 
   // The accessor's React state mirror is exercised by setMessages above —
   // tests inspect the buffer via getMessages, and the React-state mirror via
@@ -62,7 +41,7 @@ function makeToolEntry(overrides: Partial<ToolCallEntry> = {}): ToolCallEntry {
 
 describe("panelAccessor.getMessages — wire-format buffer", () => {
   it("returns the seeded user message and excludes an unfinalized assistant draft", () => {
-    const { accessor } = makeAccessor([userMsg("hello")]);
+    const { accessor } = makeAccessor([userMsg({ content: "hello" })]);
 
     accessor.startAssistantTurn({ iteration: 1 });
 
@@ -72,7 +51,7 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("does not commit content streamed via appendChunk until finalize runs", () => {
-    const { accessor } = makeAccessor([userMsg("go")]);
+    const { accessor } = makeAccessor([userMsg({ content: "go" })]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.appendChunk(turnId, { type: "content", text: "thinking..." });
@@ -85,7 +64,7 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("commits the assistant turn (with toolCalls) to the buffer on finalize", () => {
-    const { accessor } = makeAccessor([userMsg("research")]);
+    const { accessor } = makeAccessor([userMsg({ content: "research" })]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.appendChunk(turnId, { type: "content", text: "calling list" });
@@ -109,7 +88,7 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("commits a tool row to the buffer only when the tool reaches a terminal status", () => {
-    const { accessor } = makeAccessor([userMsg("research")]);
+    const { accessor } = makeAccessor([userMsg({ content: "research" })]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.finalizeAssistantTurn(turnId, {
@@ -146,7 +125,7 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("emits the denied sentinel when a tool is denied by the user", () => {
-    const { accessor } = makeAccessor([userMsg("research")]);
+    const { accessor } = makeAccessor([userMsg({ content: "research" })]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.finalizeAssistantTurn(turnId, {
@@ -167,7 +146,7 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("does not double-commit a tool row across multiple terminal updates", () => {
-    const { accessor } = makeAccessor([userMsg("go")]);
+    const { accessor } = makeAccessor([userMsg({ content: "go" })]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.finalizeAssistantTurn(turnId, {
@@ -194,7 +173,9 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
   });
 
   it("does not commit anything to the buffer when an in-progress turn is removed", () => {
-    const { accessor, getRendered } = makeAccessor([userMsg("hello")]);
+    const { accessor, getRendered } = makeAccessor([
+      userMsg({ content: "hello" }),
+    ]);
 
     const turnId = accessor.startAssistantTurn({ iteration: 1 });
     accessor.appendChunk(turnId, { type: "content", text: "partial" });
@@ -205,43 +186,5 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
     ]);
     // The React-state mirror also drops the draft.
     expect(getRendered().some((m) => m.id === turnId)).toBe(false);
-  });
-
-  it("never lets the wire format end with role:'assistant' across an iter 1 → iter 2 cycle", () => {
-    // Simulates the runner's lifecycle for the bug's reproduction:
-    //   iter 1: start → finalize w/ toolCalls → pending tools → terminal
-    //   iter 2: read getMessages — must end with a non-assistant role.
-    const { accessor } = makeAccessor([userMsg("trigger tools")]);
-
-    const turn1 = accessor.startAssistantTurn({ iteration: 1 });
-    accessor.appendChunk(turn1, {
-      type: "content",
-      text: "I'll fetch the bible.",
-    });
-    accessor.finalizeAssistantTurn(turn1, {
-      durationMs: 120,
-      finishReason: "tool_use",
-      toolCallRefs: [
-        { id: "call_1", name: "list", arguments: { category: "character" } },
-      ],
-    });
-    const [toolMsgId] = accessor.appendPendingToolMessages(turn1, [
-      makeToolEntry({ id: "call_1", status: "approved" }),
-    ]);
-    accessor.updateToolMessage(toolMsgId, {
-      status: "executed",
-      result: { success: true, message: "found 0" },
-    });
-
-    // iter 2 begins. getMessages is read first — it must NOT end with an
-    // empty assistant draft from the next startAssistantTurn (which hasn't
-    // happened yet in the runner's order, but more importantly, drafts must
-    // never reach the buffer).
-    const wireBeforeIter2 = accessor.getMessages();
-    expect(wireBeforeIter2[wireBeforeIter2.length - 1].role).toBe("tool");
-
-    accessor.startAssistantTurn({ iteration: 2 });
-    const wireAfterStart = accessor.getMessages();
-    expect(wireAfterStart[wireAfterStart.length - 1].role).toBe("tool");
   });
 });

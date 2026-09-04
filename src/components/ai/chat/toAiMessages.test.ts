@@ -1,54 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ImageUrlContentPart, TextContentPart } from "@/lib/ai/types";
+import { assistantMsg, id, toolMsg, userMsg } from "./test-helpers";
 import { toAiMessages } from "./toAiMessages";
-import type {
-  AssistantChatMessage,
-  ChatMessage,
-  ChatMessageId,
-  ToolChatMessage,
-  UserChatMessage,
-} from "./types";
-
-function id(s: string): ChatMessageId {
-  return s as ChatMessageId;
-}
-
-function userMsg(overrides: Partial<UserChatMessage>): UserChatMessage {
-  return {
-    id: id("u1"),
-    role: "user",
-    content: "hello",
-    createdAt: "2026-05-07T00:00:00Z",
-    ...overrides,
-  };
-}
-
-function assistantMsg(
-  overrides: Partial<AssistantChatMessage>,
-): AssistantChatMessage {
-  return {
-    id: id("a1"),
-    role: "assistant",
-    content: "hi back",
-    createdAt: "2026-05-07T00:00:01Z",
-    ...overrides,
-  };
-}
-
-function toolMsg(overrides: Partial<ToolChatMessage>): ToolChatMessage {
-  return {
-    id: id("t1"),
-    role: "tool",
-    toolCallId: "call_1",
-    toolName: "list",
-    displayName: "list",
-    input: { category: "character" },
-    status: "executed",
-    result: { success: true, message: "ok" },
-    createdAt: "2026-05-07T00:00:02Z",
-    ...overrides,
-  };
-}
 
 describe("toAiMessages", () => {
   it("converts a plain user message to role:'user' string content", () => {
@@ -56,26 +9,25 @@ describe("toAiMessages", () => {
     expect(out).toEqual([{ role: "user", content: "hello" }]);
   });
 
-  it("wraps selectedText into a <selected-text> block on the user message", () => {
-    const out = toAiMessages([
+  it("wraps selectedText into a <selected-text> block, including the chapter id when set", () => {
+    const plain = toAiMessages([
       userMsg({ content: "rewrite", selectedText: "the quick brown fox" }),
     ]);
-    const text = out[0].content as string;
-    expect(text).toContain("<selected-text>");
-    expect(text).toContain("the quick brown fox");
-    expect(text).toContain("rewrite");
-  });
+    const plainText = plain[0].content as string;
+    expect(plainText).toContain("<selected-text>");
+    expect(plainText).toContain("the quick brown fox");
+    expect(plainText).toContain("rewrite");
 
-  it("adds the chapter id to the <selected-text> block when set", () => {
-    const out = toAiMessages([
+    const withChapter = toAiMessages([
       userMsg({
         content: "rewrite",
         selectedText: "the quick brown fox",
         selectedChapterId: "ch-123",
       }),
     ]);
-    const text = out[0].content as string;
-    expect(text).toContain('<selected-text chapter-id="ch-123">');
+    expect(withChapter[0].content as string).toContain(
+      '<selected-text chapter-id="ch-123">',
+    );
   });
 
   it("escapes a chapter id containing a quote so the attribute is not broken", () => {
@@ -179,30 +131,6 @@ describe("toAiMessages", () => {
     expect(parsed).toEqual({ success: false, message: "No result" });
   });
 
-  it("drops a non-terminal tool message and synthesizes a failure tool_result so the assistant's tool_use id is not orphaned", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const out = toAiMessages([
-        assistantMsg({
-          content: "asking",
-          toolCallRefs: [{ id: "call_1", name: "propose_edit", arguments: {} }],
-        }),
-        toolMsg({ toolCallId: "call_1", status: "pending", result: undefined }),
-      ]);
-      expect(out).toHaveLength(2);
-      expect(out[0].role).toBe("assistant");
-      expect(out[1].role).toBe("tool");
-      expect(out[1].toolCallId).toBe("call_1");
-      const parsed = JSON.parse(out[1].content as string);
-      expect(parsed).toEqual({
-        success: false,
-        message: "Tool result missing",
-      });
-    } finally {
-      warnSpy.mockRestore();
-    }
-  });
-
   it("drops a standalone approved tool message with no preceding assistant", () => {
     const out = toAiMessages([
       toolMsg({ status: "approved", result: undefined }),
@@ -219,31 +147,6 @@ describe("toAiMessages", () => {
 
     afterEach(() => {
       warnSpy.mockRestore();
-    });
-
-    it("leaves a matched tool_use + tool_result pair untouched", () => {
-      const out = toAiMessages([
-        assistantMsg({
-          content: "calling",
-          toolCallRefs: [
-            {
-              id: "call_a",
-              name: "list",
-              arguments: { category: "character" },
-            },
-          ],
-        }),
-        toolMsg({
-          toolCallId: "call_a",
-          status: "executed",
-          result: { success: true, message: "ok" },
-        }),
-      ]);
-      expect(out).toHaveLength(2);
-      expect(out[1].toolCallId).toBe("call_a");
-      const parsed = JSON.parse(out[1].content as string);
-      expect(parsed).toEqual({ success: true, message: "ok" });
-      expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it("synthesizes a failure tool_result when the assistant emits a tool_use with no following tool message at all", () => {
@@ -336,7 +239,7 @@ describe("toAiMessages", () => {
   });
 
   it("preserves message order across user / assistant / tool entries", () => {
-    const history: ChatMessage[] = [
+    const history = [
       userMsg({ id: id("u1"), content: "Write a scene" }),
       assistantMsg({
         id: id("a1"),

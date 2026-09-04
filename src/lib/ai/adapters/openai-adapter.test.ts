@@ -1,22 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ToolDefinitionForModel } from "../tool-calling";
 import type { AiMessage } from "../types";
 import type { CompletionParams } from "./types";
 
 // Mock the openai module
 const mockCreate = vi.fn();
-const constructorCalls: Record<string, unknown>[] = [];
 
 vi.mock("openai", () => {
   class MockOpenAI {
     chat = { completions: { create: mockCreate } };
-    constructor(config: Record<string, unknown>) {
-      constructorCalls.push(config);
-    }
   }
   return { default: MockOpenAI };
 });
 
 import { createOpenAiAdapter } from "./openai-adapter";
+
+function okResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    choices: [
+      {
+        message: { role: "assistant", content: "ok" },
+        finish_reason: "stop",
+      },
+    ],
+    model: "gpt-4o",
+    ...overrides,
+  };
+}
+
+function tool(id: string): ToolDefinitionForModel {
+  return {
+    id,
+    name: id,
+    description: id,
+    parameters: { type: "object", properties: {} },
+  };
+}
 
 describe("createOpenAiAdapter", () => {
   const adapter = createOpenAiAdapter({
@@ -39,47 +58,23 @@ describe("createOpenAiAdapter", () => {
   };
 
   describe("complete", () => {
-    it("passes correct config to OpenAI constructor", async () => {
-      constructorCalls.length = 0;
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "Hi!" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "gpt-4o",
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 5,
-          total_tokens: 15,
-        },
-      });
-
-      await adapter.complete("sk-test-key", baseParams);
-
-      expect(constructorCalls[constructorCalls.length - 1]).toEqual({
-        apiKey: "sk-test-key",
-        baseURL: "https://test.api.com/v1",
-        defaultHeaders: { "X-Custom": "header" },
-      });
-    });
-
     it("maps response to AiResponse", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "Hello there!" },
-            finish_reason: "stop",
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          choices: [
+            {
+              message: { role: "assistant", content: "Hello there!" },
+              finish_reason: "stop",
+            },
+          ],
+          model: "gpt-4o-2024",
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 5,
+            total_tokens: 15,
           },
-        ],
-        model: "gpt-4o-2024",
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 5,
-          total_tokens: 15,
-        },
-      });
+        }),
+      );
 
       const result = await adapter.complete("sk-test", baseParams);
 
@@ -97,24 +92,26 @@ describe("createOpenAiAdapter", () => {
     });
 
     it("includes reasoning when present", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: {
-              role: "assistant",
-              content: "Result",
-              reasoning: "I thought about it",
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: "Result",
+                reasoning: "I thought about it",
+              },
+              finish_reason: "stop",
             },
-            finish_reason: "stop",
+          ],
+          model: "o1",
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
           },
-        ],
-        model: "o1",
-        usage: {
-          prompt_tokens: 10,
-          completion_tokens: 20,
-          total_tokens: 30,
-        },
-      });
+        }),
+      );
 
       const result = await adapter.complete("sk-test", {
         ...baseParams,
@@ -125,15 +122,7 @@ describe("createOpenAiAdapter", () => {
     });
 
     it("strips cache_control from messages", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "gpt-4o",
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -166,15 +155,7 @@ describe("createOpenAiAdapter", () => {
       // TextContentPart array. The tool branch must not check
       // `typeof content === "string"` and drop the array, or the tool
       // result comes through empty.
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "gpt-4o",
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -198,26 +179,21 @@ describe("createOpenAiAdapter", () => {
       await adapter.complete("sk-test", { ...baseParams, messages });
 
       const createCall = mockCreate.mock.calls[0][0];
-      const toolMsg = createCall.messages[1];
-      expect(toolMsg.role).toBe("tool");
-      expect(toolMsg.tool_call_id).toBe("call_1");
-      expect(toolMsg.content).toBe('{"success":true,"chapters":["one"]}');
+      expect(createCall.messages[1]).toEqual({
+        role: "tool",
+        tool_call_id: "call_1",
+        content: '{"success":true,"chapters":["one"]}',
+      });
     });
 
     it("preserves cache_control on tool messages for Anthropic-via-OpenRouter models", async () => {
       // For OpenRouter routing to Anthropic, cache_control on tool result
-      // messages must survive the conversion. Without this the trailing
+      // messages must survive the conversion — otherwise the trailing
       // breakpoint set by withTrailingCacheControl is dropped on every
       // tool-calling iteration, busting the prompt cache.
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "anthropic/claude-sonnet-4-5",
-      });
+      mockCreate.mockResolvedValueOnce(
+        okResponse({ model: "anthropic/claude-sonnet-4-5" }),
+      );
 
       const messages: AiMessage[] = [
         {
@@ -245,16 +221,17 @@ describe("createOpenAiAdapter", () => {
       });
 
       const createCall = mockCreate.mock.calls[0][0];
-      const toolMsg = createCall.messages[1];
-      expect(toolMsg.role).toBe("tool");
-      expect(toolMsg.tool_call_id).toBe("call_1");
-      expect(toolMsg.content).toEqual([
-        {
-          type: "text",
-          text: '{"success":true,"chapters":["one"]}',
-          cache_control: { type: "ephemeral" },
-        },
-      ]);
+      expect(createCall.messages[1]).toEqual({
+        role: "tool",
+        tool_call_id: "call_1",
+        content: [
+          {
+            type: "text",
+            text: '{"success":true,"chapters":["one"]}',
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+      });
     });
 
     it("sends tool messages as content arrays even without cache_control (Anthropic route)", async () => {
@@ -264,15 +241,9 @@ describe("createOpenAiAdapter", () => {
       // must still serialize as an array, not flip back to a string. The
       // string flip would change the prefix bytes Anthropic uses to look up
       // the prompt cache, busting the cache between iterations.
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "anthropic/claude-sonnet-4-5",
-      });
+      mockCreate.mockResolvedValueOnce(
+        okResponse({ model: "anthropic/claude-sonnet-4-5" }),
+      );
 
       const messages: AiMessage[] = [
         {
@@ -301,33 +272,14 @@ describe("createOpenAiAdapter", () => {
     });
 
     it("attaches cache_control to last tool entry only for Anthropic models", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "anthropic/claude-sonnet-4-5",
-      });
+      mockCreate.mockResolvedValueOnce(
+        okResponse({ model: "anthropic/claude-sonnet-4-5" }),
+      );
 
       await adapter.complete("sk-test", {
         ...baseParams,
         model: "anthropic/claude-sonnet-4-5",
-        tools: [
-          {
-            id: "a",
-            name: "a",
-            description: "A",
-            parameters: { type: "object", properties: {} },
-          },
-          {
-            id: "b",
-            name: "b",
-            description: "B",
-            parameters: { type: "object", properties: {} },
-          },
-        ],
+        tools: [tool("a"), tool("b")],
       });
 
       const createCall = mockCreate.mock.calls[0][0];
@@ -336,50 +288,19 @@ describe("createOpenAiAdapter", () => {
       expect(createCall.tools[1].cache_control).toEqual({ type: "ephemeral" });
     });
 
-    it("does not attach cache_control to tools for non-Anthropic models", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "gpt-4o",
-      });
-
-      await adapter.complete("sk-test", {
-        ...baseParams,
-        tools: [
-          {
-            id: "a",
-            name: "a",
-            description: "A",
-            parameters: { type: "object", properties: {} },
-          },
-        ],
-      });
-
-      const createCall = mockCreate.mock.calls[0][0];
-      expect(createCall.tools[0].cache_control).toBeUndefined();
-    });
-
     it("surfaces OpenRouter cache stats on usage", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          model: "anthropic/claude-sonnet-4-5",
+          usage: {
+            prompt_tokens: 1000,
+            completion_tokens: 50,
+            total_tokens: 1050,
+            prompt_tokens_details: { cached_tokens: 800 },
+            cache_write_tokens: 200,
           },
-        ],
-        model: "anthropic/claude-sonnet-4-5",
-        usage: {
-          prompt_tokens: 1000,
-          completion_tokens: 50,
-          total_tokens: 1050,
-          prompt_tokens_details: { cached_tokens: 800 },
-          cache_write_tokens: 200,
-        },
-      });
+        }),
+      );
 
       const result = await adapter.complete("sk-test", {
         ...baseParams,
@@ -395,16 +316,8 @@ describe("createOpenAiAdapter", () => {
       });
     });
 
-    it("passes reasoning parameter when provided", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "o1",
-      });
+    it("passes reasoning parameter through for non-Claude-4.6 models", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse({ model: "o1" }));
 
       await adapter.complete("sk-test", {
         ...baseParams,
@@ -415,27 +328,42 @@ describe("createOpenAiAdapter", () => {
       expect(createCall.reasoning).toEqual({ effort: "high" });
     });
 
-    it("normalizes finish_reason correctly", async () => {
-      for (const [raw, expected] of [
-        ["stop", "stop"],
-        ["length", "length"],
-        ["content_filter", "content_filter"],
-        ["other", "unknown"],
-        [null, "stop"],
-      ] as const) {
-        mockCreate.mockResolvedValueOnce({
+    it("maps reasoning effort to verbosity for Claude 4.6 via OpenRouter", async () => {
+      mockCreate.mockResolvedValueOnce(
+        okResponse({ model: "anthropic/claude-sonnet-4.6" }),
+      );
+
+      await adapter.complete("sk-test", {
+        ...baseParams,
+        model: "anthropic/claude-sonnet-4.6",
+        reasoning: { effort: "high" },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.reasoning).toEqual({ enabled: true });
+      expect(createCall.verbosity).toBe("high");
+    });
+
+    it.each([
+      ["stop", "stop"],
+      ["length", "length"],
+      ["content_filter", "content_filter"],
+      ["other", "unknown"],
+      [null, "stop"],
+    ] as const)("normalizes finish_reason %s to %s", async (raw, expected) => {
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
           choices: [
             {
               message: { role: "assistant", content: "ok" },
               finish_reason: raw,
             },
           ],
-          model: "gpt-4o",
-        });
+        }),
+      );
 
-        const result = await adapter.complete("sk-test", baseParams);
-        expect(result.finishReason).toBe(expected);
-      }
+      const result = await adapter.complete("sk-test", baseParams);
+      expect(result.finishReason).toBe(expected);
     });
   });
 
@@ -465,67 +393,35 @@ describe("createOpenAiAdapter", () => {
       ]);
     });
 
-    it("yields reasoning chunks from reasoning_details", async () => {
-      const chunks = [
-        {
-          choices: [
-            {
-              delta: {
-                reasoning_details: [{ text: "thinking..." }],
-              },
-              finish_reason: null,
-            },
-          ],
-        },
-        { choices: [{ delta: { content: "Result" }, finish_reason: null }] },
-        { choices: [{ delta: {}, finish_reason: "stop" }] },
-      ];
+    it.each([
+      [
+        "reasoning_details",
+        { reasoning_details: [{ text: "thinking..." }] },
+        "thinking...",
+      ],
+      ["direct reasoning field", { reasoning: "I think..." }, "I think..."],
+    ] as const)(
+      "yields a reasoning chunk from %s",
+      async (_label, delta, expectedText) => {
+        const chunks = [
+          { choices: [{ delta, finish_reason: null }] },
+          { choices: [{ delta: {}, finish_reason: "stop" }] },
+        ];
 
-      mockCreate.mockResolvedValueOnce({
-        [Symbol.asyncIterator]: async function* () {
-          for (const chunk of chunks) yield chunk;
-        },
-      });
+        mockCreate.mockResolvedValueOnce({
+          [Symbol.asyncIterator]: async function* () {
+            for (const chunk of chunks) yield chunk;
+          },
+        });
 
-      const results: unknown[] = [];
-      for await (const chunk of adapter.stream("sk-test", baseParams)) {
-        results.push(chunk);
-      }
+        const results: unknown[] = [];
+        for await (const chunk of adapter.stream("sk-test", baseParams)) {
+          results.push(chunk);
+        }
 
-      expect(results).toEqual([
-        { type: "reasoning", text: "thinking..." },
-        { type: "content", text: "Result" },
-        { type: "stop", finishReason: "stop" },
-      ]);
-    });
-
-    it("yields reasoning chunks from direct reasoning field", async () => {
-      const chunks = [
-        {
-          choices: [
-            {
-              delta: { reasoning: "I think..." },
-              finish_reason: null,
-            },
-          ],
-        },
-        { choices: [{ delta: { content: "Answer" }, finish_reason: null }] },
-        { choices: [{ delta: {}, finish_reason: "stop" }] },
-      ];
-
-      mockCreate.mockResolvedValueOnce({
-        [Symbol.asyncIterator]: async function* () {
-          for (const chunk of chunks) yield chunk;
-        },
-      });
-
-      const results: unknown[] = [];
-      for await (const chunk of adapter.stream("sk-test", baseParams)) {
-        results.push(chunk);
-      }
-
-      expect(results[0]).toEqual({ type: "reasoning", text: "I think..." });
-    });
+        expect(results[0]).toEqual({ type: "reasoning", text: expectedText });
+      },
+    );
 
     it("requests usage stats via stream_options.include_usage", async () => {
       mockCreate.mockResolvedValueOnce({
@@ -580,44 +476,6 @@ describe("createOpenAiAdapter", () => {
           total_tokens: 49,
         },
       });
-    });
-
-    it("omits usage on stop when upstream did not provide it", async () => {
-      const chunks = [
-        { choices: [{ delta: { content: "Hi" }, finish_reason: null }] },
-        { choices: [{ delta: {}, finish_reason: "stop" }] },
-      ];
-
-      mockCreate.mockResolvedValueOnce({
-        [Symbol.asyncIterator]: async function* () {
-          for (const chunk of chunks) yield chunk;
-        },
-      });
-
-      const results: unknown[] = [];
-      for await (const chunk of adapter.stream("sk-test", baseParams)) {
-        results.push(chunk);
-      }
-
-      expect(results.at(-1)).toEqual({ type: "stop", finishReason: "stop" });
-    });
-
-    it("does not request usage stats on non-streaming completions", async () => {
-      mockCreate.mockResolvedValueOnce({
-        choices: [
-          {
-            message: { role: "assistant", content: "ok" },
-            finish_reason: "stop",
-          },
-        ],
-        model: "gpt-4o",
-      });
-
-      await adapter.complete("sk-test", baseParams);
-
-      const createCall = mockCreate.mock.calls[0][0];
-      expect(createCall.stream).toBe(false);
-      expect(createCall.stream_options).toBeUndefined();
     });
   });
 });

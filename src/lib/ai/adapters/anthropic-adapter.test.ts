@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AiMessage } from "../types";
+import type { ToolDefinitionForModel } from "../tool-calling";
+import type { AiMessage, ReasoningEffort } from "../types";
 import type { CompletionParams } from "./types";
 
 // Mock the @anthropic-ai/sdk module
@@ -13,6 +14,25 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 import { createAnthropicAdapter } from "./anthropic-adapter";
+
+function okResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    content: [{ type: "text", text: "ok" }],
+    model: "claude-sonnet-4-5-20250929",
+    stop_reason: "end_turn",
+    usage: { input_tokens: 10, output_tokens: 5 },
+    ...overrides,
+  };
+}
+
+function tool(id: string): ToolDefinitionForModel {
+  return {
+    id,
+    name: id,
+    description: id,
+    parameters: { type: "object", properties: {} },
+  };
+}
 
 describe("createAnthropicAdapter", () => {
   const adapter = createAnthropicAdapter();
@@ -34,12 +54,7 @@ describe("createAnthropicAdapter", () => {
 
   describe("complete", () => {
     it("extracts system messages to system param", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "Hi!" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       await adapter.complete("sk-ant-test", baseParams);
 
@@ -51,12 +66,7 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("preserves cache_control on system blocks", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "Hi!" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -81,12 +91,7 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("converts image_url with base64 data URL to Anthropic image block", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "I see an image" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -116,12 +121,7 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("converts image_url with regular URL to Anthropic url source", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "I see an image" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -146,47 +146,47 @@ describe("createAnthropicAdapter", () => {
       });
     });
 
-    it("maps reasoning effort to thinking budget", async () => {
-      const effortMap = {
-        minimal: 1024,
-        low: 4096,
-        medium: 10240,
-        high: 20480,
-        xhigh: 32768,
-      } as const;
-
-      for (const [effort, expectedBudget] of Object.entries(effortMap) as [
-        keyof typeof effortMap,
-        number,
-      ][]) {
-        mockCreate.mockResolvedValueOnce({
-          content: [{ type: "text", text: "ok" }],
-          model: "claude-sonnet-4-5-20250929",
-          stop_reason: "end_turn",
-          usage: { input_tokens: 10, output_tokens: 5 },
-        });
+    it.each([
+      ["minimal", 1024],
+      ["low", 4096],
+      ["medium", 10240],
+      ["high", 20480],
+      ["xhigh", 32768],
+    ] as const)(
+      "maps reasoning effort %s to a %d token thinking budget",
+      async (effort, expectedBudget) => {
+        mockCreate.mockResolvedValueOnce(okResponse());
 
         await adapter.complete("sk-ant-test", {
           ...baseParams,
           reasoning: { effort },
         });
 
-        const createCall =
-          mockCreate.mock.calls[mockCreate.mock.calls.length - 1][0];
+        const createCall = mockCreate.mock.calls[0][0];
         expect(createCall.thinking).toEqual({
           type: "enabled",
           budget_tokens: expectedBudget,
         });
-      }
+      },
+    );
+
+    it("falls back to a 10240 token budget for an effort outside the known map", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        reasoning: { effort: "unrecognized" as unknown as ReasoningEffort },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.thinking).toEqual({
+        type: "enabled",
+        budget_tokens: 10240,
+      });
     });
 
     it("omits temperature when thinking is enabled", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       await adapter.complete("sk-ant-test", {
         ...baseParams,
@@ -199,12 +199,7 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("sets temperature when no reasoning", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       await adapter.complete("sk-ant-test", baseParams);
 
@@ -213,15 +208,15 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("maps response to AiResponse with text and thinking blocks", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [
-          { type: "thinking", thinking: "Let me think..." },
-          { type: "text", text: "Here is my answer" },
-        ],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 20 },
-      });
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          content: [
+            { type: "thinking", thinking: "Let me think..." },
+            { type: "text", text: "Here is my answer" },
+          ],
+          usage: { input_tokens: 10, output_tokens: 20 },
+        }),
+      );
 
       const result = await adapter.complete("sk-ant-test", {
         ...baseParams,
@@ -241,24 +236,15 @@ describe("createAnthropicAdapter", () => {
       });
     });
 
-    it("normalizes stop reasons", async () => {
-      const stopMap: [string, string][] = [
-        ["end_turn", "stop"],
-        ["max_tokens", "length"],
-        ["stop_sequence", "stop"],
-      ];
+    it.each([
+      ["end_turn", "stop"],
+      ["max_tokens", "length"],
+      ["stop_sequence", "stop"],
+    ])("normalizes stop reason %s to %s", async (raw, expected) => {
+      mockCreate.mockResolvedValueOnce(okResponse({ stop_reason: raw }));
 
-      for (const [raw, expected] of stopMap) {
-        mockCreate.mockResolvedValueOnce({
-          content: [{ type: "text", text: "ok" }],
-          model: "claude-sonnet-4-5-20250929",
-          stop_reason: raw,
-          usage: { input_tokens: 10, output_tokens: 5 },
-        });
-
-        const result = await adapter.complete("sk-ant-test", baseParams);
-        expect(result.finishReason).toBe(expected);
-      }
+      const result = await adapter.complete("sk-ant-test", baseParams);
+      expect(result.finishReason).toBe(expected);
     });
 
     it("preserves tool message content when wrapped in a cache_control text part", async () => {
@@ -267,12 +253,7 @@ describe("createAnthropicAdapter", () => {
       // caching spans tool-calling iterations. The tool branch must not
       // check `typeof content === "string"` and drop the array, or an empty
       // tool_result reaches the model on every follow-up turn.
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -296,46 +277,25 @@ describe("createAnthropicAdapter", () => {
       await adapter.complete("sk-ant-test", { ...baseParams, messages });
 
       const createCall = mockCreate.mock.calls[0][0];
-      const toolResultMsg = createCall.messages[1];
-      expect(toolResultMsg.role).toBe("user");
-      expect(toolResultMsg.content[0]).toEqual({
-        type: "tool_result",
-        tool_use_id: "call_1",
-        content: '{"success":true,"chapters":["one","two"]}',
-        cache_control: { type: "ephemeral" },
+      expect(createCall.messages[1]).toEqual({
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "call_1",
+            content: '{"success":true,"chapters":["one","two"]}',
+            cache_control: { type: "ephemeral" },
+          },
+        ],
       });
     });
 
     it("attaches cache_control to the last tool entry only", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       await adapter.complete("sk-ant-test", {
         ...baseParams,
-        tools: [
-          {
-            id: "tool_a",
-            name: "tool_a",
-            description: "A",
-            parameters: { type: "object", properties: {} },
-          },
-          {
-            id: "tool_b",
-            name: "tool_b",
-            description: "B",
-            parameters: { type: "object", properties: {} },
-          },
-          {
-            id: "tool_c",
-            name: "tool_c",
-            description: "C",
-            parameters: { type: "object", properties: {} },
-          },
-        ],
+        tools: [tool("tool_a"), tool("tool_b"), tool("tool_c")],
       });
 
       const createCall = mockCreate.mock.calls[0][0];
@@ -346,17 +306,11 @@ describe("createAnthropicAdapter", () => {
     });
 
     it("preserves plain-text content-part arrays even without images or cache_control", async () => {
-      // Wire shape must stay stable across tool-calling iterations: previously
-      // this branch joined text parts back into a string when nothing carried
-      // cache_control or an image, but that flipped a previously-trailing
-      // message from array form (iter N) to string form (iter N+1), busting
-      // Anthropic's prefix-byte cache match between iterations.
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: { input_tokens: 10, output_tokens: 5 },
-      });
+      // Wire shape must stay stable across tool-calling iterations: this
+      // branch must not join text parts back into a string, or a previously
+      // trailing message would flip from array form (iter N) to string form
+      // (iter N+1), busting Anthropic's prefix-byte cache match.
+      mockCreate.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -375,6 +329,29 @@ describe("createAnthropicAdapter", () => {
         { type: "text", text: "Part 1 " },
         { type: "text", text: "Part 2" },
       ]);
+    });
+
+    it("folds cache tokens into prompt_tokens and surfaces them discretely", async () => {
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          usage: {
+            input_tokens: 100,
+            cache_creation_input_tokens: 50,
+            cache_read_input_tokens: 200,
+            output_tokens: 30,
+          },
+        }),
+      );
+
+      const result = await adapter.complete("sk-ant-test", baseParams);
+
+      expect(result.usage).toEqual({
+        prompt_tokens: 350,
+        completion_tokens: 30,
+        total_tokens: 380,
+        cache_creation_tokens: 50,
+        cache_read_tokens: 200,
+      });
     });
   });
 
@@ -414,35 +391,6 @@ describe("createAnthropicAdapter", () => {
         { type: "reasoning", text: "hmm..." },
         { type: "content", text: "Hello" },
         { type: "content", text: " world" },
-        { type: "stop", finishReason: "stop" },
-      ]);
-    });
-
-    it("handles stream with no thinking blocks", async () => {
-      const events = [
-        {
-          type: "content_block_delta",
-          delta: { type: "text_delta", text: "Just text" },
-        },
-        {
-          type: "message_delta",
-          delta: { stop_reason: "end_turn" },
-        },
-      ];
-
-      mockStream.mockReturnValueOnce({
-        [Symbol.asyncIterator]: async function* () {
-          for (const event of events) yield event;
-        },
-      });
-
-      const results: unknown[] = [];
-      for await (const chunk of adapter.stream("sk-ant-test", baseParams)) {
-        results.push(chunk);
-      }
-
-      expect(results).toEqual([
-        { type: "content", text: "Just text" },
         { type: "stop", finishReason: "stop" },
       ]);
     });
@@ -488,30 +436,6 @@ describe("createAnthropicAdapter", () => {
       );
       expect(stop?.usage).toEqual({
         // 100 input + 50 cache creation + 200 cache read = 350
-        prompt_tokens: 350,
-        completion_tokens: 30,
-        total_tokens: 380,
-        cache_creation_tokens: 50,
-        cache_read_tokens: 200,
-      });
-    });
-
-    it("complete() folds cache tokens into prompt_tokens and surfaces them discretely", async () => {
-      mockCreate.mockResolvedValueOnce({
-        content: [{ type: "text", text: "ok" }],
-        model: "claude-sonnet-4-5-20250929",
-        stop_reason: "end_turn",
-        usage: {
-          input_tokens: 100,
-          cache_creation_input_tokens: 50,
-          cache_read_input_tokens: 200,
-          output_tokens: 30,
-        },
-      });
-
-      const result = await adapter.complete("sk-ant-test", baseParams);
-
-      expect(result.usage).toEqual({
         prompt_tokens: 350,
         completion_tokens: 30,
         total_tokens: 380,

@@ -9,6 +9,8 @@ import type {
   CharacterRelationshipId,
   Comment,
   CommentId,
+  EntityImage,
+  EntityImageId,
   GuardrailEntry,
   GuardrailEntryId,
   Location,
@@ -36,6 +38,7 @@ import type {
   WritingSprint,
   WritingSprintId,
 } from "@/db/schemas";
+import type { AiContext } from "@/lib/ai/types";
 
 const ts = "2024-01-01T00:00:00.000Z";
 let counter = 0;
@@ -373,6 +376,30 @@ export function makeBrainstormSetup(
     pattern: "",
     createdAt: ts,
     updatedAt: ts,
+    ...overrides,
+  };
+}
+
+export function makeImage(overrides: Partial<EntityImage> = {}): EntityImage {
+  return {
+    id: nextId<EntityImageId>(),
+    url: "https://example.com/image.png",
+    caption: "",
+    isPrimary: false,
+    focalX: 0.5,
+    focalY: 0,
+    ...overrides,
+  };
+}
+
+export function makeAiContext(overrides: Partial<AiContext> = {}): AiContext {
+  return {
+    projectTitle: "Test Novel",
+    projectDescription: "",
+    genre: "",
+    styleGuide: [],
+    guardrails: [],
+    chapters: [],
     ...overrides,
   };
 }

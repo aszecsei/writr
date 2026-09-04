@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizedIncludes } from "@/lib/punctuation-match";
 import {
   type EditLocator,
   locateProposedEdit,
   spliceEdit,
 } from "./edit-locator";
+import { computeAnchorFound } from "./proposedEdits";
 
 // The chat-mode Apply path (ChapterEditor) passes a `PendingStagedEdit`, which
 // is structurally an `EditLocator` (no id / DB fields). These cover that shape
@@ -98,25 +98,6 @@ describe("locateProposedEdit (chat-shaped EditLocator)", () => {
 // enabled button that silently does nothing. This pins the invariant:
 // anchorFound ⇒ locateProposedEdit resolves.
 describe("apply-locator stays consistent with the tool's anchorFound gate", () => {
-  // Mirror of the chat-mode `anchorFound` computation in tools/proposedEdits.ts.
-  function toolAnchorFound(content: string, e: EditLocator): boolean {
-    switch (e.kind) {
-      case "append":
-      case "full_chapter":
-        return true;
-      case "replace":
-        return normalizedIncludes(
-          content,
-          (e.prefix ?? "") + (e.anchorText ?? "") + (e.suffix ?? ""),
-        );
-      case "insert_at":
-        return (
-          e.anchorText !== undefined &&
-          normalizedIncludes(content, e.anchorText)
-        );
-    }
-  }
-
   const corpus: { content: string; edit: EditLocator }[] = [
     { content: "plain prose here", edit: { kind: "full_chapter" } },
     { content: "plain prose here", edit: { kind: "append" } },
@@ -144,7 +125,7 @@ describe("apply-locator stays consistent with the tool's anchorFound gate", () =
 
   it("returns a range for every edit whose anchor the tool reports as found", () => {
     for (const { content, edit } of corpus) {
-      if (toolAnchorFound(content, edit)) {
+      if (computeAnchorFound(content, edit)) {
         expect(
           locateProposedEdit(content, edit),
           `anchorFound was true but locate returned null for ${JSON.stringify(edit)}`,

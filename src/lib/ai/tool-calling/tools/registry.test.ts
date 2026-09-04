@@ -389,20 +389,11 @@ describe("permittedCategories helper", () => {
       "list:character",
       "read_chapter",
     ]);
-    expect(result).toBeInstanceOf(Set);
-    if (result instanceof Set) {
-      expect(result.has("chapter")).toBe(true);
-      expect(result.has("character")).toBe(true);
-      expect(result.has("location")).toBe(false);
-    }
+    expect(result).toEqual(new Set(["chapter", "character"]));
   });
 
   it("ignores unknown scoped categories", () => {
     const result = permittedCategories("get", ["get:nonsense", "get:summary"]);
-    expect(result).toBeInstanceOf(Set);
-    if (result instanceof Set) {
-      expect(result.has("summary")).toBe(true);
-      expect(result.size).toBe(1);
-    }
+    expect(result).toEqual(new Set(["summary"]));
   });
 });

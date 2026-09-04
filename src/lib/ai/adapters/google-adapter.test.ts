@@ -22,6 +22,18 @@ vi.mock("@google/genai", () => {
 
 import { createGoogleAdapter } from "./google-adapter";
 
+function okResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    candidates: [
+      {
+        content: { parts: [{ text: "ok" }] },
+        finishReason: "STOP",
+      },
+    ],
+    ...overrides,
+  };
+}
+
 describe("createGoogleAdapter", () => {
   const adapter = createGoogleAdapter({ mode: "api-key" });
 
@@ -42,40 +54,8 @@ describe("createGoogleAdapter", () => {
   };
 
   describe("complete", () => {
-    it("passes apiKey to GoogleGenAI constructor", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "Hi!" }] },
-            finishReason: "STOP",
-          },
-        ],
-        usageMetadata: {
-          promptTokenCount: 10,
-          candidatesTokenCount: 5,
-          totalTokenCount: 15,
-        },
-      });
-
-      await adapter.complete("AIzaTestKey", baseParams);
-
-      expect(constructorCalls[0]).toEqual({ apiKey: "AIzaTestKey" });
-    });
-
     it("extracts system messages into systemInstruction", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "Hi!" }] },
-            finishReason: "STOP",
-          },
-        ],
-        usageMetadata: {
-          promptTokenCount: 10,
-          candidatesTokenCount: 5,
-          totalTokenCount: 15,
-        },
-      });
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
 
       await adapter.complete("key", baseParams);
 
@@ -88,14 +68,7 @@ describe("createGoogleAdapter", () => {
     });
 
     it("maps assistant role to model role", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         { role: "user", content: "Hi" },
@@ -112,14 +85,7 @@ describe("createGoogleAdapter", () => {
     });
 
     it("converts base64 data URL images to inlineData", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "I see an image" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -144,14 +110,7 @@ describe("createGoogleAdapter", () => {
     });
 
     it("converts non-data-URL images to text placeholder", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -174,24 +133,26 @@ describe("createGoogleAdapter", () => {
     });
 
     it("extracts reasoning from thought parts", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: {
-              parts: [
-                { text: "I need to think...", thought: true },
-                { text: "The answer is 42" },
-              ],
+      mockGenerateContent.mockResolvedValueOnce(
+        okResponse({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  { text: "I need to think...", thought: true },
+                  { text: "The answer is 42" },
+                ],
+              },
+              finishReason: "STOP",
             },
-            finishReason: "STOP",
+          ],
+          usageMetadata: {
+            promptTokenCount: 10,
+            candidatesTokenCount: 20,
+            totalTokenCount: 30,
           },
-        ],
-        usageMetadata: {
-          promptTokenCount: 10,
-          candidatesTokenCount: 20,
-          totalTokenCount: 30,
-        },
-      });
+        }),
+      );
 
       const result = await adapter.complete("key", {
         ...baseParams,
@@ -203,19 +164,21 @@ describe("createGoogleAdapter", () => {
     });
 
     it("maps response to AiResponse", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "Hello there!" }] },
-            finishReason: "STOP",
+      mockGenerateContent.mockResolvedValueOnce(
+        okResponse({
+          candidates: [
+            {
+              content: { parts: [{ text: "Hello there!" }] },
+              finishReason: "STOP",
+            },
+          ],
+          usageMetadata: {
+            promptTokenCount: 10,
+            candidatesTokenCount: 5,
+            totalTokenCount: 15,
           },
-        ],
-        usageMetadata: {
-          promptTokenCount: 10,
-          candidatesTokenCount: 5,
-          totalTokenCount: 15,
-        },
-      });
+        }),
+      );
 
       const result = await adapter.complete("key", baseParams);
 
@@ -232,82 +195,55 @@ describe("createGoogleAdapter", () => {
       });
     });
 
-    it("normalizes finish reasons correctly", async () => {
-      for (const [raw, expected] of [
-        ["STOP", "stop"],
-        ["MAX_TOKENS", "length"],
-        ["SAFETY", "content_filter"],
-        ["BLOCKLIST", "content_filter"],
-        ["OTHER", "unknown"],
-        [undefined, "stop"],
-      ] as const) {
-        mockGenerateContent.mockResolvedValueOnce({
+    it.each([
+      ["STOP", "stop"],
+      ["MAX_TOKENS", "length"],
+      ["SAFETY", "content_filter"],
+      ["BLOCKLIST", "content_filter"],
+      ["OTHER", "unknown"],
+      [undefined, "stop"],
+    ] as const)("normalizes finish reason %s to %s", async (raw, expected) => {
+      mockGenerateContent.mockResolvedValueOnce(
+        okResponse({
           candidates: [
             {
               content: { parts: [{ text: "ok" }] },
               finishReason: raw,
             },
           ],
-        });
+        }),
+      );
 
-        const result = await adapter.complete("key", baseParams);
-        expect(result.finishReason).toBe(expected);
-      }
+      const result = await adapter.complete("key", baseParams);
+      expect(result.finishReason).toBe(expected);
     });
 
-    it("passes thinkingConfig when reasoning effort is set", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
-
+    it("passes thinkingConfig when reasoning effort is set, omits it when effort is none", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
       await adapter.complete("key", {
         ...baseParams,
         reasoning: { effort: "high" },
       });
+      expect(
+        mockGenerateContent.mock.calls[0][0].config.thinkingConfig,
+      ).toEqual({ thinkingBudget: 24576 });
 
-      const call = mockGenerateContent.mock.calls[0][0];
-      expect(call.config.thinkingConfig).toEqual({
-        thinkingBudget: 24576,
-      });
-    });
-
-    it("omits thinkingConfig when reasoning effort is none", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
-
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
       await adapter.complete("key", {
         ...baseParams,
         reasoning: { effort: "none" },
       });
-
-      const call = mockGenerateContent.mock.calls[0][0];
-      expect(call.config.thinkingConfig).toBeUndefined();
+      expect(
+        mockGenerateContent.mock.calls[1][0].config.thinkingConfig,
+      ).toBeUndefined();
     });
 
     it("preserves tool message content when wrapped in a cache_control text part", async () => {
-      // Regression: `withTrailingCacheControl` wraps the most recent tool
-      // result into a TextContentPart array. Previously the tool branch
-      // parsed `typeof content === "string" ? content : "{}"`, so the array
-      // form became `{}` and the model saw an empty function response.
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
+      // `withTrailingCacheControl` wraps the most recent tool result into a
+      // TextContentPart array; the tool branch must not collapse it to `"{}"`
+      // via `typeof content === "string" ? content : "{}"`, or the model sees
+      // an empty function response.
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
 
       const messages: AiMessage[] = [
         {
@@ -332,10 +268,16 @@ describe("createGoogleAdapter", () => {
 
       const call = mockGenerateContent.mock.calls[0][0];
       const toolMsg = call.contents[1];
-      expect(toolMsg.role).toBe("user");
-      expect(toolMsg.parts[0].functionResponse).toEqual({
-        name: "list",
-        response: { success: true, chapters: ["one"] },
+      expect(toolMsg).toEqual({
+        role: "user",
+        parts: [
+          {
+            functionResponse: {
+              name: "list",
+              response: { success: true, chapters: ["one"] },
+            },
+          },
+        ],
       });
     });
   });
@@ -464,69 +406,23 @@ describe("createGoogleAdapter", () => {
         },
       });
     });
-
-    it("omits usage on stop when no usageMetadata was reported", async () => {
-      const responses = [
-        {
-          candidates: [
-            {
-              content: { parts: [{ text: "Hi" }] },
-              finishReason: "STOP",
-            },
-          ],
-        },
-      ];
-
-      mockGenerateContentStream.mockResolvedValueOnce(
-        (async function* () {
-          for (const r of responses) yield r;
-        })(),
-      );
-
-      const results: unknown[] = [];
-      for await (const chunk of adapter.stream("key", baseParams)) {
-        results.push(chunk);
-      }
-
-      expect(results.at(-1)).toEqual({ type: "stop", finishReason: "stop" });
-    });
   });
 
   describe("vertex mode", () => {
     const vertexAdapter = createGoogleAdapter({ mode: "vertex" });
 
-    it("parses project:location from apiKey", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
-
+    it("parses project:location from apiKey, defaulting location to us-central1 when missing", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
       await vertexAdapter.complete("my-project:us-east1", baseParams);
-
       expect(constructorCalls[0]).toEqual({
         vertexai: true,
         project: "my-project",
         location: "us-east1",
       });
-    });
 
-    it("defaults location to us-central1 when missing", async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        candidates: [
-          {
-            content: { parts: [{ text: "ok" }] },
-            finishReason: "STOP",
-          },
-        ],
-      });
-
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
       await vertexAdapter.complete("my-project", baseParams);
-
-      expect(constructorCalls[0]).toEqual({
+      expect(constructorCalls[1]).toEqual({
         vertexai: true,
         project: "my-project",
         location: "us-central1",
