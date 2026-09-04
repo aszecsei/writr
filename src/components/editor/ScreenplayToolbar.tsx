@@ -63,7 +63,8 @@ export function ScreenplayToolbar({ editor }: ScreenplayToolbarProps) {
     if (!editor) return;
     const results = getSpellcheckResults(editor.state);
     openScanner(results);
-  }, [editor, openScanner]);
+    openModal({ id: "spellcheck-scanner" });
+  }, [editor, openScanner, openModal]);
 
   const editorState = useEditorState({
     editor,
