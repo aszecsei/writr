@@ -31,6 +31,7 @@ import {
   makeOutlineGridColumn,
   makeOutlineGridRow,
   makeRelationship,
+  makeScene,
   makeStyleGuideEntry,
   makeTimelineEvent,
   makeWorldbuildingDoc,
@@ -376,6 +377,7 @@ function buildTestProjectData(projectId: ProjectId): ProjectBackupData {
     comments: [comment],
     chapterSnapshots: [snapshot],
     projectDictionary: projectDict,
+    scenes: [],
   };
 }
 
@@ -398,6 +400,7 @@ async function clearAllTables() {
   await db.comments.clear();
   await db.chapterSnapshots.clear();
   await db.projectDictionaries.clear();
+  await db.scenes.clear();
   await db.appSettings.clear();
   await db.appDictionary.clear();
   await db.savedPrompts.clear();
@@ -581,6 +584,36 @@ describe("validateBackup", () => {
   it("rejects null", () => {
     const result = validateBackup(null);
     expect(result.success).toBe(false);
+  });
+
+  it("keeps scenes intact when validating a project backup", () => {
+    const projectId = crypto.randomUUID() as ProjectId;
+    const data = buildTestProjectData(projectId);
+    const chapter = makeChapter({ projectId, title: "Chapter 1" });
+    const scene = makeScene({
+      projectId,
+      chapterId: chapter.id,
+      title: "Opening",
+    });
+    data.chapters = [chapter];
+    data.scenes = [scene];
+
+    const backup: ProjectBackup = {
+      metadata: {
+        version: BACKUP_VERSION,
+        type: "project",
+        exportedAt: "2024-01-01T00:00:00.000Z",
+        projectTitle: "Test",
+      },
+      data,
+    };
+
+    const result = validateBackup(backup);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    const parsed = result.data as ProjectBackup;
+    expect(parsed.data.scenes).toHaveLength(1);
+    expect(parsed.data.scenes[0].title).toBe("Opening");
   });
 });
 
@@ -1169,6 +1202,85 @@ describe("round-trip export → import", () => {
     const dict = await db.projectDictionaries.where({ projectId }).first();
     expect(dict).toBeDefined();
     expect(dict?.words).toEqual(data.projectDictionary?.words);
+  });
+
+  it("carries scenes through an export → import round trip with remapped ids", async () => {
+    const projectId = crypto.randomUUID() as ProjectId;
+    const project = makeProject({ id: projectId, title: "Scene Novel" });
+    const chapter = makeChapter({ projectId, title: "Chapter 1" });
+    const scene1 = makeScene({
+      projectId,
+      chapterId: chapter.id,
+      title: "Opening",
+      order: 0,
+    });
+    const scene2 = makeScene({
+      projectId,
+      chapterId: chapter.id,
+      title: "Twist",
+      order: 1,
+    });
+
+    await db.projects.add(project);
+    await db.chapters.add(chapter);
+    await db.scenes.bulkAdd([scene1, scene2]);
+
+    const backup = await exportProject(projectId);
+    if (!backup) throw new Error("Expected backup to be non-null");
+    expect(backup.data.scenes).toHaveLength(2);
+
+    await clearAllTables();
+
+    const result = await importBackup(backup, {
+      conflictResolution: "skip",
+      restoreSettings: false,
+    });
+    expect(result.success).toBe(true);
+    expect(result.projectsImported).toBe(1);
+
+    const importedChapters = await db.chapters.where({ projectId }).toArray();
+    expect(importedChapters).toHaveLength(1);
+    const importedChapterId = importedChapters[0].id;
+
+    const importedScenes = await db.scenes.where({ projectId }).toArray();
+    expect(importedScenes).toHaveLength(2);
+    for (const scene of importedScenes) {
+      expect(scene.chapterId).toBe(importedChapterId);
+    }
+    expect(importedScenes.map((s) => s.title).sort()).toEqual([
+      "Opening",
+      "Twist",
+    ]);
+  });
+
+  it("imports a legacy project backup with no scenes key", async () => {
+    const projectId = crypto.randomUUID() as ProjectId;
+    const data = buildTestProjectData(projectId);
+    const legacyData = { ...data } as Partial<ProjectBackupData>;
+    legacyData.scenes = undefined;
+    delete legacyData.scenes;
+
+    const legacyBackup = {
+      metadata: {
+        version: BACKUP_VERSION,
+        type: "project",
+        exportedAt: ts,
+        projectTitle: "Legacy Novel",
+      },
+      data: legacyData,
+    };
+
+    const parsed = parseBackupFile(JSON.stringify(legacyBackup));
+    const result = await importBackup(parsed, {
+      conflictResolution: "skip",
+      restoreSettings: false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.projectsImported).toBe(1);
+
+    const scenes = await db.scenes.where({ projectId }).toArray();
+    expect(scenes).toHaveLength(0);
   });
 
   it("full backup round-trip preserves settings", async () => {
