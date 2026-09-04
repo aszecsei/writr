@@ -5,14 +5,14 @@ Components live under `src/components/` and are organized by feature area. Befor
 ## Feature directories
 
 - **`agents/`** — `AgentEditorBody`: the full-page agent-definition editor behind the `/agents/definitions` routes. `AgentsPageBody`: the Agent list (Global / Project) body.
-- **`ai/`** — AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `DelegatedAgentCard`, `PendingGatesBar`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`. Sub-agent delegation renders nested transcripts (`DelegatedAgentCard`) and user gates (`PendingGatesBar`).
+- **`ai/`** — AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `DelegatedAgentCard`, `PendingGatesBar`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`. Sub-agent delegation renders nested transcripts (`DelegatedAgentCard`) and user gates (`PendingGatesBar`). `AiPanel` is composition/layout only — the delegation host, gate plumbing, and run lifecycle live in `src/hooks/ai/` (see `docs/hooks.md`).
 - **`bible/`** — Story-bible building blocks: `AddImageDialog`, `ImageGallery`, `ImageLightbox`, `CollapsibleSection`, `DragHandle`, `RoleBadge`, `SortableTimelineCard`.
 - **`collab/`** — Real-time collaboration UI: `ShareSessionButton`, `ShareDialog`, `CollabBanner`, `DisplayNamePrompt`, `ApproveJoinDialog`, `ManageParticipantsDialog`, `GuestSessionShell`, `CollabProseEditor`. All gated on `NEXT_PUBLIC_COLLAB_URL`.
 - **`dashboard/`** — Project picker: `ProjectGrid`, `ProjectCard`, `CreateProjectDialog`, `EditProjectDialog`, `DeleteProjectDialog`, `ProjectFormFields`.
 - **`editor/`** — TipTap editor (see `docs/editor.md`).
 - **`export/`** — Export dialogs and preview UI for the manuscript pipeline (`src/lib/export/`).
 - **`family-tree/`** — XYFlow-based character relationship diagram: `CharacterNode`, `RelationshipEdge`, `RelationshipList`, `AddRelationshipDialog`.
-- **`layout/`** — App shell, topbar, sidebar.
+- **`layout/`** — App shell, topbar, sidebar. `layout/sidebar/`: `ChapterList` renders two `BinderSection`s (manuscript / scratchpad). `BinderSection` composes chapter-tree and scene drag-and-drop (`src/hooks/ui/useBinderDragDrop`, `useSceneDragDrop`), the `BinderContextMenu` (chapter) and `SceneContextMenu` (scene) right-click menus, `SceneRow` (a chapter's scene rows, Model D), and `BinderItem` (one flattened tree row).
 - **`outline/`** — Outline grid: `OutlineGrid`, `OutlineGridRow`, `OutlineGridCell`, `OutlineGridHeader`, `OutlineGridToolbar`, `OutlineGridContextMenu`, `OutlineTemplateDialog`, `StatusBadge`.
 - **`preview-card/`** — `html2canvas` image generation for shareable card previews.
 - **`providers/`** — App-wide context providers (settings, theme, etc.). `GlobalModals` mounts every app-wide modal once (see `docs/state.md`).

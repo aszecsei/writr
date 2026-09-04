@@ -72,7 +72,11 @@ of the project id.
 
 ### `ui/` — UI hooks
 
-`useFocusModeShortcuts`, `useAutoLayout`, `useSearch`, `useSearchPage`.
+`useFocusModeShortcuts`, `useAutoLayout`, `useSearch`, `useSearchPage`. Binder sidebar: `useBinderDragDrop` (chapter-tree drag-and-drop — the optimistic flattened list, depth projection, and `moveChapter` commit), `useSceneDragDrop` (Model D scene drag-and-drop — drop-target tracking and the reorder/move-across-chapters commit), `useBinderRename` (inline chapter-rename state).
+
+### `ai/` — AI panel hooks
+
+`useDelegationHost` (builds the `DelegationHost` a chat agent's `agentContext.delegation` uses to run `delegate` sub-agents and `present_choice` prompts), `usePendingGates` (the `pendingGates` bar's state — `pushGate`/`resolveGate`/`resetGates` for gates bubbled up from sub-agent runs), `useAgentRun` (one run's loading/error/elapsed-time/abort lifecycle plus the per-tool approval gate).
 
 ### `collab/` — Collab session integration
 
