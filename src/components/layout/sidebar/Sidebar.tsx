@@ -7,6 +7,8 @@ import { useEffect } from "react";
 import { MusicControlBar } from "@/components/radio/MusicControlBar";
 import type { ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { getTerm } from "@/lib/terminology";
+import { useProjectStore } from "@/store/projectStore";
 import { type SidebarPanel, useUiStore } from "@/store/uiStore";
 import { AgentsNav } from "./AgentsNav";
 import { BibleNav } from "./BibleNav";
@@ -19,12 +21,6 @@ interface PanelDef {
   requiresAi?: boolean;
 }
 
-const ALL_PANELS: PanelDef[] = [
-  { id: "chapters", label: "Chapters", icon: FileText },
-  { id: "bible", label: "Bible", icon: BookOpen },
-  { id: "agents", label: "Agents", icon: Bot, requiresAi: true },
-];
-
 export function Sidebar() {
   const params = useParams<{ projectId: ProjectId }>();
   const projectId = params.projectId;
@@ -34,8 +30,14 @@ export function Sidebar() {
   const openModal = useUiStore((s) => s.openModal);
   const settings = useAppSettings();
   const aiEnabled = settings?.enableAiFeatures ?? false;
+  const projectMode = useProjectStore((s) => s.activeProjectMode);
 
-  const panels = ALL_PANELS.filter((p) => !p.requiresAi || aiEnabled);
+  const allPanels: PanelDef[] = [
+    { id: "chapters", label: getTerm(projectMode, "chapters"), icon: FileText },
+    { id: "bible", label: "Bible", icon: BookOpen },
+    { id: "agents", label: "Agents", icon: Bot, requiresAi: true },
+  ];
+  const panels = allPanels.filter((p) => !p.requiresAi || aiEnabled);
 
   // If the user disables AI features while the agents panel is selected,
   // fall back to chapters so the empty panel doesn't get stuck.

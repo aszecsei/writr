@@ -19,6 +19,8 @@ import {
 import { useOutlineGridDragDrop } from "@/hooks/outline/useOutlineGridDragDrop";
 import { useOutlineGridOperations } from "@/hooks/outline/useOutlineGridOperations";
 import { depthMap, isManuscriptDocument } from "@/lib/binder/tree";
+import { getTerm } from "@/lib/terminology";
+import { useProjectStore } from "@/store/projectStore";
 import {
   type ContextMenuTarget,
   OutlineGridContextMenu,
@@ -37,6 +39,8 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   const rows = useOutlineGridRows(projectId);
   const cellsMap = useOutlineGridCellsMap(projectId);
   const chapters = useChaptersByProject(projectId);
+  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const chapterTerm = getTerm(projectMode, "chapter");
 
   const { localRows, onDragStart, onDragOver, onDragEnd } =
     useOutlineGridDragDrop(rows);
@@ -148,7 +152,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
             <thead className="sticky top-0 z-20">
               <tr>
                 <th className="sticky left-0 z-30 min-w-[180px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
-                  Chapter
+                  {chapterTerm}
                 </th>
                 {/* Fixed, non-editable */}
                 <th className="min-w-[90px] border border-neutral-200 bg-neutral-100 px-3 py-2 text-left text-sm font-medium text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
@@ -180,6 +184,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
                   columns={columns}
                   cellsMap={cellsMap}
                   highlightCellId={highlightCellId}
+                  chapterTerm={chapterTerm}
                   chapterTitle={
                     row.linkedChapterId
                       ? chapterMap.get(row.linkedChapterId)?.title
@@ -236,6 +241,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
           target={contextMenu.target}
           currentColor={currentCellColor}
           availableChapters={availableChapters}
+          chapterTerm={chapterTerm}
           onClose={closeContextMenu}
           onInsertRowAbove={operations.handleInsertRowAbove}
           onInsertRowBelow={operations.handleInsertRowBelow}
@@ -256,9 +262,10 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
           title="Delete linked row?"
           message={
             <>
-              This row is linked to the chapter{" "}
+              This row is linked to the {chapterTerm.toLowerCase()}{" "}
               <strong>"{deleteConfirm.chapterTitle}"</strong>. You can delete
-              just the row or delete both the row and chapter.
+              just the row or delete both the row and{" "}
+              {chapterTerm.toLowerCase()}.
             </>
           }
           variant="danger"
@@ -266,7 +273,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
           onConfirm={handleConfirmDeleteRow}
           onCancel={() => setDeleteConfirm(null)}
           extraAction={{
-            label: "Delete row and chapter",
+            label: `Delete row and ${chapterTerm.toLowerCase()}`,
             onClick: handleConfirmDeleteRowAndChapter,
           }}
         />

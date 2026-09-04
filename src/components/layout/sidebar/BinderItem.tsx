@@ -31,6 +31,8 @@ export interface BinderItemShared {
   /** Scene count per chapter (Model D). A chapter with >1 scene shows a scene
    *  chevron and a "N scenes" subtitle. */
   sceneCounts: Map<ChapterId, number>;
+  /** Lowercase plural scene term for the "N scenes" subtitle, mode-aware. */
+  sceneTerm: string;
   /** Which chapters are expanded to show their scene rows. */
   openChapters: Record<string, boolean>;
   onToggleChapterOpen: (id: ChapterId) => void;
@@ -190,7 +192,7 @@ export function BinderItem({
           )}
           {sceneCount > 1 && (
             <span className="text-neutral-300 dark:text-neutral-600">
-              {sceneCount} scenes ·
+              {sceneCount} {shared.sceneTerm} ·
             </span>
           )}
           {hasChildren && own > 0 && (

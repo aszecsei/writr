@@ -249,6 +249,7 @@ export function BinderSection({
   const setChapterOpen = useUiStore((s) => s.setChapterOpen);
   const projectMode = useProjectStore((s) => s.activeProjectMode);
   const sceneTerm = getTerm(projectMode, "scene");
+  const sceneCountTerm = getTerm(projectMode, "scenes").toLowerCase();
   const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
 
   // Scene rows (Model D). Group the project's scenes by chapter so the binder
@@ -554,6 +555,7 @@ export function BinderSection({
     onSeparatorOpen: (id) =>
       openModal({ id: "separator-settings", chapterId: id }),
     sceneCounts,
+    sceneTerm: sceneCountTerm,
     openChapters,
     onToggleChapterOpen: toggleChapterOpen,
     // Highlight the target chapter only for a cross-chapter scene drag.

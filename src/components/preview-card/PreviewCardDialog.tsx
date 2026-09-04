@@ -20,6 +20,8 @@ import {
 } from "@/lib/preview-card/generate";
 import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
 import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
+import { getTerm } from "@/lib/terminology";
+import { useProjectStore } from "@/store/projectStore";
 import { isPreviewCardModal, useUiStore } from "@/store/uiStore";
 import { PreviewCardCanvas } from "./PreviewCardCanvas";
 
@@ -42,6 +44,7 @@ export function PreviewCardDialog() {
   const closeModal = useUiStore((s) => s.closeModal);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
+  const projectMode = useProjectStore((s) => s.activeProjectMode);
 
   const [template, setTemplate] = useState<CardTemplate>("minimal");
   const [aspectRatio, setAspectRatio] = useState<CardAspectRatio>("square");
@@ -171,7 +174,7 @@ export function PreviewCardDialog() {
                 onChange={(e) => setShowChapterTitle(e.target.checked)}
                 className={CHECKBOX_CLASS}
               />
-              Chapter title
+              {getTerm(projectMode, "chapter")} title
             </label>
           </div>
         </fieldset>

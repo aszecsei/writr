@@ -110,7 +110,7 @@ export function AnalysisPanel() {
               {analysis.counts.words.toLocaleString()} words ·{" "}
               {analysis.counts.sentences.toLocaleString()} sentences
               {result.aggregate &&
-                ` · ${result.aggregate.chapterCount.toLocaleString()} documents`}
+                ` · ${result.aggregate.chapterCount.toLocaleString()} ${getTerm(projectMode, "chapters").toLowerCase()}`}
             </p>
             <div className="border-t border-neutral-200 dark:border-neutral-800">
               <TextComplexitySection
