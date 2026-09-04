@@ -277,7 +277,7 @@ export class GrammarService {
  * "ignore" suppresses the same issue wherever it recurs in the document.
  */
 export function ignoreKey(kind: string, problemText: string): string {
-  return `${kind} ${problemText}`;
+  return `${kind}\u0000${problemText}`;
 }
 
 // Singleton instance

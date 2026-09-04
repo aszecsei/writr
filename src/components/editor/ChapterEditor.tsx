@@ -574,7 +574,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // plugin; a meta-only dispatch rebuilds its label decorations without marking
   // the editor dirty. A mode switch recreates the editor, refreshing the term.
   const sceneTitlesKey = useMemo(
-    () => (scenes ?? []).map((s) => `${s.id} ${s.title}`).join("\n"),
+    () => (scenes ?? []).map((s) => `${s.id}\u0000${s.title}`).join("\n"),
     [scenes],
   );
   // biome-ignore lint/correctness/useExhaustiveDependencies: sceneTitlesKey is the intentional trigger; the map is rebuilt from the latest scenesRef
