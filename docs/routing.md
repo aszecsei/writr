@@ -10,6 +10,7 @@ Next.js App Router (`src/app/`). Every page is `"use client"` because data lives
 /projects/[projectId]/chapters/[chapterId]   Chapter editor (TipTap)
 /projects/[projectId]/outline                Outline grid view
 /projects/[projectId]/search                 Project-wide search
+/projects/[projectId]/agents                       Agent list (Global / Project), links to editors
 /projects/[projectId]/agents/definitions/new       New agent-definition editor
 /projects/[projectId]/agents/definitions/[agentId] Agent-definition editor (built-in or user)
 

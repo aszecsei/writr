@@ -38,6 +38,14 @@ describe("navigation commands", () => {
     const nav = command("nav.outline");
     expect(nav.when?.(ctx)).toBe(false);
   });
+
+  it("go to agents pushes the agents list route", () => {
+    const ctx = context();
+    command("nav.agents").run(ctx);
+    expect(ctx.router.push).toHaveBeenCalledWith(
+      `/projects/${projectId}/agents`,
+    );
+  });
 });
 
 describe("create commands", () => {
