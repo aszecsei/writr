@@ -2,6 +2,7 @@
 
 import { Dices } from "lucide-react";
 import { useState } from "react";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { createBrainstormIdea, updateBrainstormSetup } from "@/db/operations";
 import type { BrainstormColumn, BrainstormSetup } from "@/db/schemas";
@@ -98,7 +99,7 @@ export function BrainstormWorkspace({
           type="button"
           onClick={randomize}
           disabled={!canRandomize}
-          className="inline-flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:hover:bg-primary-400"
+          className={`inline-flex items-center gap-2 ${BUTTON_PRIMARY}`}
         >
           <Dices size={16} />
           Randomize

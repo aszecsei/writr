@@ -2,19 +2,20 @@
 
 import { useParams } from "next/navigation";
 import { ChapterEditor } from "@/components/editor/ChapterEditor";
+import { Spinner } from "@/components/ui/Spinner";
 import type { ChapterId } from "@/db/schemas";
-import { useProjectStore } from "@/store/projectStore";
+import { useActiveProject } from "@/hooks/data/useProject";
 
 export default function ChapterEditorPage() {
   const params = useParams<{ chapterId: ChapterId }>();
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProject = useActiveProject();
 
-  // Wait for project mode to be set in the store (via layout useEffect)
-  // before mounting the editor — otherwise it initializes with wrong extensions
-  if (!activeProjectMode) {
+  // Wait for the active project to load before mounting the editor —
+  // otherwise it initializes with wrong extensions
+  if (!activeProject) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+        <Spinner />
       </div>
     );
   }

@@ -1,4 +1,8 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import {
+  extractTextBlocks,
+  flattenBlock,
+} from "@/lib/prosemirror/extract-text-blocks";
 
 /**
  * A block of prose extracted from a ProseMirror document, ready to hand to
@@ -30,54 +34,12 @@ export interface GrammarBlock {
 export function extractBlocks(doc: ProseMirrorNode): GrammarBlock[] {
   const blocks: GrammarBlock[] = [];
 
-  doc.descendants((node, pos) => {
-    // Code blocks are not prose — skip the whole subtree.
-    if (node.type.name === "codeBlock") {
-      return false;
+  for (const block of extractTextBlocks(doc)) {
+    const { text, offsets } = flattenBlock(block);
+    if (text.length > 0) {
+      blocks.push({ text, offsets });
     }
-
-    // Descend into containers (doc, blockquote, list items) until we reach a
-    // leaf textblock whose inline content we can read directly.
-    if (!node.isTextblock) {
-      return true;
-    }
-
-    const chars: string[] = [];
-    const offsets: number[] = [];
-    // A textblock's inline content begins one position after the node itself.
-    const contentStart = pos + 1;
-
-    node.forEach((child, offset) => {
-      const childStart = contentStart + offset;
-
-      if (child.isText && child.text) {
-        // Inline code is not prose; replace with a single space so it still
-        // acts as a word boundary without polluting the grammar check.
-        if (child.marks.some((mark) => mark.type.name === "code")) {
-          chars.push(" ");
-          offsets.push(childStart);
-          return;
-        }
-        for (let k = 0; k < child.text.length; k++) {
-          chars.push(child.text[k]);
-          offsets.push(childStart + k);
-        }
-        return;
-      }
-
-      // Hard breaks become newlines; other inline atoms (e.g. inline images)
-      // become a space. Either way the mapped position points at the atom.
-      chars.push(child.type.name === "hardBreak" ? "\n" : " ");
-      offsets.push(childStart);
-    });
-
-    if (chars.length > 0) {
-      blocks.push({ text: chars.join(""), offsets });
-    }
-
-    // We've consumed this textblock's inline content; don't descend again.
-    return false;
-  });
+  }
 
   return blocks;
 }

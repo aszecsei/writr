@@ -1,4 +1,5 @@
 import type { Character, Location } from "@/db/schemas";
+import { wordsOf } from "@/lib/text/words-of";
 
 /**
  * Extract names from story bible entities that should be recognized as valid words.
@@ -12,7 +13,7 @@ function extractNamesFromBible(
 
   for (const char of characters) {
     // Add character name (split on spaces to get individual words)
-    const nameParts = char.name.split(/\s+/);
+    const nameParts = wordsOf(char.name);
     for (const part of nameParts) {
       const cleaned = part.toLowerCase().trim();
       if (cleaned.length >= 2) {
@@ -24,7 +25,7 @@ function extractNamesFromBible(
     // Add aliases
     if (char.aliases) {
       for (const alias of char.aliases) {
-        const aliasParts = alias.split(/\s+/);
+        const aliasParts = wordsOf(alias);
         for (const part of aliasParts) {
           const cleaned = part.toLowerCase().trim();
           if (cleaned.length >= 2) {
@@ -38,7 +39,7 @@ function extractNamesFromBible(
 
   for (const loc of locations) {
     // Add location name (split on spaces to get individual words)
-    const nameParts = loc.name.split(/\s+/);
+    const nameParts = wordsOf(loc.name);
     for (const part of nameParts) {
       const cleaned = part.toLowerCase().trim();
       if (cleaned.length >= 2) {

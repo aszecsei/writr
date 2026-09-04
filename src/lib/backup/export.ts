@@ -1,7 +1,9 @@
 import { db } from "@/db/database";
 import { updateAppSettings } from "@/db/operations";
 import type { ProjectId } from "@/db/schemas";
-import { triggerDownload } from "@/lib/export/download";
+import { APP_DICTIONARY_ID, APP_SETTINGS_ID } from "@/lib/constants";
+import { triggerDownload } from "@/lib/download";
+import { sanitizeFilename } from "@/lib/filename";
 import {
   BACKUP_VERSION,
   type Backup,
@@ -98,8 +100,8 @@ export async function exportProject(
 
 export async function exportFullBackup(): Promise<FullBackup> {
   const allProjects = await db.projects.toArray();
-  const appSettings = await db.appSettings.get("app-settings");
-  const appDictionary = await db.appDictionary.get("app-dictionary");
+  const appSettings = await db.appSettings.get(APP_SETTINGS_ID);
+  const appDictionary = await db.appDictionary.get(APP_DICTIONARY_ID);
 
   const [savedPrompts, brainstormSetups, brainstormIdeas] = await Promise.all([
     db.savedPrompts.toArray(),
@@ -132,13 +134,6 @@ export async function exportFullBackup(): Promise<FullBackup> {
 function createBackupBlob(backup: Backup): Blob {
   const json = JSON.stringify(backup, null, 2);
   return new Blob([json], { type: "application/json" });
-}
-
-function sanitizeFilename(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 function formatDate(date: Date): string {

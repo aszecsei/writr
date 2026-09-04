@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import type {
   EditorWidth,
   NeutralColor,
@@ -13,6 +14,10 @@ import {
   PRIMARY_OPTIONS,
   UI_DENSITY_OPTIONS,
 } from "@/lib/theme/palettes";
+import type {
+  AppSettingsDraft,
+  SetAppSettingsField,
+} from "./AppSettingsDialog";
 
 const THEME_OPTIONS = [
   { value: "system", label: "System" },
@@ -21,33 +26,21 @@ const THEME_OPTIONS = [
 ] as const;
 
 interface AppearanceSettingsProps {
-  theme: "light" | "dark" | "system";
-  onThemeChange: (theme: "light" | "dark" | "system") => void;
-  primaryColor: PrimaryColor;
+  draft: AppSettingsDraft;
+  setField: SetAppSettingsField;
   onPrimaryColorChange: (color: PrimaryColor) => void;
-  neutralColor: NeutralColor;
   onNeutralColorChange: (color: NeutralColor) => void;
-  editorWidth: EditorWidth;
   onEditorWidthChange: (width: EditorWidth) => void;
-  uiDensity: UiDensity;
   onUiDensityChange: (density: UiDensity) => void;
-  inputClass: string;
-  labelClass: string;
 }
 
 export function AppearanceSettings({
-  theme,
-  onThemeChange,
-  primaryColor,
+  draft,
+  setField,
   onPrimaryColorChange,
-  neutralColor,
   onNeutralColorChange,
-  editorWidth,
   onEditorWidthChange,
-  uiDensity,
   onUiDensityChange,
-  inputClass,
-  labelClass,
 }: AppearanceSettingsProps) {
   return (
     <fieldset>
@@ -56,14 +49,14 @@ export function AppearanceSettings({
       </legend>
       <div className="mt-3 space-y-5">
         {/* Theme */}
-        <label className={labelClass}>
+        <label className={LABEL_CLASS}>
           Theme
           <select
-            value={theme}
+            value={draft.theme}
             onChange={(e) =>
-              onThemeChange(e.target.value as "light" | "dark" | "system")
+              setField("theme", e.target.value as "light" | "dark" | "system")
             }
-            className={inputClass}
+            className={INPUT_CLASS}
           >
             {THEME_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -75,7 +68,7 @@ export function AppearanceSettings({
 
         {/* Primary color */}
         <div>
-          <span className={labelClass}>Accent Color</span>
+          <span className={LABEL_CLASS}>Accent Color</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {PRIMARY_OPTIONS.map((opt) => (
               <button
@@ -87,14 +80,16 @@ export function AppearanceSettings({
                 style={{
                   backgroundColor: opt.swatch,
                   borderColor:
-                    primaryColor === opt.name ? opt.swatch : "transparent",
+                    draft.primaryColor === opt.name
+                      ? opt.swatch
+                      : "transparent",
                   boxShadow:
-                    primaryColor === opt.name
+                    draft.primaryColor === opt.name
                       ? `0 0 0 2px var(--background), 0 0 0 4px ${opt.swatch}`
                       : "none",
                 }}
               >
-                {primaryColor === opt.name && (
+                {draft.primaryColor === opt.name && (
                   <Check size={14} className="text-white" strokeWidth={3} />
                 )}
               </button>
@@ -104,7 +99,7 @@ export function AppearanceSettings({
 
         {/* Neutral color */}
         <div>
-          <span className={labelClass}>Chrome Color</span>
+          <span className={LABEL_CLASS}>Chrome Color</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {NEUTRAL_OPTIONS.map((opt) => (
               <button
@@ -116,14 +111,16 @@ export function AppearanceSettings({
                 style={{
                   backgroundColor: opt.swatch,
                   borderColor:
-                    neutralColor === opt.name ? opt.swatch : "transparent",
+                    draft.neutralColor === opt.name
+                      ? opt.swatch
+                      : "transparent",
                   boxShadow:
-                    neutralColor === opt.name
+                    draft.neutralColor === opt.name
                       ? `0 0 0 2px var(--background), 0 0 0 4px ${opt.swatch}`
                       : "none",
                 }}
               >
-                {neutralColor === opt.name && (
+                {draft.neutralColor === opt.name && (
                   <Check size={14} className="text-white" strokeWidth={3} />
                 )}
               </button>
@@ -133,7 +130,7 @@ export function AppearanceSettings({
 
         {/* Editor width */}
         <div>
-          <span className={labelClass}>Editor Width</span>
+          <span className={LABEL_CLASS}>Editor Width</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {EDITOR_WIDTH_OPTIONS.map((opt) => (
               <button
@@ -141,7 +138,7 @@ export function AppearanceSettings({
                 type="button"
                 onClick={() => onEditorWidthChange(opt.value)}
                 className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                  editorWidth === opt.value
+                  draft.editorWidth === opt.value
                     ? "border-primary-600 bg-primary-600 text-white dark:border-primary-500 dark:bg-primary-500"
                     : "border-neutral-200 text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600"
                 }`}
@@ -154,7 +151,7 @@ export function AppearanceSettings({
 
         {/* UI density */}
         <div>
-          <span className={labelClass}>UI Density</span>
+          <span className={LABEL_CLASS}>UI Density</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {UI_DENSITY_OPTIONS.map((opt) => (
               <button
@@ -162,7 +159,7 @@ export function AppearanceSettings({
                 type="button"
                 onClick={() => onUiDensityChange(opt.value)}
                 className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                  uiDensity === opt.value
+                  draft.uiDensity === opt.value
                     ? "border-primary-600 bg-primary-600 text-white dark:border-primary-500 dark:bg-primary-500"
                     : "border-neutral-200 text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-600"
                 }`}

@@ -40,9 +40,8 @@ function parseInlineFormatting(text: string): ProseMirrorNodeJSON[] {
   const regex = /(\*{3})(.*?)\1|(\*{2})(.*?)\3|(\*)(.*?)\5|(_)(.*?)\7/g;
 
   let lastIndex = 0;
-  let match = regex.exec(text);
 
-  while (match !== null) {
+  for (const match of text.matchAll(regex)) {
     // Add any plain text before this match
     if (match.index > lastIndex) {
       nodes.push({ type: "text", text: text.slice(lastIndex, match.index) });
@@ -79,7 +78,6 @@ function parseInlineFormatting(text: string): ProseMirrorNodeJSON[] {
     }
 
     lastIndex = match.index + match[0].length;
-    match = regex.exec(text);
   }
 
   // Add any remaining plain text

@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import type { EntityImage, EntityImageId } from "@/db/schemas";
 import { computeFocalPoint } from "@/lib/images/focal-point";
+import { isImageLightboxModal, useUiStore } from "@/store/uiStore";
 import { AddImageDialog } from "./AddImageDialog";
 import { ImageLightbox } from "./ImageLightbox";
 
@@ -36,12 +37,18 @@ export function ImageGallery({
   onUpdateImage,
   readOnly,
 }: ImageGalleryProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<EntityImage | null>(null);
+  const modal = useUiStore((s) => s.modal);
+  const openModal = useUiStore((s) => s.openModal);
+  const closeModal = useUiStore((s) => s.closeModal);
   const [editingFocalId, setEditingFocalId] = useState<EntityImageId | null>(
     null,
   );
   const [suggestingId, setSuggestingId] = useState<EntityImageId | null>(null);
+
+  const lightboxImage =
+    isImageLightboxModal(modal) && modal.imageId
+      ? (images.find((img) => img.id === modal.imageId) ?? null)
+      : null;
 
   async function handleSuggestFocal(img: EntityImage) {
     setSuggestingId(img.id);
@@ -75,7 +82,7 @@ export function ImageGallery({
     img: EntityImage,
   ) {
     if (editingFocalId !== img.id) {
-      setLightboxImage(img);
+      openModal({ id: "image-lightbox", imageId: img.id });
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
@@ -211,24 +218,21 @@ export function ImageGallery({
       {!readOnly && (
         <button
           type="button"
-          onClick={() => setShowAddDialog(true)}
+          onClick={() => openModal({ id: "add-image" })}
           className="mt-3 flex items-center gap-1.5 rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm text-neutral-500 transition-colors hover:border-neutral-400 hover:text-neutral-700 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-300"
         >
           <ImagePlus size={14} />
           Add Image
         </button>
       )}
-      {!readOnly && showAddDialog && (
-        <AddImageDialog
-          onAdd={handleAdd}
-          onClose={() => setShowAddDialog(false)}
-        />
+      {!readOnly && modal.id === "add-image" && (
+        <AddImageDialog onAdd={handleAdd} onClose={closeModal} />
       )}
       {lightboxImage && (
         <ImageLightbox
           url={lightboxImage.url}
           caption={lightboxImage.caption}
-          onClose={() => setLightboxImage(null)}
+          onClose={closeModal}
         />
       )}
     </div>

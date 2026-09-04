@@ -13,8 +13,6 @@ export default function CharacterDetailPage() {
     <CharacterDetailBody
       projectId={params.projectId}
       characterId={params.characterId}
-      basePath={`/projects/${params.projectId}`}
-      readOnly={false}
     />
   );
 }

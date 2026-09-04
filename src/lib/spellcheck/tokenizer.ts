@@ -1,4 +1,8 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import {
+  extractTextBlocks,
+  flattenBlock,
+} from "@/lib/prosemirror/extract-text-blocks";
 
 export interface WordToken {
   word: string;
@@ -16,22 +20,18 @@ const SMART_APOSTROPHES = /[‘’ʼ]/g;
 export function extractWords(doc: ProseMirrorNode): WordToken[] {
   const words: WordToken[] = [];
 
-  doc.descendants((node, pos) => {
-    // Skip code blocks
-    if (node.type.name === "codeBlock") {
-      return false;
-    }
+  for (const block of extractTextBlocks(doc)) {
+    const { text, offsets } = flattenBlock(block);
+    if (text.length === 0) continue;
 
-    if (node.isText && node.text) {
-      if (node.marks.some((mark) => mark.type.name === "code")) {
-        return true;
-      }
-      const tokens = tokenizeText(node.text, pos);
-      words.push(...tokens);
+    for (const token of tokenizeText(text, 0)) {
+      words.push({
+        word: token.word,
+        from: offsets[token.from],
+        to: offsets[token.to - 1] + 1,
+      });
     }
-
-    return true;
-  });
+  }
 
   return words;
 }

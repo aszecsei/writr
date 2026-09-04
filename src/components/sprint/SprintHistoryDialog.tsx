@@ -1,7 +1,7 @@
 "use client";
 
 import { History, Trash2 } from "lucide-react";
-import { BUTTON_CANCEL } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
 import { Modal } from "@/components/ui/Modal";
 import { deleteSprint } from "@/db/operations";
 import type { WritingSprint } from "@/db/schemas";
@@ -9,28 +9,9 @@ import {
   useSprintHistory,
   useSprintStats,
 } from "@/hooks/writing/useSprintHistory";
+import { formatSprintDate, formatSprintDuration } from "@/lib/format-time";
 import { useProjectStore } from "@/store/projectStore";
-import { useSprintStore } from "@/store/sprintStore";
-
-function formatDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-}
-
-function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+import { useUiStore } from "@/store/uiStore";
 
 function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
   const wordsWritten =
@@ -73,8 +54,8 @@ function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>{formatDate(sprint.startedAt)}</span>
-          <span>{formatDuration(actualDuration)}</span>
+          <span>{formatSprintDate(sprint.startedAt)}</span>
+          <span>{formatSprintDuration(actualDuration)}</span>
           <span>{wpm} wpm</span>
         </div>
       </div>
@@ -91,17 +72,17 @@ function SprintHistoryItem({ sprint }: { sprint: WritingSprint }) {
 }
 
 export function SprintHistoryDialog() {
-  const historyModalOpen = useSprintStore((s) => s.historyModalOpen);
-  const closeHistoryModal = useSprintStore((s) => s.closeHistoryModal);
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
   const projectId = useProjectStore((s) => s.activeProjectId);
 
   const sprints = useSprintHistory(projectId);
   const stats = useSprintStats(projectId);
 
-  if (!historyModalOpen) return null;
+  if (modal.id !== "sprint-history") return null;
 
   return (
-    <Modal onClose={closeHistoryModal} maxWidth="max-w-lg">
+    <Modal onClose={closeModal} maxWidth="max-w-lg">
       <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
         <History size={18} />
         Sprint History
@@ -156,14 +137,8 @@ export function SprintHistoryDialog() {
       </div>
 
       {/* Close button */}
-      <div className="mt-5 flex justify-end">
-        <button
-          type="button"
-          onClick={closeHistoryModal}
-          className={BUTTON_CANCEL}
-        >
-          Close
-        </button>
+      <div className="mt-5">
+        <CloseFooter onClose={closeModal} />
       </div>
     </Modal>
   );

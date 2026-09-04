@@ -1,5 +1,6 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type Nspell from "nspell";
+import { createLazyService } from "@/lib/lazy-service";
 import { getCachedFile, setCachedFile } from "./dictionary-cache";
 import { extractWords, shouldSkipWord } from "./tokenizer";
 
@@ -14,22 +15,14 @@ export interface SpellcheckResult {
 const DICTIONARY_BASE_URL = "https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0";
 
 export class SpellcheckService {
-  private nspell: Nspell | null = null;
-  private loading = false;
-  private loadPromise: Promise<void> | null = null;
+  private lazy = createLazyService(() => this.loadNspell());
   private customWords: Set<string> = new Set();
 
   async load(): Promise<void> {
-    if (this.nspell) return;
-    if (this.loadPromise) return this.loadPromise;
-
-    this.loading = true;
-    this.loadPromise = this.doLoad();
-    await this.loadPromise;
-    this.loading = false;
+    return this.lazy.load();
   }
 
-  private async doLoad(): Promise<void> {
+  private async loadNspell(): Promise<Nspell> {
     try {
       // Try loading dictionary files from IndexedDB cache first
       const [nspellModule, cachedAff, cachedDic] = await Promise.all([
@@ -66,7 +59,7 @@ export class SpellcheckService {
       }
 
       const nspell = nspellModule.default;
-      this.nspell = nspell(aff, dic);
+      return nspell(aff, dic);
     } catch (error) {
       console.error("Failed to load spellcheck dictionary:", error);
       throw error;
@@ -74,11 +67,11 @@ export class SpellcheckService {
   }
 
   isLoaded(): boolean {
-    return this.nspell !== null;
+    return this.lazy.isLoaded();
   }
 
   isLoading(): boolean {
-    return this.loading;
+    return this.lazy.isLoading();
   }
 
   /**
@@ -92,7 +85,8 @@ export class SpellcheckService {
    * Check if a single word is spelled correctly.
    */
   isCorrect(word: string): boolean {
-    if (!this.nspell) return true;
+    const nspell = this.lazy.get();
+    if (!nspell) return true;
 
     const lower = word.toLowerCase();
 
@@ -100,15 +94,16 @@ export class SpellcheckService {
     if (this.customWords.has(lower)) return true;
 
     // Check nspell
-    return this.nspell.correct(word);
+    return nspell.correct(word);
   }
 
   /**
    * Get spelling suggestions for a word.
    */
   suggest(word: string, limit = 5): string[] {
-    if (!this.nspell) return [];
-    return this.nspell.suggest(word).slice(0, limit);
+    const nspell = this.lazy.get();
+    if (!nspell) return [];
+    return nspell.suggest(word).slice(0, limit);
   }
 
   /**
@@ -126,7 +121,7 @@ export class SpellcheckService {
     doc: ProseMirrorNode,
     ignoredWords?: Set<string>,
   ): SpellcheckResult[] {
-    if (!this.nspell) return [];
+    if (!this.lazy.isLoaded()) return [];
 
     const tokens = extractWords(doc);
     const results: SpellcheckResult[] = [];

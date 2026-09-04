@@ -21,6 +21,11 @@ import { ImageGallery } from "@/components/bible/ImageGallery";
 import { RoleBadge } from "@/components/bible/RoleBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { MarkdownField } from "@/components/ui/MarkdownField";
+import {
+  useDataSource,
+  useProjectHref,
+  useReadOnly,
+} from "@/context/DataSourceContext";
 import { deleteCharacter, updateCharacter } from "@/db/operations";
 import type {
   CharacterId,
@@ -29,26 +34,22 @@ import type {
   ProjectId,
 } from "@/db/schemas";
 import {
+  useChaptersByProject,
   useCharacter,
   useCharactersByProject,
   useLocationsByProject,
+  useProject,
   useRelationshipsByProject,
 } from "@/hooks/data/source";
-import { useChaptersByProject } from "@/hooks/data/useChapter";
 import { useScenesByProject } from "@/hooks/data/useScene";
 import { useCharacterForm } from "@/hooks/forms/useCharacterForm";
 import { getInitials } from "@/lib/characters/initials";
 import { getTerm } from "@/lib/terminology";
 import { useEditorStore } from "@/store/editorStore";
-import { useProjectStore } from "@/store/projectStore";
 
 export interface CharacterDetailBodyProps {
   projectId: ProjectId;
   characterId: CharacterId;
-  /** URL prefix without trailing slash; e.g. `/projects/abc` or
-   *  `/shared/room/projects/abc`. Used for back navigation. */
-  basePath: string;
-  readOnly: boolean;
 }
 
 /** Plain (non-collapsing) section heading: icon + title. */
@@ -72,18 +73,19 @@ function SectionHeading({
 export function CharacterDetailBody({
   projectId,
   characterId,
-  basePath,
-  readOnly,
 }: CharacterDetailBodyProps) {
   const router = useRouter();
+  const source = useDataSource();
+  const basePath = useProjectHref(projectId);
+  const readOnly = useReadOnly();
   const character = useCharacter(characterId);
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
   const relationships = useRelationshipsByProject(projectId);
-  const scenes = useScenesByProject(projectId);
+  const scenes = useScenesByProject(source.kind === "dexie" ? projectId : null);
   const chapters = useChaptersByProject(projectId);
   const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useProject(projectId)?.mode ?? null;
   const {
     form,
     setField,

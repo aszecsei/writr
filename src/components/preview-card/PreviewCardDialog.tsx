@@ -9,15 +9,17 @@ import {
   RADIO_BASE,
   RADIO_INACTIVE,
 } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
+import { CHECKBOX_CLASS, LEGEND_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useActiveProject } from "@/hooks/data/useProject";
+import { triggerDownload } from "@/lib/download";
 import { getEditorFont } from "@/lib/fonts";
-import {
-  downloadBlob,
-  generatePreviewImage,
-} from "@/lib/preview-card/generate";
+import { generatePreviewImage } from "@/lib/preview-card/generate";
 import { ASPECT_RATIOS, TEMPLATES } from "@/lib/preview-card/templates";
 import type { CardAspectRatio, CardTemplate } from "@/lib/preview-card/types";
+import { getTerm } from "@/lib/terminology";
 import { isPreviewCardModal, useUiStore } from "@/store/uiStore";
 import { PreviewCardCanvas } from "./PreviewCardCanvas";
 
@@ -40,6 +42,7 @@ export function PreviewCardDialog() {
   const closeModal = useUiStore((s) => s.closeModal);
   const settings = useAppSettings();
   const editorFont = getEditorFont(settings?.editorFont ?? "literata");
+  const projectMode = useActiveProject()?.mode ?? null;
 
   const [template, setTemplate] = useState<CardTemplate>("minimal");
   const [aspectRatio, setAspectRatio] = useState<CardAspectRatio>("square");
@@ -56,18 +59,20 @@ export function PreviewCardDialog() {
 
   if (!selectedHtml) {
     return (
-      <Modal onClose={closeModal}>
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          <ImagePlus size={18} />
-          Preview Card
-        </h2>
+      <Modal
+        onClose={closeModal}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <ImagePlus size={18} />
+            Preview Card
+          </span>
+        }
+      >
         <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
           Select some text in the editor to create a preview card.
         </p>
-        <div className="mt-5 flex justify-end">
-          <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-            Close
-          </button>
+        <div className="mt-5">
+          <CloseFooter onClose={closeModal} />
         </div>
       </Modal>
     );
@@ -82,7 +87,7 @@ export function PreviewCardDialog() {
     try {
       const blob = await generatePreviewImage(canvasRef.current);
       const filename = `${projectTitle.toLowerCase().replace(/\s+/g, "-")}-preview.png`;
-      downloadBlob(blob, filename);
+      triggerDownload(blob, filename);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate image");
     } finally {
@@ -91,12 +96,16 @@ export function PreviewCardDialog() {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-2xl">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <ImagePlus size={18} />
-        Preview Card
-      </h2>
-
+    <Modal
+      onClose={closeModal}
+      maxWidth="max-w-2xl"
+      title={
+        <span className="inline-flex items-center gap-2">
+          <ImagePlus size={18} />
+          Preview Card
+        </span>
+      }
+    >
       <div className="mt-5 space-y-5">
         <div className="flex justify-center rounded-lg bg-neutral-100 p-4 dark:bg-neutral-800">
           <PreviewCardCanvas
@@ -113,9 +122,7 @@ export function PreviewCardDialog() {
         </div>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Template
-          </legend>
+          <legend className={LEGEND_CLASS}>Template</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {TEMPLATE_OPTIONS.map((opt) => (
               <button
@@ -131,9 +138,7 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Aspect Ratio
-          </legend>
+          <legend className={LEGEND_CLASS}>Aspect Ratio</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {ASPECT_RATIO_OPTIONS.map((opt) => (
               <button
@@ -149,16 +154,14 @@ export function PreviewCardDialog() {
         </fieldset>
 
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Attribution
-          </legend>
+          <legend className={LEGEND_CLASS}>Attribution</legend>
           <div className="mt-2 flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={showWorkTitle}
                 onChange={(e) => setShowWorkTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
               Work title
             </label>
@@ -167,9 +170,9 @@ export function PreviewCardDialog() {
                 type="checkbox"
                 checked={showChapterTitle}
                 onChange={(e) => setShowChapterTitle(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
-              Chapter title
+              {getTerm(projectMode, "chapter")} title
             </label>
           </div>
         </fieldset>

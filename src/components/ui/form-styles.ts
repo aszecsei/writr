@@ -4,6 +4,12 @@ export const INPUT_CLASS =
 export const LABEL_CLASS =
   "block text-sm font-medium text-neutral-700 dark:text-neutral-300";
 
+export const CHECKBOX_CLASS =
+  "h-4 w-4 rounded border-neutral-300 dark:border-neutral-600";
+
+export const LEGEND_CLASS =
+  "text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400";
+
 export {
   BUTTON_CANCEL,
   BUTTON_PRIMARY,

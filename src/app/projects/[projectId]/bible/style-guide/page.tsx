@@ -6,5 +6,5 @@ import type { ProjectId } from "@/db/schemas";
 
 export default function StyleGuidePage() {
   const params = useParams<{ projectId: ProjectId }>();
-  return <StyleGuidePageBody projectId={params.projectId} readOnly={false} />;
+  return <StyleGuidePageBody projectId={params.projectId} />;
 }

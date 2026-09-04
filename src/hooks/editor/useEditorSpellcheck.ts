@@ -1,5 +1,6 @@
 import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useAppSettings } from "@/hooks/data/useAppSettings";
 import {
   useCharactersByProject,
   useLocationsByProject,
@@ -39,8 +40,16 @@ export function useEditorSpellcheck(projectId: string | null): SpellcheckRefs {
   const spellcheckEnabled = useSpellcheckStore((s) => s.enabled);
   const ignoredWords = useSpellcheckStore((s) => s.ignored);
   const openContextMenu = useSpellcheckStore((s) => s.openContextMenu);
+  const setSpellcheckEnabled = useSpellcheckStore((s) => s.setEnabled);
 
-  const dictionaryWords = useCombinedDictionaryWords(projectId ?? undefined);
+  const persistedSpellcheckEnabled = useAppSettings()?.spellcheckEnabled;
+  useEffect(() => {
+    if (persistedSpellcheckEnabled !== undefined) {
+      setSpellcheckEnabled(persistedSpellcheckEnabled);
+    }
+  }, [persistedSpellcheckEnabled, setSpellcheckEnabled]);
+
+  const dictionaryWords = useCombinedDictionaryWords(projectId);
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
 

@@ -3,7 +3,8 @@
 import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
@@ -15,6 +16,7 @@ import {
   updateSavedPrompt,
 } from "@/db/operations/savedPrompts";
 import type { SavedPrompt, SavedPromptId } from "@/db/schemas";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -29,7 +31,7 @@ export function SavedPromptsManager() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectTitle = useActiveProject()?.title ?? null;
 
   const prompts = useAvailableSavedPrompts(activeProjectId);
 
@@ -208,10 +210,8 @@ export function SavedPromptsManager() {
         />
       )}
 
-      <div className="mt-4 flex justify-end">
-        <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-          Close
-        </button>
+      <div className="mt-4">
+        <CloseFooter onClose={closeModal} />
       </div>
     </Modal>
   );

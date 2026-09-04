@@ -2,8 +2,12 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import type { ChapterId, ProjectId, Scene } from "@/db/schemas";
-import { createEntityHook } from "../factories";
+import type { ProjectId } from "@/db/schemas";
+import {
+  createChildListHook,
+  createEntityHook,
+  createProjectListUnsortedHook,
+} from "../factories";
 
 export const useScene = createEntityHook(db.scenes);
 
@@ -11,30 +15,14 @@ export const useScene = createEntityHook(db.scenes);
  * A chapter's scenes in order (core scene first). The correct list for the
  * sidebar scene rows and the Details panel scene overview.
  */
-export function useScenesByChapter(
-  chapterId: string | null,
-): Scene[] | undefined {
-  return useLiveQuery<Scene[]>(
-    () =>
-      chapterId
-        ? db.scenes.where({ chapterId: chapterId as ChapterId }).sortBy("order")
-        : Promise.resolve([]),
-    [chapterId],
-  );
-}
+export const useScenesByChapter = createChildListHook(
+  db.scenes,
+  "chapterId",
+  "order",
+);
 
 /** Every scene of a project — for aggregate views and strand autocomplete. */
-export function useScenesByProject(
-  projectId: string | null,
-): Scene[] | undefined {
-  return useLiveQuery<Scene[]>(
-    () =>
-      projectId
-        ? db.scenes.where({ projectId: projectId as ProjectId }).toArray()
-        : Promise.resolve([]),
-    [projectId],
-  );
-}
+export const useScenesByProject = createProjectListUnsortedHook(db.scenes);
 
 /**
  * The distinct set of strands used anywhere in a project, sorted — the source

@@ -1,36 +1,46 @@
 "use client";
 
 import { AlertTriangle, CheckCircle } from "lucide-react";
-import { useState } from "react";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { useEffect, useRef, useState } from "react";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import {
-  type Backup,
   type ConflictResolution,
   type ImportResult,
   importBackup,
   isFullBackup,
 } from "@/lib/backup";
+import { isImportBackupModal, useUiStore } from "@/store/uiStore";
 
-interface ImportBackupDialogProps {
-  backup: Backup;
-  filename: string;
-  onClose: () => void;
-  onImportComplete: (result: ImportResult) => void;
-}
+export function ImportBackupDialog() {
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
 
-export function ImportBackupDialog({
-  backup,
-  filename,
-  onClose,
-  onImportComplete,
-}: ImportBackupDialogProps) {
   const [conflictResolution, setConflictResolution] =
     useState<ConflictResolution>("skip");
   const [restoreSettings, setRestoreSettings] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  // Reset the form when the modal transitions to open — the dialog stays
+  // mounted, so without this a previous import's result/selections persist.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    const open = isImportBackupModal(modal);
+    if (open && !wasOpen.current) {
+      setConflictResolution("skip");
+      setRestoreSettings(false);
+      setIsImporting(false);
+      setResult(null);
+    }
+    wasOpen.current = open;
+  }, [modal]);
+
+  if (!isImportBackupModal(modal)) return null;
+
+  const { backup, filename } = modal;
   const isFull = isFullBackup(backup);
   const projectCount = isFull ? backup.projects.length : 1;
   const projectTitle = isFull ? null : backup.data.project.title;
@@ -44,7 +54,6 @@ export function ImportBackupDialog({
         restoreSettings: isFull && restoreSettings,
       });
       setResult(importResult);
-      onImportComplete(importResult);
     } catch (e) {
       setResult({
         success: false,
@@ -61,7 +70,7 @@ export function ImportBackupDialog({
 
   if (result) {
     return (
-      <Modal onClose={onClose} maxWidth="max-w-md">
+      <Modal onClose={closeModal} maxWidth="max-w-md">
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             {result.success ? (
@@ -106,7 +115,11 @@ export function ImportBackupDialog({
             </div>
           </div>
           <div className="flex justify-end">
-            <button type="button" onClick={onClose} className={BUTTON_PRIMARY}>
+            <button
+              type="button"
+              onClick={closeModal}
+              className={BUTTON_PRIMARY}
+            >
               Done
             </button>
           </div>
@@ -116,11 +129,7 @@ export function ImportBackupDialog({
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-md">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Import Backup
-      </h2>
-
+    <Modal onClose={closeModal} maxWidth="max-w-md" title="Import Backup">
       <div className="mt-4 space-y-4">
         <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
           <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -138,10 +147,7 @@ export function ImportBackupDialog({
         </div>
 
         <div>
-          <label
-            htmlFor="conflict-resolution"
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
+          <label htmlFor="conflict-resolution" className={LABEL_CLASS}>
             If a project already exists:
           </label>
           <select
@@ -185,23 +191,15 @@ export function ImportBackupDialog({
           </label>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isImporting}
-            className={BUTTON_CANCEL}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={isImporting}
-            className={BUTTON_PRIMARY}
-          >
-            {isImporting ? "Importing..." : "Import"}
-          </button>
+        <div className="pt-2">
+          <DialogFooter
+            onCancel={closeModal}
+            cancelDisabled={isImporting}
+            submitType="button"
+            onSubmit={handleImport}
+            submitDisabled={isImporting}
+            submitChildren={isImporting ? "Importing..." : "Import"}
+          />
         </div>
       </div>
     </Modal>

@@ -15,9 +15,9 @@ import { updateChapter } from "@/db/operations";
 import type { ChapterId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { summarizeChapter } from "@/lib/ai/client";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { isChapterPropertiesModal, useUiStore } from "@/store/uiStore";
 
 export function ChapterPropertiesDialog() {
@@ -31,7 +31,7 @@ function ChapterPropertiesDialogInner({ chapterId }: { chapterId: ChapterId }) {
   const chapter = useChapter(chapterId);
   const settings = useAppSettings();
   const closeModal = useUiStore((s) => s.closeModal);
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProjectMode = useActiveProject()?.mode ?? null;
 
   const [synopsis, setSynopsis] = useState("");
   const [staged, setStaged] = useState<string | null>(null);
@@ -103,11 +103,7 @@ function ChapterPropertiesDialogInner({ chapterId }: { chapterId: ChapterId }) {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        {term} Summary
-      </h3>
-
+    <Modal onClose={closeModal} maxWidth="max-w-lg" title={`${term} Summary`}>
       <AutoResizeTextarea
         label="Summary"
         labelClassName={LABEL_CLASS}

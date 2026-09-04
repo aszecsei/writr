@@ -66,11 +66,7 @@ export function ImageAttachmentPicker({
   ];
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-lg">
-      <h3 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Attach Image
-      </h3>
-
+    <Modal onClose={onClose} maxWidth="max-w-lg" title="Attach Image">
       {/* Tabs */}
       <div className="mb-4 flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
         {tabs.map((t) => (

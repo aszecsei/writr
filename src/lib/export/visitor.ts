@@ -1,7 +1,8 @@
 import { match } from "ts-pattern";
+import { forEachExportItem } from "./for-each-export-item";
 import type { DocNode } from "./markdown-to-nodes";
 import { markdownToNodes } from "./markdown-to-nodes";
-import type { ExportContent, ExportOptions } from "./types";
+import type { ExportContent, ExportLoopOptions } from "./types";
 
 // Named node types extracted from the DocNode union
 export type HeadingNode = Extract<DocNode, { type: "heading" }>;
@@ -60,47 +61,21 @@ export function visitNodes(nodes: DocNode[], visitor: DocNodeVisitor): void {
 export function buildExport(
   exporter: Exporter,
   content: ExportContent,
-  options: ExportOptions,
+  options: ExportLoopOptions,
 ): void {
-  if (options.includeTitlePage && options.scope === "book") {
-    exporter.addTitlePage(content.projectTitle);
-  }
-
-  for (let i = 0; i < content.chapters.length; i++) {
-    const chapter = content.chapters[i];
-
-    // A separator is a structural heading (e.g. "Part Two"); always render its
-    // label and honor its page break, regardless of includeChapterHeadings.
-    if (chapter.isSeparator) {
-      if (chapter.pageBreakBefore && options.scope === "book") {
-        exporter.addPageBreak();
-      }
-      exporter.addChapterHeading(chapter.title);
-      continue;
-    }
-
-    if (
-      i > 0 &&
-      options.pageBreaksBetweenChapters &&
-      options.scope === "book"
-    ) {
-      exporter.addPageBreak();
-    }
-
-    if (options.includeChapterHeadings) {
-      exporter.addChapterHeading(chapter.title);
-    }
-
-    const nodes = markdownToNodes(chapter.content);
-    visitNodes(nodes, exporter);
-  }
+  forEachExportItem(content, options, {
+    titlePage: (title) => exporter.addTitlePage(title),
+    pageBreak: () => exporter.addPageBreak(),
+    chapterHeading: (item) => exporter.addChapterHeading(item.title),
+    chapter: (item) => visitNodes(markdownToNodes(item.content), exporter),
+  });
 }
 
 /** Calls buildExport then toBlob(). */
 export async function runExport(
   exporter: Exporter,
   content: ExportContent,
-  options: ExportOptions,
+  options: ExportLoopOptions,
 ): Promise<Blob> {
   buildExport(exporter, content, options);
   return exporter.toBlob();

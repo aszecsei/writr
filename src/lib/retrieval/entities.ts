@@ -1,12 +1,9 @@
 import type { Character, Location } from "@/db/schemas";
+import { escapeRegExp } from "@/lib/text/escape-reg-exp";
 
 export interface MentionedEntities {
   characterIds: Set<string>;
   locationIds: Set<string>;
-}
-
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function mentions(text: string, name: string): boolean {

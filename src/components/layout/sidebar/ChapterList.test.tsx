@@ -5,7 +5,7 @@ import { db } from "@/db/database";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
-import { makeChapter, resetIdCounter } from "@/test/helpers";
+import { makeChapter, makeProject, resetIdCounter } from "@/test/helpers";
 import { ChapterList } from "./ChapterList";
 
 vi.mock("next/navigation", () => ({
@@ -22,7 +22,9 @@ describe("ChapterList", () => {
   beforeEach(async () => {
     resetIdCounter();
     await db.chapters.clear();
-    useProjectStore.setState({ activeProjectMode: "prose" });
+    await db.projects.clear();
+    await db.projects.add(makeProject({ id: projectId, title: "Draft" }));
+    useProjectStore.setState({ activeProjectId: projectId });
     useUiStore.getState().closeModal();
     useUiStore.setState({ collapsedChapters: {} });
   });

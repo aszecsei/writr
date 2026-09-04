@@ -58,6 +58,7 @@ interface OutlineGridContextMenuProps {
   target: ContextMenuTarget;
   currentColor?: OutlineCardColor;
   availableChapters?: Chapter[];
+  chapterTerm: string;
   onClose: () => void;
   onInsertRowAbove: () => void;
   onInsertRowBelow: () => void;
@@ -77,6 +78,7 @@ export function OutlineGridContextMenu({
   target,
   currentColor,
   availableChapters,
+  chapterTerm,
   onClose,
   onInsertRowAbove,
   onInsertRowBelow,
@@ -96,6 +98,7 @@ export function OutlineGridContextMenu({
   const showChapterLinking = target.type === "row";
   const isLinkedToChapter =
     target.type === "row" && target.linkedChapterId !== null;
+  const chapterTermLower = chapterTerm.toLowerCase();
 
   return (
     <ContextMenu position={position} onClose={onClose}>
@@ -118,7 +121,7 @@ export function OutlineGridContextMenu({
           <ContextMenuSeparator />
           {isLinkedToChapter ? (
             <ContextMenuItem icon={Link2Off} onClick={onUnlinkChapter}>
-              Unlink from chapter
+              Unlink from {chapterTermLower}
             </ContextMenuItem>
           ) : (
             <>
@@ -129,10 +132,10 @@ export function OutlineGridContextMenu({
                   onClose();
                 }}
               >
-                Create chapter from row
+                Create {chapterTermLower} from row
               </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuLabel>Link to chapter</ContextMenuLabel>
+              <ContextMenuLabel>Link to {chapterTermLower}</ContextMenuLabel>
               {availableChapters && availableChapters.length > 0 ? (
                 <div className="max-h-40 overflow-y-auto">
                   {availableChapters.map((chapter) => (
@@ -150,7 +153,7 @@ export function OutlineGridContextMenu({
                 </div>
               ) : (
                 <div className="px-3 py-1.5 text-sm text-neutral-400">
-                  No chapters available
+                  No {chapterTermLower}s available
                 </div>
               )}
             </>

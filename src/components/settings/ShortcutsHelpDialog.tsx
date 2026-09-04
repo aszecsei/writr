@@ -1,13 +1,13 @@
 "use client";
 
 import { Modal } from "@/components/ui/Modal";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   type CommandCategory,
   commandTitle,
   formatBinding,
   shortcutRegistry,
 } from "@/lib/shortcuts";
-import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
@@ -27,18 +27,14 @@ const CATEGORY_ORDER: CommandCategory[] = [
 export function ShortcutsHelpDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   if (modal.id !== "shortcuts-help") return null;
 
   const groups = shortcutRegistry.byCategory();
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Keyboard Shortcuts
-      </h2>
-
+    <Modal onClose={closeModal} maxWidth="max-w-lg" title="Keyboard Shortcuts">
       <div className="mt-4 space-y-5">
         {CATEGORY_ORDER.filter((category) => groups[category].length > 0).map(
           (category) => (

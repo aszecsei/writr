@@ -15,7 +15,7 @@ export function useAppDictionary(): AppDictionary | undefined {
  * Hook to get a project-level dictionary with live updates.
  */
 export function useProjectDictionary(
-  projectId: string | undefined,
+  projectId: string | null | undefined,
 ): ProjectDictionary | undefined {
   return useLiveQuery(
     () =>
@@ -30,7 +30,7 @@ export function useProjectDictionary(
  * Hook to get combined dictionary words (app + project) as a Set.
  */
 export function useCombinedDictionaryWords(
-  projectId: string | undefined,
+  projectId: string | null | undefined,
 ): Set<string> {
   const appDict = useAppDictionary();
   const projectDict = useProjectDictionary(projectId);

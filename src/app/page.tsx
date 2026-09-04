@@ -7,12 +7,13 @@ import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog"
 import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
 import { EditProjectDialog } from "@/components/dashboard/EditProjectDialog";
 import { ProjectGrid } from "@/components/dashboard/ProjectGrid";
-import { SettingsModals } from "@/components/settings/SettingsModals";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import {
   ContextMenu,
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
+import { Spinner } from "@/components/ui/Spinner";
 import type { ProjectId } from "@/db/schemas";
 import { useAllProjects } from "@/hooks/data/useProject";
 import { useUiStore } from "@/store/uiStore";
@@ -63,7 +64,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => openModal({ id: "create-project" })}
-              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+              className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
             >
               <Plus size={16} />
               New Project
@@ -74,7 +75,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         {projects === undefined ? (
           <div className="flex justify-center py-24">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+            <Spinner />
           </div>
         ) : (
           <>
@@ -126,7 +127,6 @@ export default function DashboardPage() {
       <CreateProjectDialog />
       <EditProjectDialog />
       <DeleteProjectDialog />
-      <SettingsModals />
     </div>
   );
 }

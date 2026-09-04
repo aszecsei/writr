@@ -4,6 +4,11 @@ import type { ProjectId, ProjectMode } from "@/db/schemas";
 
 interface ProjectState {
   activeProjectId: ProjectId | null;
+  /**
+   * Compatibility shim: mirrors the active project's `title`/`mode` for the
+   * handful of readers not yet migrated to `useActiveProject()` (the live
+   * Dexie row). New readers should use `useActiveProject()` instead.
+   */
   activeProjectTitle: string | null;
   activeProjectMode: ProjectMode | null;
 

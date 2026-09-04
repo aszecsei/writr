@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SCENE_BREAK_RE, splitParagraphs } from "./helpers";
+import { splitParagraphs } from "@/lib/text/split-paragraphs";
+import { SCENE_BREAK_RE } from "./helpers";
 
 describe("SCENE_BREAK_RE", () => {
   it("matches markdown-style thematic breaks", () => {

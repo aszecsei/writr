@@ -2,6 +2,7 @@
 
 import { AccordionSection } from "@/components/ui/AccordionSection";
 import { Badge } from "@/components/ui/Badge";
+import { escapeRegExp } from "@/lib/text/escape-reg-exp";
 import type { Echo, EchoSeverity } from "@/lib/text-analysis";
 import {
   ECHO_WINDOW_SENTENCES,
@@ -30,10 +31,6 @@ const SEVERITY_STYLES: Record<
     mark: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400",
   },
 };
-
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 /** Wrap occurrences of the echoed word in a tinted mark; falls back to plain
  * text when the surface form in the excerpt differs from the normal form. */

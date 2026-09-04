@@ -19,6 +19,7 @@ import {
   useAppDictionary,
   useProjectDictionary,
 } from "@/hooks/data/useDictionary";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 
@@ -28,7 +29,7 @@ export function DictionaryManagerDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectTitle = useActiveProject()?.title ?? null;
 
   const appDict = useAppDictionary();
   const projectDict = useProjectDictionary(activeProjectId ?? undefined);
@@ -70,11 +71,7 @@ export function DictionaryManagerDialog() {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Dictionary Manager
-      </h2>
-
+    <Modal onClose={closeModal} maxWidth="max-w-lg" title="Dictionary Manager">
       {/* Tab bar */}
       <div className="mt-4 flex gap-2">
         <button

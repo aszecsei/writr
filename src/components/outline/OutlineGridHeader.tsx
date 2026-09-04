@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import type { OutlineGridColumn } from "@/db/schemas";
+import { useInlineEdit } from "@/hooks/forms/useInlineEdit";
 
 interface OutlineGridHeaderProps {
   column: OutlineGridColumn;
@@ -14,51 +14,19 @@ export function OutlineGridHeader({
   onRename,
   onContextMenu,
 }: OutlineGridHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(column.title);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Sync when title changes externally
-  useEffect(() => {
-    if (!isEditing) {
-      setEditValue(column.title);
-    }
-  }, [column.title, isEditing]);
-
-  const startEditing = useCallback(() => {
-    setEditValue(column.title);
-    setIsEditing(true);
-  }, [column.title]);
-
-  const saveAndClose = useCallback(() => {
-    setIsEditing(false);
-    const trimmed = editValue.trim();
-    if (trimmed && trimmed !== column.title) {
-      onRename(trimmed);
-    } else {
-      setEditValue(column.title);
-    }
-  }, [editValue, column.title, onRename]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setEditValue(column.title);
-        setIsEditing(false);
-      } else if (e.key === "Enter") {
-        saveAndClose();
-      }
-    },
-    [column.title, saveAndClose],
-  );
-
-  // Focus input when entering edit mode
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
+  const {
+    isEditing,
+    editValue,
+    setEditValue,
+    inputRef,
+    startEditing,
+    saveAndClose,
+    handleKeyDown,
+  } = useInlineEdit({
+    initialValue: column.title,
+    onSave: onRename,
+    saveOnEnter: true,
+  });
 
   return (
     <th
@@ -68,7 +36,7 @@ export function OutlineGridHeader({
     >
       {isEditing ? (
         <input
-          ref={inputRef}
+          ref={inputRef as React.RefObject<HTMLInputElement>}
           type="text"
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}

@@ -3,6 +3,7 @@
 import { History, Play, Timer } from "lucide-react";
 import { useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
+import { Fieldset } from "@/components/ui/Fieldset";
 import {
   INPUT_CLASS,
   RADIO_ACTIVE,
@@ -10,9 +11,9 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useWritingSprint } from "@/hooks/writing/useWritingSprint";
-import { useProjectStore } from "@/store/projectStore";
-import { useSprintStore } from "@/store/sprintStore";
+import { useUiStore } from "@/store/uiStore";
 
 const DURATION_PRESETS = [
   { label: "15 min", ms: 15 * 60 * 1000 },
@@ -23,10 +24,10 @@ const DURATION_PRESETS = [
 ];
 
 export function SprintConfigDialog() {
-  const configModalOpen = useSprintStore((s) => s.configModalOpen);
-  const closeConfigModal = useSprintStore((s) => s.closeConfigModal);
-  const openHistoryModal = useSprintStore((s) => s.openHistoryModal);
-  const projectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
+  const openModal = useUiStore((s) => s.openModal);
+  const projectTitle = useActiveProject()?.title ?? null;
 
   const { start } = useWritingSprint();
 
@@ -38,7 +39,7 @@ export function SprintConfigDialog() {
   const [wordGoal, setWordGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (!configModalOpen) return null;
+  if (modal.id !== "sprint-config") return null;
 
   const effectiveDuration = useCustom
     ? Number.parseInt(customMinutes, 10) * 60 * 1000
@@ -69,29 +70,23 @@ export function SprintConfigDialog() {
   }
 
   function handleViewHistory() {
-    closeConfigModal();
-    openHistoryModal();
+    openModal({ id: "sprint-history" });
   }
 
   return (
-    <Modal onClose={closeConfigModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <Timer size={18} />
-        Start Writing Sprint
-      </h2>
-
-      {projectTitle && (
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Project: {projectTitle}
-        </p>
-      )}
-
+    <Modal
+      onClose={closeModal}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <Timer size={18} />
+          Start Writing Sprint
+        </span>
+      }
+      description={projectTitle ? `Project: ${projectTitle}` : undefined}
+    >
       <div className="mt-5 space-y-5">
         {/* Duration */}
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Duration
-          </legend>
+        <Fieldset legend="Duration">
           <div className="mt-2 flex flex-wrap gap-2">
             {DURATION_PRESETS.map((preset) => (
               <button
@@ -130,13 +125,10 @@ export function SprintConfigDialog() {
               </span>
             </div>
           )}
-        </fieldset>
+        </Fieldset>
 
         {/* Word Goal */}
-        <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Word Goal (optional)
-          </legend>
+        <Fieldset legend="Word Goal (optional)">
           <div className="mt-2">
             <input
               type="number"
@@ -147,7 +139,7 @@ export function SprintConfigDialog() {
               className={`w-32 ${INPUT_CLASS}`}
             />
           </div>
-        </fieldset>
+        </Fieldset>
 
         {/* Error */}
         {error && (
@@ -156,7 +148,7 @@ export function SprintConfigDialog() {
 
         {/* Actions */}
         <DialogFooter
-          onCancel={closeConfigModal}
+          onCancel={closeModal}
           submitDisabled={!isValidDuration}
           submitType="button"
           onSubmit={handleStart}

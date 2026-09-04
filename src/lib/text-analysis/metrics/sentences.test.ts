@@ -1,16 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bucketForLength, meanFromSums, stdDevFromSums } from "./sentences";
-
-describe("bucketForLength", () => {
-  it("switches buckets at the documented boundaries", () => {
-    expect(bucketForLength(7)).toBe("short");
-    expect(bucketForLength(8)).toBe("medium");
-    expect(bucketForLength(19)).toBe("medium");
-    expect(bucketForLength(20)).toBe("long");
-    expect(bucketForLength(29)).toBe("long");
-    expect(bucketForLength(30)).toBe("veryLong");
-  });
-});
+import { meanFromSums, stdDevFromSums } from "./sentences";
 
 describe("meanFromSums", () => {
   it("computes the mean and guards division by zero", () => {

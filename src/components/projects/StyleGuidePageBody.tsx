@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { useReadOnly } from "@/context/DataSourceContext";
 import {
   createGuardrailEntry,
   createStyleGuideEntry,
@@ -27,13 +28,10 @@ import { useHighlightFade } from "@/hooks/editor/useHighlightFade";
 
 export interface StyleGuidePageBodyProps {
   projectId: ProjectId;
-  readOnly: boolean;
 }
 
-export function StyleGuidePageBody({
-  projectId,
-  readOnly,
-}: StyleGuidePageBodyProps) {
+export function StyleGuidePageBody({ projectId }: StyleGuidePageBodyProps) {
+  const readOnly = useReadOnly();
   const searchParams = useSearchParams();
   const highlightId = searchParams.get("highlight");
   const entries = useStyleGuideByProject(projectId);

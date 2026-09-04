@@ -1,4 +1,5 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { extractTextBlocks } from "@/lib/prosemirror/extract-text-blocks";
 
 export interface LineBreakPair {
   /** Position of the first hardBreak in the pair (inclusive). */
@@ -18,27 +19,23 @@ export interface LineBreakPair {
 export function findLineBreakPairs(doc: ProseMirrorNode): LineBreakPair[] {
   const pairs: LineBreakPair[] = [];
 
-  doc.descendants((node, pos) => {
-    if (node.type.name === "codeBlock") return false;
-    if (node.type.name !== "paragraph") return;
+  for (const block of extractTextBlocks(doc)) {
+    if (block.node.type.name !== "paragraph") continue;
 
     let prevBreakPos = -1;
-    node.forEach((child, offset) => {
-      const childPos = pos + 1 + offset;
-      if (child.type.name === "hardBreak") {
+    for (const run of block.runs) {
+      if (run.kind === "hardBreak") {
         if (prevBreakPos !== -1) {
-          pairs.push({ from: prevBreakPos, to: childPos + child.nodeSize });
+          pairs.push({ from: prevBreakPos, to: run.from + 1 });
           prevBreakPos = -1;
         } else {
-          prevBreakPos = childPos;
+          prevBreakPos = run.from;
         }
       } else {
         prevBreakPos = -1;
       }
-    });
-
-    return false;
-  });
+    }
+  }
 
   return pairs;
 }

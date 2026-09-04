@@ -2,6 +2,8 @@
 
 import { Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { describeImage } from "@/lib/ai/client";
@@ -60,12 +62,9 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-lg">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Add Image
-      </h3>
+    <Modal onClose={onClose} maxWidth="max-w-lg" title="Add Image">
       <div className="space-y-4">
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label className={LABEL_CLASS}>
           Image URL
           <input
             type="url"
@@ -76,12 +75,12 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
             }}
             onKeyDown={handleKeyDown}
             placeholder="https://example.com/image.jpg"
-            className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+            className={INPUT_CLASS}
           />
         </label>
         <div>
           <div className="flex items-center gap-2">
-            <label className="block flex-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            <label className={`flex-1 ${LABEL_CLASS}`}>
               Caption (optional)
               <input
                 type="text"
@@ -92,7 +91,7 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Description of the image..."
-                className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                className={INPUT_CLASS}
               />
             </label>
             {showAiButton && (
@@ -135,22 +134,14 @@ export function AddImageDialog({ onAdd, onClose }: AddImageDialogProps) {
             )}
           </div>
         )}
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:hover:bg-neutral-800"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!isValidUrl}
-            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-          >
-            Add Image
-          </button>
+        <div className="pt-2">
+          <DialogFooter
+            onCancel={onClose}
+            submitLabel="Add Image"
+            submitType="button"
+            onSubmit={handleAdd}
+            submitDisabled={!isValidUrl}
+          />
         </div>
       </div>
     </Modal>

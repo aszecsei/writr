@@ -1,10 +1,5 @@
+import { MTLD_MIN_TOKENS, MTLD_TTR_THRESHOLD } from "../thresholds";
 import type { VocabularyMetrics } from "../types";
-
-/** MTLD is unstable below this many tokens; report null instead. */
-export const MTLD_MIN_TOKENS = 50;
-
-/** The TTR level at which an MTLD factor is considered complete. */
-const MTLD_TTR_THRESHOLD = 0.72;
 
 /**
  * Type-token ratio and Guiraud's root TTR, computed from a word-frequency

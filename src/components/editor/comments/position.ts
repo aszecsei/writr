@@ -1,5 +1,6 @@
 import type { EditorView } from "@tiptap/pm/view";
 import type { Comment } from "@/db/schemas";
+import { getScrollContainer } from "@/lib/editor/scroll";
 
 /**
  * Calculate the vertical position of a comment relative to its scroll container.
@@ -10,9 +11,7 @@ export function calculateCommentTop(
   comment: Comment,
   positionMap: Map<string, { from: number; to: number }>,
 ): number | null {
-  const scrollContainer = view.dom.closest(
-    ".overflow-y-auto",
-  ) as HTMLElement | null;
+  const scrollContainer = getScrollContainer(view);
   if (!scrollContainer) return null;
 
   const docSize = view.state.doc.content.size;

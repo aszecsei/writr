@@ -3,8 +3,8 @@
 import type { Editor } from "@tiptap/react";
 import { ChevronDown, MessageSquarePlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import type { CommentColor } from "@/db/schemas";
-import { useClickOutside } from "@/hooks/useClickOutside";
 import { useCommentsAdapter } from "./CommentsAdapterContext";
 import { COLOR_BUTTON_CLASSES, COMMENT_COLORS } from "./colors";
 
@@ -16,7 +16,6 @@ export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
   const adapter = useCommentsAdapter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<CommentColor>("yellow");
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Store last known selection so it survives focus loss when clicking button
   const selectionRef = useRef<{ from: number; to: number; empty: boolean }>({
@@ -41,8 +40,6 @@ export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
       editor.off("transaction", updateSelection);
     };
   }, [editor]);
-
-  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   if (!editor) return null;
 
@@ -80,69 +77,70 @@ export function CreateCommentButton({ editor }: CreateCommentButtonProps) {
   }
 
   return (
-    <div className="relative" ref={menuRef}>
-      <div className="flex items-center">
-        <button
-          type="button"
-          title="Add comment"
-          onMouseDown={(e) => {
-            // Prevent stealing focus from editor so selection survives
-            e.preventDefault();
-            handleCreateComment();
-          }}
-          className="rounded-l p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        >
-          <MessageSquarePlus size={16} />
-        </button>
-        <button
-          type="button"
-          title="Choose color"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setMenuOpen(!menuOpen);
-          }}
-          className="rounded-r border-l border-neutral-200 p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        >
-          <ChevronDown size={12} />
-        </button>
-      </div>
-
-      {menuOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 rounded-md border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
-          <div className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            Color
-          </div>
-          <div className="flex gap-1.5">
-            {COMMENT_COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => {
-                  setSelectedColor(color);
-                }}
-                className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
-                  COLOR_BUTTON_CLASSES[color]
-                } ${
-                  selectedColor === color
-                    ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
-                    : ""
-                }`}
-                title={color.charAt(0).toUpperCase() + color.slice(1)}
-              />
-            ))}
-          </div>
+    <DropdownMenu
+      open={menuOpen}
+      onClose={() => setMenuOpen(false)}
+      panelClassName="rounded-md border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+      trigger={
+        <div className="flex items-center">
           <button
             type="button"
+            title="Add comment"
             onMouseDown={(e) => {
+              // Prevent stealing focus from editor so selection survives
               e.preventDefault();
               handleCreateComment();
             }}
-            className="mt-2 w-full rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+            className="rounded-l p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
           >
-            Add Comment
+            <MessageSquarePlus size={16} />
+          </button>
+          <button
+            type="button"
+            title="Choose color"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setMenuOpen(!menuOpen);
+            }}
+            className="rounded-r border-l border-neutral-200 p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          >
+            <ChevronDown size={12} />
           </button>
         </div>
-      )}
-    </div>
+      }
+    >
+      <div className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+        Color
+      </div>
+      <div className="flex gap-1.5">
+        {COMMENT_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            onClick={() => {
+              setSelectedColor(color);
+            }}
+            className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
+              COLOR_BUTTON_CLASSES[color]
+            } ${
+              selectedColor === color
+                ? "ring-2 ring-neutral-900 ring-offset-1 dark:ring-white"
+                : ""
+            }`}
+            title={color.charAt(0).toUpperCase() + color.slice(1)}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          handleCreateComment();
+        }}
+        className="mt-2 w-full rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600"
+      >
+        Add Comment
+      </button>
+    </DropdownMenu>
   );
 }

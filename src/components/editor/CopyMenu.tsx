@@ -1,12 +1,13 @@
 "use client";
 
 import { Check, Copy, FileCode2, FileText } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/DropdownMenu";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
-import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   copyChapterAo3HtmlToClipboard,
   copyChapterMarkdownToClipboard,
@@ -26,13 +27,10 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
   // When the chapter contains holes, the requested copy is held here pending
   // confirmation rather than running immediately.
   const [pendingCopy, setPendingCopy] = useState<CopyType | null>(null);
-  const copyMenuRef = useRef<HTMLDivElement>(null);
 
   const chapter = useChapter(chapterId);
   const settings = useAppSettings();
   const holeDelimiters = settings?.holeDelimiters ?? DEFAULT_HOLE_DELIMITERS;
-
-  useClickOutside(copyMenuRef, () => setCopyMenuOpen(false), copyMenuOpen);
 
   async function runCopy(type: CopyType) {
     try {
@@ -70,39 +68,30 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
     : 0;
 
   return (
-    <div className="relative" ref={copyMenuRef}>
-      <button
-        type="button"
-        title="Copy to clipboard"
-        onClick={() => setCopyMenuOpen(!copyMenuOpen)}
-        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-          copiedType
-            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        }`}
+    <>
+      <DropdownMenu
+        open={copyMenuOpen}
+        onClose={() => setCopyMenuOpen(false)}
+        panelClassName="w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+        trigger={
+          <ToolbarButton
+            icon={copiedType ? Check : Copy}
+            title="Copy to clipboard"
+            onClick={() => setCopyMenuOpen(!copyMenuOpen)}
+            variant={copiedType ? "success" : "default"}
+          />
+        }
       >
-        {copiedType ? <Check size={16} /> : <Copy size={16} />}
-      </button>
-      {copyMenuOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
-          <button
-            type="button"
-            onClick={() => requestCopy("markdown")}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
-          >
-            <FileText size={14} />
-            Copy Markdown
-          </button>
-          <button
-            type="button"
-            onClick={() => requestCopy("ao3")}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
-          >
-            <FileCode2 size={14} />
-            Copy AO3 HTML
-          </button>
-        </div>
-      )}
+        <DropdownMenuItem
+          icon={FileText}
+          onClick={() => requestCopy("markdown")}
+        >
+          Copy Markdown
+        </DropdownMenuItem>
+        <DropdownMenuItem icon={FileCode2} onClick={() => requestCopy("ao3")}>
+          Copy AO3 HTML
+        </DropdownMenuItem>
+      </DropdownMenu>
       {pendingCopy && (
         <ConfirmDialog
           title="Copy material with holes?"
@@ -120,6 +109,6 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
           onCancel={() => setPendingCopy(null)}
         />
       )}
-    </div>
+    </>
   );
 }

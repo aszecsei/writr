@@ -4,6 +4,7 @@ import { ChevronDown, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useProjectHref, useReadOnly } from "@/context/DataSourceContext";
 import { createLocation, deleteLocation } from "@/db/operations";
 import type { Location, LocationId, ProjectId } from "@/db/schemas";
 import {
@@ -43,16 +44,12 @@ function buildLocationTree(locations: Location[]): LocationNode[] {
 
 export interface LocationsPageBodyProps {
   projectId: ProjectId;
-  basePath: string;
-  readOnly: boolean;
 }
 
-export function LocationsPageBody({
-  projectId,
-  basePath,
-  readOnly,
-}: LocationsPageBodyProps) {
+export function LocationsPageBody({ projectId }: LocationsPageBodyProps) {
   const router = useRouter();
+  const basePath = useProjectHref(projectId);
+  const readOnly = useReadOnly();
   const locations = useLocationsByProject(projectId);
   const characters = useCharactersByProject(projectId);
   const [expanded, setExpanded] = useState<Set<LocationId>>(() => new Set());

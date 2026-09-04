@@ -1,16 +1,3 @@
-import type { SentenceLengthBuckets } from "../types";
-
-export const SHORT_MAX = 7;
-export const MEDIUM_MAX = 19;
-export const LONG_MAX = 29;
-
-export function bucketForLength(words: number): keyof SentenceLengthBuckets {
-  if (words <= SHORT_MAX) return "short";
-  if (words <= MEDIUM_MAX) return "medium";
-  if (words <= LONG_MAX) return "long";
-  return "veryLong";
-}
-
 export function meanFromSums(sum: number, count: number): number {
   return count === 0 ? 0 : sum / count;
 }

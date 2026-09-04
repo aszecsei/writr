@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
-import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
+import {
+  CHECKBOX_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+} from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateSeparator } from "@/db/operations";
 import type { ChapterId } from "@/db/schemas";
@@ -43,11 +47,7 @@ function SeparatorSettingsDialogInner({ chapterId }: { chapterId: ChapterId }) {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-md">
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Separator
-      </h3>
-
+    <Modal onClose={closeModal} maxWidth="max-w-md" title="Separator">
       <label className={LABEL_CLASS} htmlFor="separator-label">
         Label
       </label>
@@ -66,7 +66,7 @@ function SeparatorSettingsDialogInner({ chapterId }: { chapterId: ChapterId }) {
             type="checkbox"
             checked={includeInCompile}
             onChange={(e) => setIncludeInCompile(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+            className={`mt-0.5 ${CHECKBOX_CLASS}`}
           />
           <span>
             Include in compiled output
@@ -82,7 +82,7 @@ function SeparatorSettingsDialogInner({ chapterId }: { chapterId: ChapterId }) {
             checked={pageBreakBefore}
             disabled={!includeInCompile}
             onChange={(e) => setPageBreakBefore(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-neutral-300 disabled:opacity-50 dark:border-neutral-600"
+            className={`mt-0.5 disabled:opacity-50 ${CHECKBOX_CLASS}`}
           />
           <span className={includeInCompile ? "" : "opacity-50"}>
             Page break before

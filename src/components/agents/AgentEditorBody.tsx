@@ -16,8 +16,10 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   BUTTON_CANCEL,
   BUTTON_PRIMARY,
+  CHECKBOX_CLASS,
   INPUT_CLASS,
   LABEL_CLASS,
+  LEGEND_CLASS,
 } from "@/components/ui/form-styles";
 import { TriStateCheckbox } from "@/components/ui/TriStateCheckbox";
 import {
@@ -34,26 +36,11 @@ import type {
   ReasoningEffort,
 } from "@/db/schemas";
 import { useAgent } from "@/hooks/data/useAgents";
-import { PROVIDERS } from "@/lib/ai/providers";
-
-const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
-  { value: "openrouter", label: "OpenRouter" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "openai", label: "OpenAI" },
-  { value: "grok", label: "Grok (xAI)" },
-  { value: "zai", label: "z.ai (Zhipu AI)" },
-  { value: "google", label: "Google AI Studio" },
-  { value: "vertex", label: "Vertex AI" },
-];
-
-const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
-  { value: "xhigh", label: "Extra High" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-  { value: "minimal", label: "Minimal" },
-  { value: "none", label: "None" },
-];
+import {
+  PROVIDER_OPTIONS,
+  PROVIDERS,
+  REASONING_EFFORT_OPTIONS,
+} from "@/lib/ai/providers";
 
 interface AgentEditorBodyProps {
   projectId: ProjectId | null;
@@ -306,7 +293,7 @@ export function AgentEditorBody({
           </label>
 
           <fieldset className="rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
-            <legend className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            <legend className={`px-1 ${LEGEND_CLASS}`}>
               Allowed Tools ({allowedToolIds.size})
             </legend>
             <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
@@ -412,7 +399,7 @@ export function AgentEditorBody({
           </fieldset>
 
           <fieldset className="rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
-            <legend className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            <legend className={`px-1 ${LEGEND_CLASS}`}>
               Model Override (optional)
             </legend>
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -420,7 +407,7 @@ export function AgentEditorBody({
                 type="checkbox"
                 checked={overrideEnabled}
                 onChange={(e) => setOverrideEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
               Use a specific provider/model for this agent
             </label>
@@ -461,7 +448,7 @@ export function AgentEditorBody({
                     }
                     className={INPUT_CLASS}
                   >
-                    {REASONING_OPTIONS.map((opt) => (
+                    {REASONING_EFFORT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>

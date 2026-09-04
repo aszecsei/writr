@@ -12,10 +12,11 @@ import {
 import Link from "next/link";
 import { SearchBar } from "@/components/search";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useActiveProject } from "@/hooks/data/useProject";
+import { useActiveSprint } from "@/hooks/writing/useActiveSprint";
 import { formatReadingTime } from "@/lib/reading-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
-import { useSprintStore } from "@/store/sprintStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function TopBar() {
@@ -23,13 +24,12 @@ export function TopBar() {
   const toggleRightPanel = useUiStore((s) => s.toggleRightPanel);
   const rightPanelOpen = useUiStore((s) => s.rightPanel.open);
   const openModal = useUiStore((s) => s.openModal);
-  const projectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const projectTitle = useActiveProject()?.title ?? null;
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
-  const openSprintConfig = useSprintStore((s) => s.openConfigModal);
-  const activeSprintId = useSprintStore((s) => s.activeSprintId);
+  const activeSprint = useActiveSprint();
   const settings = useAppSettings();
 
   return (
@@ -98,10 +98,10 @@ export function TopBar() {
             </button>
             <button
               type="button"
-              onClick={openSprintConfig}
-              disabled={!!activeSprintId}
+              onClick={() => openModal({ id: "sprint-config" })}
+              disabled={!!activeSprint}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                activeSprintId
+                activeSprint
                   ? "cursor-not-allowed opacity-50"
                   : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
               }`}

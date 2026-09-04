@@ -14,7 +14,7 @@ const CHAPTER_ID_2 = "00000000-0000-4000-8000-000000000002" as ChapterId;
 const CHARACTER_ID_1 = "00000000-0000-4000-8000-000000000011" as CharacterId;
 
 const SharedWrapper = ({ children }: { children: ReactNode }) => (
-  <DataSourceProvider source={{ kind: "shared" }}>
+  <DataSourceProvider source={{ kind: "shared", roomUuid: "test-room" }}>
     {children}
   </DataSourceProvider>
 );

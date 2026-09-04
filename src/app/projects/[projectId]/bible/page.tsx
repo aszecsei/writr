@@ -1,7 +1,5 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
-import { Clock, GitFork, Globe, MapPin, Music, Pen, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { ProjectId } from "@/db/schemas";
@@ -14,51 +12,7 @@ import {
   useWorldbuildingDocsByProject,
 } from "@/hooks/data/useBibleEntries";
 import { usePlaylistByProject } from "@/hooks/data/usePlaylistEntries";
-
-const sections: {
-  key: string;
-  label: string;
-  path: string;
-  icon: LucideIcon;
-}[] = [
-  {
-    key: "characters",
-    label: "Characters",
-    path: "bible/characters",
-    icon: Users,
-  },
-  {
-    key: "locations",
-    label: "Locations",
-    path: "bible/locations",
-    icon: MapPin,
-  },
-  { key: "timeline", label: "Timeline", path: "bible/timeline", icon: Clock },
-  {
-    key: "family-tree",
-    label: "Family Tree",
-    path: "bible/family-tree",
-    icon: GitFork,
-  },
-  {
-    key: "style-guide",
-    label: "Style Guide",
-    path: "bible/style-guide",
-    icon: Pen,
-  },
-  {
-    key: "worldbuilding",
-    label: "Worldbuilding",
-    path: "bible/worldbuilding",
-    icon: Globe,
-  },
-  {
-    key: "playlist",
-    label: "Playlist",
-    path: "bible/playlist",
-    icon: Music,
-  },
-];
+import { BIBLE_SECTIONS } from "@/lib/bible-sections";
 
 export default function BibleOverviewPage() {
   const params = useParams<{ projectId: ProjectId }>();
@@ -90,8 +44,9 @@ export default function BibleOverviewPage() {
         worldbuilding details.
       </p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sections.map((section) => {
+        {BIBLE_SECTIONS.map((section) => {
           const Icon = section.icon;
+          const count = counts[section.key] ?? 0;
           return (
             <Link
               key={section.key}
@@ -105,20 +60,10 @@ export default function BibleOverviewPage() {
                 {section.label}
               </h3>
               <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                {counts[section.key] ?? 0}
+                {count}
               </p>
               <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
-                {section.key === "family-tree"
-                  ? counts[section.key] === 1
-                    ? "relationship"
-                    : "relationships"
-                  : section.key === "playlist"
-                    ? counts[section.key] === 1
-                      ? "track"
-                      : "tracks"
-                    : counts[section.key] === 1
-                      ? "entry"
-                      : "entries"}
+                {count === 1 ? section.noun.singular : section.noun.plural}
               </p>
             </Link>
           );

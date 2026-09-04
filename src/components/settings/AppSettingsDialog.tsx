@@ -9,8 +9,6 @@ import {
 } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
-  INPUT_CLASS,
-  LABEL_CLASS,
   RADIO_ACTIVE,
   RADIO_BASE,
   RADIO_INACTIVE,
@@ -19,6 +17,7 @@ import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import type {
   AiProvider,
+  AppSettings,
   EditorWidth,
   GoalCountdownDisplay,
   NeutralColor,
@@ -32,7 +31,6 @@ import {
   getDefaultProviderTtsModels,
   getDefaultProviderTtsVoices,
 } from "@/lib/ai/providers";
-import type { Backup } from "@/lib/backup";
 import {
   applyEditorWidth,
   applyHoleHighlightOpacity,
@@ -45,7 +43,6 @@ import { AiSettings } from "./AiSettings";
 import { BackupSettings } from "./BackupSettings";
 import { EditorSettings } from "./EditorSettings";
 import { GeneralTabContent } from "./GeneralTabContent";
-import { ImportBackupDialog } from "./ImportBackupDialog";
 
 type SettingsTab = "general" | "editor" | "ai" | "data";
 
@@ -56,32 +53,67 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "data", label: "Data" },
 ];
 
-export function AppSettingsDialog() {
-  const modal = useUiStore((s) => s.modal);
-  const closeModal = useUiStore((s) => s.closeModal);
-  const openModal = useUiStore((s) => s.openModal);
-  const settings = useAppSettings();
+/** The subset of `AppSettings` fields the dialog's General/Editor/AI tabs
+ *  edit. Deliberately excludes fields owned by other dialogs (grammar rule
+ *  overrides, saved-prompt fields, etc.) so this form never clobbers
+ *  concurrent edits made elsewhere while it's open. */
+export interface AppSettingsDraft {
+  theme: "light" | "dark" | "system";
+  primaryColor: PrimaryColor;
+  neutralColor: NeutralColor;
+  editorWidth: EditorWidth;
+  uiDensity: UiDensity;
+  editorFont: string;
+  editorFontSize: number;
+  autoSaveSeconds: number;
+  readingSpeedWpm: number;
+  autoFocusModeOnSprint: boolean;
+  grammarCheckerEnabled: boolean;
+  holeOpenDelimiter: string;
+  holeCloseDelimiter: string;
+  holeHighlightOpacity: number;
+  goalCountdownDisplay: GoalCountdownDisplay;
+  enableAiFeatures: boolean;
+  aiProvider: AiProvider;
+  providerApiKeys: Record<AiProvider, string>;
+  providerModels: Record<AiProvider, string>;
+  providerTtsModels: Record<AiProvider, string>;
+  providerTtsVoices: Record<AiProvider, string>;
+  debugMode: boolean;
+  streamResponses: boolean;
+  reasoningEffort: ReasoningEffort;
+  enableToolCalling: boolean;
+  loreRetrievalEnabled: boolean;
+  omniscientMode: boolean;
+  loreTopK: number;
+  sceneTopK: number;
+  similarityFloor: number;
+}
 
-  const [tab, setTab] = useState<SettingsTab>("general");
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-  const [primaryColor, setPrimaryColor] = useState<PrimaryColor>("blue");
-  const [neutralColor, setNeutralColor] = useState<NeutralColor>("zinc");
-  const [editorWidth, setEditorWidth] = useState<EditorWidth>("medium");
-  const [uiDensity, setUiDensity] = useState<UiDensity>("comfortable");
-  const [editorFont, setEditorFont] = useState("literata");
-  const [editorFontSize, setEditorFontSize] = useState(16);
-  const [autoSaveSeconds, setAutoSaveSeconds] = useState(3);
-  const [readingSpeedWpm, setReadingSpeedWpm] = useState(200);
-  const [autoFocusModeOnSprint, setAutoFocusModeOnSprint] = useState(false);
-  const [grammarCheckerEnabled, setGrammarCheckerEnabled] = useState(false);
-  const [holeOpenDelimiter, setHoleOpenDelimiter] = useState("[");
-  const [holeCloseDelimiter, setHoleCloseDelimiter] = useState("]");
-  const [holeHighlightOpacity, setHoleHighlightOpacity] = useState(0.18);
-  const [goalCountdownDisplay, setGoalCountdownDisplay] =
-    useState<GoalCountdownDisplay>("estimated-date");
-  const [enableAiFeatures, setEnableAiFeatures] = useState(false);
-  const [aiProvider, setAiProvider] = useState<AiProvider>("openrouter");
-  const emptyKeys: Record<AiProvider, string> = {
+export type SetAppSettingsField = <K extends keyof AppSettingsDraft>(
+  key: K,
+  value: AppSettingsDraft[K],
+) => void;
+
+export const DEFAULT_APP_SETTINGS_DRAFT: AppSettingsDraft = {
+  theme: "system",
+  primaryColor: "blue",
+  neutralColor: "zinc",
+  editorWidth: "medium",
+  uiDensity: "comfortable",
+  editorFont: "literata",
+  editorFontSize: 16,
+  autoSaveSeconds: 3,
+  readingSpeedWpm: 200,
+  autoFocusModeOnSprint: false,
+  grammarCheckerEnabled: false,
+  holeOpenDelimiter: "[",
+  holeCloseDelimiter: "]",
+  holeHighlightOpacity: 0.18,
+  goalCountdownDisplay: "estimated-date",
+  enableAiFeatures: false,
+  aiProvider: "openrouter",
+  providerApiKeys: {
     openrouter: "",
     anthropic: "",
     openai: "",
@@ -89,32 +121,125 @@ export function AppSettingsDialog() {
     zai: "",
     google: "",
     vertex: "",
+  },
+  providerModels: getDefaultProviderModels(),
+  providerTtsModels: getDefaultProviderTtsModels(),
+  providerTtsVoices: getDefaultProviderTtsVoices(),
+  debugMode: false,
+  streamResponses: true,
+  reasoningEffort: "medium",
+  enableToolCalling: false,
+  loreRetrievalEnabled: false,
+  omniscientMode: false,
+  loreTopK: 5,
+  sceneTopK: 3,
+  similarityFloor: 0.3,
+};
+
+function settingsToDraft(settings: AppSettings): AppSettingsDraft {
+  return {
+    theme: settings.theme,
+    primaryColor: settings.primaryColor,
+    neutralColor: settings.neutralColor,
+    editorWidth: settings.editorWidth,
+    uiDensity: settings.uiDensity,
+    editorFont: settings.editorFont,
+    editorFontSize: settings.editorFontSize,
+    autoSaveSeconds: Math.round(settings.autoSaveIntervalMs / 1000),
+    readingSpeedWpm: settings.readingSpeedWpm,
+    autoFocusModeOnSprint: settings.autoFocusModeOnSprint,
+    grammarCheckerEnabled: settings.grammarCheckerEnabled,
+    holeOpenDelimiter: settings.holeDelimiters.open,
+    holeCloseDelimiter: settings.holeDelimiters.close,
+    holeHighlightOpacity: settings.holeHighlightOpacity,
+    goalCountdownDisplay: settings.goalCountdownDisplay,
+    enableAiFeatures: settings.enableAiFeatures,
+    aiProvider: settings.aiProvider,
+    providerApiKeys: settings.providerApiKeys,
+    providerModels: settings.providerModels,
+    providerTtsModels: settings.providerTtsModels,
+    providerTtsVoices: settings.providerTtsVoices,
+    debugMode: settings.debugMode,
+    streamResponses: settings.streamResponses,
+    reasoningEffort: settings.reasoningEffort,
+    enableToolCalling: settings.enableToolCalling,
+    loreRetrievalEnabled: settings.loreRetrievalEnabled,
+    omniscientMode: settings.omniscientMode,
+    loreTopK: settings.loreTopK,
+    sceneTopK: settings.sceneTopK,
+    similarityFloor: settings.similarityFloor,
   };
-  const [providerApiKeys, setProviderApiKeys] =
-    useState<Record<AiProvider, string>>(emptyKeys);
-  const [providerModels, setProviderModels] = useState<
-    Record<AiProvider, string>
-  >(getDefaultProviderModels);
-  const [providerTtsModels, setProviderTtsModels] = useState<
-    Record<AiProvider, string>
-  >(getDefaultProviderTtsModels);
-  const [providerTtsVoices, setProviderTtsVoices] = useState<
-    Record<AiProvider, string>
-  >(getDefaultProviderTtsVoices);
-  const [debugMode, setDebugMode] = useState(false);
-  const [streamResponses, setStreamResponses] = useState(true);
-  const [reasoningEffort, setReasoningEffort] =
-    useState<ReasoningEffort>("medium");
-  const [enableToolCalling, setEnableToolCalling] = useState(false);
-  const [loreRetrievalEnabled, setLoreRetrievalEnabled] = useState(false);
-  const [omniscientMode, setOmniscientMode] = useState(false);
-  const [loreTopK, setLoreTopK] = useState(5);
-  const [sceneTopK, setSceneTopK] = useState(3);
-  const [similarityFloor, setSimilarityFloor] = useState(0.3);
-  const [pendingImport, setPendingImport] = useState<{
-    backup: Backup;
-    filename: string;
-  } | null>(null);
+}
+
+function draftToUpdatePayload(
+  draft: AppSettingsDraft,
+): Partial<Omit<AppSettings, "id">> {
+  return {
+    theme: draft.theme,
+    primaryColor: draft.primaryColor,
+    neutralColor: draft.neutralColor,
+    editorWidth: draft.editorWidth,
+    uiDensity: draft.uiDensity,
+    editorFont: draft.editorFont,
+    editorFontSize: draft.editorFontSize,
+    autoSaveIntervalMs: draft.autoSaveSeconds * 1000,
+    readingSpeedWpm: draft.readingSpeedWpm,
+    autoFocusModeOnSprint: draft.autoFocusModeOnSprint,
+    grammarCheckerEnabled: draft.grammarCheckerEnabled,
+    holeDelimiters: {
+      open: draft.holeOpenDelimiter.trim() || "[",
+      close: draft.holeCloseDelimiter.trim() || "]",
+    },
+    holeHighlightOpacity: draft.holeHighlightOpacity,
+    goalCountdownDisplay: draft.goalCountdownDisplay,
+    enableAiFeatures: draft.enableAiFeatures,
+    aiProvider: draft.aiProvider,
+    providerApiKeys: draft.providerApiKeys,
+    providerModels: draft.providerModels,
+    providerTtsModels: draft.providerTtsModels,
+    providerTtsVoices: draft.providerTtsVoices,
+    debugMode: draft.debugMode,
+    streamResponses: draft.streamResponses,
+    reasoningEffort: draft.reasoningEffort,
+    enableToolCalling: draft.enableToolCalling,
+    loreRetrievalEnabled: draft.loreRetrievalEnabled,
+    omniscientMode: draft.omniscientMode,
+    loreTopK: draft.loreTopK,
+    sceneTopK: draft.sceneTopK,
+    similarityFloor: draft.similarityFloor,
+  };
+}
+
+/** Shallow-diffs `draft` against `saved` (an `AppSettings` snapshot mapped to
+ *  the same shape), comparing object-valued fields by content. */
+function isDraftDirty(
+  draft: AppSettingsDraft,
+  saved: AppSettingsDraft,
+): boolean {
+  return (Object.keys(draft) as (keyof AppSettingsDraft)[]).some((key) => {
+    const a = draft[key];
+    const b = saved[key];
+    if (a && typeof a === "object") {
+      return JSON.stringify(a) !== JSON.stringify(b);
+    }
+    return a !== b;
+  });
+}
+
+export function AppSettingsDialog() {
+  const modal = useUiStore((s) => s.modal);
+  const closeModal = useUiStore((s) => s.closeModal);
+  const openModal = useUiStore((s) => s.openModal);
+  const settings = useAppSettings();
+
+  const [tab, setTab] = useState<SettingsTab>("general");
+  const [draft, setDraft] = useState<AppSettingsDraft>(
+    DEFAULT_APP_SETTINGS_DRAFT,
+  );
+
+  const setField: SetAppSettingsField = useCallback((key, value) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+  }, []);
 
   // Snapshot of saved settings at dialog open, used to revert on cancel
   const savedSettingsRef = useRef(settings);
@@ -137,64 +262,50 @@ export function AppSettingsDialog() {
       initializedRef.current = true;
       savedSettingsRef.current = settings;
       setTab("general");
-      setTheme(settings.theme);
-      setPrimaryColor(settings.primaryColor);
-      setNeutralColor(settings.neutralColor);
-      setEditorWidth(settings.editorWidth);
-      setUiDensity(settings.uiDensity);
-      setEditorFont(settings.editorFont);
-      setEditorFontSize(settings.editorFontSize);
-      setAutoSaveSeconds(Math.round(settings.autoSaveIntervalMs / 1000));
-      setReadingSpeedWpm(settings.readingSpeedWpm);
-      setAutoFocusModeOnSprint(settings.autoFocusModeOnSprint);
-      setGrammarCheckerEnabled(settings.grammarCheckerEnabled);
-      setHoleOpenDelimiter(settings.holeDelimiters.open);
-      setHoleCloseDelimiter(settings.holeDelimiters.close);
-      setHoleHighlightOpacity(settings.holeHighlightOpacity);
-      setGoalCountdownDisplay(settings.goalCountdownDisplay);
-      setEnableAiFeatures(settings.enableAiFeatures);
-      setAiProvider(settings.aiProvider);
-      setProviderApiKeys(settings.providerApiKeys);
-      setProviderModels(settings.providerModels);
-      setProviderTtsModels(settings.providerTtsModels);
-      setProviderTtsVoices(settings.providerTtsVoices);
-      setDebugMode(settings.debugMode);
-      setStreamResponses(settings.streamResponses);
-      setReasoningEffort(settings.reasoningEffort);
-      setEnableToolCalling(settings.enableToolCalling);
-      setLoreRetrievalEnabled(settings.loreRetrievalEnabled);
-      setOmniscientMode(settings.omniscientMode);
-      setLoreTopK(settings.loreTopK);
-      setSceneTopK(settings.sceneTopK);
-      setSimilarityFloor(settings.similarityFloor);
+      setDraft(settingsToDraft(settings));
     }
   }, [settings, modal.id]);
 
   // Live preview: apply theme changes immediately
-  const handlePrimaryColorChange = useCallback((color: PrimaryColor) => {
-    setPrimaryColor(color);
-    applyPrimaryColor(color);
-  }, []);
+  const handlePrimaryColorChange = useCallback(
+    (color: PrimaryColor) => {
+      setField("primaryColor", color);
+      applyPrimaryColor(color);
+    },
+    [setField],
+  );
 
-  const handleNeutralColorChange = useCallback((color: NeutralColor) => {
-    setNeutralColor(color);
-    applyNeutralColor(color);
-  }, []);
+  const handleNeutralColorChange = useCallback(
+    (color: NeutralColor) => {
+      setField("neutralColor", color);
+      applyNeutralColor(color);
+    },
+    [setField],
+  );
 
-  const handleEditorWidthChange = useCallback((width: EditorWidth) => {
-    setEditorWidth(width);
-    applyEditorWidth(width);
-  }, []);
+  const handleEditorWidthChange = useCallback(
+    (width: EditorWidth) => {
+      setField("editorWidth", width);
+      applyEditorWidth(width);
+    },
+    [setField],
+  );
 
-  const handleUiDensityChange = useCallback((density: UiDensity) => {
-    setUiDensity(density);
-    applyUiDensity(density);
-  }, []);
+  const handleUiDensityChange = useCallback(
+    (density: UiDensity) => {
+      setField("uiDensity", density);
+      applyUiDensity(density);
+    },
+    [setField],
+  );
 
-  const handleHoleHighlightOpacityChange = useCallback((opacity: number) => {
-    setHoleHighlightOpacity(opacity);
-    applyHoleHighlightOpacity(opacity);
-  }, []);
+  const handleHoleHighlightOpacityChange = useCallback(
+    (opacity: number) => {
+      setField("holeHighlightOpacity", opacity);
+      applyHoleHighlightOpacity(opacity);
+    },
+    [setField],
+  );
 
   // Revert live preview on cancel using the snapshot taken at dialog open
   const handleCancel = useCallback(() => {
@@ -212,78 +323,11 @@ export function AppSettingsDialog() {
   if (modal.id !== "app-settings") return null;
 
   const isDirty =
-    settings != null &&
-    (theme !== settings.theme ||
-      primaryColor !== settings.primaryColor ||
-      neutralColor !== settings.neutralColor ||
-      editorWidth !== settings.editorWidth ||
-      uiDensity !== settings.uiDensity ||
-      editorFont !== settings.editorFont ||
-      editorFontSize !== settings.editorFontSize ||
-      autoSaveSeconds !== Math.round(settings.autoSaveIntervalMs / 1000) ||
-      readingSpeedWpm !== settings.readingSpeedWpm ||
-      autoFocusModeOnSprint !== settings.autoFocusModeOnSprint ||
-      grammarCheckerEnabled !== settings.grammarCheckerEnabled ||
-      holeOpenDelimiter !== settings.holeDelimiters.open ||
-      holeCloseDelimiter !== settings.holeDelimiters.close ||
-      holeHighlightOpacity !== settings.holeHighlightOpacity ||
-      goalCountdownDisplay !== settings.goalCountdownDisplay ||
-      enableAiFeatures !== settings.enableAiFeatures ||
-      aiProvider !== settings.aiProvider ||
-      JSON.stringify(providerApiKeys) !==
-        JSON.stringify(settings.providerApiKeys) ||
-      JSON.stringify(providerModels) !==
-        JSON.stringify(settings.providerModels) ||
-      JSON.stringify(providerTtsModels) !==
-        JSON.stringify(settings.providerTtsModels) ||
-      JSON.stringify(providerTtsVoices) !==
-        JSON.stringify(settings.providerTtsVoices) ||
-      debugMode !== settings.debugMode ||
-      streamResponses !== settings.streamResponses ||
-      reasoningEffort !== settings.reasoningEffort ||
-      enableToolCalling !== settings.enableToolCalling ||
-      loreRetrievalEnabled !== settings.loreRetrievalEnabled ||
-      omniscientMode !== settings.omniscientMode ||
-      loreTopK !== settings.loreTopK ||
-      sceneTopK !== settings.sceneTopK ||
-      similarityFloor !== settings.similarityFloor);
+    settings != null && isDraftDirty(draft, settingsToDraft(settings));
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    await updateAppSettings({
-      theme,
-      primaryColor,
-      neutralColor,
-      editorWidth,
-      uiDensity,
-      editorFont,
-      editorFontSize,
-      autoSaveIntervalMs: autoSaveSeconds * 1000,
-      readingSpeedWpm,
-      autoFocusModeOnSprint,
-      grammarCheckerEnabled,
-      holeDelimiters: {
-        open: holeOpenDelimiter.trim() || "[",
-        close: holeCloseDelimiter.trim() || "]",
-      },
-      holeHighlightOpacity,
-      goalCountdownDisplay,
-      enableAiFeatures,
-      aiProvider,
-      providerApiKeys,
-      providerModels,
-      providerTtsModels,
-      providerTtsVoices,
-      debugMode,
-      streamResponses,
-      reasoningEffort,
-      enableToolCalling,
-      loreRetrievalEnabled,
-      omniscientMode,
-      loreTopK,
-      sceneTopK,
-      similarityFloor,
-    });
+    await updateAppSettings(draftToUpdatePayload(draft));
     closeModal();
   }
 
@@ -310,101 +354,35 @@ export function AppSettingsDialog() {
       <form onSubmit={handleSubmit} className="mt-4 space-y-6">
         {tab === "general" && (
           <GeneralTabContent
-            theme={theme}
-            onThemeChange={setTheme}
-            primaryColor={primaryColor}
+            draft={draft}
+            setField={setField}
             onPrimaryColorChange={handlePrimaryColorChange}
-            neutralColor={neutralColor}
             onNeutralColorChange={handleNeutralColorChange}
-            editorWidth={editorWidth}
             onEditorWidthChange={handleEditorWidthChange}
-            uiDensity={uiDensity}
             onUiDensityChange={handleUiDensityChange}
-            goalCountdownDisplay={goalCountdownDisplay}
-            onGoalCountdownDisplayChange={setGoalCountdownDisplay}
-            inputClass={INPUT_CLASS}
-            labelClass={LABEL_CLASS}
           />
         )}
 
         {tab === "editor" && (
           <EditorSettings
-            editorFont={editorFont}
-            editorFontSize={editorFontSize}
-            autoSaveSeconds={autoSaveSeconds}
-            readingSpeedWpm={readingSpeedWpm}
-            autoFocusModeOnSprint={autoFocusModeOnSprint}
-            grammarCheckerEnabled={grammarCheckerEnabled}
-            holeOpenDelimiter={holeOpenDelimiter}
-            holeCloseDelimiter={holeCloseDelimiter}
-            holeHighlightOpacity={holeHighlightOpacity}
-            onEditorFontChange={setEditorFont}
-            onEditorFontSizeChange={setEditorFontSize}
-            onAutoSaveSecondsChange={setAutoSaveSeconds}
-            onReadingSpeedWpmChange={setReadingSpeedWpm}
-            onAutoFocusModeOnSprintChange={setAutoFocusModeOnSprint}
-            onGrammarCheckerEnabledChange={setGrammarCheckerEnabled}
-            onHoleOpenDelimiterChange={setHoleOpenDelimiter}
-            onHoleCloseDelimiterChange={setHoleCloseDelimiter}
+            draft={draft}
+            setField={setField}
             onHoleHighlightOpacityChange={handleHoleHighlightOpacityChange}
             onManageDictionaries={() => openModal({ id: "dictionary-manager" })}
             onManageGrammarRules={() => openModal({ id: "grammar-rules" })}
-            inputClass={INPUT_CLASS}
-            labelClass={LABEL_CLASS}
           />
         )}
 
         {tab === "ai" && (
           <div className="space-y-6">
-            <AiSettings
-              enableAiFeatures={enableAiFeatures}
-              aiProvider={aiProvider}
-              providerApiKeys={providerApiKeys}
-              providerModels={providerModels}
-              providerTtsModels={providerTtsModels}
-              providerTtsVoices={providerTtsVoices}
-              streamResponses={streamResponses}
-              reasoningEffort={reasoningEffort}
-              debugMode={debugMode}
-              enableToolCalling={enableToolCalling}
-              onEnableAiFeaturesChange={setEnableAiFeatures}
-              onAiProviderChange={setAiProvider}
-              onProviderApiKeyChange={(provider, key) =>
-                setProviderApiKeys((prev) => ({ ...prev, [provider]: key }))
-              }
-              onProviderModelChange={(provider, model) =>
-                setProviderModels((prev) => ({ ...prev, [provider]: model }))
-              }
-              onProviderTtsModelChange={(provider, model) =>
-                setProviderTtsModels((prev) => ({ ...prev, [provider]: model }))
-              }
-              onProviderTtsVoiceChange={(provider, voice) =>
-                setProviderTtsVoices((prev) => ({ ...prev, [provider]: voice }))
-              }
-              onStreamResponsesChange={setStreamResponses}
-              onReasoningEffortChange={setReasoningEffort}
-              onDebugModeChange={setDebugMode}
-              onEnableToolCallingChange={setEnableToolCalling}
-              loreRetrievalEnabled={loreRetrievalEnabled}
-              onLoreRetrievalEnabledChange={setLoreRetrievalEnabled}
-              omniscientMode={omniscientMode}
-              onOmniscientModeChange={setOmniscientMode}
-              loreTopK={loreTopK}
-              onLoreTopKChange={setLoreTopK}
-              sceneTopK={sceneTopK}
-              onSceneTopKChange={setSceneTopK}
-              similarityFloor={similarityFloor}
-              onSimilarityFloorChange={setSimilarityFloor}
-              inputClass={INPUT_CLASS}
-              labelClass={LABEL_CLASS}
-            />
+            <AiSettings draft={draft} setField={setField} />
           </div>
         )}
 
         {tab === "data" && (
           <BackupSettings
             onImportReady={(backup, filename) =>
-              setPendingImport({ backup, filename })
+              openModal({ id: "import-backup", backup, filename })
             }
           />
         )}
@@ -415,17 +393,6 @@ export function AppSettingsDialog() {
           submitDisabled={!isDirty}
         />
       </form>
-
-      {pendingImport && (
-        <ImportBackupDialog
-          backup={pendingImport.backup}
-          filename={pendingImport.filename}
-          onClose={() => setPendingImport(null)}
-          onImportComplete={() => {
-            // Result is shown in the dialog, user will close it
-          }}
-        />
-      )}
     </Modal>
   );
 }

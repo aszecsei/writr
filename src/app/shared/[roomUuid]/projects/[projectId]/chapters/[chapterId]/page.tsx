@@ -6,7 +6,6 @@ import type { ChapterId, ProjectId } from "@/db/schemas";
 
 export default function SharedChapterPage() {
   const params = useParams<{
-    roomUuid: string;
     projectId: ProjectId;
     chapterId: ChapterId;
   }>();
@@ -14,7 +13,6 @@ export default function SharedChapterPage() {
     <ChapterReadOnlyBody
       projectId={params.projectId}
       chapterId={params.chapterId}
-      basePath={`/shared/${params.roomUuid}/projects/${params.projectId}`}
     />
   );
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import { createChildListHook } from "../factories";
 
-export function useCommentsByChapter(chapterId: string | null) {
-  return useLiveQuery(
-    () =>
-      chapterId ? db.comments.where({ chapterId }).sortBy("fromOffset") : [],
-    [chapterId],
-  );
-}
+export const useCommentsByChapter = createChildListHook(
+  db.comments,
+  "chapterId",
+  "fromOffset",
+);

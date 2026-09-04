@@ -1,3 +1,4 @@
+import type nlpFn from "compromise";
 import type { AnalyzedSentence, AnalyzedTerm } from "./types";
 
 /**
@@ -21,14 +22,9 @@ interface NlpSentenceJson {
   terms: NlpTermJson[];
 }
 
-type NlpFn = (text: string) => {
-  compute: (method: string) => void;
-  json: (options: object) => NlpSentenceJson[];
-};
+let nlpPromise: Promise<typeof nlpFn> | null = null;
 
-let nlpPromise: Promise<NlpFn> | null = null;
-
-async function getNlp(): Promise<NlpFn> {
+async function getNlp(): Promise<typeof nlpFn> {
   if (!nlpPromise) {
     nlpPromise = (async () => {
       const [{ default: nlp }, { default: speech }] = await Promise.all([
@@ -36,7 +32,7 @@ async function getNlp(): Promise<NlpFn> {
         import("compromise-speech"),
       ]);
       nlp.extend(speech);
-      return nlp as unknown as NlpFn;
+      return nlp;
     })();
   }
   return nlpPromise;
@@ -83,9 +79,14 @@ export async function parseParagraph(
   // Populates each term's `root` (verb→infinitive, plural→singular) where
   // compromise's tagging finds a reduction; consumed by echo + glue metrics.
   doc.compute("root");
-  const sentences = doc.json({
+  // compromise's own `.json()` return type is untyped `any` (its shape
+  // depends on the options passed in); annotate it with the actual runtime
+  // shape for these options instead. The options type itself doesn't know
+  // about `terms.syllables` — added by the compromise-speech plugin, not
+  // compromise's own JsonProps — hence the cast.
+  const sentences: NlpSentenceJson[] = doc.json({
     terms: { tags: true, normal: true, syllables: true },
-  });
+  } as object);
   return sentences
     .map((sentence) => ({
       text: sentence.text.trim(),

@@ -1,14 +1,8 @@
 "use client";
 
 import { Loader2, Pause, Play, X } from "lucide-react";
+import { formatPlaybackTime } from "@/lib/format-time";
 import { useTtsStore } from "@/store/ttsStore";
-
-function formatTime(seconds: number): string {
-  if (!seconds || !Number.isFinite(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
 
 /**
  * Persistent mini player rendered at the bottom of AppShell while a chapter
@@ -77,7 +71,7 @@ export function TtsPlayerBar() {
         ) : (
           <div className="mt-1 flex items-center gap-2">
             <span className="w-9 text-right text-[10px] tabular-nums text-neutral-400">
-              {formatTime(currentTime)}
+              {formatPlaybackTime(currentTime)}
             </span>
             <input
               type="range"
@@ -90,7 +84,7 @@ export function TtsPlayerBar() {
               aria-label="Playback position"
             />
             <span className="w-9 text-[10px] tabular-nums text-neutral-400">
-              {formatTime(duration)}
+              {formatPlaybackTime(duration)}
             </span>
           </div>
         )}

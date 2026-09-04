@@ -25,12 +25,14 @@ import {
 } from "@/components/family-tree/CharacterNode";
 import { RelationshipEdge } from "@/components/family-tree/RelationshipEdge";
 import { RelationshipList } from "@/components/family-tree/RelationshipList";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
   useRelationshipsByProject,
 } from "@/hooks/data/useBibleEntries";
 import { layoutNodes } from "@/hooks/ui/useAutoLayout";
+import { useUiStore } from "@/store/uiStore";
 
 const nodeTypes: NodeTypes = { character: CharacterNode };
 const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };
@@ -39,11 +41,23 @@ function FamilyTreeCanvas() {
   const params = useParams<{ projectId: ProjectId }>();
   const characters = useCharactersByProject(params.projectId);
   const relationships = useRelationshipsByProject(params.projectId);
-  const [showDialog, setShowDialog] = useState(false);
+  const modal = useUiStore((s) => s.modal);
+  const openModal = useUiStore((s) => s.openModal);
+  const closeModal = useUiStore((s) => s.closeModal);
 
   // --- Controlled ReactFlow state ---
   const [nodes, setNodes] = useState<Node[]>([]);
   const prevFingerprint = useRef("");
+
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateIsDark = () => setIsDarkMode(root.classList.contains("dark"));
+    updateIsDark();
+    const observer = new MutationObserver(updateIsDark);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const edges: Edge[] = useMemo(() => {
     if (!relationships) return [];
@@ -103,7 +117,7 @@ function FamilyTreeCanvas() {
         </p>
         <Link
           href={`/projects/${params.projectId}/bible/characters`}
-          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          className={BUTTON_PRIMARY}
         >
           Go to Characters
         </Link>
@@ -120,7 +134,7 @@ function FamilyTreeCanvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        colorMode="dark"
+        colorMode={isDarkMode ? "dark" : "light"}
         proOptions={{ hideAttribution: true }}
         className="bg-neutral-50 dark:bg-neutral-950"
       >
@@ -162,18 +176,18 @@ function FamilyTreeCanvas() {
       <div className="absolute left-4 top-4 z-10">
         <button
           type="button"
-          onClick={() => setShowDialog(true)}
-          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          onClick={() => openModal({ id: "add-relationship" })}
+          className={`shadow-md ${BUTTON_PRIMARY}`}
         >
           Add Relationship
         </button>
       </div>
 
-      {showDialog && characters && (
+      {modal.id === "add-relationship" && characters && (
         <AddRelationshipDialog
           projectId={params.projectId}
           characters={characters}
-          onClose={() => setShowDialog(false)}
+          onClose={closeModal}
         />
       )}
     </>

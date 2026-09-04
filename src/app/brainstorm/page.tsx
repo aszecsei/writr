@@ -7,7 +7,7 @@ import { BrainstormWorkspace } from "@/components/brainstorm/BrainstormWorkspace
 import { SavedIdeasList } from "@/components/brainstorm/SavedIdeasList";
 import { SetupList } from "@/components/brainstorm/SetupList";
 import { CreateProjectDialog } from "@/components/dashboard/CreateProjectDialog";
-import { SettingsModals } from "@/components/settings/SettingsModals";
+import { Spinner } from "@/components/ui/Spinner";
 import type { BrainstormSetupId } from "@/db/schemas";
 import { useBrainstormSetups } from "@/hooks/data";
 import { useUiStore } from "@/store/uiStore";
@@ -65,7 +65,7 @@ export default function BrainstormPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         {setups === undefined ? (
           <div className="flex justify-center py-24">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+            <Spinner />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-8 md:grid-cols-[200px_1fr]">
@@ -97,7 +97,6 @@ export default function BrainstormPage() {
       </main>
 
       <CreateProjectDialog />
-      <SettingsModals />
     </div>
   );
 }

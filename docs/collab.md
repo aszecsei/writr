@@ -46,6 +46,28 @@ A small standalone Node service. **Blind pass-through** — it never sees plaint
 
 The relay has **no persistent storage**; rooms exist only in memory and clear on restart.
 
+## Data source and read-only guest pages
+
+The project bible pages (`src/app/projects/[projectId]/bible/**`,
+`src/components/projects/*Body.tsx`) render identically for the host and for
+a shared-project guest, switching backing stores through
+`src/context/DataSourceContext.tsx`. `DataSourceProvider` supplies
+`{ kind: "shared", roomUuid }` from `src/app/shared/[roomUuid]/projects/[projectId]/layout.tsx`; every other route falls back to the default
+`{ kind: "dexie" }`. `useReadOnly()` and `useProjectHref(projectId)` derive
+the read-only flag and the `/projects/[id]` vs. `/shared/[roomUuid]/projects/[id]`
+link prefix from that source, so page wrappers no longer thread `readOnly` /
+`basePath` props through to the `*Body` components.
+
+Data itself comes from `src/hooks/data/source.ts`'s source-aware hooks (see
+`docs/hooks.md`), which read Dexie on the host and `useSharedProjectStore` —
+populated by `attachProjectReader` from the tables in
+`PROJECT_DOC_TABLES` (`src/lib/collab/projectDoc.ts`) — on a shared guest.
+Scenes are not one of those tables, so `CharacterDetailBody` /
+`LocationDetailBody` only query scenes when `useDataSource().kind ===
+"dexie"`; on a shared guest the scene sidebar and scene-count copy render as
+empty rather than reading local Dexie data for a project the guest doesn't
+have.
+
 ## Editor integration
 
 `ChapterEditor` (the host's local view) binds its own `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-caret` extensions over the session's Y.js doc when hosting. `CollabProseEditor` is guest-only — it backs the `/shared/[uuid]` route. Markdown round-tripping still happens for save/load; collab only changes the in-memory transport.

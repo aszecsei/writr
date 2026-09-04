@@ -6,7 +6,6 @@ import type { LocationId, ProjectId } from "@/db/schemas";
 
 export default function SharedLocationDetailPage() {
   const params = useParams<{
-    roomUuid: string;
     projectId: ProjectId;
     locationId: LocationId;
   }>();
@@ -14,8 +13,6 @@ export default function SharedLocationDetailPage() {
     <LocationDetailBody
       projectId={params.projectId}
       locationId={params.locationId}
-      basePath={`/shared/${params.roomUuid}/projects/${params.projectId}`}
-      readOnly={true}
     />
   );
 }

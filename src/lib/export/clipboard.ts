@@ -45,10 +45,7 @@ export async function copyChapterAo3HtmlToClipboard(
       chapters: [{ title: chapter.title, content: chapter.content }],
     },
     {
-      format: "markdown",
       scope: "chapter",
-      projectId: options.projectId,
-      chapterId: options.chapterId,
       includeTitlePage: false,
       includeChapterHeadings: options.includeChapterHeading,
       pageBreaksBetweenChapters: false,

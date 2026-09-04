@@ -2,6 +2,7 @@ import { Node, type NodeViewRendererProps } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { sceneBreakMarker } from "@/lib/scenes/segments";
 
 /**
  * tiptap-markdown's serializer state — the library ships no public type, so we
@@ -185,7 +186,7 @@ export const SceneBreak = Node.create<SceneBreakOptions>({
       markdown: {
         serialize(state: MarkdownState, node: { attrs: { sceneId?: string } }) {
           const id = node.attrs.sceneId ?? "";
-          state.write(`<hr data-type="sceneBreak" data-scene-id="${id}">`);
+          state.write(sceneBreakMarker(id));
           state.closeBlock(node);
         },
         parse: {

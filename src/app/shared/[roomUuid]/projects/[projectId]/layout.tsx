@@ -66,7 +66,7 @@ export default function SharedProjectLayout({
   }
 
   return (
-    <DataSourceProvider source={{ kind: "shared" }}>
+    <DataSourceProvider source={{ kind: "shared", roomUuid: params.roomUuid }}>
       <div className="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
         <SessionHeaderBar
           left={

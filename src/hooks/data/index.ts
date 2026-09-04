@@ -15,4 +15,4 @@ export {
 } from "./useBibleEntries";
 export { useBrainstormIdeas, useBrainstormSetups } from "./useBrainstorm";
 export { useChapter, useChaptersByProject } from "./useChapter";
-export { useProject } from "./useProject";
+export { useActiveProject, useProject } from "./useProject";

@@ -1,11 +1,9 @@
 "use client";
 
-import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useRef } from "react";
 import {
   createSprint,
   endSprint,
-  getActiveSprint,
   getAppSettings,
   pauseSprint,
   resumeSprint,
@@ -14,37 +12,26 @@ import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useSprintStore } from "@/store/sprintStore";
 import { useUiStore } from "@/store/uiStore";
+import { useActiveSprint } from "./useActiveSprint";
 
 export function useWritingSprint() {
-  const activeSprint = useLiveQuery(() => getActiveSprint(), []);
+  const activeSprint = useActiveSprint();
   const wordCount = useEditorStore((s) => s.wordCount);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeChapterId = useEditorStore(selectActiveChapterId);
 
-  const {
-    setActiveSprint,
-    updateTimer,
-    setWordsWritten,
-    reset,
-    closeConfigModal,
-  } = useSprintStore();
+  const { updateTimer, setWordsWritten, reset } = useSprintStore();
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startWordCountRef = useRef<number>(0);
 
-  // Sync active sprint to store
   useEffect(() => {
     if (activeSprint) {
-      setActiveSprint(
-        activeSprint.id,
-        activeSprint.status === "active",
-        activeSprint.status === "paused",
-      );
       startWordCountRef.current = activeSprint.startWordCount;
     } else {
       reset();
     }
-  }, [activeSprint, setActiveSprint, reset]);
+  }, [activeSprint, reset]);
 
   // Timer tick effect
   useEffect(() => {
@@ -97,7 +84,7 @@ export function useWritingSprint() {
         chapterId: activeChapterId,
         wordCountGoal,
       });
-      closeConfigModal();
+      useUiStore.getState().closeModal();
 
       // Auto-enable focus mode if setting is enabled
       const settings = await getAppSettings();
@@ -105,7 +92,7 @@ export function useWritingSprint() {
         useUiStore.getState().setFocusMode(true);
       }
     },
-    [activeProjectId, activeChapterId, wordCount, closeConfigModal],
+    [activeProjectId, activeChapterId, wordCount],
   );
 
   const pause = useCallback(async () => {

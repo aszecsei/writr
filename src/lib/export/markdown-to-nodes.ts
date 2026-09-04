@@ -1,4 +1,4 @@
-import { Lexer, type Token, type Tokens } from "marked";
+import { Lexer, type MarkedToken, type Token } from "marked";
 import { match } from "ts-pattern";
 
 type InlineStyle = "bold" | "italic" | "code" | "strikethrough";
@@ -56,63 +56,47 @@ function parseInlineTokens(
   const spans: InlineSpan[] = [];
 
   for (const token of tokens) {
-    match(token as Token)
+    // marked's `Token` type adds an untyped `Tokens.Generic` escape hatch for
+    // custom lexer extensions, which this file's plain Lexer never produces.
+    // Matching against `MarkedToken` (no Generic) lets ts-pattern narrow `t`
+    // to the concrete token shape in every branch below, with no re-casting.
+    match(token as MarkedToken)
       .with({ type: "text" }, (t) => {
-        const textToken = t as Tokens.Text;
-        if (textToken.tokens) {
-          spans.push(...parseInlineTokens(textToken.tokens, parentStyles));
+        if (t.tokens) {
+          spans.push(...parseInlineTokens(t.tokens, parentStyles));
         } else {
-          spans.push(textSpan(textToken.text, [...parentStyles]));
+          spans.push(textSpan(t.text, [...parentStyles]));
         }
       })
       .with({ type: "strong" }, (t) => {
-        const strongToken = t as Tokens.Strong;
-        spans.push(
-          ...parseInlineTokens(strongToken.tokens, [...parentStyles, "bold"]),
-        );
+        spans.push(...parseInlineTokens(t.tokens, [...parentStyles, "bold"]));
       })
       .with({ type: "em" }, (t) => {
-        const emToken = t as Tokens.Em;
-        spans.push(
-          ...parseInlineTokens(emToken.tokens, [...parentStyles, "italic"]),
-        );
+        spans.push(...parseInlineTokens(t.tokens, [...parentStyles, "italic"]));
       })
       .with({ type: "del" }, (t) => {
-        const delToken = t as Tokens.Del;
         spans.push(
-          ...parseInlineTokens(delToken.tokens, [
-            ...parentStyles,
-            "strikethrough",
-          ]),
+          ...parseInlineTokens(t.tokens, [...parentStyles, "strikethrough"]),
         );
       })
       .with({ type: "codespan" }, (t) => {
-        const codeToken = t as Tokens.Codespan;
-        spans.push(textSpan(codeToken.text, [...parentStyles, "code"]));
+        spans.push(textSpan(t.text, [...parentStyles, "code"]));
       })
       .with({ type: "br" }, () => {
         spans.push({ type: "lineBreak" });
       })
       .with({ type: "escape" }, (t) => {
-        const escapeToken = t as Tokens.Escape;
-        spans.push(textSpan(escapeToken.text, [...parentStyles]));
+        spans.push(textSpan(t.text, [...parentStyles]));
       })
       .with({ type: "link" }, (t) => {
-        const linkToken = t as Tokens.Link;
-        spans.push(...parseInlineTokens(linkToken.tokens, parentStyles));
+        spans.push(...parseInlineTokens(t.tokens, parentStyles));
       })
       .with({ type: "image" }, (t) => {
-        const imageToken = t as Tokens.Image;
-        spans.push(
-          textSpan(imageToken.text || imageToken.title || "[image]", [
-            ...parentStyles,
-          ]),
-        );
+        spans.push(textSpan(t.text || t.title || "[image]", [...parentStyles]));
       })
       .with({ type: "html" }, (t) => {
-        const htmlToken = t as Tokens.HTML;
         // Handle ruby text: <ruby>base<rt>annotation</rt></ruby>
-        const rubyMatch = htmlToken.raw.match(
+        const rubyMatch = t.raw.match(
           /<ruby[^>]*>([^<]*)<rt[^>]*>([^<]*)<\/rt><\/ruby>/i,
         );
         if (rubyMatch) {
@@ -124,7 +108,7 @@ function parseInlineTokens(
           });
         } else {
           // For other inline HTML, extract text content
-          const textContent = htmlToken.raw.replace(/<[^>]+>/g, "");
+          const textContent = t.raw.replace(/<[^>]+>/g, "");
           if (textContent.trim()) {
             spans.push(textSpan(textContent, [...parentStyles]));
           }
@@ -206,46 +190,45 @@ function walkTokens(tokens: Token[]): DocNode[] {
   const nodes: DocNode[] = [];
 
   for (const token of tokens) {
-    match(token as Token)
+    // marked's `Token` type adds an untyped `Tokens.Generic` escape hatch for
+    // custom lexer extensions, which this file's plain Lexer never produces.
+    // Matching against `MarkedToken` (no Generic) lets ts-pattern narrow `t`
+    // to the concrete token shape in every branch below, with no re-casting.
+    match(token as MarkedToken)
       .with({ type: "heading" }, (t) => {
-        const headingToken = t as Tokens.Heading;
         nodes.push({
           type: "heading",
-          level: headingToken.depth as 1 | 2 | 3 | 4 | 5 | 6,
-          spans: parseInlineTokens(headingToken.tokens),
+          level: t.depth as 1 | 2 | 3 | 4 | 5 | 6,
+          spans: parseInlineTokens(t.tokens),
         });
       })
       .with({ type: "paragraph" }, (t) => {
-        const paragraphToken = t as Tokens.Paragraph;
         nodes.push({
           type: "paragraph",
-          spans: parseInlineTokens(paragraphToken.tokens),
+          spans: parseInlineTokens(t.tokens),
         });
       })
       .with({ type: "blockquote" }, (t) => {
-        const blockquoteToken = t as Tokens.Blockquote;
         nodes.push({
           type: "blockquote",
-          children: walkTokens(blockquoteToken.tokens),
+          children: walkTokens(t.tokens),
         });
       })
       .with({ type: "list" }, (t) => {
-        const listToken = t as Tokens.List;
         nodes.push({
           type: "list",
-          ordered: listToken.ordered,
-          items: listToken.items.map((item) => walkTokens(item.tokens)),
+          ordered: t.ordered,
+          items: t.items.map((item) => walkTokens(item.tokens)),
         });
       })
       .with({ type: "code" }, (t) => {
-        const codeToken = t as Tokens.Code;
-        nodes.push({ type: "code", text: codeToken.text });
+        nodes.push({ type: "code", text: t.text });
       })
       .with({ type: "hr" }, () => {
         nodes.push({ type: "hr" });
       })
       .with({ type: "html" }, (t) => {
-        const raw = (t as Tokens.HTML).raw;
+        const raw = t.raw;
 
         const image = parseHtmlImage(raw);
         if (image) {

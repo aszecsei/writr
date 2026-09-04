@@ -1,5 +1,6 @@
 "use client";
 
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import type {
   EditorWidth,
   GoalCountdownDisplay,
@@ -9,22 +10,12 @@ import type {
 } from "@/db/schemas";
 import { useAppStats } from "@/hooks/editor/useAppStats";
 import { formatBytes } from "@/lib/format-bytes";
+import { formatRelativeTime } from "@/lib/format-time";
 import { AppearanceSettings } from "./AppearanceSettings";
-
-function formatRelativeDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffHrs = Math.floor(diffMs / 3_600_000);
-  const diffDays = Math.floor(diffMs / 86_400_000);
-
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  if (diffDays < 30) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
+import type {
+  AppSettingsDraft,
+  SetAppSettingsField,
+} from "./AppSettingsDialog";
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
@@ -38,37 +29,21 @@ function StatItem({ label, value }: { label: string; value: string }) {
 }
 
 interface GeneralTabContentProps {
-  theme: "light" | "dark" | "system";
-  onThemeChange: (theme: "light" | "dark" | "system") => void;
-  primaryColor: PrimaryColor;
+  draft: AppSettingsDraft;
+  setField: SetAppSettingsField;
   onPrimaryColorChange: (color: PrimaryColor) => void;
-  neutralColor: NeutralColor;
   onNeutralColorChange: (color: NeutralColor) => void;
-  editorWidth: EditorWidth;
   onEditorWidthChange: (width: EditorWidth) => void;
-  uiDensity: UiDensity;
   onUiDensityChange: (density: UiDensity) => void;
-  goalCountdownDisplay: GoalCountdownDisplay;
-  onGoalCountdownDisplayChange: (display: GoalCountdownDisplay) => void;
-  inputClass: string;
-  labelClass: string;
 }
 
 export function GeneralTabContent({
-  theme,
-  onThemeChange,
-  primaryColor,
+  draft,
+  setField,
   onPrimaryColorChange,
-  neutralColor,
   onNeutralColorChange,
-  editorWidth,
   onEditorWidthChange,
-  uiDensity,
   onUiDensityChange,
-  goalCountdownDisplay,
-  onGoalCountdownDisplayChange,
-  inputClass,
-  labelClass,
 }: GeneralTabContentProps) {
   const stats = useAppStats();
 
@@ -112,7 +87,7 @@ export function GeneralTabContent({
             value={
               stats
                 ? stats.lastExportedAt
-                  ? formatRelativeDate(stats.lastExportedAt)
+                  ? formatRelativeTime(stats.lastExportedAt)
                   : "Never"
                 : "\u2014"
             }
@@ -128,16 +103,17 @@ export function GeneralTabContent({
           <div className="flex items-center gap-4">
             <label
               htmlFor="goal-countdown"
-              className={`${labelClass} shrink-0`}
+              className={`${LABEL_CLASS} shrink-0`}
             >
               Goal countdown
             </label>
             <select
               id="goal-countdown"
-              className={`${inputClass} w-full`}
-              value={goalCountdownDisplay}
+              className={`${INPUT_CLASS} w-full`}
+              value={draft.goalCountdownDisplay}
               onChange={(e) =>
-                onGoalCountdownDisplayChange(
+                setField(
+                  "goalCountdownDisplay",
                   e.target.value as GoalCountdownDisplay,
                 )
               }
@@ -151,18 +127,12 @@ export function GeneralTabContent({
       </fieldset>
 
       <AppearanceSettings
-        theme={theme}
-        onThemeChange={onThemeChange}
-        primaryColor={primaryColor}
+        draft={draft}
+        setField={setField}
         onPrimaryColorChange={onPrimaryColorChange}
-        neutralColor={neutralColor}
         onNeutralColorChange={onNeutralColorChange}
-        editorWidth={editorWidth}
         onEditorWidthChange={onEditorWidthChange}
-        uiDensity={uiDensity}
         onUiDensityChange={onUiDensityChange}
-        inputClass={inputClass}
-        labelClass={labelClass}
       />
     </div>
   );

@@ -1,39 +1,10 @@
 "use client";
 
-import { move } from "@dnd-kit/helpers";
-import {
-  DragDropProvider,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/react";
-import {
-  ArrowDown,
-  ArrowRightLeft,
-  ArrowUp,
-  CheckCircle2,
-  Circle,
-  CornerDownRight,
-  Download,
-  FileText,
-  Pencil,
-  Plus,
-  SeparatorHorizontal,
-  Settings,
-  SplitSquareVertical,
-  Trash2,
-} from "lucide-react";
-import Link from "next/link";
+import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DragHandle } from "@/components/bible/DragHandle";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import {
-  ContextMenu,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuSeparator,
-} from "@/components/ui/ContextMenu";
 import {
   createChapter,
   createSeparator,
@@ -41,24 +12,17 @@ import {
   moveChapter,
   updateChapter,
 } from "@/db/operations";
-import type {
-  ChapterId,
-  ChapterSection,
-  ProjectId,
-  Scene,
-  SceneId,
-} from "@/db/schemas";
+import type { ChapterId, ChapterSection, ProjectId, Scene } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useBinderTree } from "@/hooks/data/useChapter";
 import { useScenesByProject } from "@/hooks/data/useScene";
+import { useBinderDragDrop } from "@/hooks/ui/useBinderDragDrop";
+import { useBinderRename } from "@/hooks/ui/useBinderRename";
+import { useSceneDragDrop } from "@/hooks/ui/useSceneDragDrop";
 import { isNestingEnabled } from "@/lib/binder/config";
 import {
   type BinderNode,
-  type FlatRow,
-  flatDescendantIds,
   flattenForDnd,
-  getBinderProjection,
-  getDragDepth,
   subtreeHoleCounts,
   subtreeWordCounts,
 } from "@/lib/binder/tree";
@@ -70,22 +34,16 @@ import {
   reorderScenesInChapter,
 } from "@/lib/scenes/scene-surgery";
 import { getTerm } from "@/lib/terminology";
-import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { BinderContextMenu } from "./BinderContextMenu";
 import {
   BinderItem,
   BinderItemOverlay,
   type BinderItemShared,
-  INDENT_PX,
 } from "./BinderItem";
-import { planSceneReorder } from "./scene-drag";
-
-const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "revised", label: "Revised" },
-  { value: "final", label: "Final" },
-] as const;
+import { SceneContextMenu } from "./SceneContextMenu";
+import { SceneRow } from "./SceneRow";
 
 function indexNodes(nodes: BinderNode[]): Map<ChapterId, BinderNode> {
   const map = new Map<ChapterId, BinderNode>();
@@ -105,110 +63,7 @@ function descendantIds(node: BinderNode): ChapterId[] {
   return ids;
 }
 
-/** A 2px accent bar marking where a dragged scene will be inserted. */
-function SceneDropLine({ indent }: { indent: number }) {
-  return (
-    <div
-      className="pointer-events-none my-0.5 h-0.5 rounded-full bg-primary-500 dark:bg-primary-400"
-      style={{ marginLeft: indent, marginRight: 12 }}
-    />
-  );
-}
-
-/**
- * A scene row rendered beneath an open chapter (Model D). Clicking navigates to
- * the chapter; right-click opens the scene context menu; the grip handle drags
- * it to reorder within its chapter or into another chapter. Local to
- * BinderSection so its function props don't cross a client-component boundary.
- */
-function SceneRow({
-  scene,
-  index,
-  depth,
-  projectId,
-  pathname,
-  sceneTerm,
-  onContextMenu,
-  showLineBefore,
-  showLineAfter,
-}: {
-  scene: Scene;
-  index: number;
-  depth: number;
-  projectId: ProjectId;
-  pathname: string;
-  sceneTerm: string;
-  onContextMenu: (e: React.MouseEvent, scene: Scene) => void;
-  /** Render the insertion line immediately above this row. */
-  showLineBefore: boolean;
-  /** Render the insertion line immediately below this row (append slot). */
-  showLineAfter: boolean;
-}) {
-  const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
-  const dragData = {
-    type: "scene",
-    sceneId: scene.id,
-    chapterId: scene.chapterId,
-  };
-  const {
-    ref: dragRef,
-    handleRef,
-    isDragSource,
-  } = useDraggable({
-    id: scene.id,
-    type: "scene",
-    data: dragData,
-  });
-  const { ref: dropRef } = useDroppable({
-    id: scene.id,
-    type: "scene",
-    accept: "scene",
-    data: dragData,
-  });
-  const setRef = useCallback(
-    (el: Element | null) => {
-      dragRef(el);
-      dropRef(el);
-    },
-    [dragRef, dropRef],
-  );
-  const indent = (depth + 1) * INDENT_PX;
-  const href = `/projects/${projectId}/chapters/${scene.chapterId}?scene=${scene.id}`;
-  const isActive = pathname === href;
-  const label = scene.title.trim() || `${sceneTerm} ${index + 1}`;
-  return (
-    <div>
-      {showLineBefore && <SceneDropLine indent={indent} />}
-      <div
-        ref={setRef}
-        className={`flex items-center rounded-md transition-colors ${
-          isDragSource ? "opacity-40" : ""
-        } ${
-          isActive
-            ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100"
-            : "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
-        }`}
-        style={{ paddingLeft: indent }}
-      >
-        <DragHandle ref={handleRef} />
-        <Link
-          href={href}
-          onClick={() => requestSceneScroll(scene.id)}
-          onContextMenu={(e) => onContextMenu(e, scene)}
-          className="flex flex-1 items-center justify-between gap-2 overflow-hidden rounded-r-md py-density-item pr-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400"
-        >
-          <span className="truncate">{label}</span>
-          <span className="ml-2 shrink-0 tabular-nums text-neutral-400 dark:text-neutral-500">
-            {scene.wordCount.toLocaleString()}
-          </span>
-        </Link>
-      </div>
-      {showLineAfter && <SceneDropLine indent={indent} />}
-    </div>
-  );
-}
-
-interface BinderSectionLabels {
+export interface BinderSectionLabels {
   /** Uppercase section header, e.g. "Manuscript". */
   header: string;
   /** "Add" button + sibling menu label, e.g. "Add Chapter". */
@@ -249,7 +104,7 @@ export function BinderSection({
   const setChapterOpen = useUiStore((s) => s.setChapterOpen);
   const projectMode = useProjectStore((s) => s.activeProjectMode);
   const sceneTerm = getTerm(projectMode, "scene");
-  const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
+  const sceneCountTerm = getTerm(projectMode, "scenes").toLowerCase();
 
   // Scene rows (Model D). Group the project's scenes by chapter so the binder
   // can interleave them under an open chapter and show a "N scenes" subtitle.
@@ -291,74 +146,33 @@ export function BinderSection({
     [tree, collapsed],
   );
 
-  // Optimistic flattened list driven during a drag (ported from the dnd-kit
-  // Sortable/Tree example): `move()` reorders it and horizontal projection sets
-  // each dragged row's depth/parentId. While idle it tracks `canonicalRows`.
-  const [flatRows, setFlatRows] = useState<FlatRow[]>(canonicalRows);
-  const isDragging = useRef(false);
-  const initialDepth = useRef(0);
-
-  // Scene drag (Model D): the row being dragged plus the live drop slot. The
-  // slot drives the insertion line and the target-chapter highlight, and is
-  // read on drop to reorder within a chapter or move across chapters.
-  const sceneDragRef = useRef<{
-    sceneId: SceneId;
-    originChapterId: ChapterId;
-  } | null>(null);
-  const [sceneDropTarget, setSceneDropTarget] = useState<{
-    chapterId: ChapterId;
-    beforeSceneId: SceneId | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!isDragging.current) setFlatRows(canonicalRows);
-  }, [canonicalRows]);
+  const chapterDrag = useBinderDragDrop({ canonicalRows, nestingEnabled });
+  const sceneDrag = useSceneDragDrop({
+    projectId,
+    scenesByChapter,
+    nodeIndex,
+    openChapters,
+    setChapterOpen,
+  });
+  const { flatRows } = chapterDrag;
+  const { sceneDropTarget } = sceneDrag;
 
   const [menuChapterId, setMenuChapterId] = useState<ChapterId | null>(null);
   const [menuScene, setMenuScene] = useState<Scene | null>(null);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-  const [renamingChapterId, setRenamingChapterId] = useState<ChapterId | null>(
-    null,
-  );
-  const [renameValue, setRenameValue] = useState("");
-  const renameInputRef = useRef<HTMLInputElement>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{
+  const [pendingDelete, setPendingDelete] = useState<{
     chapterId: ChapterId;
     chapterTitle: string;
     childCount: number;
   } | null>(null);
 
   const closeMenu = useCallback(() => setMenuChapterId(null), []);
-
-  useEffect(() => {
-    if (renamingChapterId && renameInputRef.current) {
-      renameInputRef.current.focus();
-      renameInputRef.current.select();
-    }
-  }, [renamingChapterId]);
+  const rename = useBinderRename(closeMenu);
 
   function handleContextMenu(e: React.MouseEvent, chapterId: ChapterId) {
     e.preventDefault();
     setMenuChapterId(chapterId);
     setMenuPos({ x: e.clientX, y: e.clientY });
-  }
-
-  function handleRenameStart(chapterId: ChapterId, currentTitle: string) {
-    setRenamingChapterId(chapterId);
-    setRenameValue(currentTitle);
-    closeMenu();
-  }
-
-  async function handleRenameCommit() {
-    if (renamingChapterId && renameValue.trim()) {
-      await updateChapter(renamingChapterId, { title: renameValue.trim() });
-    }
-    setRenamingChapterId(null);
-  }
-
-  function handleRenameKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleRenameCommit();
-    else if (e.key === "Escape") setRenamingChapterId(null);
   }
 
   async function handleSetStatus(
@@ -430,6 +244,16 @@ export function BinderSection({
     openModal({ id: "separator-settings", chapterId });
   }
 
+  function handleExport(chapterId: ChapterId) {
+    closeMenu();
+    openModal({ id: "export", projectId, chapterId, scope: "chapter" });
+  }
+
+  function handleEditSummary(chapterId: ChapterId) {
+    closeMenu();
+    openModal({ id: "chapter-properties", chapterId });
+  }
+
   function navigateAwayIfDeleted(deletedIds: ChapterId[]) {
     const active = deletedIds.find(
       (id) => pathname === `/projects/${projectId}/chapters/${id}`,
@@ -442,7 +266,7 @@ export function BinderSection({
     const node = nodeIndex.get(chapterId);
     if (!node) return;
     if (node.children.length > 0) {
-      setDeleteConfirm({
+      setPendingDelete({
         chapterId,
         chapterTitle: node.chapter.title,
         childCount: descendantIds(node).length - 1,
@@ -454,14 +278,14 @@ export function BinderSection({
   }
 
   async function handleConfirmDelete(mode: "cascade" | "promote") {
-    if (!deleteConfirm) return;
-    const node = nodeIndex.get(deleteConfirm.chapterId);
+    if (!pendingDelete) return;
+    const node = nodeIndex.get(pendingDelete.chapterId);
     const affected =
       mode === "cascade" && node
         ? descendantIds(node)
-        : [deleteConfirm.chapterId];
-    await deleteChapter(deleteConfirm.chapterId, mode);
-    setDeleteConfirm(null);
+        : [pendingDelete.chapterId];
+    await deleteChapter(pendingDelete.chapterId, mode);
+    setPendingDelete(null);
     navigateAwayIfDeleted(affected);
   }
 
@@ -503,91 +327,32 @@ export function BinderSection({
     await deleteSceneWithContent(scene.id);
   }
 
-  /** Persist a finished scene drag: reorder within the origin chapter, or move
-   *  the scene into the target chapter and make that chapter active. */
-  async function commitSceneDrag(
-    sceneId: SceneId,
-    originChapterId: ChapterId,
-    target: { chapterId: ChapterId; beforeSceneId: SceneId | null },
-  ) {
-    try {
-      if (target.chapterId === originChapterId) {
-        const currentOrder = (scenesByChapter.get(originChapterId) ?? []).map(
-          (s) => s.id,
-        );
-        const next = planSceneReorder(
-          currentOrder,
-          sceneId,
-          target.beforeSceneId,
-        );
-        if (!next) return;
-        await reorderScenesInChapter(originChapterId, next);
-      } else {
-        await moveSceneToChapter(
-          sceneId,
-          target.chapterId,
-          target.beforeSceneId,
-        );
-        // The scene left its origin; make the target active and reveal it.
-        router.push(`/projects/${projectId}/chapters/${target.chapterId}`);
-        requestSceneScroll(sceneId);
-      }
-    } catch {
-      // Stale / disallowed move — the live query keeps the canonical view.
-    }
-  }
-
   const shared: BinderItemShared = {
     projectId,
     pathname,
     subtreeTotals,
     subtreeHoles,
     collapsed,
-    renamingChapterId,
-    renameValue,
-    renameInputRef,
+    renamingChapterId: rename.renamingChapterId,
+    renameValue: rename.renameValue,
+    renameInputRef: rename.renameInputRef,
     onToggleCollapsed: toggleCollapsed,
-    onRenameChange: setRenameValue,
-    onRenameCommit: handleRenameCommit,
-    onRenameKeyDown: handleRenameKeyDown,
+    onRenameChange: rename.setRenameValue,
+    onRenameCommit: rename.commitRename,
+    onRenameKeyDown: rename.handleKeyDown,
     onContextMenu: handleContextMenu,
     onSeparatorOpen: (id) =>
       openModal({ id: "separator-settings", chapterId: id }),
     sceneCounts,
+    sceneTerm: sceneCountTerm,
     openChapters,
     onToggleChapterOpen: toggleChapterOpen,
-    // Highlight the target chapter only for a cross-chapter scene drag.
-    sceneDropTargetId:
-      sceneDropTarget &&
-      sceneDropTarget.chapterId !== sceneDragRef.current?.originChapterId
-        ? sceneDropTarget.chapterId
-        : null,
+    sceneDropTargetId: sceneDrag.crossChapterDropTargetId,
   };
 
   const menuChapter = menuChapterId
     ? nodeIndex.get(menuChapterId)?.chapter
     : undefined;
-  const isMenuDocument = menuChapter?.kind !== "separator";
-
-  /** Persist a finished drag: re-parent the dragged row and order it by its
-   *  position in the optimistic flattened list. moveChapter carries the subtree. */
-  async function commitDrag(rows: FlatRow[], id: ChapterId) {
-    const index = rows.findIndex((r) => r.chapter.id === id);
-    if (index === -1) return;
-    const parentChapterId = rows[index].parentId;
-    let beforeId: ChapterId | null = null;
-    for (let i = index + 1; i < rows.length; i++) {
-      if (rows[i].parentId === parentChapterId) {
-        beforeId = rows[i].chapter.id;
-        break;
-      }
-    }
-    try {
-      await moveChapter(id, { parentChapterId, beforeId });
-    } catch {
-      // Stale / cyclic move — the live query keeps the canonical view.
-    }
-  }
 
   return (
     <div className="space-y-0.5">
@@ -596,122 +361,18 @@ export function BinderSection({
       </div>
 
       <DragDropProvider
-        onDragStart={(event) => {
-          const source = event.operation.source;
-          if (source?.type === "scene") {
-            sceneDragRef.current = {
-              sceneId: source.id as SceneId,
-              originChapterId: source.data.chapterId as ChapterId,
-            };
-            setSceneDropTarget(null);
-            return;
-          }
-          const id = source?.id as ChapterId | undefined;
-          if (!id) return;
-          isDragging.current = true;
-          const start = flatRows.find((r) => r.chapter.id === id);
-          initialDepth.current = start?.depth ?? 0;
-          // Hide the dragged row's descendants for the duration of the drag.
-          const descendants = flatDescendantIds(flatRows, id);
-          setFlatRows((rows) =>
-            rows.filter((r) => !descendants.has(r.chapter.id)),
-          );
+        onDragStart={(event, manager) => {
+          sceneDrag.onDragStart(event, manager);
+          chapterDrag.onDragStart(event, manager);
         }}
         onDragOver={(event, manager) => {
-          const { source, target } = event.operation;
-          if (source?.type === "scene") {
-            event.preventDefault();
-            if (!target) {
-              setSceneDropTarget(null);
-              return;
-            }
-            if (target.type === "scene") {
-              const targetChapterId = target.data.chapterId as ChapterId;
-              const targetSceneId = target.id as SceneId;
-              const list = scenesByChapter.get(targetChapterId) ?? [];
-              const idx = list.findIndex((s) => s.id === targetSceneId);
-              // Drop before the hovered scene, or after it (before its
-              // successor / at the end) once the pointer passes its midpoint.
-              const pointerY = manager.dragOperation.position.current.y;
-              const centerY = target.shape?.center.y ?? pointerY;
-              const beforeSceneId =
-                pointerY > centerY
-                  ? (list[idx + 1]?.id ?? null)
-                  : targetSceneId;
-              setSceneDropTarget({ chapterId: targetChapterId, beforeSceneId });
-            } else if (target.type === "chapter") {
-              const chapterId = target.id as ChapterId;
-              const chapter = nodeIndex.get(chapterId)?.chapter;
-              if (chapter?.kind !== "document") {
-                setSceneDropTarget(null);
-                return;
-              }
-              // Reveal the chapter's scenes so the user can place among them.
-              if (openChapters[chapterId] !== true)
-                setChapterOpen(chapterId, true);
-              setSceneDropTarget({ chapterId, beforeSceneId: null });
-            } else {
-              setSceneDropTarget(null);
-            }
-            return;
-          }
-          event.preventDefault();
-          if (!source || !target || source.id === target.id) return;
-          setFlatRows((rows) => {
-            const sorted = move(rows, event);
-            // Horizontal drag-to-nest is gated; when off, depth follows drop
-            // position only (no intentional re-parenting).
-            const dragDepth = nestingEnabled
-              ? getDragDepth(manager.dragOperation.transform.x, INDENT_PX)
-              : 0;
-            const projectedDepth = initialDepth.current + dragDepth;
-            const { depth, parentId } = getBinderProjection(
-              sorted,
-              source.id as ChapterId,
-              projectedDepth,
-            );
-            return sorted.map((r) =>
-              r.chapter.id === source.id ? { ...r, depth, parentId } : r,
-            );
-          });
+          sceneDrag.onDragOver(event, manager);
+          chapterDrag.onDragOver(event, manager);
         }}
-        onDragMove={(event, manager) => {
-          if (event.defaultPrevented) return;
-          const { source } = event.operation;
-          if (!source || source.type === "scene") return;
-          setFlatRows((rows) => {
-            const dragDepth = nestingEnabled
-              ? getDragDepth(manager.dragOperation.transform.x, INDENT_PX)
-              : 0;
-            const projectedDepth = initialDepth.current + dragDepth;
-            const { depth, parentId } = getBinderProjection(
-              rows,
-              source.id as ChapterId,
-              projectedDepth,
-            );
-            return rows.map((r) =>
-              r.chapter.id === source.id ? { ...r, depth, parentId } : r,
-            );
-          });
-        }}
-        onDragEnd={async (event) => {
-          const source = event.operation.source;
-          if (source?.type === "scene") {
-            const drag = sceneDragRef.current;
-            const target = sceneDropTarget;
-            sceneDragRef.current = null;
-            setSceneDropTarget(null);
-            if (event.canceled || !drag || !target) return;
-            await commitSceneDrag(drag.sceneId, drag.originChapterId, target);
-            return;
-          }
-          isDragging.current = false;
-          const id = source?.id as ChapterId | undefined;
-          if (event.canceled || !id) {
-            setFlatRows(canonicalRows);
-            return;
-          }
-          await commitDrag(flatRows, id);
+        onDragMove={chapterDrag.onDragMove}
+        onDragEnd={async (event, manager) => {
+          await sceneDrag.onDragEnd(event, manager);
+          await chapterDrag.onDragEnd(event, manager);
         }}
       >
         <div className="space-y-0.5">
@@ -782,186 +443,58 @@ export function BinderSection({
       </button>
 
       {menuChapterId && (
-        <ContextMenu position={menuPos} onClose={closeMenu}>
-          <ContextMenuItem
-            icon={Pencil}
-            onClick={() => {
-              if (menuChapter)
-                handleRenameStart(menuChapter.id, menuChapter.title);
-            }}
-          >
-            Rename
-          </ContextMenuItem>
-          {isMenuDocument && nestingEnabled && (
-            <ContextMenuItem
-              icon={CornerDownRight}
-              onClick={() => handleAddChild(menuChapterId)}
-            >
-              {labels.addNested}
-            </ContextMenuItem>
-          )}
-          <ContextMenuItem
-            icon={Plus}
-            onClick={() => handleAddSibling(menuChapterId)}
-          >
-            {labels.add}
-          </ContextMenuItem>
-          <ContextMenuItem
-            icon={SeparatorHorizontal}
-            onClick={() => handleAddSeparator(menuChapterId)}
-          >
-            Add Separator
-          </ContextMenuItem>
-          <ContextMenuItem
-            icon={ArrowRightLeft}
-            onClick={() => handleMoveToOther(menuChapterId)}
-          >
-            {labels.moveToOther}
-          </ContextMenuItem>
-          {!isMenuDocument && (
-            <ContextMenuItem
-              icon={Settings}
-              onClick={() => openSeparatorSettings(menuChapterId)}
-            >
-              Separator Settings
-            </ContextMenuItem>
-          )}
-          {isMenuDocument && (
-            <>
-              <ContextMenuItem
-                icon={Download}
-                onClick={() => {
-                  closeMenu();
-                  openModal({
-                    id: "export",
-                    projectId,
-                    chapterId: menuChapterId,
-                    scope: "chapter",
-                  });
-                }}
-              >
-                Export
-              </ContextMenuItem>
-              <ContextMenuItem
-                icon={FileText}
-                onClick={() => {
-                  closeMenu();
-                  openModal({
-                    id: "chapter-properties",
-                    chapterId: menuChapterId,
-                  });
-                }}
-              >
-                Edit Summary
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuLabel>Status</ContextMenuLabel>
-              {STATUS_OPTIONS.map((opt) => {
-                const isCurrent = menuChapter?.status === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${
-                      isCurrent
-                        ? "font-medium text-neutral-900 dark:text-neutral-100"
-                        : "text-neutral-700 dark:text-neutral-300"
-                    } hover:bg-neutral-100 dark:hover:bg-neutral-800`}
-                    onClick={() => handleSetStatus(menuChapterId, opt.value)}
-                  >
-                    {isCurrent ? (
-                      <CheckCircle2 size={14} />
-                    ) : (
-                      <Circle size={14} />
-                    )}
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </>
-          )}
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            icon={Trash2}
-            variant="danger"
-            onClick={() => handleDelete(menuChapterId)}
-          >
-            Delete
-          </ContextMenuItem>
-        </ContextMenu>
+        <BinderContextMenu
+          chapterId={menuChapterId}
+          chapter={menuChapter}
+          position={menuPos}
+          labels={labels}
+          nestingEnabled={nestingEnabled}
+          onClose={closeMenu}
+          onRenameStart={rename.startRename}
+          onAddChild={handleAddChild}
+          onAddSibling={handleAddSibling}
+          onAddSeparator={handleAddSeparator}
+          onMoveToOther={handleMoveToOther}
+          onOpenSeparatorSettings={openSeparatorSettings}
+          onExport={handleExport}
+          onEditSummary={handleEditSummary}
+          onSetStatus={handleSetStatus}
+          onDelete={handleDelete}
+        />
       )}
 
       {menuScene && (
-        <ContextMenu position={menuPos} onClose={closeSceneMenu}>
-          <ContextMenuItem
-            icon={ArrowUp}
-            onClick={() => handleReorderScene(menuScene, -1)}
-          >
-            Move Up
-          </ContextMenuItem>
-          <ContextMenuItem
-            icon={ArrowDown}
-            onClick={() => handleReorderScene(menuScene, 1)}
-          >
-            Move Down
-          </ContextMenuItem>
-          <ContextMenuItem
-            icon={SplitSquareVertical}
-            onClick={() => handlePromoteScene(menuScene)}
-          >
-            Promote to {labels.add.replace(/^Add\s+/, "")}
-          </ContextMenuItem>
-          {(() => {
-            const targets = [...nodeIndex.values()]
-              .map((n) => n.chapter)
-              .filter(
-                (c) => c.kind !== "separator" && c.id !== menuScene.chapterId,
-              );
-            if (targets.length === 0) return null;
-            return (
-              <>
-                <ContextMenuSeparator />
-                <ContextMenuLabel>Move to</ContextMenuLabel>
-                {targets.map((c) => (
-                  <ContextMenuItem
-                    key={c.id}
-                    icon={ArrowRightLeft}
-                    onClick={() => handleMoveSceneTo(menuScene, c.id)}
-                  >
-                    {c.title}
-                  </ContextMenuItem>
-                ))}
-              </>
-            );
-          })()}
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            icon={Trash2}
-            variant="danger"
-            onClick={() => handleDeleteScene(menuScene)}
-          >
-            Delete {sceneTerm}
-          </ContextMenuItem>
-        </ContextMenu>
+        <SceneContextMenu
+          scene={menuScene}
+          position={menuPos}
+          sceneTerm={sceneTerm}
+          promoteLabel={labels.add.replace(/^Add\s+/, "")}
+          nodeIndex={nodeIndex}
+          onClose={closeSceneMenu}
+          onReorder={handleReorderScene}
+          onPromote={handlePromoteScene}
+          onMoveTo={handleMoveSceneTo}
+          onDelete={handleDeleteScene}
+        />
       )}
 
-      {deleteConfirm && (
+      {pendingDelete && (
         <ConfirmDialog
-          title={`Delete "${deleteConfirm.chapterTitle}"?`}
+          title={`Delete "${pendingDelete.chapterTitle}"?`}
           message={
             <>
-              <strong>"{deleteConfirm.chapterTitle}"</strong> contains{" "}
-              {deleteConfirm.childCount} nested{" "}
-              {deleteConfirm.childCount === 1 ? "item" : "items"}. Keep them by
+              <strong>"{pendingDelete.chapterTitle}"</strong> contains{" "}
+              {pendingDelete.childCount} nested{" "}
+              {pendingDelete.childCount === 1 ? "item" : "items"}. Keep them by
               moving them up one level, or delete everything inside.
             </>
           }
           variant="danger"
           confirmLabel="Keep items (move up)"
           onConfirm={() => handleConfirmDelete("promote")}
-          onCancel={() => setDeleteConfirm(null)}
+          onCancel={() => setPendingDelete(null)}
           extraAction={{
-            label: `Delete all (${deleteConfirm.childCount + 1})`,
+            label: `Delete all (${pendingDelete.childCount + 1})`,
             onClick: () => handleConfirmDelete("cascade"),
           }}
         />
