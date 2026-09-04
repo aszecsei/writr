@@ -32,7 +32,9 @@ export default function SharedSessionPage() {
     color: string;
   } | null>(null);
 
-  const { enabled, joinAsGuest, end } = useCollabManager();
+  const { enabled, joinAsGuest, end } = useCollabManager({
+    ownsLifecycle: true,
+  });
   const status = useCollabStore((s) => s.status);
   const role = useCollabStore((s) => s.role);
   const peerCount = useCollabStore((s) => s.peerCount);
