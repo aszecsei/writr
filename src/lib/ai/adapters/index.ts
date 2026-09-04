@@ -4,9 +4,6 @@ import { createGoogleAdapter } from "./google-adapter";
 import { createOpenAiAdapter } from "./openai-adapter";
 import type { ProviderAdapter } from "./types";
 
-export { createAnthropicAdapter } from "./anthropic-adapter";
-export { createGoogleAdapter } from "./google-adapter";
-export { createOpenAiAdapter } from "./openai-adapter";
 export type { CompletionParams, ProviderAdapter } from "./types";
 
 /**

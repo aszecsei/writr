@@ -22,10 +22,6 @@ export function useAllAgents(
   }, [projectId]);
 }
 
-/** Alias of {@link useAllAgents}: chat agent selection and Manage Agents use
- * the same underlying list. */
-export const useChatAgents = useAllAgents;
-
 export const useAgent = createEntityHook(db.agents);
 
 const KIND_ORDER: Record<string, number> = {

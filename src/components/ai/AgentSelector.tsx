@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { AgentDefinitionId } from "@/db/schemas";
-import { useChatAgents } from "@/hooks/data/useAgents";
+import { useAllAgents } from "@/hooks/data/useAgents";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 
@@ -17,7 +17,7 @@ interface AgentSelectorProps {
  */
 export function AgentSelector({ value, onChange }: AgentSelectorProps) {
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const agents = useChatAgents(activeProjectId);
+  const agents = useAllAgents(activeProjectId);
   const selectedText = useEditorStore((s) => s.selectedText);
 
   // If the current selection vanished (e.g. user deleted the agent), fall

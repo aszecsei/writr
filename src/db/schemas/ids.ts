@@ -71,7 +71,6 @@ export const ProjectDictionaryIdSchema = z
 export type ProjectDictionaryId = z.infer<typeof ProjectDictionaryIdSchema>;
 
 export const ChapterSummaryIdSchema = z.uuid().brand<"ChapterSummaryId">();
-export type ChapterSummaryId = z.infer<typeof ChapterSummaryIdSchema>;
 
 export const AgentDefinitionIdSchema = z.uuid().brand<"AgentDefinitionId">();
 export type AgentDefinitionId = z.infer<typeof AgentDefinitionIdSchema>;

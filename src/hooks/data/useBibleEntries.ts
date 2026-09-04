@@ -29,7 +29,6 @@ export const useTimelineByProject = createProjectListHook(
   db.timelineEvents,
   "order",
 );
-export const useTimelineEvent = createEntityHook(db.timelineEvents);
 
 // Style guide & guardrails merge globals (projectId=null) with project-scoped
 // entries, so they can't use the exact-projectId factory hook. The merged list
@@ -38,12 +37,10 @@ export const useTimelineEvent = createEntityHook(db.timelineEvents);
 export function useStyleGuideByProject(projectId: ProjectId | null) {
   return useLiveQuery(() => listStyleGuideForProject(projectId), [projectId]);
 }
-export const useStyleGuideEntry = createEntityHook(db.styleGuideEntries);
 
 export function useGuardrailsByProject(projectId: ProjectId | null) {
   return useLiveQuery(() => listGuardrailsForProject(projectId), [projectId]);
 }
-export const useGuardrailEntry = createEntityHook(db.guardrailEntries);
 
 export const useWorldbuildingDocsByProject = createProjectListHook(
   db.worldbuildingDocs,

@@ -9,8 +9,6 @@ import type {
   CharacterRelationshipId,
   Comment,
   CommentId,
-  EntityImage,
-  EntityImageId,
   GuardrailEntry,
   GuardrailEntryId,
   Location,
@@ -377,18 +375,6 @@ export function makeBrainstormSetup(
     pattern: "",
     createdAt: ts,
     updatedAt: ts,
-    ...overrides,
-  };
-}
-
-export function makeImage(overrides: Partial<EntityImage> = {}): EntityImage {
-  return {
-    id: nextId<EntityImageId>(),
-    url: "https://example.com/image.png",
-    caption: "",
-    isPrimary: false,
-    focalX: 0.5,
-    focalY: 0,
     ...overrides,
   };
 }
