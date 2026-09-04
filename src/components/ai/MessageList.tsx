@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import type { ToolCallEntry } from "@/lib/ai/tool-calling";
 import type { AiMessage, FinishReason } from "@/lib/ai/types";
 import { ImageLightbox } from "../bible/ImageLightbox";
 import { BetaReaderPanelMessage } from "./BetaReaderPanelMessage";
@@ -40,17 +39,6 @@ function getProposedEditChatPayload(
   const data = m.result?.data;
   if (!data) return null;
   return data as unknown as ProposedEditChatPayload;
-}
-
-function toolMessageToToolCallEntry(m: ToolChatMessage): ToolCallEntry {
-  return {
-    id: m.toolCallId,
-    toolName: m.toolName,
-    displayName: m.displayName,
-    input: m.input,
-    status: m.status,
-    result: m.result,
-  };
 }
 
 function formatDuration(ms: number): string {
@@ -451,7 +439,7 @@ export function MessageList({
                 return (
                   <ToolCallMessage
                     key={tm.id}
-                    entry={toolMessageToToolCallEntry(tm)}
+                    entry={tm}
                     onApprove={
                       tm.status === "pending" && onApproveToolCall
                         ? () => onApproveToolCall(tm.id)

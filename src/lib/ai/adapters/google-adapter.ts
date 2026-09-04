@@ -6,7 +6,12 @@ import type {
   ContentPart,
   FinishReason,
 } from "../types";
-import { extractTextContent, parseBase64ImageDataUrl } from "./helpers";
+import {
+  extractTextContent,
+  generateToolUseId,
+  parseBase64ImageDataUrl,
+  toAiUsage,
+} from "./helpers";
 import type { CompletionParams, ProviderAdapter } from "./types";
 
 interface GoogleAdapterConfig {
@@ -58,9 +63,30 @@ interface ExtractedMessages {
   messages: GoogleMessage[];
 }
 
+/**
+ * Google's `functionResponse.response` must be an object. Tool results are
+ * always JSON-encoded (see `toolResultContent`), but fall back to wrapping
+ * raw text rather than letting `JSON.parse` throw on malformed input.
+ */
+function toFunctionResponse(text: string): Record<string, unknown> {
+  if (!text) return {};
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return parsed !== null && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : { result: parsed };
+  } catch {
+    return { result: text };
+  }
+}
+
 function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
   const systemParts: string[] = [];
   const nonSystemMessages: GoogleMessage[] = [];
+  // Google's functionResponse identifies the call by function name, not by
+  // id — track each tool call's name by its id as assistant messages emit
+  // them so the later tool-result message can look it up.
+  const toolCallNames = new Map<string, string>();
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -75,14 +101,16 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
       }
     } else if (msg.role === "tool") {
       // Google expects function responses in user role messages
+      const name =
+        (msg.toolCallId && toolCallNames.get(msg.toolCallId)) ?? "unknown";
       const responseText = extractTextContent(msg.content).text;
       nonSystemMessages.push({
         role: "user",
         parts: [
           {
             functionResponse: {
-              name: msg.toolCallId ?? "unknown",
-              response: responseText ? JSON.parse(responseText) : {},
+              name,
+              response: toFunctionResponse(responseText),
             },
           },
         ],
@@ -95,6 +123,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         parts.push({ text });
       }
       for (const tc of msg.toolCalls) {
+        toolCallNames.set(tc.id, tc.name);
         parts.push({
           functionCall: { name: tc.name, args: tc.arguments },
         });
@@ -204,7 +233,7 @@ export function createGoogleAdapter(
             reasoning += part.text ?? "";
           } else if (part.functionCall) {
             toolCalls.push({
-              id: `google-tc-${crypto.randomUUID()}`,
+              id: generateToolUseId(),
               name: part.functionCall.name ?? "",
               arguments: (part.functionCall.args ?? {}) as Record<
                 string,
@@ -223,12 +252,12 @@ export function createGoogleAdapter(
         reasoning: reasoning || undefined,
         model: params.model,
         usage: response.usageMetadata
-          ? {
-              prompt_tokens: response.usageMetadata.promptTokenCount ?? 0,
-              completion_tokens:
+          ? toAiUsage({
+              promptTokens: response.usageMetadata.promptTokenCount ?? 0,
+              completionTokens:
                 response.usageMetadata.candidatesTokenCount ?? 0,
-              total_tokens: response.usageMetadata.totalTokenCount ?? 0,
-            }
+              totalTokens: response.usageMetadata.totalTokenCount ?? 0,
+            })
           : undefined,
         finishReason: hasToolCalls
           ? "tool_use"
@@ -269,7 +298,7 @@ export function createGoogleAdapter(
               // Google sends complete function calls (no incremental JSON)
               yield {
                 type: "tool_use" as const,
-                id: `google-tc-${crypto.randomUUID()}`,
+                id: generateToolUseId(),
                 name: part.functionCall.name ?? "",
                 input: (part.functionCall.args ?? {}) as Record<
                   string,
@@ -292,11 +321,11 @@ export function createGoogleAdapter(
           finishReason: normalizeFinishReason(finalFinishReason),
           ...(finalUsage
             ? {
-                usage: {
-                  prompt_tokens: finalUsage.promptTokenCount ?? 0,
-                  completion_tokens: finalUsage.candidatesTokenCount ?? 0,
-                  total_tokens: finalUsage.totalTokenCount ?? 0,
-                },
+                usage: toAiUsage({
+                  promptTokens: finalUsage.promptTokenCount ?? 0,
+                  completionTokens: finalUsage.candidatesTokenCount ?? 0,
+                  totalTokens: finalUsage.totalTokenCount ?? 0,
+                }),
               }
             : {}),
         };

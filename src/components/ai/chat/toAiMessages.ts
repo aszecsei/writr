@@ -1,4 +1,5 @@
 import { match } from "ts-pattern";
+import { isTerminalToolStatus, toolResultContent } from "@/lib/ai/tool-calling";
 import type { AiMessage } from "@/lib/ai/types";
 import { escapeAttr } from "@/lib/ai/xml";
 import type {
@@ -43,11 +44,7 @@ function userToAiMessage(m: UserChatMessage): AiMessage {
 function assistantToAiMessage(m: AssistantChatMessage): AiMessage {
   const out: AiMessage = { role: "assistant", content: m.content };
   if (m.toolCallRefs?.length) {
-    out.toolCalls = m.toolCallRefs.map((ref) => ({
-      id: ref.id,
-      name: ref.name,
-      arguments: ref.arguments,
-    }));
+    out.toolCalls = m.toolCallRefs;
   }
   return out;
 }
@@ -59,18 +56,12 @@ function assistantToAiMessage(m: AssistantChatMessage): AiMessage {
  * cares about results that exist.
  */
 function toolToAiMessage(m: ToolChatMessage): AiMessage | null {
-  if (
-    m.status !== "executed" &&
-    m.status !== "denied" &&
-    m.status !== "error"
-  ) {
-    return null;
-  }
-  const content =
-    m.status === "denied"
-      ? JSON.stringify({ success: false, message: "Denied by user" })
-      : JSON.stringify(m.result ?? { success: false, message: "No result" });
-  return { role: "tool", content, toolCallId: m.toolCallId };
+  if (!isTerminalToolStatus(m.status)) return null;
+  return {
+    role: "tool",
+    content: toolResultContent(m.status, m.result),
+    toolCallId: m.toolCallId,
+  };
 }
 
 /**

@@ -1,7 +1,17 @@
 import OpenAI from "openai";
 import { match, P } from "ts-pattern";
-import type { AiMessage, AiToolCall, FinishReason } from "../types";
-import { extractTextContent, generateToolUseId } from "./helpers";
+import type {
+  AiMessage,
+  AiToolCall,
+  ContentPart,
+  FinishReason,
+} from "../types";
+import {
+  extractTextContent,
+  generateToolUseId,
+  REASONING_EFFORT_SCALE,
+  toAiUsage,
+} from "./helpers";
 import type {
   CompletionParams,
   ProviderAdapter,
@@ -42,8 +52,8 @@ function isAnthropicModel(model: string): boolean {
  * OpenRouter omits them on routes that don't support caching.
  */
 function extractCacheUsage(usage: unknown): {
-  cache_creation_tokens?: number;
-  cache_read_tokens?: number;
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
 } {
   const u = usage as
     | {
@@ -53,29 +63,15 @@ function extractCacheUsage(usage: unknown): {
     | null
     | undefined;
   if (!u) return {};
-  const cacheRead = u.prompt_tokens_details?.cached_tokens;
-  const cacheWrite = u.cache_write_tokens;
   return {
-    ...(typeof cacheWrite === "number" && cacheWrite > 0
-      ? { cache_creation_tokens: cacheWrite }
-      : {}),
-    ...(typeof cacheRead === "number" && cacheRead > 0
-      ? { cache_read_tokens: cacheRead }
-      : {}),
+    cacheCreationTokens: u.cache_write_tokens,
+    cacheReadTokens: u.prompt_tokens_details?.cached_tokens,
   };
 }
 
 function isClaude46(model: string): boolean {
   return isAnthropicModel(model) && (/4\.6/.test(model) || /4-6/.test(model));
 }
-
-const VERBOSITY_MAP: Record<string, string> = {
-  xhigh: "max",
-  high: "high",
-  medium: "medium",
-  low: "low",
-  minimal: "low",
-};
 
 function buildReasoningParam(params: CompletionParams): object {
   if (!params.reasoning) return {};
@@ -84,7 +80,7 @@ function buildReasoningParam(params: CompletionParams): object {
     // use verbosity (maps to output_config.effort) instead
     return {
       reasoning: { enabled: true },
-      verbosity: VERBOSITY_MAP[params.reasoning.effort] ?? "medium",
+      verbosity: REASONING_EFFORT_SCALE[params.reasoning.effort] ?? "medium",
     };
   }
   return { reasoning: params.reasoning };
@@ -210,10 +206,10 @@ function toOpenAIMessage(
         // Always array-form for Anthropic so wire shape stays stable across
         // iterations, even when a previously-trailing message no longer
         // carries cache_control.
-        const parts: ContentPartLike[] =
+        const parts: ContentPart[] =
           typeof m.content === "string"
             ? [{ type: "text", text: m.content }]
-            : (m.content as ContentPartLike[]);
+            : m.content;
         return {
           role: m.role,
           content: parts,
@@ -239,13 +235,6 @@ function toOpenAIMessage(
       } as OpenAI.ChatCompletionMessageParam;
     });
 }
-
-// Local alias so we can pass ContentPart-shaped values through to OpenRouter
-// without forcing them through the OpenAI SDK's stricter ChatCompletionContent-
-// Part union. Anthropic accepts the richer shape (cache_control, etc.).
-type ContentPartLike =
-  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
-  | { type: "image_url"; image_url: { url: string } };
 
 function convertMessages(
   messages: AiMessage[],
@@ -395,12 +384,12 @@ export function createOpenAiAdapter(
         reasoning: message?.reasoning,
         model: response.model,
         usage: response.usage
-          ? {
-              prompt_tokens: response.usage.prompt_tokens,
-              completion_tokens: response.usage.completion_tokens ?? 0,
-              total_tokens: response.usage.total_tokens,
+          ? toAiUsage({
+              promptTokens: response.usage.prompt_tokens,
+              completionTokens: response.usage.completion_tokens ?? 0,
+              totalTokens: response.usage.total_tokens,
               ...extractCacheUsage(response.usage),
-            }
+            })
           : undefined,
         finishReason: normalizeFinishReason(choice?.finish_reason),
         toolCalls,
@@ -510,12 +499,12 @@ export function createOpenAiAdapter(
           finishReason: normalizeFinishReason(finalFinishReason),
           ...(finalUsage
             ? {
-                usage: {
-                  prompt_tokens: finalUsage.prompt_tokens,
-                  completion_tokens: finalUsage.completion_tokens ?? 0,
-                  total_tokens: finalUsage.total_tokens,
+                usage: toAiUsage({
+                  promptTokens: finalUsage.prompt_tokens,
+                  completionTokens: finalUsage.completion_tokens ?? 0,
+                  totalTokens: finalUsage.total_tokens,
                   ...extractCacheUsage(finalUsage),
-                },
+                }),
               }
             : {}),
         };

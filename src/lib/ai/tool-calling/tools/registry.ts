@@ -451,11 +451,9 @@ export function permittedCategories(
 
 // ─── Tools ─────────────────────────────────────────────────────────────
 
-const listInputSchema = z
-  .object({
-    category: ListCategoryEnum,
-  })
-  .strip();
+const listInputSchema = z.object({
+  category: ListCategoryEnum.describe("Entity category to list."),
+});
 
 export const listTool = defineTool({
   id: "list",
@@ -464,17 +462,6 @@ export const listTool = defineTool({
     "List all entries of one category in the project. Returns each entry's id and a small set of summary fields. " +
     "Categories: character, location, timeline, chapter, style_guide, guardrail, worldbuilding. " +
     "Follow up with `get` to fetch full details for specific ids.",
-  parameters: {
-    type: "object",
-    properties: {
-      category: {
-        type: "string",
-        description: "Entity category to list.",
-        enum: [...LIST_CATEGORIES],
-      },
-    },
-    required: ["category"],
-  },
   inputSchema: listInputSchema,
   requiresApproval: false,
   async execute(params, context) {
@@ -493,18 +480,22 @@ export const listTool = defineTool({
   },
 });
 
-const getRequestSchema = z
-  .object({
-    category: ReadCategoryEnum,
-    ids: z.array(z.string().min(1)).optional(),
-  })
-  .strip();
+const getRequestSchema = z.object({
+  category: ReadCategoryEnum.describe("Entity category."),
+  ids: z
+    .array(z.string().min(1))
+    .describe(
+      "Ids to fetch. Required for non-singleton categories; ignored for outline.",
+    )
+    .optional(),
+});
 
-const getInputSchema = z
-  .object({
-    requests: z.array(getRequestSchema).min(1),
-  })
-  .strip();
+const getInputSchema = z.object({
+  requests: z
+    .array(getRequestSchema)
+    .min(1)
+    .describe("Per-category lookup requests."),
+});
 
 interface GetResultEntry {
   category: ReadCategory;
@@ -522,33 +513,6 @@ export const getTool = defineTool({
     "Pass an array of {category, ids} requests; results come back in the same order. " +
     "Singleton categories (outline) take no ids; chapter-keyed categories (summary) take chapter ids. " +
     "A missing or out-of-bounds id returns `found: false` for that entry without failing the whole call.",
-  parameters: {
-    type: "object",
-    properties: {
-      requests: {
-        type: "array",
-        description: "Per-category lookup requests.",
-        items: {
-          type: "object",
-          properties: {
-            category: {
-              type: "string",
-              description: "Entity category.",
-              enum: [...GET_CATEGORIES],
-            },
-            ids: {
-              type: "array",
-              description:
-                "Ids to fetch. Required for non-singleton categories; ignored for outline.",
-              items: { type: "string" },
-            },
-          },
-          required: ["category"],
-        },
-      },
-    },
-    required: ["requests"],
-  },
   inputSchema: getInputSchema,
   requiresApproval: false,
   async execute(params, context) {

@@ -1,5 +1,11 @@
 import type { ToolCallEntry } from "../tool-calling";
-import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
+import type {
+  AiMessage,
+  AiStreamChunk,
+  AiToolCall,
+  AiUsage,
+  FinishReason,
+} from "../types";
 
 /**
  * Opaque message id returned by `startAssistantTurn` /
@@ -9,18 +15,12 @@ import type { AiMessage, AiStreamChunk, AiUsage, FinishReason } from "../types";
  */
 export type AccessorMessageId = string;
 
-interface AccessorToolCallRef {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-}
-
 export interface AssistantTurnFinalizeInfo {
   durationMs: number;
   finishReason?: FinishReason;
   usage?: AiUsage;
   /** Tool-call references the assistant emitted, if any. */
-  toolCallRefs?: AccessorToolCallRef[];
+  toolCallRefs?: AiToolCall[];
 }
 
 export interface ToolMessagePatch {

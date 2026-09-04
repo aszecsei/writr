@@ -10,24 +10,13 @@ export const presentChoiceTool = defineTool({
     "Use this when a decision is genuinely the user's to make and you cannot " +
     "resolve it yourself. Returns the option the user selected. Works from both " +
     "the top-level agent and sub-agents — the prompt always surfaces to the user.",
-  parameters: {
-    type: "object",
-    properties: {
-      question: {
-        type: "string",
-        description: "The decision to put to the user.",
-      },
-      options: {
-        type: "array",
-        items: { type: "string" },
-        description: "Between 2 and 8 distinct options for the user to choose.",
-      },
-    },
-    required: ["question", "options"],
-  },
   inputSchema: z.object({
-    question: z.string().min(1),
-    options: z.array(z.string().min(1)).min(2).max(8),
+    question: z.string().min(1).describe("The decision to put to the user."),
+    options: z
+      .array(z.string().min(1))
+      .min(2)
+      .max(8)
+      .describe("Between 2 and 8 distinct options for the user to choose."),
   }),
   requiresApproval: false,
   async execute(params, context) {

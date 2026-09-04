@@ -75,17 +75,9 @@ export const listScenesTool = defineTool({
     "tags, word counts). Scene 0 is the implicit 'core' scene — the prose before " +
     "the first scene break. Character and location references are resolved to " +
     "names. Use the returned scene ids with `update_scene`.",
-  parameters: {
-    type: "object",
-    properties: {
-      chapterId: {
-        type: "string",
-        description: "Chapter ID whose scenes to list.",
-      },
-    },
-    required: ["chapterId"],
-  },
-  inputSchema: z.object({ chapterId: z.string().min(1) }).strip(),
+  inputSchema: z.object({
+    chapterId: z.string().min(1).describe("Chapter ID whose scenes to list."),
+  }),
   requiresApproval: false,
   async execute(params, context) {
     const chapter = await getChapter(params.chapterId as ChapterId);
@@ -118,83 +110,47 @@ export const updateSceneTool = defineTool({
     "`povCharacterId: null` to clear the POV. Character and location ids must " +
     "belong to the same project. Scene ordering is managed by the editor and " +
     "cannot be set here.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Scene ID" },
-      title: { type: "string", description: "New scene title" },
-      status: {
-        type: "string",
-        description: "New status",
-        enum: ["draft", "revised", "final"],
-      },
-      povCharacterId: {
-        type: "string",
-        description: "Point-of-view character id, or null to clear",
-      },
-      presentCharacterIds: {
-        type: "array",
-        description: "Ids of characters present in the scene",
-        items: { type: "string" },
-      },
-      locationIds: {
-        type: "array",
-        description: "Ids of locations the scene takes place in",
-        items: { type: "string" },
-      },
-      timelineMode: {
-        type: "string",
-        description: "How the scene sits on the timeline",
-        enum: [
-          "linear",
-          "flashback",
-          "flashforward",
-          "dream",
-          "vision",
-          "other",
-        ],
-      },
-      strands: {
-        type: "array",
-        description: "Free-text storyline threads (e.g. a subplot or year)",
-        items: { type: "string" },
-      },
-      storyDate: {
-        type: "string",
-        description: "In-world date the scene occurs",
-      },
-      storyTime: {
-        type: "string",
-        description: "In-world time of day the scene occurs",
-      },
-      targetWordCount: {
-        type: "number",
-        description: "Target word count for the scene",
-      },
-      tags: {
-        type: "array",
-        description: "Nestable tags (e.g. 'arc/rising-action')",
-        items: { type: "string" },
-      },
-    },
-    required: ["id"],
-  },
-  inputSchema: z
-    .object({
-      id: z.string().min(1),
-      title: z.string().optional(),
-      status: ChapterStatusEnum.optional(),
-      povCharacterId: z.string().min(1).nullable().optional(),
-      presentCharacterIds: z.array(z.string().min(1)).optional(),
-      locationIds: z.array(z.string().min(1)).optional(),
-      timelineMode: TimelineModeEnum.optional(),
-      strands: z.array(z.string()).optional(),
-      storyDate: z.string().optional(),
-      storyTime: z.string().optional(),
-      targetWordCount: z.number().int().nonnegative().optional(),
-      tags: z.array(z.string()).optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Scene ID"),
+    title: z.string().describe("New scene title").optional(),
+    status: ChapterStatusEnum.describe("New status").optional(),
+    povCharacterId: z
+      .string()
+      .min(1)
+      .describe("Point-of-view character id, or null to clear")
+      .nullable()
+      .optional(),
+    presentCharacterIds: z
+      .array(z.string().min(1))
+      .describe("Ids of characters present in the scene")
+      .optional(),
+    locationIds: z
+      .array(z.string().min(1))
+      .describe("Ids of locations the scene takes place in")
+      .optional(),
+    timelineMode: TimelineModeEnum.describe(
+      "How the scene sits on the timeline",
+    ).optional(),
+    strands: z
+      .array(z.string())
+      .describe("Free-text storyline threads (e.g. a subplot or year)")
+      .optional(),
+    storyDate: z.string().describe("In-world date the scene occurs").optional(),
+    storyTime: z
+      .string()
+      .describe("In-world time of day the scene occurs")
+      .optional(),
+    targetWordCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Target word count for the scene")
+      .optional(),
+    tags: z
+      .array(z.string())
+      .describe("Nestable tags (e.g. 'arc/rising-action')")
+      .optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const { id, ...fields } = params;

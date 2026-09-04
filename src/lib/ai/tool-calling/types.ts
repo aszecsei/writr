@@ -1,14 +1,44 @@
 // ─── Tool Calling Types ─────────────────────────────────────────────
 
-import type { z } from "zod";
+import { z } from "zod";
 import type { ProjectId } from "@/db/schemas";
 
-type ToolCallStatus = "pending" | "approved" | "denied" | "executed" | "error";
+export type ToolCallStatus =
+  | "pending"
+  | "approved"
+  | "denied"
+  | "executed"
+  | "error";
+
+const TERMINAL_TOOL_STATUSES = new Set<ToolCallStatus>([
+  "executed",
+  "denied",
+  "error",
+]);
+
+/** True once a tool call has reached a status the runner won't advance further. */
+export function isTerminalToolStatus(status: ToolCallStatus): boolean {
+  return TERMINAL_TOOL_STATUSES.has(status);
+}
 
 export interface ToolResult {
   success: boolean;
   message: string;
   data?: Record<string, unknown>;
+}
+
+/**
+ * Wire-format content string for a terminal tool call: a denied call
+ * synthesizes a fixed "Denied by user" payload, otherwise the tool's own
+ * result (or a fallback when missing) is JSON-encoded.
+ */
+export function toolResultContent(
+  status: ToolCallStatus,
+  result: ToolResult | undefined,
+): string {
+  return status === "denied"
+    ? JSON.stringify({ success: false, message: "Denied by user" })
+    : JSON.stringify(result ?? { success: false, message: "No result" });
 }
 
 /** A request from an orchestrator to run a named sub-agent on a subtask. */
@@ -107,13 +137,158 @@ export interface AiToolDefinition {
   ) => Promise<ToolResult>;
 }
 
+type JsonSchemaNode = Record<string, unknown>;
+
+function isPlainObject(value: unknown): value is JsonSchemaNode {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNullSchema(node: JsonSchemaNode): boolean {
+  return node.type === "null";
+}
+
+function variantsOf(node: JsonSchemaNode): JsonSchemaNode[] | undefined {
+  const variants = node.oneOf ?? node.anyOf;
+  return Array.isArray(variants) ? variants.filter(isPlainObject) : undefined;
+}
+
+/**
+ * Merge the branches of a discriminated union (or a plain union of object
+ * schemas) into a single flattened object schema: a property is required
+ * only when every branch declares it required, and enum-valued properties
+ * (e.g. a `z.literal()` discriminant) union their allowed values across
+ * branches.
+ */
+function mergeVariants(
+  variants: JsonSchemaNode[],
+  description?: string,
+): ToolParameterProperty {
+  const converted = variants.map((v) => toParameterProperty(v));
+  const properties: Record<string, ToolParameterProperty> = {};
+  const presenceCount = new Map<string, number>();
+  const requiredCount = new Map<string, number>();
+
+  for (const variant of converted) {
+    const variantProps = variant.properties ?? {};
+    const variantRequired = new Set(variant.required ?? []);
+    for (const [key, propSchema] of Object.entries(variantProps)) {
+      presenceCount.set(key, (presenceCount.get(key) ?? 0) + 1);
+      if (variantRequired.has(key)) {
+        requiredCount.set(key, (requiredCount.get(key) ?? 0) + 1);
+      }
+      const existing = properties[key];
+      if (!existing) {
+        properties[key] = propSchema;
+      } else if (existing.enum && propSchema.enum) {
+        properties[key] = {
+          ...existing,
+          enum: [...new Set([...existing.enum, ...propSchema.enum])],
+        };
+      }
+    }
+  }
+
+  const required = [...presenceCount.keys()].filter(
+    (key) =>
+      presenceCount.get(key) === variants.length &&
+      requiredCount.get(key) === variants.length,
+  );
+
+  return {
+    type: "object",
+    ...(description ? { description } : {}),
+    properties,
+    ...(required.length ? { required } : {}),
+  };
+}
+
+/** Reduce a raw JSON Schema node to the `ToolParameterProperty` subset. */
+function toParameterProperty(node: JsonSchemaNode): ToolParameterProperty {
+  const description =
+    typeof node.description === "string" ? node.description : undefined;
+
+  const variants = variantsOf(node);
+  if (variants) {
+    const nonNull = variants.filter((v) => !isNullSchema(v));
+    if (nonNull.length === 1) {
+      return {
+        ...toParameterProperty(nonNull[0]),
+        ...(description ? { description } : {}),
+      };
+    }
+    return mergeVariants(nonNull, description);
+  }
+
+  const type =
+    typeof node.type === "string"
+      ? node.type
+      : typeof node.const === "string"
+        ? "string"
+        : "string";
+
+  const out: ToolParameterProperty = { type };
+  if (description) out.description = description;
+
+  if (Array.isArray(node.enum)) {
+    const values = node.enum.filter((v): v is string => typeof v === "string");
+    if (values.length) out.enum = values;
+  } else if (typeof node.const === "string") {
+    out.enum = [node.const];
+  }
+
+  if (type === "array" && isPlainObject(node.items)) {
+    out.items = toParameterProperty(node.items);
+  }
+
+  if (type === "object" && isPlainObject(node.properties)) {
+    const requiredKeys = new Set(
+      Array.isArray(node.required) ? (node.required as string[]) : [],
+    );
+    const properties: Record<string, ToolParameterProperty> = {};
+    for (const [key, value] of Object.entries(node.properties)) {
+      if (isPlainObject(value)) properties[key] = toParameterProperty(value);
+    }
+    out.properties = properties;
+    const required = [...requiredKeys].filter((key) => key in properties);
+    if (required.length) out.required = required;
+  }
+
+  return out;
+}
+
+/**
+ * Derive a tool's `parameters` JSON Schema from its Zod `inputSchema`, so the
+ * schema sent to the model can't drift from what `execute` actually
+ * validates. Reduces `z.toJSONSchema()`'s output to the `ToolParametersSchema`
+ * subset the API route and adapters expect (no `$schema`,
+ * `additionalProperties`, `minLength`, etc.), and flattens discriminated
+ * unions into a single object schema (a property is required only when every
+ * branch requires it).
+ */
+export function zodToToolParameters(schema: z.ZodType): ToolParametersSchema {
+  const raw = z.toJSONSchema(schema, {
+    unrepresentable: "any",
+  }) as JsonSchemaNode;
+  const prop = toParameterProperty(raw);
+  if (prop.type !== "object") {
+    throw new Error("Tool inputSchema must describe an object");
+  }
+  return {
+    type: "object",
+    properties: prop.properties ?? {},
+    ...(prop.required ? { required: prop.required } : {}),
+  };
+}
+
 /**
  * Type-safe tool definition helper. Infers the params type from the Zod
  * `inputSchema` so each `execute` function gets fully typed parameters
- * without manual casts.
+ * without manual casts. `parameters` is derived from `inputSchema` via
+ * `zodToToolParameters()` when not given explicitly.
  */
 export function defineTool<S extends z.ZodType>(
-  def: Omit<AiToolDefinition, "inputSchema" | "execute"> & {
+  def: Omit<AiToolDefinition, "inputSchema" | "execute" | "parameters"> & {
+    parameters?: ToolParametersSchema;
     inputSchema: S;
     execute: (
       params: z.infer<S>,
@@ -121,7 +296,8 @@ export function defineTool<S extends z.ZodType>(
     ) => Promise<ToolResult>;
   },
 ): AiToolDefinition {
-  return def as unknown as AiToolDefinition;
+  const parameters = def.parameters ?? zodToToolParameters(def.inputSchema);
+  return { ...def, parameters } as unknown as AiToolDefinition;
 }
 
 /** Subset sent to the API / model */

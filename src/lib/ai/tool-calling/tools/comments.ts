@@ -51,45 +51,31 @@ export const addCommentTool = defineTool({
     "in the chapter, or the call is rejected. " +
     "persona stamps the comment with the beta-reader author + color. " +
     "Always selection comments (anchorText is highlighted); no point comments.",
-  parameters: {
-    type: "object",
-    properties: {
-      chapterId: { type: "string", description: "Target chapter id" },
-      anchorText: {
-        type: "string",
-        description:
-          "The exact text the comment attaches to. Must match the chapter VERBATIM, character-for-character (curly vs straight quotes are tolerated).",
-      },
-      prefix: {
-        type: "string",
-        description:
-          "Verbatim text immediately preceding anchorText, concatenated as prefix+anchorText+suffix to form a unique locator. Use only when anchorText alone repeats. Do NOT add spaces between prefix and anchorText — the substrings are concatenated as-is.",
-      },
-      suffix: {
-        type: "string",
-        description:
-          "Verbatim text immediately following anchorText. See prefix.",
-      },
-      content: {
-        type: "string",
-        description: "The comment body — your reaction or observation.",
-      },
-      persona: {
-        type: "string",
-        enum: ["maya", "anton", "joan"],
-        description:
-          "Which beta-reader persona is leaving this comment. Must match the XML block you are currently inside.",
-      },
-    },
-    required: ["chapterId", "anchorText", "content", "persona"],
-  },
   inputSchema: z.object({
-    chapterId: z.string().uuid(),
-    anchorText: z.string().min(1),
-    prefix: z.string().optional(),
-    suffix: z.string().optional(),
-    content: z.string().min(1),
-    persona: PersonaEnum,
+    chapterId: z.string().min(1).describe("Target chapter id"),
+    anchorText: z
+      .string()
+      .min(1)
+      .describe(
+        "The exact text the comment attaches to. Must match the chapter VERBATIM, character-for-character (curly vs straight quotes are tolerated).",
+      ),
+    prefix: z
+      .string()
+      .describe(
+        "Verbatim text immediately preceding anchorText, concatenated as prefix+anchorText+suffix to form a unique locator. Use only when anchorText alone repeats. Do NOT add spaces between prefix and anchorText — the substrings are concatenated as-is.",
+      )
+      .optional(),
+    suffix: z
+      .string()
+      .describe("Verbatim text immediately following anchorText. See prefix.")
+      .optional(),
+    content: z
+      .string()
+      .min(1)
+      .describe("The comment body — your reaction or observation."),
+    persona: PersonaEnum.describe(
+      "Which beta-reader persona is leaving this comment. Must match the XML block you are currently inside.",
+    ),
   }),
   requiresApproval: false,
   async execute(params, context) {
@@ -165,31 +151,17 @@ export const replyToCommentTool = defineTool({
     "the parent (no anchor needed). The parent must be a root comment, not " +
     "itself a reply. persona stamps the reply with the beta-reader author " +
     "+ color matching the XML block you are inside.",
-  parameters: {
-    type: "object",
-    properties: {
-      parentCommentId: {
-        type: "string",
-        description:
-          "The id of the comment you are replying to. Must be a root comment, not a reply.",
-      },
-      content: {
-        type: "string",
-        description: "The reply body.",
-      },
-      persona: {
-        type: "string",
-        enum: ["maya", "anton", "joan"],
-        description:
-          "Which beta-reader persona is leaving this reply. Must match the XML block you are currently inside.",
-      },
-    },
-    required: ["parentCommentId", "content", "persona"],
-  },
   inputSchema: z.object({
-    parentCommentId: z.string().uuid(),
-    content: z.string().min(1),
-    persona: PersonaEnum,
+    parentCommentId: z
+      .string()
+      .min(1)
+      .describe(
+        "The id of the comment you are replying to. Must be a root comment, not a reply.",
+      ),
+    content: z.string().min(1).describe("The reply body."),
+    persona: PersonaEnum.describe(
+      "Which beta-reader persona is leaving this reply. Must match the XML block you are currently inside.",
+    ),
   }),
   requiresApproval: false,
   async execute(params, context) {

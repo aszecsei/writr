@@ -253,7 +253,7 @@ describe("createGoogleAdapter", () => {
         },
         {
           role: "tool",
-          toolCallId: "list",
+          toolCallId: "call_1",
           content: [
             {
               type: "text",
@@ -278,6 +278,57 @@ describe("createGoogleAdapter", () => {
             },
           },
         ],
+      });
+    });
+
+    it("resolves functionResponse.name from the matching tool call id, not the toolCallId string itself", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            { id: "call_abc123", name: "create_character", arguments: {} },
+          ],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_abc123",
+          content: '{"success":true}',
+        },
+      ];
+
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const call = mockGenerateContent.mock.calls[0][0];
+      expect(call.contents[1].parts[0].functionResponse.name).toBe(
+        "create_character",
+      );
+    });
+
+    it("wraps non-JSON tool result text as { result: text } instead of throwing", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [{ id: "call_1", name: "search", arguments: {} }],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_1",
+          content: "not valid json",
+        },
+      ];
+
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const call = mockGenerateContent.mock.calls[0][0];
+      expect(call.contents[1].parts[0].functionResponse).toEqual({
+        name: "search",
+        response: { result: "not valid json" },
       });
     });
   });

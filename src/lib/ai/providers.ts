@@ -58,19 +58,22 @@ export function getDefaultProviderModels(): Record<AiProvider, string> {
   ) as Record<AiProvider, string>;
 }
 
+/** A `Record<AiProvider, string>` with every provider mapped to `""`. */
+function emptyProviderRecord(): Record<AiProvider, string> {
+  return Object.fromEntries(
+    Object.values(PROVIDERS).map((p) => [p.id, ""]),
+  ) as Record<AiProvider, string>;
+}
+
 /**
  * Empty defaults for TTS model/voice records. The Read Aloud button stays
  * hidden until the user fills these in for a TTS-capable provider
  * (OpenRouter today).
  */
 export function getDefaultProviderTtsModels(): Record<AiProvider, string> {
-  return Object.fromEntries(
-    Object.values(PROVIDERS).map((p) => [p.id, ""]),
-  ) as Record<AiProvider, string>;
+  return emptyProviderRecord();
 }
 
 export function getDefaultProviderTtsVoices(): Record<AiProvider, string> {
-  return Object.fromEntries(
-    Object.values(PROVIDERS).map((p) => [p.id, ""]),
-  ) as Record<AiProvider, string>;
+  return emptyProviderRecord();
 }

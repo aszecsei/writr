@@ -5,9 +5,11 @@ export type {
   DelegationHost,
   ToolCallEntry,
   ToolCallPayload,
+  ToolCallStatus,
   ToolDefinitionForModel,
   ToolExecutionContext,
   ToolParameterProperty,
   ToolParametersSchema,
   ToolResult,
 } from "./types";
+export { isTerminalToolStatus, toolResultContent } from "./types";

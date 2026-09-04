@@ -9,7 +9,9 @@
 - `anthropic-adapter.ts` — Anthropic Messages API.
 - `openai-adapter.ts` — OpenAI Chat/Responses.
 - `google-adapter.ts` — Google Gemini.
-- `helpers.ts`, `types.ts`, `index.ts` — shared adapter utilities.
+- `helpers.ts` — shared adapter utilities: `extractTextContent`, `parseBase64ImageDataUrl`, `generateToolUseId` (every adapter mints its own tool-call ids through this, including Google), `REASONING_EFFORT_SCALE` (the reasoning-effort-to-coarser-scale map Anthropic's `output_config.effort` and OpenRouter's Claude-4.6 `verbosity` workaround both use), and `toAiUsage()` (builds the `AiUsage` object each adapter would otherwise assemble by hand in both `complete()` and `stream()`).
+- `types.ts` — `CompletionParams` / `ProviderAdapter` shared types.
+- `index.ts` — exports the three adapter factories plus `PROVIDER_ADAPTERS`, the live `Record<AiProvider, ProviderAdapter>` the route dispatches on. Pulls in the provider SDKs (Node-only) — never import it from `"use client"` code; only `/api/ai/route.ts` should.
 
 Each adapter normalizes streaming into a single internal event format so the rest of the codebase doesn't branch on provider.
 
@@ -20,6 +22,7 @@ Single entry point for sending an AI request. Features:
 - Streams events through an async generator (`streamAi()`).
 - Handles tool-call rounds: model emits a tool call → client dispatches via the tool registry → result is fed back to the model → loop.
 - Caches prompt context where the provider supports it.
+- `describeImage` and `summarizeChapter` are one-shot, non-streaming helpers that bypass the agent runner entirely; both go through the shared `postChat(body, signal)`, which does the `/api/ai` POST and upstream-error extraction once.
 
 ## Prompts (`prompts.ts`)
 
@@ -28,6 +31,8 @@ Builds system prompts that include the relevant slice of the story bible: charac
 ## Tool calling (`src/lib/ai/tool-calling/`)
 
 Tools are registered in a central registry (`tool-calling/tools.ts`) and dispatched from the AI client. Each tool validates its arguments with Zod and returns a structured payload the model can ingest.
+
+A tool's `parameters` — the JSON Schema sent to the model — is derived from its Zod `inputSchema` rather than hand-written: `defineTool()` (in `tool-calling/types.ts`) calls `zodToToolParameters()` whenever a tool omits `parameters`, which runs `z.toJSONSchema()` and reduces the result to the `ToolParametersSchema` subset the API route and adapters expect (no `$schema`, `additionalProperties`, `minLength`, etc.). A tool built on `z.discriminatedUnion()` (the outline-grid tools) gets its branches flattened into one object schema — a property is required only when every branch requires it, and enum-valued discriminant fields union their literal values across branches. Put a field's description on `.describe()` in the Zod schema, not in a separate `parameters` block.
 
 Tools (`tool-calling/tools/`):
 

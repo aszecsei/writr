@@ -7,12 +7,9 @@ import type {
   ToolMessagePatch,
 } from "@/lib/ai/agents/accessor";
 import type { ToolCallEntry } from "@/lib/ai/tool-calling";
+import { isTerminalToolStatus, toolResultContent } from "@/lib/ai/tool-calling";
 import type { AiMessage, AiToolCall } from "@/lib/ai/types";
-import {
-  makeEmptyAssistantMessage,
-  makePendingToolMessage,
-  toToolCallRef,
-} from "./factories";
+import { makeEmptyAssistantMessage, makePendingToolMessage } from "./factories";
 import type { AssistantChatMessage, ChatMessage, ChatMessageId } from "./types";
 
 /**
@@ -163,38 +160,25 @@ export function makeChatAccessorCore(
         (t) => t.toolMsgId === toolMessageId,
       );
 
-      const wasTerminal =
-        tool?.entry.status === "executed" ||
-        tool?.entry.status === "denied" ||
-        tool?.entry.status === "error";
+      const wasTerminal = tool
+        ? isTerminalToolStatus(tool.entry.status)
+        : false;
 
       if (tool) {
         if (patch.status !== undefined) tool.entry.status = patch.status;
         if (patch.result !== undefined) tool.entry.result = patch.result;
       }
 
-      const isTerminal =
-        tool?.entry.status === "executed" ||
-        tool?.entry.status === "denied" ||
-        tool?.entry.status === "error";
+      const isTerminal = tool ? isTerminalToolStatus(tool.entry.status) : false;
 
       // Commit the role:"tool" row to the buffer the first time this entry
       // reaches a terminal status. Order matches dispatch order so tool_use
       // ids in an assistant turn are followed by their results in the wire
       // format.
       if (tool && isTerminal && !wasTerminal) {
-        const content =
-          tool.entry.status === "denied"
-            ? JSON.stringify({ success: false, message: "Denied by user" })
-            : JSON.stringify(
-                tool.entry.result ?? {
-                  success: false,
-                  message: "No result",
-                },
-              );
         buffer.push({
           role: "tool",
-          content,
+          content: toolResultContent(tool.entry.status, tool.entry.result),
           toolCallId: tool.entry.id,
         });
       }
@@ -213,11 +197,7 @@ export function makeChatAccessorCore(
       const turn = pending.get(id);
       if (turn) {
         const toolCalls: AiToolCall[] | undefined = info.toolCallRefs?.length
-          ? info.toolCallRefs.map((r) => ({
-              id: r.id,
-              name: r.name,
-              arguments: r.arguments,
-            }))
+          ? info.toolCallRefs
           : undefined;
         buffer.push({
           role: "assistant",
@@ -232,7 +212,7 @@ export function makeChatAccessorCore(
           ...m,
           durationMs: info.durationMs,
           finishReason: info.finishReason,
-          toolCallRefs: info.toolCallRefs?.map(toToolCallRef),
+          toolCallRefs: info.toolCallRefs,
         };
         if (finalizeOverlay) finalized = finalizeOverlay(finalized);
         return finalized;

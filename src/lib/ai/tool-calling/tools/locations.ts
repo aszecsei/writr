@@ -14,29 +14,18 @@ export const createLocationTool = defineTool({
   name: "Create Location",
   description:
     "Create a new location in the story bible. Use when the user asks to add a setting or place.",
-  parameters: {
-    type: "object",
-    properties: {
-      name: { type: "string", description: "Location name" },
-      description: { type: "string", description: "Location description" },
-      notes: { type: "string", description: "Additional notes" },
-    },
-    required: ["name"],
-  },
-  inputSchema: z
-    .object({
-      name: z.string().min(1),
-      description: z.string().optional(),
-      notes: z.string().optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    name: z.string().min(1).describe("Location name"),
+    description: z.string().describe("Location description").optional(),
+    notes: z.string().describe("Additional notes").optional(),
+  }),
   requiresApproval: true,
   async execute(params, context) {
     const location = await createLocation({
       projectId: context.projectId,
       name: params.name,
-      description: params.description ?? undefined,
-      notes: params.notes ?? undefined,
+      description: params.description,
+      notes: params.notes,
     });
     return ok(`Created location "${location.name}"`, {
       id: location.id,
@@ -51,24 +40,12 @@ export const updateLocationTool = defineTool({
   description:
     "Update fields on an existing location. Only include fields to change. " +
     "Use the `list` and `get` tools first to discover the location id.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Location ID" },
-      name: { type: "string", description: "New name" },
-      description: { type: "string", description: "New description" },
-      notes: { type: "string", description: "New notes" },
-    },
-    required: ["id"],
-  },
-  inputSchema: z
-    .object({
-      id: z.string().min(1),
-      name: z.string().optional(),
-      description: z.string().optional(),
-      notes: z.string().optional(),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Location ID"),
+    name: z.string().describe("New name").optional(),
+    description: z.string().describe("New description").optional(),
+    notes: z.string().describe("New notes").optional(),
+  }),
   requiresApproval: true,
   async execute(params) {
     const { id, ...fields } = params;
@@ -85,18 +62,9 @@ export const deleteLocationTool = defineTool({
   description:
     "Delete a location from the story bible. Use the `list` and `get` tools " +
     "first to confirm the id.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string", description: "Location ID" },
-    },
-    required: ["id"],
-  },
-  inputSchema: z
-    .object({
-      id: z.string().min(1),
-    })
-    .strip(),
+  inputSchema: z.object({
+    id: z.string().min(1).describe("Location ID"),
+  }),
   requiresApproval: true,
   async execute(params) {
     const existing = await getLocation(params.id as LocationId);

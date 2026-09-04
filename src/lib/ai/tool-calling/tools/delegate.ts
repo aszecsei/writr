@@ -20,28 +20,19 @@ export const delegateTool = defineTool({
     "standalone briefing: the sub-agent does not see this conversation. Use it " +
     "to fan out verbose or specialized work (deep manuscript reads, bible " +
     "audits, focused rewrites) to the agent best suited for it.",
-  parameters: {
-    type: "object",
-    properties: {
-      agent: {
-        type: "string",
-        description:
-          "Name (or id) of the sub-agent to run. Must be a different agent " +
-          "than yourself.",
-      },
-      prompt: {
-        type: "string",
-        description:
-          "The subtask, fully specified and self-contained. The sub-agent " +
-          "receives this as its only instruction and cannot see the current " +
-          "conversation.",
-      },
-    },
-    required: ["agent", "prompt"],
-  },
   inputSchema: z.object({
-    agent: z.string().min(1),
-    prompt: z.string().min(1),
+    agent: z
+      .string()
+      .min(1)
+      .describe(
+        "Name (or id) of the sub-agent to run. Must be a different agent than yourself.",
+      ),
+    prompt: z
+      .string()
+      .min(1)
+      .describe(
+        "The subtask, fully specified and self-contained. The sub-agent receives this as its only instruction and cannot see the current conversation.",
+      ),
   }),
   // The sub-agent's own mutating tools gate individually; delegation itself is
   // not a mutation and needs no separate approval.

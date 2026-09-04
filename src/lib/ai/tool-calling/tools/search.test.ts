@@ -64,7 +64,7 @@ describe("search_project tool", () => {
     expect(empty.data?.results as unknown[]).toHaveLength(0);
   });
 
-  it("filters by entity_types", async () => {
+  it("filters by entityTypes", async () => {
     await Promise.all([
       db.chapters.add(
         makeChapter({
@@ -78,7 +78,7 @@ describe("search_project tool", () => {
 
     const result = await executeTool(
       "search_project",
-      { query: "dragon", entity_types: ["character"] },
+      { query: "dragon", entityTypes: ["character"] },
       ctx,
     );
     expect(result.success).toBe(true);

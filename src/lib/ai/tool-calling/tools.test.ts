@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { ToolDefinitionSchema } from "@/app/api/ai/request-schema";
 import type { ProjectId } from "@/db/schemas";
 import { AI_TOOL_MAP, AI_TOOLS, executeTool } from "./tools";
+import { getTool } from "./tools/registry";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
@@ -17,6 +19,38 @@ describe("executeTool with unknown tool", () => {
     const result = await executeTool("nonexistent_tool", {}, ctx);
     expect(result.success).toBe(false);
     expect(result.message).toContain("Unknown tool");
+  });
+});
+
+describe("derived tool parameters", () => {
+  it("round-trips every tool's parameters through the API route's schema", () => {
+    for (const tool of AI_TOOLS) {
+      const parsed = ToolDefinitionSchema.safeParse({
+        id: tool.id,
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      });
+      expect(parsed.success, `${tool.id}: ${parsed.error?.message}`).toBe(true);
+    }
+  });
+
+  it("keeps the get tool's nested requests[].category enum", () => {
+    const category =
+      getTool.parameters.properties.requests?.items?.properties?.category;
+    expect(category?.enum).toEqual(
+      expect.arrayContaining([
+        "character",
+        "location",
+        "timeline",
+        "chapter",
+        "style_guide",
+        "guardrail",
+        "worldbuilding",
+        "outline",
+        "summary",
+      ]),
+    );
   });
 });
 

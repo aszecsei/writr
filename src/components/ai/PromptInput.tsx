@@ -1,34 +1,24 @@
 "use client";
 
 import { ArrowUp, BookMarked, ImagePlus, Square, X } from "lucide-react";
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import type { SavedPrompt } from "@/db/schemas";
 import { useUiStore } from "@/store/uiStore";
-
-export interface PendingImage {
-  url: string;
-  alt?: string;
-}
+import type { ChatImage } from "./chat/types";
 
 interface PromptInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSubmit: (e: FormEvent) => void;
+  onSubmit: () => void;
   onCancel?: () => void;
   loading: boolean;
   selectedText?: string | null;
   onClearSelection?: () => void;
   savedPrompts: SavedPrompt[];
   onSelectPrompt: (body: string) => void;
-  pendingImages: PendingImage[];
-  onAddImage: (image: PendingImage) => void;
+  pendingImages: ChatImage[];
+  onAddImage: (image: ChatImage) => void;
   onRemoveImage: (index: number) => void;
   onOpenImagePicker: () => void;
 }
@@ -74,7 +64,10 @@ export function PromptInput({
   }, [showPrompts]);
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
       className="border-t border-neutral-200 p-3 dark:border-neutral-800"
     >
       {selectedText && (
@@ -190,7 +183,7 @@ export function PromptInput({
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               if (value.trim() || pendingImages.length > 0) {
-                onSubmit(e as unknown as FormEvent);
+                onSubmit();
               }
             }
           }}

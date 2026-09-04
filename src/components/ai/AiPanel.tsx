@@ -7,13 +7,7 @@ import {
   Telescope,
   Trash2,
 } from "lucide-react";
-import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAppSettings, isActiveInProject } from "@/db/operations";
 import { getAgent, listAgents } from "@/db/operations/agents";
 import type { AgentDefinition, AgentDefinitionId } from "@/db/schemas";
@@ -51,11 +45,15 @@ import {
   makeAiPanelAccessor,
   makeNestedPanelAccessor,
 } from "./chat/panelAccessor";
-import type { ChatMessage, ChatMessageId, ToolChatMessage } from "./chat/types";
+import type {
+  ChatImage,
+  ChatMessage,
+  ChatMessageId,
+  ToolChatMessage,
+} from "./chat/types";
 import { ImageAttachmentPicker } from "./ImageAttachmentPicker";
 import { MessageList } from "./MessageList";
 import { type PendingGate, PendingGatesBar } from "./PendingGatesBar";
-import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
 import { RetrievalPreviewDialog } from "./RetrievalPreviewDialog";
@@ -80,6 +78,15 @@ function resolveDelegateTarget(
     ) ?? null
   );
 }
+
+/**
+ * `Omit` doesn't distribute over a union — it would collapse `PendingGate`
+ * down to its shared fields and drop `toolDisplayName` / `question` /
+ * `options`. This distributes it per-variant instead.
+ */
+type DistributiveOmit<T, K extends keyof T> = T extends unknown
+  ? Omit<T, K>
+  : never;
 
 /**
  * Walk a drill path of delegate tool-message ids into the nested transcript it
@@ -141,7 +148,7 @@ export function AiPanel() {
   const [editingMessageId, setEditingMessageId] =
     useState<ChatMessageId | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [pendingImages, setPendingImages] = useState<ChatImage[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [pendingToolApproval, setPendingToolApproval] = useState(false);
   const [showRetrievalPreview, setShowRetrievalPreview] = useState(false);
@@ -256,39 +263,22 @@ export function AiPanel() {
     resolveToolApproval(toolMessageId, false);
   }
 
-  /** Bubble a sub-agent mutation approval to the top-level gates bar. */
-  function pushApprovalGate(
-    agentName: string,
-    toolDisplayName: string,
-  ): Promise<boolean> {
+  /**
+   * Bubble a sub-agent gate — a mutation approval or a `present_choice`
+   * prompt — to the top-level gates bar, resolving once the user acts on it.
+   */
+  function pushGate<T extends boolean | string>(
+    gate: DistributiveOmit<PendingGate, "id">,
+  ): Promise<T> {
     const gateId = crypto.randomUUID();
-    return new Promise<boolean>((resolve) => {
+    return new Promise<T>((resolve) => {
       gateResolversRef.current.set(gateId, {
-        kind: "approval",
+        kind: gate.kind,
         resolve: resolve as (value: boolean | string) => void,
       });
       setPendingGates((prev) => [
         ...prev,
-        { kind: "approval", id: gateId, agentName, toolDisplayName },
-      ]);
-    });
-  }
-
-  /** Bubble a `present_choice` prompt to the top-level gates bar. */
-  function pushChoiceGate(
-    agentName: string,
-    question: string,
-    options: string[],
-  ): Promise<string> {
-    const gateId = crypto.randomUUID();
-    return new Promise<string>((resolve) => {
-      gateResolversRef.current.set(gateId, {
-        kind: "choice",
-        resolve: resolve as (value: boolean | string) => void,
-      });
-      setPendingGates((prev) => [
-        ...prev,
-        { kind: "choice", id: gateId, agentName, question, options },
+        { ...gate, id: gateId } as PendingGate,
       ]);
     });
   }
@@ -442,7 +432,11 @@ export function AiPanel() {
               crypto.randomUUID()) as ChatMessageId,
             seedPrompt: req.prompt,
             awaitToolApproval: (_id, info) =>
-              pushApprovalGate(target.name, info?.displayName ?? "a tool"),
+              pushGate<boolean>({
+                kind: "approval",
+                agentName: target.name,
+                toolDisplayName: info?.displayName ?? "a tool",
+              }),
           });
           const result = await runAgent({
             agent: subAgent,
@@ -454,7 +448,12 @@ export function AiPanel() {
           return { answer: result.content, aborted: result.aborted };
         },
         async requestChoice(req: ChoiceRequest) {
-          return pushChoiceGate(params.agentName, req.question, req.options);
+          return pushGate<string>({
+            kind: "choice",
+            agentName: params.agentName,
+            question: req.question,
+            options: req.options,
+          });
         },
       };
     }
@@ -486,8 +485,36 @@ export function AiPanel() {
     });
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  /**
+   * Shared wrapper for the four run entry points (submit, edit, regenerate,
+   * continue): sets loading state, mints the abort controller, and handles
+   * the common error/cleanup paths around `prepare` — which does the
+   * handler-specific work and calls `runSelectedAgent(signal)`.
+   */
+  async function runWithLoading(
+    prepare: (signal: AbortSignal) => Promise<void>,
+  ) {
+    setLoading(true);
+    setError(null);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      await prepare(controller.signal);
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setLoading(false);
+      setPendingToolApproval(false);
+      abortControllerRef.current = null;
+    }
+  }
+
+  async function handleSubmit() {
     if ((!prompt.trim() && pendingImages.length === 0) || loading) return;
 
     const userText = prompt.trim();
@@ -503,28 +530,13 @@ export function AiPanel() {
       images: attachedImages?.map((img) => ({ url: img.url, alt: img.alt })),
     });
     setMessages((prev) => [...prev, newUserMsg]);
-    setLoading(true);
-    setError(null);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      await runSelectedAgent(controller.signal);
-
+    await runWithLoading(async (signal) => {
+      await runSelectedAgent(signal);
       if (selectedText) {
         clearSelection();
       }
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
-      setLoading(false);
-      setPendingToolApproval(false);
-      abortControllerRef.current = null;
-    }
+    });
   }
 
   function handleCancel() {
@@ -591,24 +603,8 @@ export function AiPanel() {
     setMessages([...historyBeforeEdit, newUserMsg]);
     setEditingMessageId(null);
     setEditingContent("");
-    setLoading(true);
-    setError(null);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      await runSelectedAgent(controller.signal);
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
-      setLoading(false);
-      setPendingToolApproval(false);
-      abortControllerRef.current = null;
-    }
+    await runWithLoading((signal) => runSelectedAgent(signal));
   }
 
   async function handleRegenerate(id: ChatMessageId) {
@@ -627,24 +623,8 @@ export function AiPanel() {
     if (prev?.role !== "user") return;
 
     setMessages(messages.slice(0, truncateAt));
-    setLoading(true);
-    setError(null);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      await runSelectedAgent(controller.signal);
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
-      setLoading(false);
-      setPendingToolApproval(false);
-      abortControllerRef.current = null;
-    }
+    await runWithLoading((signal) => runSelectedAgent(signal));
   }
 
   async function handleContinue() {
@@ -652,24 +632,8 @@ export function AiPanel() {
     const newUserMsg = makeUserMessage({ content: continuePrompt });
 
     setMessages((prev) => [...prev, newUserMsg]);
-    setLoading(true);
-    setError(null);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      await runSelectedAgent(controller.signal);
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
-      setLoading(false);
-      setPendingToolApproval(false);
-      abortControllerRef.current = null;
-    }
+    await runWithLoading((signal) => runSelectedAgent(signal));
   }
 
   // Resolve the active nested transcript when the user has drilled into a
