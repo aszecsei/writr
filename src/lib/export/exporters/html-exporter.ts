@@ -1,7 +1,5 @@
 import { match } from "ts-pattern";
-import type { DocNode, InlineSpan } from "../markdown-to-nodes";
-import { markdownToNodes } from "../markdown-to-nodes";
-import type { ExportContent, ExportOptions } from "../types";
+import type { InlineSpan } from "../markdown-to-nodes";
 import {
   type BlockquoteNode,
   type CodeNode,
@@ -135,45 +133,4 @@ export class HtmlExporter implements Exporter {
   toBlob(): Blob {
     return new Blob([this.toString()], { type: "text/html" });
   }
-}
-
-/** Convert DocNodes to HTML string (backward compat). */
-export function nodesToHtml(nodes: DocNode[]): string {
-  const exporter = new HtmlExporter();
-  visitNodes(nodes, exporter);
-  return exporter.toString();
-}
-
-/**
- * Export full content to HTML string (backward compat).
- * Joins sections with double newlines to match original output format.
- */
-export function exportHtml(
-  content: ExportContent,
-  options: ExportOptions,
-): string {
-  const sections: string[] = [];
-
-  if (options.includeTitlePage && options.scope === "book") {
-    sections.push(`<h1>${escapeHtml(content.projectTitle)}</h1>`);
-    sections.push("<hr>");
-  }
-
-  for (const chapter of content.chapters) {
-    if (chapter.isSeparator) {
-      const style = chapter.pageBreakBefore
-        ? ' style="page-break-before: always"'
-        : "";
-      sections.push(`<h1${style}>${escapeHtml(chapter.title)}</h1>`);
-      continue;
-    }
-    if (options.includeChapterHeadings) {
-      const level = Math.min(6, 2 + (chapter.level ?? 0));
-      sections.push(`<h${level}>${escapeHtml(chapter.title)}</h${level}>`);
-    }
-    const nodes = markdownToNodes(chapter.content);
-    sections.push(nodesToHtml(nodes));
-  }
-
-  return sections.join("\n\n");
 }

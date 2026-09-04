@@ -11,7 +11,7 @@ export type CommandCategory = "navigation" | "create" | "view" | "general";
  * interface rather than Next's concrete `AppRouterInstance` keeps the command
  * layer decoupled from the framework and trivially fakeable in tests.
  */
-export interface CommandRouter {
+interface CommandRouter {
   push: (href: string) => void;
 }
 

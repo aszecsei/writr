@@ -111,10 +111,10 @@ const GENERAL_COMMANDS: Command[] = [
     defaultKeys: "Escape",
     // Must fire while the editor is focused — focus mode's whole point is
     // distraction-free typing, so the user is almost always in the editor when
-    // they hit Escape. Mirrors the old useFocusModeShortcuts window listener.
+    // they hit Escape.
     allowInEditable: true,
-    // Mirrors the old useFocusModeShortcuts semantics: only when focus mode is
-    // on and the browser isn't handling Escape for fullscreen.
+    // Only when focus mode is on and the browser isn't handling Escape for
+    // fullscreen.
     when: () =>
       useUiStore.getState().focusModeEnabled &&
       typeof document !== "undefined" &&
@@ -158,7 +158,7 @@ export const DEFAULT_COMMANDS: Command[] = [
 ];
 
 /** Populate a registry with the default command set. Idempotent. */
-export function registerDefaultCommands(registry: ShortcutRegistry): void {
+function registerDefaultCommands(registry: ShortcutRegistry): void {
   if (registry.size > 0) return;
   registry.registerAll(DEFAULT_COMMANDS);
 }

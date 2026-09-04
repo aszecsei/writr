@@ -26,7 +26,7 @@ function hardSplit(
 
 /**
  * Split markdown into word-bounded, slightly overlapping chunks suitable for
- * embedding. See plan Task 3 for the full behavior contract.
+ * embedding.
  */
 export function chunkText(text: string, options: ChunkOptions = {}): string[] {
   const maxWords = options.maxWords ?? 180;

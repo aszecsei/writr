@@ -17,7 +17,7 @@ export interface BuiltIndex {
   docs: Map<string, IndexedDoc>;
 }
 
-export interface ParagraphDoc {
+interface ParagraphDoc {
   docId: string;
   paragraphNumber: number;
   text: string;

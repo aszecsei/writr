@@ -29,14 +29,6 @@ export class ShortcutRegistry {
     for (const command of commands) this.register(command);
   }
 
-  unregister(id: string): void {
-    this.commands.delete(id);
-  }
-
-  clear(): void {
-    this.commands.clear();
-  }
-
   get size(): number {
     return this.commands.size;
   }

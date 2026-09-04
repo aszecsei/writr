@@ -1,7 +1,7 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type Nspell from "nspell";
 import { getCachedFile, setCachedFile } from "./dictionary-cache";
-import { extractWords, shouldSkipWord, type WordToken } from "./tokenizer";
+import { extractWords, shouldSkipWord } from "./tokenizer";
 
 export interface SpellcheckResult {
   word: string;
@@ -129,36 +129,6 @@ export class SpellcheckService {
     if (!this.nspell) return [];
 
     const tokens = extractWords(doc);
-    const results: SpellcheckResult[] = [];
-
-    for (const token of tokens) {
-      if (this.shouldSkip(token.word, ignoredWords)) continue;
-
-      if (!this.isCorrect(token.word)) {
-        results.push({
-          word: token.word,
-          from: token.from,
-          to: token.to,
-          suggestions: [],
-        });
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Check a subset of text for spelling errors.
-   */
-  checkText(
-    text: string,
-    startPos: number,
-    ignoredWords?: Set<string>,
-  ): SpellcheckResult[] {
-    if (!this.nspell) return [];
-
-    const { tokenizeText } = require("./tokenizer");
-    const tokens: WordToken[] = tokenizeText(text, startPos);
     const results: SpellcheckResult[] = [];
 
     for (const token of tokens) {

@@ -3,17 +3,7 @@ import type { ColumnRefNode, Node } from "./brainstorm-ast";
 import { parseAst } from "./brainstorm-parser";
 import { pickRandom, randomChance } from "./random";
 
-export type {
-  Ast,
-  ColumnRefNode,
-  Constraint,
-  LiteralNode,
-  Node,
-  OptionalNode,
-} from "./brainstorm-ast";
-export { parseAst } from "./brainstorm-parser";
-
-export interface FilledSegment {
+interface FilledSegment {
   text: string;
   /**
    * True when this segment is an unresolved `[name]` left literal because the

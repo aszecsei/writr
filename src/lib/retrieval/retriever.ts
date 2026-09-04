@@ -84,8 +84,7 @@ export async function retrieveContext(
   const future: RetrievalHit[] = [];
 
   for (const chunk of all) {
-    // Skip orphaned chunks whose source doc/chapter no longer exists. Cleanup on
-    // delete prevents new orphans, but legacy rows may linger in older DBs.
+    // Skip orphaned chunks whose source doc/chapter no longer exists.
     if (!titleFor.has(chunk.sourceId)) continue;
     const semantic = bestScore(chunk, queryVectors);
     const hit = (score: number): RetrievalHit => ({

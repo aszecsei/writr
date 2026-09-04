@@ -1,19 +1,13 @@
 import type { z } from "zod/v4";
 import type {
-  BackupMetadataSchema,
   FullBackupSchema,
-  GlobalsBackupDataSchema,
   ProjectBackupDataSchema,
   ProjectBackupSchema,
 } from "./validation";
 
 export const BACKUP_VERSION = 1;
 
-export type BackupMetadata = z.infer<typeof BackupMetadataSchema>;
-
 export type ProjectBackupData = z.infer<typeof ProjectBackupDataSchema>;
-
-export type GlobalsBackupData = z.infer<typeof GlobalsBackupDataSchema>;
 
 export type FullBackup = z.infer<typeof FullBackupSchema>;
 

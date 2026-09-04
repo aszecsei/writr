@@ -11,7 +11,7 @@
  */
 
 /** A run of literal text (already un-escaped). */
-export interface LiteralNode {
+interface LiteralNode {
   kind: "literal";
   text: string;
 }

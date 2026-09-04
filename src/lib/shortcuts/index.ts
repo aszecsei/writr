@@ -1,24 +1,20 @@
-export {
-  DEFAULT_COMMANDS,
-  registerDefaultCommands,
-} from "./commands";
+// Populates `shortcutRegistry` as a side effect of import.
+import "./commands";
+
 export {
   bufferMatches,
   ChordTracker,
   formatBinding,
   isMac,
   isPlainKey,
-  isSequenceSpec,
   matchCombo,
-  type ParsedBinding,
   type ParsedCombo,
   parseBinding,
 } from "./keys";
-export { ShortcutRegistry, shortcutRegistry } from "./registry";
+export { shortcutRegistry } from "./registry";
 export {
   type Command,
   type CommandCategory,
   type CommandContext,
-  type CommandRouter,
   commandTitle,
 } from "./types";

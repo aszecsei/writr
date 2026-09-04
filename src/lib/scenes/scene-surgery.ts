@@ -128,8 +128,6 @@ async function applyCommentWrites(
       if ("delete" in w) {
         await db.comments.delete(w.id);
       } else {
-        // `chapterId` is not part of updateComment's editable surface, so write
-        // the row directly (moving a scene across chapters re-homes its comments).
         await db.comments.update(w.id, {
           chapterId: w.chapterId,
           fromOffset: w.fromOffset,

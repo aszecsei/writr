@@ -1,10 +1,10 @@
-export type EmbeddingsResponseStatus =
+type EmbeddingsResponseStatus =
   | "success"
   | "error"
   | "rate_limited"
   | "cancelled";
 
-export interface EmbeddingsUsage {
+interface EmbeddingsUsage {
   promptTokens?: number;
   totalTokens?: number;
 }

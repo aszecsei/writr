@@ -1,7 +1,7 @@
 import { Lexer, type Token, type Tokens } from "marked";
 import { match } from "ts-pattern";
 
-export type InlineStyle = "bold" | "italic" | "code" | "strikethrough";
+type InlineStyle = "bold" | "italic" | "code" | "strikethrough";
 export type TextAlignment = "left" | "center" | "right" | "justify";
 
 export interface TextSpan {
@@ -12,7 +12,7 @@ export interface TextSpan {
   ruby?: string;
 }
 
-export interface LineBreakSpan {
+interface LineBreakSpan {
   type: "lineBreak";
 }
 

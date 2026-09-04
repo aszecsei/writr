@@ -111,7 +111,6 @@ export async function exportFullBackup(): Promise<FullBackup> {
     allProjects.map((project) => gatherProjectData(project.id)),
   );
 
-  // Filter out any null results (shouldn't happen, but be safe)
   const projects = projectDataResults.filter(
     (data): data is ProjectBackupData => data !== null,
   );
@@ -130,7 +129,7 @@ export async function exportFullBackup(): Promise<FullBackup> {
   };
 }
 
-export function createBackupBlob(backup: Backup): Blob {
+function createBackupBlob(backup: Backup): Blob {
   const json = JSON.stringify(backup, null, 2);
   return new Blob([json], { type: "application/json" });
 }
@@ -159,19 +158,6 @@ export function generateBackupFilename(backup: Backup): string {
 
 export async function downloadFullBackup(): Promise<void> {
   const backup = await exportFullBackup();
-  const blob = createBackupBlob(backup);
-  const filename = generateBackupFilename(backup);
-  triggerDownload(blob, filename);
-  await updateAppSettings({ lastExportedAt: new Date().toISOString() });
-}
-
-export async function downloadProjectBackup(
-  projectId: ProjectId,
-): Promise<void> {
-  const backup = await exportProject(projectId);
-  if (!backup) {
-    throw new Error("Project not found");
-  }
   const blob = createBackupBlob(backup);
   const filename = generateBackupFilename(backup);
   triggerDownload(blob, filename);

@@ -4,7 +4,7 @@ import type { Character, Location } from "@/db/schemas";
  * Extract names from story bible entities that should be recognized as valid words.
  * This includes character names, aliases, and location names.
  */
-export function extractNamesFromBible(
+function extractNamesFromBible(
   characters: Character[],
   locations: Location[],
 ): string[] {

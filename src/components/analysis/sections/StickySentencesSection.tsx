@@ -1,8 +1,7 @@
 "use client";
 
 import { AccordionSection } from "@/components/ui/AccordionSection";
-import type { StickySentence } from "@/lib/text-analysis";
-import { STICKY_THRESHOLD } from "@/lib/text-analysis/metrics/glue";
+import { STICKY_THRESHOLD, type StickySentence } from "@/lib/text-analysis";
 import { ChapterOnlyHint, formatPct } from "./shared";
 
 export function StickySentencesSection({

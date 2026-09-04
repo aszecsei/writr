@@ -1,5 +1,8 @@
-import { hashText } from "../hash";
-import type { EmbeddingProvider, EmbeddingsResponse } from "./provider";
+import type {
+  EmbeddingProvider,
+  EmbeddingsResponse,
+} from "@/lib/retrieval/embedding/provider";
+import { hashText } from "@/lib/retrieval/hash";
 
 /**
  * Deterministic, dependency-free EmbeddingProvider. Seeds an LCG from
