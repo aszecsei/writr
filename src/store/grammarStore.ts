@@ -10,7 +10,7 @@ export interface GrammarContextMenuState {
   rect: DOMRect;
 }
 
-export interface GrammarScannerState {
+interface GrammarScannerState {
   currentIndex: number;
   issues: GrammarResult[];
 }
@@ -28,14 +28,12 @@ interface GrammarState {
 
   // Actions
   ignoreLint: (kind: string, problemText: string) => void;
-  clearIgnored: () => void;
   openContextMenu: (state: GrammarContextMenuState) => void;
   closeContextMenu: () => void;
   openScanner: (issues: GrammarResult[]) => void;
   closeScanner: () => void;
   nextIssue: () => void;
   prevIssue: () => void;
-  setCurrentIssue: (index: number) => void;
   removeIssueAt: (index: number) => void;
   removeIssuesByRule: (ruleKey: string) => void;
 }
@@ -53,11 +51,6 @@ export const useGrammarStore = create<GrammarState>()(
     ignoreLint: (kind, problemText) =>
       set((s) => {
         s.ignoredLints.add(ignoreKey(kind, problemText));
-      }),
-
-    clearIgnored: () =>
-      set((s) => {
-        s.ignoredLints.clear();
       }),
 
     openContextMenu: (state) =>
@@ -101,13 +94,6 @@ export const useGrammarStore = create<GrammarState>()(
         s.scanner.currentIndex =
           (s.scanner.currentIndex - 1 + s.scanner.issues.length) %
           s.scanner.issues.length;
-      }),
-
-    setCurrentIssue: (index) =>
-      set((s) => {
-        if (index >= 0 && index < s.scanner.issues.length) {
-          s.scanner.currentIndex = index;
-        }
       }),
 
     removeIssueAt: (index) =>

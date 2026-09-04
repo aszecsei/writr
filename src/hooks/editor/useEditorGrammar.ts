@@ -25,7 +25,7 @@ interface GrammarRefs {
  */
 export function useEditorGrammar(): GrammarRefs {
   const settings = useAppSettings();
-  // Default to on while settings load, matching the schema default.
+  // Default to off while settings load, matching the schema default.
   const grammarEnabled = settings?.grammarCheckerEnabled ?? false;
   const disabledLintKinds = settings?.disabledLintKinds;
   const ruleOverrides = settings?.grammarRuleOverrides;

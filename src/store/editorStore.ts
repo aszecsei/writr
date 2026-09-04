@@ -7,18 +7,15 @@ import type {
   WorldbuildingDocId,
 } from "@/db/schemas";
 
-export type SaveStatus = "idle" | "saving" | "saved" | "error";
-export type DocumentType = "chapter" | "worldbuilding" | "style-guide";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+type DocumentType = "chapter" | "worldbuilding" | "style-guide";
 
 /**
  * The id of the active document, branded by its document type. Consumers
  * narrow via `activeDocumentType` to read the id with the correct brand —
  * the union members are pairwise distinct.
  */
-export type ActiveDocumentId =
-  | ChapterId
-  | WorldbuildingDocId
-  | StyleGuideEntryId;
+type ActiveDocumentId = ChapterId | WorldbuildingDocId | StyleGuideEntryId;
 
 /**
  * Cross-component editor command. The AI panel posts these via
@@ -27,7 +24,7 @@ export type ActiveDocumentId =
  * it. Selection-based commands embed the range directly so the consumer
  * doesn't have to read from elsewhere on a stale closure.
  */
-export interface PendingInsertion {
+interface PendingInsertion {
   /** Markdown to insert. Converted to ProseMirror nodes by the consumer. */
   markdown: string;
   /**
@@ -71,7 +68,6 @@ interface EditorState {
   activeDocumentType: DocumentType | null;
   isDirty: boolean;
   saveStatus: SaveStatus;
-  lastSavedAt: string | null;
   wordCount: number;
   selectedText: string | null;
   selectedRange: { from: number; to: number } | null;
@@ -129,7 +125,6 @@ export const useEditorStore = create<EditorState>()(
     activeDocumentType: null,
     isDirty: false,
     saveStatus: "idle",
-    lastSavedAt: null,
     wordCount: 0,
     selectedText: null,
     selectedRange: null,
@@ -175,7 +170,6 @@ export const useEditorStore = create<EditorState>()(
       set((s) => {
         s.isDirty = false;
         s.saveStatus = "saved";
-        s.lastSavedAt = new Date().toISOString();
       }),
 
     markSaveError: () =>
@@ -260,17 +254,3 @@ export const useEditorStore = create<EditorState>()(
 
 export const selectActiveChapterId = (s: EditorState): ChapterId | null =>
   s.activeDocumentType === "chapter" ? (s.activeDocumentId as ChapterId) : null;
-
-export const selectActiveWorldbuildingDocId = (
-  s: EditorState,
-): WorldbuildingDocId | null =>
-  s.activeDocumentType === "worldbuilding"
-    ? (s.activeDocumentId as WorldbuildingDocId)
-    : null;
-
-export const selectActiveStyleGuideEntryId = (
-  s: EditorState,
-): StyleGuideEntryId | null =>
-  s.activeDocumentType === "style-guide"
-    ? (s.activeDocumentId as StyleGuideEntryId)
-    : null;

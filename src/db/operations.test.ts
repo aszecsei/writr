@@ -23,14 +23,9 @@ import {
   getChaptersByProject,
   getCharactersByProject,
   getComment,
-  getCommentsByChapter,
   getLocationsByProject,
   getOutlineGridColumnsByProject,
   getOutlineGridRowsByProject,
-  getRelationshipsByProject,
-  getSessionsByProject,
-  getSprintsByProject,
-  getStyleGuideByProject,
   getTimelineByProject,
   getWorldbuildingDoc,
   getWorldbuildingDocsByProject,
@@ -102,12 +97,20 @@ describe("deleteProject (cascading delete)", () => {
     expect(await getCharactersByProject(project.id)).toHaveLength(0);
     expect(await getLocationsByProject(project.id)).toHaveLength(0);
     expect(await getTimelineByProject(project.id)).toHaveLength(0);
-    expect(await getStyleGuideByProject(project.id)).toHaveLength(0);
+    expect(
+      await db.styleGuideEntries.where({ projectId: project.id }).toArray(),
+    ).toHaveLength(0);
     expect(await getWorldbuildingDocsByProject(project.id)).toHaveLength(0);
-    expect(await getRelationshipsByProject(project.id)).toHaveLength(0);
+    expect(
+      await db.characterRelationships
+        .where({ projectId: project.id })
+        .toArray(),
+    ).toHaveLength(0);
     expect(await getOutlineGridColumnsByProject(project.id)).toHaveLength(0);
     expect(await getOutlineGridRowsByProject(project.id)).toHaveLength(0);
-    expect(await getSprintsByProject(project.id)).toHaveLength(0);
+    expect(
+      await db.writingSprints.where({ projectId: project.id }).toArray(),
+    ).toHaveLength(0);
   });
 
   it("does not affect other projects", async () => {
@@ -550,34 +553,6 @@ describe("writing sprints", () => {
     expect(deleted).toBeUndefined();
   });
 
-  it("getSprintsByProject returns only completed/abandoned sprints for project", async () => {
-    const project = await createProject({ title: "P" });
-
-    const sprint1 = await createSprint({
-      durationMs: 1500000,
-      startWordCount: 0,
-      projectId: project.id,
-    });
-    await endSprint(sprint1.id, 100);
-
-    const sprint2 = await createSprint({
-      durationMs: 1500000,
-      startWordCount: 100,
-      projectId: project.id,
-    });
-    await endSprint(sprint2.id, 200, true);
-
-    // Create active sprint - should not appear
-    await createSprint({
-      durationMs: 1500000,
-      startWordCount: 200,
-      projectId: project.id,
-    });
-
-    const history = await getSprintsByProject(project.id);
-    expect(history).toHaveLength(2);
-  });
-
   it("deleteProject cascades to sprints", async () => {
     const project = await createProject({ title: "P" });
     const sprint = await createSprint({
@@ -589,7 +564,9 @@ describe("writing sprints", () => {
 
     await deleteProject(project.id);
 
-    const sprints = await getSprintsByProject(project.id);
+    const sprints = await db.writingSprints
+      .where({ projectId: project.id })
+      .toArray();
     expect(sprints).toHaveLength(0);
   });
 });
@@ -604,7 +581,9 @@ describe("writing sessions", () => {
 
     await recordWritingSession(project.id, chapter.id, 0, 100);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     expect(sessions[0].wordCountStart).toBe(0);
     expect(sessions[0].wordCountEnd).toBe(100);
@@ -620,7 +599,9 @@ describe("writing sessions", () => {
 
     await recordWritingSession(project.id, chapter.id, 0, 50);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     const today = toLocalDateString(new Date());
     const currentHour = new Date().getHours();
 
@@ -640,7 +621,9 @@ describe("writing sessions", () => {
     // Give async operation time to complete
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     expect(sessions[0].wordCountEnd).toBe(2);
   });
@@ -657,7 +640,9 @@ describe("writing sessions", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(0);
   });
 
@@ -672,27 +657,10 @@ describe("writing sessions", () => {
 
     await deleteProject(project.id);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(0);
-  });
-
-  it("getSessionsByProject respects days parameter", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    // Record a session for today
-    await recordWritingSession(project.id, chapter.id, 0, 100);
-
-    // Fetch with 30 days should include today's session
-    const sessions30 = await getSessionsByProject(project.id, 30);
-    expect(sessions30).toHaveLength(1);
-
-    // Fetch with 0 days should still include today (boundary condition)
-    const sessions0 = await getSessionsByProject(project.id, 0);
-    expect(sessions0).toHaveLength(1);
   });
 });
 
@@ -706,7 +674,9 @@ describe("recordWritingSession (session management)", () => {
 
     await recordWritingSession(project.id, chapter.id, 0, 100);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     expect(sessions[0].wordCountStart).toBe(0);
     expect(sessions[0].wordCountEnd).toBe(100);
@@ -729,7 +699,9 @@ describe("recordWritingSession (session management)", () => {
     // Second write within timeout - should extend
     await recordWritingSession(project.id, chapter.id, 100, 200);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     expect(sessions[0].wordCountStart).toBe(0);
     expect(sessions[0].wordCountEnd).toBe(200);
@@ -754,7 +726,9 @@ describe("recordWritingSession (session management)", () => {
     await new Promise((resolve) => setTimeout(resolve, 30));
     await recordWritingSession(project.id, chapter.id, 150, 200);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     // Duration should be sum of both intervals (~60ms total)
     expect(sessions[0].durationMs).toBeGreaterThanOrEqual(60);
@@ -774,7 +748,9 @@ describe("recordWritingSession (session management)", () => {
     await recordWritingSession(project.id, chapter1.id, 0, 100);
     await recordWritingSession(project.id, chapter2.id, 0, 50);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(2);
   });
 
@@ -791,7 +767,9 @@ describe("recordWritingSession (session management)", () => {
     // Extend
     await recordWritingSession(project.id, chapter.id, 600, 700);
 
-    const sessions = await getSessionsByProject(project.id);
+    const sessions = await db.writingSessions
+      .where({ projectId: project.id })
+      .toArray();
     expect(sessions).toHaveLength(1);
     // Original start should be preserved
     expect(sessions[0].wordCountStart).toBe(500);
@@ -844,39 +822,6 @@ describe("comments", () => {
     expect(comment.toOffset).toBe(50);
     expect(comment.anchorText).toBe("");
     expect(comment.content).toBe("");
-  });
-
-  it("retrieves comments by chapter sorted by fromOffset", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 100,
-      toOffset: 110,
-    });
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 20,
-      toOffset: 30,
-    });
-    await createComment({
-      projectId: project.id,
-      chapterId: chapter.id,
-      fromOffset: 50,
-      toOffset: 60,
-    });
-
-    const comments = await getCommentsByChapter(chapter.id);
-    expect(comments).toHaveLength(3);
-    expect(comments[0].fromOffset).toBe(20);
-    expect(comments[1].fromOffset).toBe(50);
-    expect(comments[2].fromOffset).toBe(100);
   });
 
   it("updates comment content and color", async () => {
@@ -960,7 +905,9 @@ describe("comments", () => {
 
     await deleteProject(project.id);
 
-    const comments = await getCommentsByChapter(chapter.id);
+    const comments = await db.comments
+      .where({ chapterId: chapter.id })
+      .toArray();
     expect(comments).toHaveLength(0);
   });
 
@@ -988,8 +935,12 @@ describe("comments", () => {
       toOffset: 10,
     });
 
-    const comments1 = await getCommentsByChapter(chapter1.id);
-    const comments2 = await getCommentsByChapter(chapter2.id);
+    const comments1 = await db.comments
+      .where({ chapterId: chapter1.id })
+      .toArray();
+    const comments2 = await db.comments
+      .where({ chapterId: chapter2.id })
+      .toArray();
 
     expect(comments1).toHaveLength(1);
     expect(comments2).toHaveLength(1);

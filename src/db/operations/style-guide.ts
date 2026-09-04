@@ -15,13 +15,6 @@ import { appliesToProject, byScopeThenOrder } from "./scope";
 
 // ─── Style Guide Entries ────────────────────────────────────────────
 
-/** Entries owned by exactly `projectId` (excludes globals). Used by backup. */
-export async function getStyleGuideByProject(
-  projectId: ProjectId,
-): Promise<StyleGuideEntry[]> {
-  return db.styleGuideEntries.where({ projectId }).sortBy("order");
-}
-
 /**
  * All entries applicable to a project context: globals (projectId=null) plus
  * those scoped to `projectId`. Includes per-project-disabled entries — callers

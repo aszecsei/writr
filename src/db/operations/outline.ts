@@ -180,12 +180,6 @@ export async function deleteOutlineGridRow(
   );
 }
 
-export async function getOutlineGridRowByChapterId(
-  chapterId: ChapterId,
-): Promise<OutlineGridRow | undefined> {
-  return db.outlineGridRows.where({ linkedChapterId: chapterId }).first();
-}
-
 export async function insertOutlineGridRowAt(
   projectId: ProjectId,
   atOrder: number,
@@ -274,10 +268,4 @@ export async function updateOutlineGridCellColor(
   if (existing) {
     await db.outlineGridCells.update(existing.id, { color, updatedAt: now() });
   }
-}
-
-export async function deleteOutlineGridCell(
-  id: OutlineGridCellId,
-): Promise<void> {
-  await db.outlineGridCells.delete(id);
 }

@@ -12,10 +12,6 @@ import type {
  * List agents available for a project. Includes:
  *   - Built-in chat agents (spark, scene, reader, editor, etc.).
  *   - User-created agents that are global or scoped to this project.
- *
- * Pipeline-internal agents (orchestrator, verifier) are EXCLUDED from this
- * list — they aren't user-selectable from the chat dropdown. Use
- * `useAllAgents` (which includes them) for the Manage Agents view.
  */
 export function useChatAgents(
   projectId: ProjectId | null,
@@ -37,8 +33,8 @@ export function useChatAgents(
 }
 
 /**
- * List ALL agents (incl. orchestrator/verifier) for the Manage Agents view.
- * Built-in agents come first in canonical order, then user agents A-Z.
+ * List all agents for the Manage Agents view. Built-in agents come first in
+ * canonical order, then user agents A-Z.
  */
 export function useAllAgents(
   projectId: ProjectId | null,
@@ -79,8 +75,6 @@ const KIND_ORDER: Record<string, number> = {
   "orchestrator-chat": 10,
   researcher: 11,
   "prose-writer": 12,
-  orchestrator: 13,
-  verifier: 14,
   user: 99, // user-created sort by name within the trailing block
 };
 

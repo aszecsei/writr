@@ -139,7 +139,7 @@ export function useLocationsByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useTimelineEvent(
+function useTimelineEvent(
   id: TimelineEventId | null,
 ): TimelineEvent | undefined {
   const source = useDataSource();
@@ -157,7 +157,7 @@ export function useTimelineByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useStyleGuideEntry(
+function useStyleGuideEntry(
   id: StyleGuideEntryId | null,
 ): StyleGuideEntry | undefined {
   const source = useDataSource();
@@ -179,7 +179,7 @@ export function useStyleGuideByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useGuardrailEntry(
+function useGuardrailEntry(
   id: GuardrailEntryId | null,
 ): GuardrailEntry | undefined {
   const source = useDataSource();
@@ -201,7 +201,7 @@ export function useGuardrailsByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useWorldbuildingDoc(
+function useWorldbuildingDoc(
   id: WorldbuildingDocId | null,
 ): WorldbuildingDoc | undefined {
   const source = useDataSource();
@@ -210,7 +210,7 @@ export function useWorldbuildingDoc(
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useWorldbuildingDocsByProject(projectId: ProjectId | null) {
+function useWorldbuildingDocsByProject(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseWorldbuildingDocsByProject(
     source.kind === "dexie" ? projectId : null,
@@ -235,17 +235,16 @@ export function useRelationshipsByProject(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-// Outline grid hooks live in src/hooks/outline/useOutlineGrid.ts.
-// We import them lazily here so the existing module continues to be the
-// single import path for dexie consumers; the source-aware wrappers below
-// branch in the same way as the bible/chapter hooks above.
+// Outline grid hooks live in src/hooks/outline/useOutlineGrid.ts. The
+// source-aware wrappers below branch in the same way as the bible/chapter
+// hooks above.
 import {
   useOutlineGridCells as dexieUseOutlineGridCells,
   useOutlineGridColumns as dexieUseOutlineGridColumns,
   useOutlineGridRows as dexieUseOutlineGridRows,
 } from "@/hooks/outline/useOutlineGrid";
 
-export function useOutlineGridColumns(projectId: ProjectId | null) {
+function useOutlineGridColumns(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridColumns(
     source.kind === "dexie" ? projectId : null,
@@ -258,7 +257,7 @@ export function useOutlineGridColumns(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useOutlineGridRows(projectId: ProjectId | null) {
+function useOutlineGridRows(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridRows(
     source.kind === "dexie" ? projectId : null,
@@ -271,7 +270,7 @@ export function useOutlineGridRows(projectId: ProjectId | null) {
   return source.kind === "dexie" ? dexie : shared;
 }
 
-export function useOutlineGridCells(projectId: ProjectId | null) {
+function useOutlineGridCells(projectId: ProjectId | null) {
   const source = useDataSource();
   const dexie = dexieUseOutlineGridCells(
     source.kind === "dexie" ? projectId : null,

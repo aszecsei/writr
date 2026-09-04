@@ -54,8 +54,8 @@ export async function getChapter(id: ChapterId): Promise<Chapter | undefined> {
 /**
  * Manuscript documents in true reading order: the flattened depth-first
  * sequence (parent before children), separators and scratchpad excluded. This
- * is the canonical order for the AI reader pipeline, where sibling-scoped
- * `order` no longer linearizes the manuscript.
+ * is the canonical order for the AI reader pipeline — sibling-scoped `order`
+ * alone doesn't linearize the manuscript.
  */
 export async function getManuscriptChaptersOrdered(
   projectId: ProjectId,

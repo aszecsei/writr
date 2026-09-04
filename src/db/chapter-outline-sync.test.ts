@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   createChapterFromRow,
-  hasLinkedChapter,
-  hasLinkedRow,
   linkChapterToRow,
   syncDeleteOutlineRow,
   syncReorderOutlineRows,
@@ -106,7 +104,7 @@ describe("createChapterFromRow", () => {
     expect(updatedRow?.label).toBe("");
   });
 
-  it("seeds the core scene, matching the Model D invariant", async () => {
+  it("seeds the core scene", async () => {
     const project = await createProject({ title: "P" });
     const row = await createOutlineGridRow({
       projectId: project.id,
@@ -496,61 +494,5 @@ describe("syncDeleteOutlineRow", () => {
 
     const remaining = await getOutlineGridRowsByProject(project.id);
     expect(remaining.map((r) => r.order)).toEqual([0, 1]);
-  });
-});
-
-describe("hasLinkedRow", () => {
-  it("returns true when chapter has a linked row", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-    await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: chapter.id,
-    });
-
-    const result = await hasLinkedRow(chapter.id);
-    expect(result).toBe(true);
-  });
-
-  it("returns false when chapter has no linked row", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-
-    const result = await hasLinkedRow(chapter.id);
-    expect(result).toBe(false);
-  });
-});
-
-describe("hasLinkedChapter", () => {
-  it("returns true when row has a linked chapter", async () => {
-    const project = await createProject({ title: "P" });
-    const chapter = await createChapter({
-      projectId: project.id,
-      title: "Ch1",
-    });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      linkedChapterId: chapter.id,
-    });
-
-    const result = await hasLinkedChapter(row.id);
-    expect(result).toBe(true);
-  });
-
-  it("returns false when row has no linked chapter", async () => {
-    const project = await createProject({ title: "P" });
-    const row = await createOutlineGridRow({
-      projectId: project.id,
-      label: "Unlinked",
-    });
-
-    const result = await hasLinkedChapter(row.id);
-    expect(result).toBe(false);
   });
 });

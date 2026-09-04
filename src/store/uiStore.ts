@@ -8,7 +8,7 @@ export type SidebarPanel = "chapters" | "bible" | "agents";
 export type RightPanelTab = "ai" | "analysis" | "details";
 
 // Discriminated union for modal state - provides type safety at call sites
-export type ModalState =
+type ModalState =
   | { id: null }
   | {
       id: "create-project";
@@ -85,7 +85,7 @@ interface UiState {
   /**
    * Which chapters are "open" in the binder, showing their scene rows. Default
    * closed (absent / `false`); an explicit `true` reveals a chapter's scenes.
-   * Distinct from `collapsedChapters` (which drives legacy nesting/separators).
+   * Distinct from `collapsedChapters` (which drives binder nesting).
    */
   openChapters: Record<string, boolean>;
 

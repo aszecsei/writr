@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { makeProject, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";

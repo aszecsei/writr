@@ -2,7 +2,6 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useRef } from "react";
-import { db } from "@/db/database";
 import {
   createSprint,
   endSprint,
@@ -137,11 +136,4 @@ export function useWritingSprint() {
     resume,
     end,
   };
-}
-
-export function useActiveSprintQuery() {
-  return useLiveQuery(
-    () => db.writingSprints.where("status").anyOf(["active", "paused"]).first(),
-    [],
-  );
 }

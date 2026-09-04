@@ -60,18 +60,3 @@ export async function deleteIndexedChunk(id: IndexedChunkId): Promise<void> {
   await db.indexedChunks.delete(id);
 }
 
-export async function deleteIndexedChunksBySource(
-  projectId: ProjectId,
-  sourceType: IndexedChunkSourceType,
-  sourceId: string,
-): Promise<void> {
-  const rows = await getIndexedChunksBySource(projectId, sourceType, sourceId);
-  await db.indexedChunks.bulkDelete(rows.map((r) => r.id));
-}
-
-export async function deleteIndexedChunksByProject(
-  projectId: ProjectId,
-): Promise<void> {
-  const rows = await getIndexedChunksByProject(projectId);
-  await db.indexedChunks.bulkDelete(rows.map((r) => r.id));
-}

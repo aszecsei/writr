@@ -104,12 +104,6 @@ export async function deleteCharacter(id: CharacterId): Promise<void> {
 
 // ─── Character Relationships ────────────────────────────────────────
 
-export async function getRelationshipsByProject(
-  projectId: ProjectId,
-): Promise<CharacterRelationship[]> {
-  return db.characterRelationships.where({ projectId }).toArray();
-}
-
 export async function createRelationship(
   data: Pick<
     CharacterRelationship,

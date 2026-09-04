@@ -9,18 +9,6 @@ import { generateId, now } from "./helpers";
 
 // ─── Chapter Snapshots ──────────────────────────────────────────────
 
-export async function getSnapshotsByChapter(
-  chapterId: ChapterId,
-): Promise<ChapterSnapshot[]> {
-  return db.chapterSnapshots.where({ chapterId }).reverse().sortBy("createdAt");
-}
-
-export async function getSnapshot(
-  id: ChapterSnapshotId,
-): Promise<ChapterSnapshot | undefined> {
-  return db.chapterSnapshots.get(id);
-}
-
 export async function createSnapshot(
   data: Pick<
     ChapterSnapshot,

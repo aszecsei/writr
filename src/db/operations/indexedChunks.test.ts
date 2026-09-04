@@ -1,9 +1,7 @@
-import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "../database";
 import type { ProjectId } from "../schemas";
 import {
-  deleteIndexedChunksBySource,
   getIndexedChunksByProject,
   getIndexedChunksBySource,
   putIndexedChunk,
@@ -59,13 +57,5 @@ describe("indexedChunks operations", () => {
     expect(
       await getIndexedChunksBySource(projectId, "worldbuilding", "doc1"),
     ).toHaveLength(1);
-  });
-
-  it("deletes all chunks for a source", async () => {
-    await putIndexedChunk(chunk("doc1", 0));
-    await deleteIndexedChunksBySource(projectId, "worldbuilding", "doc1");
-    expect(
-      await getIndexedChunksBySource(projectId, "worldbuilding", "doc1"),
-    ).toHaveLength(0);
   });
 });

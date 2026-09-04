@@ -1,9 +1,6 @@
 // Re-export chapter-outline sync functions
 export {
   createChapterFromRow,
-  getLinkedRow,
-  hasLinkedChapter,
-  hasLinkedRow,
   linkChapterToRow,
   syncDeleteOutlineRow,
   syncReorderOutlineRows,
