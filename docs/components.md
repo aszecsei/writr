@@ -15,10 +15,10 @@ Components live under `src/components/` and are organized by feature area. Befor
 - **`layout/`** — App shell, topbar, sidebar.
 - **`outline/`** — Outline grid: `OutlineGrid`, `OutlineGridRow`, `OutlineGridCell`, `OutlineGridHeader`, `OutlineGridToolbar`, `OutlineGridContextMenu`, `OutlineTemplateDialog`, `StatusBadge`.
 - **`preview-card/`** — `html2canvas` image generation for shareable card previews.
-- **`providers/`** — App-wide context providers (settings, theme, etc.).
+- **`providers/`** — App-wide context providers (settings, theme, etc.). `GlobalModals` mounts every app-wide modal once (see `docs/state.md`).
 - **`radio/`** — YouTube-backed mood playlist UI.
 - **`search/`** — Project-wide search UI (backed by `src/lib/search/`).
-- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`, `GrammarRulesDialog`, `SavedPromptsManager`, `ShortcutsHelpDialog`. `agent-tool-picker` holds the allowed-tools picker config shared by the agent editor. (Agent editing moved to `agents/AgentEditorBody` + the `/agents/definitions` routes.)
+- **`settings/`** — Settings dialogs: `AppSettingsDialog`, `AiSettings`, `BackupSettings`, `DictionaryManagerDialog`, `ImportBackupDialog`, `AppearanceSettings`, `EditorSettings`, `GeneralTabContent`, `GrammarRulesDialog`, `SavedPromptsManager`, `ShortcutsHelpDialog`. `AppSettingsDialog` holds one `AppSettingsDraft` state (exported, along with the `setField` setter type) and passes `{ draft, setField }` to its General/Editor/AI sub-forms instead of one prop pair per field. `agent-tool-picker` holds the allowed-tools picker config shared by the agent editor. (Agent editing moved to `agents/AgentEditorBody` + the `/agents/definitions` routes.)
 - **`sprint/`** — Writing-sprint UI: `SprintWidget`, `SprintConfigDialog`, `SprintHistoryDialog`.
 - **`stats/`** — Writing analytics: `WritingStatsDashboard`, `DailyWordChart`, `TimeOfDayChart`, `StatCard`, `StreakDisplay`.
 - **`ui/`** — Reusable primitives (see below).
