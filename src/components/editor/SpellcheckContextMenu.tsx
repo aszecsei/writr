@@ -2,18 +2,17 @@
 
 import type { Editor } from "@tiptap/react";
 import { BookPlus, BookType, Eye } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useCallback } from "react";
 import {
   addWordToAppDictionary,
   addWordToProjectDictionary,
 } from "@/db/operations";
 import type { ProjectId } from "@/db/schemas";
-import { useClickOutside } from "@/hooks/useClickOutside";
 import {
   type ContextMenuState,
   useSpellcheckStore,
 } from "@/store/spellcheckStore";
+import { IssueContextMenu } from "./IssueContextMenu";
 
 interface SpellcheckContextMenuProps {
   editor: Editor | null;
@@ -28,7 +27,6 @@ export function SpellcheckContextMenu({
   contextMenu,
   onClose,
 }: SpellcheckContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
   const addToIgnored = useSpellcheckStore((s) => s.addToIgnored);
 
   const handleSuggestionClick = useCallback(
@@ -48,112 +46,52 @@ export function SpellcheckContextMenu({
   );
 
   const handleAddToAppDictionary = useCallback(async () => {
-    addToIgnored(contextMenu.word);
+    addToIgnored(contextMenu.word.toLowerCase());
     await addWordToAppDictionary(contextMenu.word);
     onClose();
   }, [addToIgnored, contextMenu.word, onClose]);
 
   const handleAddToProjectDictionary = useCallback(async () => {
-    addToIgnored(contextMenu.word);
+    addToIgnored(contextMenu.word.toLowerCase());
     await addWordToProjectDictionary(projectId, contextMenu.word);
     onClose();
   }, [addToIgnored, projectId, contextMenu.word, onClose]);
 
   const handleIgnore = useCallback(() => {
-    addToIgnored(contextMenu.word);
+    addToIgnored(contextMenu.word.toLowerCase());
     onClose();
   }, [addToIgnored, contextMenu.word, onClose]);
 
-  useClickOutside(menuRef, onClose);
-
-  // Position the menu
-  const style = {
-    position: "fixed" as const,
-    top: contextMenu.rect.bottom + 4,
-    left: contextMenu.rect.left,
-    zIndex: 50,
-  };
-
-  // Adjust if menu would go off-screen
-  const adjustPosition = () => {
-    if (!menuRef.current) return;
-    const rect = menuRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    if (rect.right > viewportWidth) {
-      menuRef.current.style.left = `${viewportWidth - rect.width - 8}px`;
-    }
-    if (rect.bottom > viewportHeight) {
-      menuRef.current.style.top = `${contextMenu.rect.top - rect.height - 4}px`;
-    }
-  };
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: adjustPosition reads contextMenu.rect internally
-  useEffect(() => {
-    adjustPosition();
-  }, [contextMenu.rect]);
-
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={style}
-      className="min-w-48 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
-    >
-      {/* Suggestions */}
-      {contextMenu.suggestions.length > 0 && (
-        <>
-          {contextMenu.suggestions.map((suggestion, index) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => handleSuggestionClick(suggestion)}
-              className="flex w-full items-center px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
-            >
-              <span className="mr-2 text-xs text-neutral-400">{index + 1}</span>
-              {suggestion}
-            </button>
-          ))}
-          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-        </>
-      )}
-
-      {/* No suggestions message */}
-      {contextMenu.suggestions.length === 0 && (
-        <>
-          <div className="px-3 py-1.5 text-sm italic text-neutral-500">
-            No suggestions
-          </div>
-          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-        </>
-      )}
-
-      {/* Dictionary actions */}
-      <button
-        type="button"
-        onClick={handleAddToAppDictionary}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
-      >
-        <BookType size={14} className="text-neutral-500" />
-        Add to App Dictionary
-      </button>
-      <button
-        type="button"
-        onClick={handleAddToProjectDictionary}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
-      >
-        <BookPlus size={14} className="text-neutral-500" />
-        Add to Project Dictionary
-      </button>
-      <button
-        type="button"
-        onClick={handleIgnore}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-700"
-      >
-        <Eye size={14} className="text-neutral-500" />
-        Ignore (this session)
-      </button>
-    </div>,
-    document.body,
+  return (
+    <IssueContextMenu
+      anchorRect={contextMenu.rect}
+      className="min-w-48"
+      suggestions={contextMenu.suggestions.map((suggestion) => ({
+        key: suggestion,
+        label: suggestion,
+        onSelect: () => handleSuggestionClick(suggestion),
+      }))}
+      actions={[
+        {
+          key: "app-dictionary",
+          label: "Add to App Dictionary",
+          icon: BookType,
+          onClick: handleAddToAppDictionary,
+        },
+        {
+          key: "project-dictionary",
+          label: "Add to Project Dictionary",
+          icon: BookPlus,
+          onClick: handleAddToProjectDictionary,
+        },
+        {
+          key: "ignore",
+          label: "Ignore (this session)",
+          icon: Eye,
+          onClick: handleIgnore,
+        },
+      ]}
+      onClose={onClose}
+    />
   );
 }
