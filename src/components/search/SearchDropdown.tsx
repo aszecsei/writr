@@ -27,7 +27,7 @@ export function SearchDropdown({
   const hasResults = flatResults.length > 0;
 
   return (
-    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[400px] overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+    <>
       {isSearching && (
         <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-500">
           <Loader2 size={12} className="animate-spin" />
@@ -79,6 +79,6 @@ export function SearchDropdown({
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

@@ -2,9 +2,9 @@
 
 import type { Editor } from "@tiptap/react";
 import { Check, Pilcrow, Type } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
+import { DropdownMenu, DropdownMenuItem } from "@/components/ui/DropdownMenu";
 import { ToolbarButton } from "@/components/ui/ToolbarButton";
-import { useClickOutside } from "@/hooks/useClickOutside";
 import { findLineBreakPairs } from "@/lib/normalize-line-breaks";
 import { convertToSmartQuotes } from "@/lib/smart-quotes";
 
@@ -15,9 +15,6 @@ interface TextToolsMenuProps {
 export function TextToolsMenu({ editor }: TextToolsMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [applied, setApplied] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   function handleSmartQuotes() {
     if (!editor) return;
@@ -71,33 +68,25 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
   }
 
   return (
-    <div className="relative" ref={menuRef}>
-      <ToolbarButton
-        icon={applied ? Check : Type}
-        title="Text tools"
-        onClick={() => setMenuOpen(!menuOpen)}
-        variant={applied ? "success" : "default"}
-      />
-      {menuOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
-          <button
-            type="button"
-            onClick={handleSmartQuotes}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
-          >
-            <Type size={14} />
-            Smart Quotes
-          </button>
-          <button
-            type="button"
-            onClick={handleNormalizeLineBreaks}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
-          >
-            <Pilcrow size={14} />
-            Normalize Line Breaks
-          </button>
-        </div>
-      )}
-    </div>
+    <DropdownMenu
+      open={menuOpen}
+      onClose={() => setMenuOpen(false)}
+      panelClassName="w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+      trigger={
+        <ToolbarButton
+          icon={applied ? Check : Type}
+          title="Text tools"
+          onClick={() => setMenuOpen(!menuOpen)}
+          variant={applied ? "success" : "default"}
+        />
+      }
+    >
+      <DropdownMenuItem icon={Type} onClick={handleSmartQuotes}>
+        Smart Quotes
+      </DropdownMenuItem>
+      <DropdownMenuItem icon={Pilcrow} onClick={handleNormalizeLineBreaks}>
+        Normalize Line Breaks
+      </DropdownMenuItem>
+    </DropdownMenu>
   );
 }
