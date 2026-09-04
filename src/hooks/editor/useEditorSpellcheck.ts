@@ -40,7 +40,7 @@ export function useEditorSpellcheck(projectId: string | null): SpellcheckRefs {
   const ignoredWords = useSpellcheckStore((s) => s.ignored);
   const openContextMenu = useSpellcheckStore((s) => s.openContextMenu);
 
-  const dictionaryWords = useCombinedDictionaryWords(projectId ?? undefined);
+  const dictionaryWords = useCombinedDictionaryWords(projectId);
   const characters = useCharactersByProject(projectId);
   const locations = useLocationsByProject(projectId);
 

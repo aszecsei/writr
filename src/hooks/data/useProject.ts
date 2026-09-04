@@ -2,14 +2,9 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import type { ProjectId } from "@/db/schemas";
+import { createEntityHook } from "../factories";
 
-export function useProject(projectId: ProjectId | null) {
-  return useLiveQuery(
-    () => (projectId ? db.projects.get(projectId) : undefined),
-    [projectId],
-  );
-}
+export const useProject = createEntityHook(db.projects);
 
 export function useAllProjects() {
   return useLiveQuery(() =>

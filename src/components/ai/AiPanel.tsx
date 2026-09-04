@@ -10,7 +10,11 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAppSettings, isActiveInProject } from "@/db/operations";
 import { getAgent, listAgents } from "@/db/operations/agents";
-import type { AgentDefinition, AgentDefinitionId } from "@/db/schemas";
+import type {
+  AgentDefinition,
+  AgentDefinitionId,
+  ChapterId,
+} from "@/db/schemas";
 import {
   useCharactersByProject,
   useGuardrailsByProject,
@@ -129,7 +133,7 @@ export function AiPanel() {
   const selectedRange = useEditorStore((s) => s.selectedRange);
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const activeChapter = useChapter(
-    activeDocumentType === "chapter" ? activeDocumentId : null,
+    activeDocumentType === "chapter" ? (activeDocumentId as ChapterId) : null,
   );
   const retrieve = useLoreRetrieval(projectId);
 
