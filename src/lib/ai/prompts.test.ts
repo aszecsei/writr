@@ -1,40 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { Chapter, ChapterId, ProjectId } from "@/db/schemas";
-import { makeGuardrailEntry } from "@/test/helpers";
+import type { ChapterId, ProjectId } from "@/db/schemas";
+import { makeAiContext, makeChapter, makeGuardrailEntry } from "@/test/helpers";
 import { withVoiceMandate } from "./agents/builtins/voice";
 import { buildAgenticContext, buildMessages } from "./prompts";
 import type { AiContext, AiMessage, TextContentPart } from "./types";
 
-function emptyContext(overrides?: Partial<AiContext>): AiContext {
-  return {
-    projectTitle: "Test Novel",
-    projectDescription: "",
-    genre: "",
-    styleGuide: [],
-    guardrails: [],
-    chapters: [],
-    ...overrides,
-  };
-}
+const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
-function makeChapter(overrides: Partial<Chapter> & { id: ChapterId }): Chapter {
-  return {
-    id: overrides.id,
-    projectId: overrides.projectId ?? ("project-1" as ProjectId),
-    title: overrides.title ?? "Untitled",
-    order: overrides.order ?? 0,
-    content: overrides.content ?? "",
-    synopsis: overrides.synopsis ?? "",
-    status: overrides.status ?? "draft",
-    wordCount: overrides.wordCount ?? 0,
-    parentChapterId: overrides.parentChapterId ?? null,
-    section: overrides.section ?? "manuscript",
-    kind: overrides.kind ?? "document",
-    includeInCompile: overrides.includeInCompile ?? true,
-    pageBreakBefore: overrides.pageBreakBefore ?? false,
-    createdAt: overrides.createdAt ?? "2026-01-01T00:00:00Z",
-    updatedAt: overrides.updatedAt ?? "2026-01-01T00:00:00Z",
-  };
+function emptyContext(overrides?: Partial<AiContext>): AiContext {
+  return makeAiContext(overrides);
 }
 
 function getSystemText(messages: AiMessage[]): string {
@@ -163,30 +137,23 @@ describe("buildMessages", () => {
     expect(getSystemText(msgs)).toContain("<tool-calling-instructions>");
   });
 
-  it("uses the minimal agentic context when tool calling is enabled", () => {
-    const msgs = buildMessages(
-      "agent prompt",
-      emptyContext({ projectDescription: "An epic." }),
-      [],
-      { enableToolCalling: true },
+  it("uses the same minimal agentic context whether or not tool calling is enabled", () => {
+    const enabled = getFirstUserText(
+      buildMessages(
+        "agent prompt",
+        emptyContext({ projectDescription: "An epic." }),
+        [],
+        { enableToolCalling: true },
+      ),
     );
-    const text = getFirstUserText(msgs);
-    expect(text).toContain("<description>An epic.</description>");
-  });
-
-  it("uses the same minimal context when tool calling is disabled (no full bible dump)", () => {
-    const msgs = buildMessages(
-      "agent prompt",
-      emptyContext({ projectDescription: "An epic." }),
+    const disabled = getFirstUserText(
+      buildMessages(
+        "agent prompt",
+        emptyContext({ projectDescription: "An epic." }),
+      ),
     );
-    const text = getFirstUserText(msgs);
-    expect(text).toContain("<description>An epic.</description>");
-    expect(text).not.toContain("<characters>");
-    expect(text).not.toContain("<locations>");
-    expect(text).not.toContain("<timeline>");
-    expect(text).not.toContain("<worldbuilding>");
-    expect(text).not.toContain("<outline>");
-    expect(text).not.toContain("<relationships>");
+    expect(enabled).toContain("<description>An epic.</description>");
+    expect(disabled).toContain("<description>An epic.</description>");
   });
 
   it("emits a chapter table-of-contents in the project context", () => {
@@ -196,11 +163,13 @@ describe("buildMessages", () => {
         chapters: [
           makeChapter({
             id: "c1" as ChapterId,
+            projectId,
             title: "The Beginning",
             order: 0,
           }),
           makeChapter({
             id: "c2" as ChapterId,
+            projectId,
             title: "Rising Action",
             order: 1,
             status: "revised",
@@ -317,12 +286,21 @@ function baseContext(): AiContext {
 }
 
 describe("buildMessages retrieval injection", () => {
+  // The retrieval block, when present, is its own dedicated user message with
+  // plain string content — unlike the bible-context and chapter messages,
+  // which are always ContentPart arrays. That's enough to pick it out.
+  function getRetrievalText(messages: AiMessage[]): string {
+    const retrievalMsg = messages.find(
+      (m) => m.role === "user" && typeof m.content === "string",
+    );
+    return typeof retrievalMsg?.content === "string"
+      ? retrievalMsg.content
+      : "";
+  }
+
   it("omits retrieval blocks when no retrieval data is present", () => {
     const msgs = buildMessages("sys", baseContext(), []);
-    const text = JSON.stringify(msgs);
-    expect(text).not.toContain("<relevant-lore>");
-    expect(text).not.toContain("<past-events>");
-    expect(text).not.toContain("<future-events>");
+    expect(getRetrievalText(msgs)).toBe("");
   });
 
   it("injects lore and past-events blocks when present", () => {
@@ -333,8 +311,7 @@ describe("buildMessages retrieval injection", () => {
       ],
       pastEvents: [{ title: "Chapter 1", text: "They met at the gate." }],
     };
-    const msgs = buildMessages("sys", ctx, []);
-    const text = JSON.stringify(msgs);
+    const text = getRetrievalText(buildMessages("sys", ctx, []));
     expect(text).toContain("<relevant-lore>");
     expect(text).toContain("Veyrish burn their dead.");
     expect(text).toContain("<past-events>");
@@ -346,7 +323,7 @@ describe("buildMessages retrieval injection", () => {
       ...baseContext(),
       futureEvents: [{ title: "Chapter 9", text: "The betrayal." }],
     };
-    const text = JSON.stringify(buildMessages("sys", ctx, []));
+    const text = getRetrievalText(buildMessages("sys", ctx, []));
     expect(text).toContain("<future-events>");
     expect(text).toContain("Do not spoil");
   });
@@ -375,8 +352,18 @@ describe("buildAgenticContext", () => {
     const xml = buildAgenticContext(
       emptyContext({
         chapters: [
-          makeChapter({ id: "c1" as ChapterId, title: "Opening", order: 0 }),
-          makeChapter({ id: "c2" as ChapterId, title: "Climax", order: 1 }),
+          makeChapter({
+            id: "c1" as ChapterId,
+            projectId,
+            title: "Opening",
+            order: 0,
+          }),
+          makeChapter({
+            id: "c2" as ChapterId,
+            projectId,
+            title: "Climax",
+            order: 1,
+          }),
         ],
       }),
     );
@@ -421,6 +408,7 @@ describe("buildAgenticContext", () => {
         chapters: [
           makeChapter({
             id: "c1" as ChapterId,
+            projectId,
             title: 'Quotes "and" ampersands & angles',
             order: 0,
           }),

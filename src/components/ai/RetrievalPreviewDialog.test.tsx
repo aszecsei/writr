@@ -5,15 +5,15 @@ import type { AppSettings, Chapter } from "@/db/schemas";
 import type { RetrievalHit, RetrievalResult } from "@/lib/retrieval/types";
 import { RetrievalPreviewDialog } from "./RetrievalPreviewDialog";
 
-const settingsRef: { current: Partial<AppSettings> } = {
+const settingsRef = vi.hoisted(() => ({
   current: {
     loreRetrievalEnabled: true,
     omniscientMode: true,
     loreTopK: 5,
     sceneTopK: 3,
     similarityFloor: 0.3,
-  },
-};
+  } as Partial<AppSettings>,
+}));
 
 vi.mock("@/hooks/data/useAppSettings", () => ({
   useAppSettings: () => settingsRef.current,
@@ -147,7 +147,7 @@ describe("RetrievalPreviewDialog", () => {
     );
   });
 
-  it("shows the disabled banner when retrieval is turned off", async () => {
+  it("shows the disabled banner when retrieval is turned off", () => {
     settingsRef.current = {
       ...settingsRef.current,
       loreRetrievalEnabled: false,

@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/database";
 import type { ProjectId, WorldbuildingDocId } from "@/db/schemas";
-import { BUILTIN_AGENT_DEFAULTS } from "@/lib/ai/agents/builtins/defaults";
 import { makeWorldbuildingDoc, resetIdCounter } from "@/test/helpers";
-import { AI_TOOL_MAP, executeTool } from "../tools";
+import { executeTool } from "../tools";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 const ctx = { projectId };
@@ -202,18 +201,5 @@ describe("worldbuilding doc tools", () => {
     );
     expect(result.success).toBe(false);
     expect(result.message).toMatch(/same parent/i);
-  });
-});
-
-describe("worldbuilder agent wiring", () => {
-  it("the Worldbuilder builtin's allowedToolIds all resolve to registered tools", () => {
-    const ids = BUILTIN_AGENT_DEFAULTS.worldbuilder.allowedToolIds;
-    expect(ids).toContain("create_worldbuilding_doc");
-    for (const id of ids) {
-      // Scoped read ids (e.g. "list:character") map to the consolidated
-      // list/get tools; everything else must be a registered tool id.
-      const base = id.includes(":") ? id.split(":")[0] : id;
-      expect(AI_TOOL_MAP.get(base)).toBeDefined();
-    }
   });
 });

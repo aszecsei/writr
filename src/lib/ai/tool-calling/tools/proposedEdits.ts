@@ -7,7 +7,36 @@ import {
   normalizedIncludes,
 } from "@/lib/punctuation-match";
 import { defineTool } from "../types";
+import type { EditLocator } from "./edit-locator";
 import { fail, ok } from "./helpers";
+
+/**
+ * Apply-time safety check: is this edit's anchor still locatable in the given
+ * chapter content? For `replace`, mirrors the proposal-time uniqueness gate
+ * (but tolerates non-uniqueness — the chapter has likely shifted by apply
+ * time, so any match is enough to enable Apply). Shared with
+ * `locateProposedEdit` (`edit-locator.ts`) — that function actually resolves
+ * the range; this one only answers "would it find something".
+ */
+export function computeAnchorFound(
+  content: string,
+  edit: Pick<EditLocator, "kind" | "anchorText" | "prefix" | "suffix">,
+): boolean {
+  return match(edit)
+    .with({ kind: P.union("append", "full_chapter") }, () => true)
+    .with({ kind: "replace" }, (e) =>
+      normalizedIncludes(
+        content,
+        (e.prefix ?? "") + (e.anchorText ?? "") + (e.suffix ?? ""),
+      ),
+    )
+    .with(
+      { kind: "insert_at" },
+      (e) =>
+        e.anchorText !== undefined && normalizedIncludes(content, e.anchorText),
+    )
+    .exhaustive();
+}
 
 // ─── propose_edit ───────────────────────────────────────────────────
 //
@@ -124,21 +153,12 @@ export const proposeEditTool = defineTool({
     // if the chapter has shifted between proposal and click. For `replace`
     // proposal-time uniqueness already guaranteed a match exists, so this is
     // a guard against the chat user editing the chapter before clicking.
-    const anchorFound = match(params)
-      .with({ kind: P.union("append", "full_chapter") }, () => true)
-      .with({ kind: "replace" }, (p) =>
-        normalizedIncludes(
-          chapter.content,
-          (p.prefix ?? "") + (p.anchorText ?? "") + (p.suffix ?? ""),
-        ),
-      )
-      .with(
-        { kind: "insert_at" },
-        (p) =>
-          p.anchorText !== undefined &&
-          normalizedIncludes(chapter.content, p.anchorText),
-      )
-      .exhaustive();
+    const anchorFound = computeAnchorFound(chapter.content, {
+      kind: params.kind,
+      anchorText: params.anchorText,
+      prefix: params.prefix,
+      suffix: params.suffix,
+    });
 
     return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
       chapterId: params.chapterId,

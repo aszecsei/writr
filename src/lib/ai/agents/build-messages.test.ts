@@ -1,24 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { AiContext } from "../types";
+import { makeAiContext } from "@/test/helpers";
 import { makeChatAgentBuildMessages } from "./build-messages";
-
-function emptyContext(overrides?: Partial<AiContext>): AiContext {
-  return {
-    projectTitle: "Test Novel",
-    projectDescription: "",
-    genre: "",
-    styleGuide: [],
-    guardrails: [],
-    chapters: [],
-    ...overrides,
-  };
-}
 
 describe("makeChatAgentBuildMessages", () => {
   it("forwards history through prompts.ts/buildMessages", () => {
     const build = makeChatAgentBuildMessages({
       systemPrompt: "chat-sys",
-      context: emptyContext(),
+      context: makeAiContext(),
     });
 
     const messages = build({
@@ -32,7 +20,7 @@ describe("makeChatAgentBuildMessages", () => {
   it("appends an assistantPrefill at the end when configured", () => {
     const build = makeChatAgentBuildMessages({
       systemPrompt: "chat-sys",
-      context: emptyContext(),
+      context: makeAiContext(),
       assistantPrefill: "{",
     });
 
