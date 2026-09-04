@@ -10,7 +10,11 @@ import {
 } from "@/db/operations";
 import type { WorldbuildingDoc, WorldbuildingDocId } from "@/db/schemas";
 import { useWorldbuildingDoc } from "@/hooks/data/useBibleEntries";
-import { buildWorldbuildingTree, type DocNode } from "@/lib/worldbuilding-tree";
+import {
+  buildWorldbuildingTree,
+  type DocNode,
+  descendantIds,
+} from "@/lib/worldbuilding-tree";
 
 export function WorldbuildingDocDialog({
   docId,
@@ -31,25 +35,13 @@ export function WorldbuildingDocDialog({
   );
 
   // Build a flat list of docs with depth, excluding self and descendants
+  // (moving a doc under its own descendant would create a cycle).
   const selectableDocs = useMemo(() => {
     const tree = buildWorldbuildingTree(allDocs);
-    const result: { doc: { id: string; title: string }; depth: number }[] = [];
-    const excludeIds = new Set<string>();
+    const excludeIds = descendantIds(tree, docId);
     excludeIds.add(docId);
-    function collectDescendants(nodes: DocNode[]) {
-      for (const node of nodes) {
-        if (excludeIds.has(node.doc.id)) {
-          function markChildren(n: DocNode) {
-            excludeIds.add(n.doc.id);
-            for (const c of n.children) markChildren(c);
-          }
-          for (const c of node.children) markChildren(c);
-        }
-        collectDescendants(node.children);
-      }
-    }
-    collectDescendants(tree.roots);
 
+    const result: { doc: { id: string; title: string }; depth: number }[] = [];
     function walk(nodes: DocNode[]) {
       for (const node of nodes) {
         if (!excludeIds.has(node.doc.id)) {

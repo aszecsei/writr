@@ -56,7 +56,7 @@ of the project id.
 
 ### `editor/` — Editor lifecycle hooks
 
-`useAutoSave`, `useComments`, `useEditorCommentSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
+`useAutoSave` (also flushes a final save on unmount), `useComments`, `useEditorCommentSync`, `useEditorSeed` (doc seeding, collab Y.Doc handoff, sidebar scene-scroll requests), `useStagedEdits` (applies a propose_edit diff card), `useEditorPendingInsertion` (applies an AI-panel insert/replace), `useSceneTitleSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
 
 ### `forms/` — Form hooks
 

@@ -52,7 +52,7 @@ group from the shared `actions` array instead of hand-rolling `undo()`/`redo()`.
 
 The scanner modals are `uiStore.modal` variants (`spellcheck-scanner` / `grammar-scanner` — see `docs/state.md`), so they close on Escape and backdrop click like every other dialog. `spellcheckStore` and `grammarStore` still each own their own `contextMenu` and `scanner` state (unrelated to `uiStore.modal`); both are built on the shared `createCheckerSlice` in `src/store/createCheckerStore.ts` (see `docs/state.md`).
 
-Both scanner wrappers center the current issue in the editor's scroll container via `scrollToPos`/`getScrollContainer` (`src/lib/editor/scroll.ts`). `FindReplacePanel.tsx`'s `scrollToMatch` duplicates this same `.overflow-y-auto` centering math and is a candidate to move onto `scrollToPos` in a follow-up.
+Both scanner wrappers, `FindReplacePanel.tsx`'s `scrollToMatch`, the scene-scroll helper in `useEditorSeed`, and `comments/position.ts`'s `calculateCommentTop` all center or locate content in the editor's scroll container via `scrollToPos`/`getScrollContainer` (`src/lib/editor/scroll.ts`). `TypewriterScrolling` and `useFocusMode` scroll the same container but with different math (an instant, delta-based `scrollBy` with a jitter threshold, and an instant rather than smooth absolute scroll respectively) and are not on the shared helper.
 
 ## Custom extensions
 

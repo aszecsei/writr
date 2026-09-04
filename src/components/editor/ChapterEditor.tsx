@@ -1,7 +1,7 @@
 "use no memo";
 "use client";
 
-import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/Spinner";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
@@ -14,24 +14,16 @@ import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
 import { useEditorGrammar } from "@/hooks/editor/useEditorGrammar";
 import { useEditorKeyboardShortcuts } from "@/hooks/editor/useEditorKeyboardShortcuts";
+import { useEditorPendingInsertion } from "@/hooks/editor/useEditorPendingInsertion";
+import { useEditorSeed } from "@/hooks/editor/useEditorSeed";
 import { useEditorSpellcheck } from "@/hooks/editor/useEditorSpellcheck";
 import { useFocusMode } from "@/hooks/editor/useFocusMode";
-import {
-  locateProposedEdit,
-  spliceEdit,
-} from "@/lib/ai/tool-calling/tools/edit-locator";
+import { useSceneTitleSync } from "@/hooks/editor/useSceneTitleSync";
+import { useStagedEdits } from "@/hooks/editor/useStagedEdits";
+import { getMarkdown, getWordCount } from "@/lib/editor/tiptap-storage";
 import { getEditorFont } from "@/lib/fonts";
-import {
-  fountainToProseMirror,
-  parseFountain,
-  serializeFountain,
-} from "@/lib/fountain";
-import {
-  countWordsExcludingHoles,
-  DEFAULT_HOLE_DELIMITERS,
-  type HoleDelimiters,
-} from "@/lib/holes";
-import { getTerm } from "@/lib/terminology";
+import { serializeFountain } from "@/lib/fountain";
+import { DEFAULT_HOLE_DELIMITERS, type HoleDelimiters } from "@/lib/holes";
 import { useCollabStore } from "@/store/collabStore";
 import { useCommentStore } from "@/store/commentStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -50,7 +42,6 @@ import { createExtensions, createScreenplayExtensions } from "./extensions";
 import { getCommentPositions } from "./extensions/Comments";
 import { GRAMMAR_UPDATED_META } from "./extensions/Grammar";
 import { HOLES_UPDATED_META } from "./extensions/Holes";
-import { SCENE_TITLES_UPDATED_META } from "./extensions/SceneBreak";
 import { SENTENCE_LENGTH_PREVIEW_META } from "./extensions/SentenceLengthPreview";
 import { SPELLCHECK_UPDATED_META } from "./extensions/Spellcheck";
 import { FindReplacePanel } from "./FindReplacePanel";
@@ -64,114 +55,6 @@ import {
   ensureSceneIds,
   reconcileSceneRows,
 } from "./scene-sync";
-
-// tiptap-markdown and character-count store methods on editor.storage
-// but TipTap's Storage type doesn't expose them, so we cast through unknown
-interface MarkdownStorage {
-  getMarkdown: () => string;
-}
-interface CharacterCountStorage {
-  words: () => number;
-}
-function getMarkdown(storage: unknown): string {
-  return (storage as { markdown: MarkdownStorage }).markdown.getMarkdown();
-}
-function getWordCount(storage: unknown): number {
-  return (
-    storage as { characterCount: CharacterCountStorage }
-  ).characterCount.words();
-}
-
-// Word count for a serialized chapter string (markdown or fountain). Used when
-// persisting a staged-edit splice, where the editor's live characterCount isn't
-// available for the post-splice content (it's reseeded asynchronously). The
-// next real editor save recomputes the authoritative count. Holes are excluded
-// to match the live CharacterCount, which is configured the same way.
-function countContentWords(text: string, delimiters: HoleDelimiters): number {
-  return countWordsExcludingHoles(text, delimiters);
-}
-
-// Convert a markdown string into TipTap-compatible insertion content. Used
-// by both the requestInsertAtCursor path (Spark inserts) and the
-// requestStagedEdit path (propose_edit applies).
-//
-// Single-paragraph input returns inline text nodes so the splice stays
-// inside the surrounding paragraph — wrapping inline content in a block
-// paragraph splits the host paragraph in two, producing phantom \n\n on
-// each side when the chapter round-trips to markdown. Multi-paragraph
-// input returns block paragraph nodes; the splice deliberately splits the
-// host paragraph, which is the intended outcome for multi-paragraph
-// replacements. Inline marks (**bold** / *italic*) are not preserved — the
-// LLM-generated inserts in practice are plain prose.
-function markdownToInsertContent(markdown: string) {
-  const paragraphs = markdown
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
-  if (paragraphs.length <= 1) {
-    return paragraphs.map((text) => ({ type: "text", text }));
-  }
-  return paragraphs.map((text) => ({
-    type: "paragraph",
-    content: [{ type: "text", text }],
-  }));
-}
-
-/** Position of the sceneBreak marker carrying `sceneId`, or null if absent. */
-function findSceneMarkerPos(editor: Editor, sceneId: string): number | null {
-  let pos: number | null = null;
-  editor.state.doc.forEach((node, offset) => {
-    if (
-      pos === null &&
-      node.type.name === "sceneBreak" &&
-      node.attrs.sceneId === sceneId
-    ) {
-      pos = offset;
-    }
-  });
-  return pos;
-}
-
-/** The nearest HTMLElement for a DOM node (itself if already an element). */
-function elementFor(node: Node | null | undefined): HTMLElement | null {
-  if (!node) return null;
-  return node instanceof HTMLElement ? node : node.parentElement;
-}
-
-/**
- * Scroll the editor to a scene and place the caret at its start. Returns false
- * (a no-op) when the scene doesn't belong to this chapter's loaded rows — the
- * caller then leaves the scroll request pending for the right chapter's editor.
- * The core scene (no marker) scrolls to the top.
- *
- * Scrolls via the DOM `scrollIntoView` (not ProseMirror's transaction-level
- * scrollIntoView, which doesn't reliably walk the editor's nested overflow
- * containers), deferred a frame so it runs against post-seed layout.
- */
-function scrollEditorToScene(
-  editor: Editor,
-  scenes: { id: string }[],
-  targetId: string,
-): boolean {
-  if (!scenes.some((s) => s.id === targetId)) return false;
-  const markerPos = findSceneMarkerPos(editor, targetId);
-  const size = editor.state.doc.content.size;
-  const caret = markerPos !== null ? markerPos + 1 : 1;
-  // Move the caret to the scene start (drives the active-scene highlight).
-  editor
-    .chain()
-    .setTextSelection(Math.max(1, Math.min(caret, size)))
-    .run();
-  requestAnimationFrame(() => {
-    if (editor.isDestroyed) return;
-    const target =
-      markerPos !== null
-        ? elementFor(editor.view.nodeDOM(markerPos))
-        : elementFor(editor.view.domAtPos(1).node);
-    target?.scrollIntoView({ block: "center", behavior: "smooth" });
-  });
-  return true;
-}
 
 interface ChapterEditorProps {
   chapterId: ChapterId;
@@ -193,12 +76,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setActiveSceneId = useEditorStore((s) => s.setActiveSceneId);
   const pendingSceneScroll = useEditorStore((s) => s.pendingSceneScroll);
   const clearSceneScroll = useEditorStore((s) => s.clearSceneScroll);
-  // Latest values readable from the content-seed effect without making it a
-  // dependency (which would wrongly reseed the doc when scenes change).
-  const scenesRef = useRef(scenes);
-  scenesRef.current = scenes;
-  const pendingSceneScrollRef = useRef(pendingSceneScroll);
-  pendingSceneScrollRef.current = pendingSceneScroll;
   const reportStagedEditResult = useEditorStore(
     (s) => s.reportStagedEditResult,
   );
@@ -421,54 +298,25 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     closeFindReplace();
   }, [chapterId, closeFindReplace]);
 
-  // Load content from Dexie into the editor once. In collab mode we only
-  // seed the shared Y.Doc when it's empty; otherwise the relay's buffered
-  // state has already been applied via the Collaboration extension.
-  useEffect(() => {
-    if (!editor || !chapter || editor.isDestroyed || initializedRef.current) {
-      return;
-    }
-    if (collabDoc) {
-      const isYDocEmpty = collabDoc.getXmlFragment("default").length === 0;
-      if (isYDocEmpty && (chapter.content || "").length > 0) {
-        if (isScreenplay) {
-          const elements = parseFountain(chapter.content || "");
-          const json = fountainToProseMirror(elements);
-          editor.commands.setContent(json);
-        } else {
-          editor.commands.setContent(chapter.content || "");
-        }
-      }
-      // If the Y.Doc has content we leave it alone — peers' state wins.
-    } else if (isScreenplay) {
-      const elements = parseFountain(chapter.content || "");
-      const json = fountainToProseMirror(elements);
-      editor.commands.setContent(json);
-    } else {
-      editor.commands.setContent(chapter.content || "");
-    }
-    const wc = getWordCount(editor.storage);
-    setWordCount(wc);
-    initializedRef.current = true;
-    // Consume a pending scene-scroll now that the doc is seeded — this is the
-    // path that fires after cross-chapter navigation. Same-chapter clicks are
-    // handled by the dedicated effect below.
-    const pending = pendingSceneScrollRef.current;
-    if (
-      pending &&
-      scenesRef.current &&
-      scrollEditorToScene(editor, scenesRef.current, pending)
-    ) {
-      clearSceneScroll();
-    }
-  }, [
+  const contentVersion = useEditorStore((s) => s.contentVersion);
+
+  // Seed the doc from Dexie/collab, reset the seed flag on chapter/version/
+  // collab-mode change, and consume pending sidebar scene-scroll requests.
+  useEditorSeed({
     editor,
     chapter,
-    setWordCount,
+    chapterId,
     isScreenplay,
     collabDoc,
+    isCollabHost,
+    contentVersion,
+    scenes,
+    pendingSceneScroll,
     clearSceneScroll,
-  ]);
+    setWordCount,
+    initializedRef,
+    resetReconcile,
+  });
 
   // When the hole delimiters change, rebuild hole decorations and refresh the
   // live word count (a meta-only transaction doesn't fire onUpdate, so the
@@ -492,16 +340,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     );
   }, [editor, sentenceLengthPreviewEnabled]);
 
-  // Reset initialized flag when chapterId, contentVersion, or collab mode
-  // changes — entering or leaving a session needs a fresh seed pass.
-  const contentVersion = useEditorStore((s) => s.contentVersion);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion/collab change
-  useEffect(() => {
-    initializedRef.current = false;
-    resetReconcile();
-  }, [chapterId, contentVersion, resetReconcile, isCollabHost]);
-
-  // Auto-save
+  // Auto-save (also flushes a final save on unmount)
   const isScreenplayRef = useRef(isScreenplay);
   isScreenplayRef.current = isScreenplay;
 
@@ -567,162 +406,43 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     };
   }, [editor, scenes, setActiveSceneId]);
 
-  // Keep scene-break labels in sync with live scene data. Untitled scenes fall
-  // back to a positional "Scene N" label matching the binder/details panels
-  // (scenes are order-sorted, so the array index is the scene number). Keyed on
-  // a title signature so word-count churn (which also mutates `scenes`) doesn't
-  // trigger needless decoration rebuilds. The ref is read by the SceneBreak
-  // plugin; a meta-only dispatch rebuilds its label decorations without marking
-  // the editor dirty. A mode switch recreates the editor, refreshing the term.
-  const sceneTitlesKey = useMemo(
-    () => (scenes ?? []).map((s) => `${s.id}\u0000${s.title}`).join("\n"),
-    [scenes],
-  );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sceneTitlesKey is the intentional trigger; the map is rebuilt from the latest scenesRef
-  useEffect(() => {
-    const sceneTerm = getTerm(activeProjectMode, "scene");
-    sceneTitlesRef.current = new Map(
-      (scenesRef.current ?? []).map((s, index) => [
-        s.id,
-        s.title.trim() || `${sceneTerm} ${index + 1}`,
-      ]),
-    );
-    if (editor && !editor.isDestroyed) {
-      editor.view.dispatch(
-        editor.state.tr.setMeta(SCENE_TITLES_UPDATED_META, true),
-      );
-    }
-  }, [editor, sceneTitlesKey]);
-
-  // Scroll to a scene requested from a sidebar. Handles the same-chapter case
-  // (editor already seeded); cross-chapter scrolls are consumed by the seed
-  // effect after navigation.
-  useEffect(() => {
-    if (
-      !pendingSceneScroll ||
-      !editor ||
-      editor.isDestroyed ||
-      !initializedRef.current
-    ) {
-      return;
-    }
-    if (scrollEditorToScene(editor, scenes ?? [], pendingSceneScroll)) {
-      clearSceneScroll();
-    }
-  }, [pendingSceneScroll, editor, scenes, clearSceneScroll]);
-
-  // Save on unmount to preserve content when toggling focus mode
-  const editorRef = useRef(editor);
-  editorRef.current = editor;
-  const chapterIdRef = useRef(chapterId);
-  chapterIdRef.current = chapterId;
-
-  useEffect(() => {
-    return () => {
-      const ed = editorRef.current;
-      if (ed && !ed.isDestroyed) {
-        const content = isScreenplayRef.current
-          ? serializeFountain(ed.state.doc)
-          : getMarkdown(ed.storage);
-        const wc = getWordCount(ed.storage);
-        updateChapterContent(chapterIdRef.current, content, wc);
-        if (!isCollabHostRef.current) {
-          const positions = getCommentPositions(ed.state);
-          if (positions.size > 0) {
-            updateCommentPositions(positions);
-          }
-        }
-      }
-    };
-  }, []);
+  // Keep scene-break labels in sync with live scene data.
+  useSceneTitleSync({
+    editor,
+    scenes,
+    activeProjectMode,
+    sceneTitlesRef,
+  });
 
   // Focus mode: focus editor and scroll to center cursor
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   useFocusMode(focusModeEnabled, editor, scrollContainerRef);
 
-  // AI-driven inserts: the AiPanel posts markdown via editorStore. Apply at
-  // the requested range (selection-replace) or current cursor, then clear.
+  // AI-driven inserts: the AiPanel posts markdown via editorStore.
   const pendingInsertion = useEditorStore((s) => s.pendingInsertion);
   const clearPendingInsertion = useEditorStore((s) => s.clearPendingInsertion);
-  useEffect(() => {
-    if (!pendingInsertion || !editor || editor.isDestroyed) return;
-    const { markdown, replaceRange } = pendingInsertion;
-    const nodes = markdownToInsertContent(markdown);
+  useEditorPendingInsertion({
+    editor,
+    pendingInsertion,
+    clearPendingInsertion,
+  });
 
-    const chain = editor.chain().focus();
-    if (replaceRange) {
-      chain.insertContentAt(
-        { from: replaceRange.from, to: replaceRange.to },
-        nodes,
-      );
-    } else {
-      const { from } = editor.state.selection;
-      chain.insertContentAt(from, nodes);
-    }
-    chain.run();
-    clearPendingInsertion();
-  }, [pendingInsertion, editor, clearPendingInsertion]);
-
-  // AI-driven staged edits: the AiPanel posts an edit when the user clicks
-  // Apply on a propose_edit diff card. The panel has no editor access, so we
-  // resolve and apply here. Resolution runs against the chapter's serialized
-  // STRING (the same representation propose_edit validated its anchor against)
-  // via the shared `locateProposedEdit` — not the flattened PM doc, which
-  // strips markdown and silently dropped any anchor touching formatting. We
-  // splice the string, persist, then `bumpContentVersion` to reseed the editor
-  // (re-parsing fountain when needed) and re-anchor comments through the normal
-  // reconcile path. The originating card observes the outcome via
-  // `reportStagedEditResult`.
+  // AI-driven staged edits: applies a propose_edit diff card's Apply click.
   const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
   const clearPendingStagedEdit = useEditorStore(
     (s) => s.clearPendingStagedEdit,
   );
-  useEffect(() => {
-    if (!pendingStagedEdit || !editor || editor.isDestroyed) return;
-    if (pendingStagedEdit.chapterId !== chapterId) return;
-    const edit = pendingStagedEdit;
-
-    const content = isScreenplay
-      ? serializeFountain(editor.state.doc)
-      : getMarkdown(editor.storage);
-    const range = locateProposedEdit(content, edit);
-
-    if (!range) {
-      console.warn(
-        `[propose_edit] anchorText not located in chapter — staged ${edit.kind} edit dropped`,
-      );
-      reportStagedEditResult(edit.editId, "failed");
-      clearPendingStagedEdit();
-      return;
-    }
-
-    const next = spliceEdit(content, range, edit.newContent);
-    clearPendingStagedEdit();
-    // Cancel any pending autosave before persisting. A debounced autosave armed
-    // by recent typing would read the editor doc — which still holds the
-    // pre-splice content until the async reseed below — and clobber our write.
-    // Marking saved clears that timer; our apply never re-dirties the doc, so no
-    // new autosave starts before the reseed.
-    markSaved();
-    void (async () => {
-      await updateChapterContent(
-        chapterId,
-        next,
-        countContentWords(next, holeDelimitersRef.current),
-      );
-      bumpContentVersion();
-      reportStagedEditResult(edit.editId, "applied");
-    })();
-  }, [
-    pendingStagedEdit,
+  useStagedEdits({
     editor,
     chapterId,
     isScreenplay,
-    reportStagedEditResult,
+    pendingStagedEdit,
     clearPendingStagedEdit,
+    reportStagedEditResult,
     markSaved,
     bumpContentVersion,
-  ]);
+    holeDelimitersRef,
+  });
 
   // Keyboard shortcuts (Ctrl+Shift+P for preview card)
   useEditorKeyboardShortcuts(
