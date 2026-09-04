@@ -2,61 +2,21 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import type { AiProvider, ReasoningEffort } from "@/db/schemas";
-import { PROVIDERS } from "@/lib/ai/providers";
-
-const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
-  { value: "xhigh", label: "Extra High" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-  { value: "minimal", label: "Minimal" },
-  { value: "none", label: "None" },
-];
-
-const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
-  { value: "openrouter", label: "OpenRouter" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "openai", label: "OpenAI" },
-  { value: "grok", label: "Grok (xAI)" },
-  { value: "zai", label: "z.ai (Zhipu AI)" },
-  { value: "google", label: "Google AI Studio" },
-  { value: "vertex", label: "Vertex AI" },
-];
+import {
+  PROVIDER_OPTIONS,
+  PROVIDERS,
+  REASONING_EFFORT_OPTIONS,
+} from "@/lib/ai/providers";
+import type {
+  AppSettingsDraft,
+  SetAppSettingsField,
+} from "./AppSettingsDialog";
 
 interface AiSettingsProps {
-  enableAiFeatures: boolean;
-  aiProvider: AiProvider;
-  providerApiKeys: Record<AiProvider, string>;
-  providerModels: Record<AiProvider, string>;
-  providerTtsModels: Record<AiProvider, string>;
-  providerTtsVoices: Record<AiProvider, string>;
-  streamResponses: boolean;
-  reasoningEffort: ReasoningEffort;
-  debugMode: boolean;
-  enableToolCalling: boolean;
-  onEnableAiFeaturesChange: (enabled: boolean) => void;
-  onAiProviderChange: (provider: AiProvider) => void;
-  onProviderApiKeyChange: (provider: AiProvider, key: string) => void;
-  onProviderModelChange: (provider: AiProvider, model: string) => void;
-  onProviderTtsModelChange: (provider: AiProvider, model: string) => void;
-  onProviderTtsVoiceChange: (provider: AiProvider, voice: string) => void;
-  onStreamResponsesChange: (enabled: boolean) => void;
-  onReasoningEffortChange: (effort: ReasoningEffort) => void;
-  onDebugModeChange: (enabled: boolean) => void;
-  onEnableToolCallingChange: (enabled: boolean) => void;
-  loreRetrievalEnabled: boolean;
-  onLoreRetrievalEnabledChange: (enabled: boolean) => void;
-  omniscientMode: boolean;
-  onOmniscientModeChange: (enabled: boolean) => void;
-  loreTopK: number;
-  onLoreTopKChange: (value: number) => void;
-  sceneTopK: number;
-  onSceneTopKChange: (value: number) => void;
-  similarityFloor: number;
-  onSimilarityFloorChange: (value: number) => void;
-  inputClass: string;
-  labelClass: string;
+  draft: AppSettingsDraft;
+  setField: SetAppSettingsField;
 }
 
 function ApiKeyInput({
@@ -64,13 +24,11 @@ function ApiKeyInput({
   value,
   onChange,
   placeholder,
-  inputClass,
 }: {
   id: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  inputClass: string;
 }) {
   const [show, setShow] = useState(false);
 
@@ -81,7 +39,7 @@ function ApiKeyInput({
         type={show ? "text" : "password"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${inputClass} mt-0 pr-10`}
+        className={`${INPUT_CLASS} mt-0 pr-10`}
         placeholder={placeholder}
       />
       <button
@@ -96,40 +54,8 @@ function ApiKeyInput({
   );
 }
 
-export function AiSettings({
-  enableAiFeatures,
-  aiProvider,
-  providerApiKeys,
-  providerModels,
-  providerTtsModels,
-  providerTtsVoices,
-  streamResponses,
-  reasoningEffort,
-  debugMode,
-  enableToolCalling,
-  onEnableAiFeaturesChange,
-  onAiProviderChange,
-  onProviderApiKeyChange,
-  onProviderModelChange,
-  onProviderTtsModelChange,
-  onProviderTtsVoiceChange,
-  onStreamResponsesChange,
-  onReasoningEffortChange,
-  onDebugModeChange,
-  onEnableToolCallingChange,
-  loreRetrievalEnabled,
-  onLoreRetrievalEnabledChange,
-  omniscientMode,
-  onOmniscientModeChange,
-  loreTopK,
-  onLoreTopKChange,
-  sceneTopK,
-  onSceneTopKChange,
-  similarityFloor,
-  onSimilarityFloorChange,
-  inputClass,
-  labelClass,
-}: AiSettingsProps) {
+export function AiSettings({ draft, setField }: AiSettingsProps) {
+  const { aiProvider } = draft;
   const providerConfig = PROVIDERS[aiProvider];
 
   return (
@@ -141,8 +67,8 @@ export function AiSettings({
         <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
-            checked={enableAiFeatures}
-            onChange={(e) => onEnableAiFeaturesChange(e.target.checked)}
+            checked={draft.enableAiFeatures}
+            onChange={(e) => setField("enableAiFeatures", e.target.checked)}
             className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
           />
           Enable AI features
@@ -150,16 +76,16 @@ export function AiSettings({
             — show AI panel and tools
           </span>
         </label>
-        {enableAiFeatures && (
+        {draft.enableAiFeatures && (
           <>
-            <label className={labelClass}>
+            <label className={LABEL_CLASS}>
               Provider
               <select
                 value={aiProvider}
                 onChange={(e) =>
-                  onAiProviderChange(e.target.value as AiProvider)
+                  setField("aiProvider", e.target.value as AiProvider)
                 }
-                className={inputClass}
+                className={INPUT_CLASS}
               >
                 {PROVIDER_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -168,39 +94,49 @@ export function AiSettings({
                 ))}
               </select>
             </label>
-            <label htmlFor="ai-api-key" className={labelClass}>
+            <label htmlFor="ai-api-key" className={LABEL_CLASS}>
               {providerConfig.label} API Key
               <ApiKeyInput
                 id="ai-api-key"
-                value={providerApiKeys[aiProvider]}
-                onChange={(key) => onProviderApiKeyChange(aiProvider, key)}
+                value={draft.providerApiKeys[aiProvider]}
+                onChange={(key) =>
+                  setField("providerApiKeys", {
+                    ...draft.providerApiKeys,
+                    [aiProvider]: key,
+                  })
+                }
                 placeholder={providerConfig.apiKeyPrefix}
-                inputClass={inputClass}
               />
             </label>
-            <label className={labelClass}>
+            <label className={LABEL_CLASS}>
               Preferred Model
               <input
                 type="text"
-                value={providerModels[aiProvider]}
+                value={draft.providerModels[aiProvider]}
                 onChange={(e) =>
-                  onProviderModelChange(aiProvider, e.target.value)
+                  setField("providerModels", {
+                    ...draft.providerModels,
+                    [aiProvider]: e.target.value,
+                  })
                 }
-                className={inputClass}
+                className={INPUT_CLASS}
                 placeholder={providerConfig.defaultModel}
               />
             </label>
             {aiProvider === "openrouter" && (
               <>
-                <label className={labelClass}>
+                <label className={LABEL_CLASS}>
                   TTS Model
                   <input
                     type="text"
-                    value={providerTtsModels[aiProvider]}
+                    value={draft.providerTtsModels[aiProvider]}
                     onChange={(e) =>
-                      onProviderTtsModelChange(aiProvider, e.target.value)
+                      setField("providerTtsModels", {
+                        ...draft.providerTtsModels,
+                        [aiProvider]: e.target.value,
+                      })
                     }
-                    className={inputClass}
+                    className={INPUT_CLASS}
                     placeholder="e.g. openai/gpt-4o-mini-tts"
                   />
                   <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
@@ -208,15 +144,18 @@ export function AiSettings({
                     TTS-capable model ID from OpenRouter.
                   </span>
                 </label>
-                <label className={labelClass}>
+                <label className={LABEL_CLASS}>
                   TTS Voice
                   <input
                     type="text"
-                    value={providerTtsVoices[aiProvider]}
+                    value={draft.providerTtsVoices[aiProvider]}
                     onChange={(e) =>
-                      onProviderTtsVoiceChange(aiProvider, e.target.value)
+                      setField("providerTtsVoices", {
+                        ...draft.providerTtsVoices,
+                        [aiProvider]: e.target.value,
+                      })
                     }
-                    className={inputClass}
+                    className={INPUT_CLASS}
                     placeholder="e.g. alloy"
                   />
                   <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
@@ -230,8 +169,8 @@ export function AiSettings({
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
-                checked={streamResponses}
-                onChange={(e) => onStreamResponsesChange(e.target.checked)}
+                checked={draft.streamResponses}
+                onChange={(e) => setField("streamResponses", e.target.checked)}
                 className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Stream responses
@@ -239,14 +178,14 @@ export function AiSettings({
                 — show text as it generates
               </span>
             </label>
-            <label className={labelClass}>
+            <label className={LABEL_CLASS}>
               Reasoning Effort
               <select
-                value={reasoningEffort}
+                value={draft.reasoningEffort}
                 onChange={(e) =>
-                  onReasoningEffortChange(e.target.value as ReasoningEffort)
+                  setField("reasoningEffort", e.target.value as ReasoningEffort)
                 }
-                className={inputClass}
+                className={INPUT_CLASS}
               >
                 {REASONING_EFFORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -262,8 +201,8 @@ export function AiSettings({
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
-                checked={debugMode}
-                onChange={(e) => onDebugModeChange(e.target.checked)}
+                checked={draft.debugMode}
+                onChange={(e) => setField("debugMode", e.target.checked)}
                 className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Debug mode (dry-run)
@@ -274,8 +213,10 @@ export function AiSettings({
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
-                checked={enableToolCalling}
-                onChange={(e) => onEnableToolCallingChange(e.target.checked)}
+                checked={draft.enableToolCalling}
+                onChange={(e) =>
+                  setField("enableToolCalling", e.target.checked)
+                }
                 className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Enable tool calling
@@ -287,8 +228,10 @@ export function AiSettings({
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
-                checked={loreRetrievalEnabled}
-                onChange={(e) => onLoreRetrievalEnabledChange(e.target.checked)}
+                checked={draft.loreRetrievalEnabled}
+                onChange={(e) =>
+                  setField("loreRetrievalEnabled", e.target.checked)
+                }
                 className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
               />
               Surface relevant lore & scenes automatically
@@ -297,13 +240,15 @@ export function AiSettings({
                 chat context
               </span>
             </label>
-            {loreRetrievalEnabled && (
+            {draft.loreRetrievalEnabled && (
               <>
                 <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
-                    checked={omniscientMode}
-                    onChange={(e) => onOmniscientModeChange(e.target.checked)}
+                    checked={draft.omniscientMode}
+                    onChange={(e) =>
+                      setField("omniscientMode", e.target.checked)
+                    }
                     className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
                   />
                   Include future scenes (omniscient)
@@ -311,59 +256,59 @@ export function AiSettings({
                     — surface scenes that occur after the current chapter
                   </span>
                 </label>
-                <label className={labelClass}>
+                <label className={LABEL_CLASS}>
                   Lore results (top-K)
                   <input
                     type="number"
                     min={0}
                     step={1}
-                    value={loreTopK}
+                    value={draft.loreTopK}
                     onChange={(e) => {
                       const next = Number.parseInt(e.target.value, 10);
                       if (Number.isFinite(next) && next >= 0) {
-                        onLoreTopKChange(next);
+                        setField("loreTopK", next);
                       }
                     }}
-                    className={inputClass}
+                    className={INPUT_CLASS}
                   />
                   <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
                     Number of lore chunks to surface per chat turn. Default 5.
                   </span>
                 </label>
-                <label className={labelClass}>
+                <label className={LABEL_CLASS}>
                   Scene results (top-K)
                   <input
                     type="number"
                     min={0}
                     step={1}
-                    value={sceneTopK}
+                    value={draft.sceneTopK}
                     onChange={(e) => {
                       const next = Number.parseInt(e.target.value, 10);
                       if (Number.isFinite(next) && next >= 0) {
-                        onSceneTopKChange(next);
+                        setField("sceneTopK", next);
                       }
                     }}
-                    className={inputClass}
+                    className={INPUT_CLASS}
                   />
                   <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
                     Number of scene chunks to surface per chat turn. Default 3.
                   </span>
                 </label>
-                <label className={labelClass}>
+                <label className={LABEL_CLASS}>
                   Similarity floor
                   <input
                     type="number"
                     min={0}
                     max={1}
                     step={0.05}
-                    value={similarityFloor}
+                    value={draft.similarityFloor}
                     onChange={(e) => {
                       const next = Number.parseFloat(e.target.value);
                       if (Number.isFinite(next) && next >= 0 && next <= 1) {
-                        onSimilarityFloorChange(next);
+                        setField("similarityFloor", next);
                       }
                     }}
-                    className={inputClass}
+                    className={INPUT_CLASS}
                   />
                   <span className="mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
                     Minimum cosine similarity (0–1) for a chunk to be included.

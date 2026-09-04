@@ -36,26 +36,11 @@ import type {
   ReasoningEffort,
 } from "@/db/schemas";
 import { useAgent } from "@/hooks/data/useAgents";
-import { PROVIDERS } from "@/lib/ai/providers";
-
-const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
-  { value: "openrouter", label: "OpenRouter" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "openai", label: "OpenAI" },
-  { value: "grok", label: "Grok (xAI)" },
-  { value: "zai", label: "z.ai (Zhipu AI)" },
-  { value: "google", label: "Google AI Studio" },
-  { value: "vertex", label: "Vertex AI" },
-];
-
-const REASONING_OPTIONS: { value: ReasoningEffort; label: string }[] = [
-  { value: "xhigh", label: "Extra High" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-  { value: "minimal", label: "Minimal" },
-  { value: "none", label: "None" },
-];
+import {
+  PROVIDER_OPTIONS,
+  PROVIDERS,
+  REASONING_EFFORT_OPTIONS,
+} from "@/lib/ai/providers";
 
 interface AgentEditorBodyProps {
   projectId: ProjectId | null;
@@ -463,7 +448,7 @@ export function AgentEditorBody({
                     }
                     className={INPUT_CLASS}
                   >
-                    {REASONING_OPTIONS.map((opt) => (
+                    {REASONING_EFFORT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>

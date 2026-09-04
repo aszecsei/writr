@@ -1,4 +1,4 @@
-import type { AiProvider } from "@/db/schemas";
+import type { AiProvider, ReasoningEffort } from "@/db/schemas";
 
 export interface ProviderConfig {
   id: AiProvider;
@@ -51,6 +51,22 @@ export const PROVIDERS: Record<AiProvider, ProviderConfig> = {
     apiKeyPrefix: "project-id:location",
   },
 };
+
+/** Provider select-field options, derived from {@link PROVIDERS}. */
+export const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] =
+  Object.values(PROVIDERS).map((p) => ({ value: p.id, label: p.label }));
+
+export const REASONING_EFFORT_OPTIONS: {
+  value: ReasoningEffort;
+  label: string;
+}[] = [
+  { value: "xhigh", label: "Extra High" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+  { value: "minimal", label: "Minimal" },
+  { value: "none", label: "None" },
+];
 
 export function getDefaultProviderModels(): Record<AiProvider, string> {
   return Object.fromEntries(

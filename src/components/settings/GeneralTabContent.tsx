@@ -1,5 +1,6 @@
 "use client";
 
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import type {
   EditorWidth,
   GoalCountdownDisplay,
@@ -10,6 +11,10 @@ import type {
 import { useAppStats } from "@/hooks/editor/useAppStats";
 import { formatBytes } from "@/lib/format-bytes";
 import { AppearanceSettings } from "./AppearanceSettings";
+import type {
+  AppSettingsDraft,
+  SetAppSettingsField,
+} from "./AppSettingsDialog";
 
 function formatRelativeDate(iso: string): string {
   const date = new Date(iso);
@@ -38,37 +43,21 @@ function StatItem({ label, value }: { label: string; value: string }) {
 }
 
 interface GeneralTabContentProps {
-  theme: "light" | "dark" | "system";
-  onThemeChange: (theme: "light" | "dark" | "system") => void;
-  primaryColor: PrimaryColor;
+  draft: AppSettingsDraft;
+  setField: SetAppSettingsField;
   onPrimaryColorChange: (color: PrimaryColor) => void;
-  neutralColor: NeutralColor;
   onNeutralColorChange: (color: NeutralColor) => void;
-  editorWidth: EditorWidth;
   onEditorWidthChange: (width: EditorWidth) => void;
-  uiDensity: UiDensity;
   onUiDensityChange: (density: UiDensity) => void;
-  goalCountdownDisplay: GoalCountdownDisplay;
-  onGoalCountdownDisplayChange: (display: GoalCountdownDisplay) => void;
-  inputClass: string;
-  labelClass: string;
 }
 
 export function GeneralTabContent({
-  theme,
-  onThemeChange,
-  primaryColor,
+  draft,
+  setField,
   onPrimaryColorChange,
-  neutralColor,
   onNeutralColorChange,
-  editorWidth,
   onEditorWidthChange,
-  uiDensity,
   onUiDensityChange,
-  goalCountdownDisplay,
-  onGoalCountdownDisplayChange,
-  inputClass,
-  labelClass,
 }: GeneralTabContentProps) {
   const stats = useAppStats();
 
@@ -128,16 +117,17 @@ export function GeneralTabContent({
           <div className="flex items-center gap-4">
             <label
               htmlFor="goal-countdown"
-              className={`${labelClass} shrink-0`}
+              className={`${LABEL_CLASS} shrink-0`}
             >
               Goal countdown
             </label>
             <select
               id="goal-countdown"
-              className={`${inputClass} w-full`}
-              value={goalCountdownDisplay}
+              className={`${INPUT_CLASS} w-full`}
+              value={draft.goalCountdownDisplay}
               onChange={(e) =>
-                onGoalCountdownDisplayChange(
+                setField(
+                  "goalCountdownDisplay",
                   e.target.value as GoalCountdownDisplay,
                 )
               }
@@ -151,18 +141,12 @@ export function GeneralTabContent({
       </fieldset>
 
       <AppearanceSettings
-        theme={theme}
-        onThemeChange={onThemeChange}
-        primaryColor={primaryColor}
+        draft={draft}
+        setField={setField}
         onPrimaryColorChange={onPrimaryColorChange}
-        neutralColor={neutralColor}
         onNeutralColorChange={onNeutralColorChange}
-        editorWidth={editorWidth}
         onEditorWidthChange={onEditorWidthChange}
-        uiDensity={uiDensity}
         onUiDensityChange={onUiDensityChange}
-        inputClass={inputClass}
-        labelClass={labelClass}
       />
     </div>
   );
