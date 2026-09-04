@@ -55,7 +55,7 @@ interface MessageListProps {
   elapsedMs: number;
   error: string | null;
   onInspectPrompt: (messages: AiMessage[]) => void;
-  onDeleteMessage: (id: ChatMessageId, index: number) => void;
+  onDeleteMessage: (index: number) => void;
   onEditMessage: (id: ChatMessageId) => void;
   onRegenerate: (id: ChatMessageId) => void;
   onContinue: () => void;
@@ -233,7 +233,7 @@ export function MessageList({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDeleteMessage(msg.id, group.index)}
+                        onClick={() => onDeleteMessage(group.index)}
                         title="Delete message and responses after it"
                         className="rounded p-0.5 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
                       >
@@ -355,7 +355,7 @@ export function MessageList({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDeleteMessage(msg.id, index)}
+                        onClick={() => onDeleteMessage(index)}
                         title="Delete message and responses after it"
                         className="rounded p-0.5 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
                       >
