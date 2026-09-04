@@ -27,7 +27,7 @@ export const searchProjectTool = defineTool({
     "Returns matches from chapters, characters, locations, timeline events, " +
     "style guide, guardrails, worldbuilding docs, and outline cells. " +
     "Each result includes the entity type, title, matching field, and a text snippet. " +
-    "Use this for broad discovery before drilling into specific entities with get_* tools.",
+    "Use this for broad discovery before drilling into specific entities with the `get` tool.",
   parameters: {
     type: "object",
     properties: {
