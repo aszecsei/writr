@@ -33,9 +33,7 @@ export const presentChoiceTool = defineTool({
   async execute(params, context) {
     const host = context.delegation;
     if (!host) {
-      return fail(
-        "present_choice is only available in interactive chat, not pipeline runs.",
-      );
+      return fail("present_choice is only available in interactive chat.");
     }
     const chosen = await host.requestChoice({
       question: params.question,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Chapter, ChapterId, ProjectId } from "@/db/schemas";
 import { makeGuardrailEntry } from "@/test/helpers";
+import { withVoiceMandate } from "./agents/builtins/voice";
 import { buildAgenticContext, buildMessages } from "./prompts";
 import type { AiContext, AiMessage, TextContentPart } from "./types";
 
@@ -153,6 +154,14 @@ describe("buildMessages", () => {
     });
     const sys = getSystemText(msgs);
     expect(sys.startsWith("You are a strict editor.")).toBe(true);
+  });
+
+  it("does not reference the reader bible in the voice-mandated system prompt", () => {
+    const msgs = buildMessages("agent prompt", emptyContext(), [], {
+      customSystemPrompt: withVoiceMandate("You are a chat agent."),
+    });
+    const sys = getSystemText(msgs);
+    expect(sys).not.toContain("reader bible");
   });
 
   it("emits a tool-calling-instructions block when enableToolCalling is on", () => {

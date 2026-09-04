@@ -49,9 +49,7 @@ export const delegateTool = defineTool({
   async execute(params, context) {
     const host = context.delegation;
     if (!host) {
-      return fail(
-        "Delegation is only available in interactive chat, not pipeline runs.",
-      );
+      return fail("Delegation is only available in interactive chat.");
     }
     if (host.depth >= DELEGATE_MAX_DEPTH) {
       return fail(
