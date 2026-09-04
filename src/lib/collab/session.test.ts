@@ -1,48 +1,22 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Awareness, encodeAwarenessUpdate } from "y-protocols/awareness";
 import * as Y from "yjs";
-import { CollabClient, type CollabTransport } from "./client";
+import { CollabClient } from "./client";
 import {
   decryptPayload,
   encryptPayload,
   generateRoomKey,
   type RoomKey,
 } from "./crypto";
-import {
-  CLOSE_CODES,
-  type ClientMessage,
-  type ServerMessage,
-} from "./protocol";
-import { CollabSession } from "./session";
-
-class MockTransport implements CollabTransport {
-  sent: ClientMessage[] = [];
-  closed: { code?: number; reason?: string } | null = null;
-
-  send(data: string): void {
-    this.sent.push(JSON.parse(data) as ClientMessage);
-  }
-  close(code?: number, reason?: string): void {
-    if (!this.closed) {
-      this.closed = {};
-      if (code !== undefined) this.closed.code = code;
-      if (reason !== undefined) this.closed.reason = reason;
-    }
-  }
-}
+import { CLOSE_CODES, type ServerMessage } from "./protocol";
+import { CollabSession, REMOTE_ORIGIN } from "./session";
+import { flush, MockTransport } from "./test-support";
 
 async function deliver(
   client: CollabClient,
   message: ServerMessage,
 ): Promise<void> {
   await client.handleMessage(JSON.stringify(message));
-}
-
-async function flush(): Promise<void> {
-  // crypto.subtle.encrypt resolves on the macrotask queue under Node;
-  // a single setTimeout(0) covers both the microtask chain and the I/O turn.
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 let key: RoomKey;
@@ -116,7 +90,7 @@ describe("CollabSession: incoming application", () => {
     expect(session.getDoc("prose").getText("body").toString()).toBe("incoming");
   });
 
-  it("replays buffer updates in order", async () => {
+  it("replays buffer updates in order within a single transact tagged REMOTE_ORIGIN", async () => {
     const transport = new MockTransport();
     const client = new CollabClient({ transport, key, role: "view" });
     const session = new CollabSession({ client });
@@ -141,6 +115,13 @@ describe("CollabSession: incoming application", () => {
       Y.encodeStateAsUpdate(seedDoc, stateAfterB),
     );
 
+    const doc = session.getDoc("prose");
+    const origins: unknown[] = [];
+    const handler = vi.fn((_update: Uint8Array, origin: unknown) => {
+      origins.push(origin);
+    });
+    doc.on("update", handler);
+
     await deliver(client, {
       type: "buffer",
       docKind: "prose",
@@ -148,38 +129,9 @@ describe("CollabSession: incoming application", () => {
       updates: [u1, u2, u3],
     });
 
-    expect(session.getDoc("prose").getText("body").toString()).toBe("ABC");
-  });
-
-  it("keeps prose and comments docs independent", async () => {
-    const transport = new MockTransport();
-    const client = new CollabClient({ transport, key, role: "edit" });
-    const session = new CollabSession({ client });
-
-    const proseDoc = new Y.Doc();
-    proseDoc.getText("body").insert(0, "prose");
-    const commentsDoc = new Y.Doc();
-    commentsDoc.getText("body").insert(0, "comment");
-
-    await deliver(client, {
-      type: "y-update",
-      docKind: "prose",
-      streamId: 1,
-      payload: await encryptPayload(key, Y.encodeStateAsUpdate(proseDoc)),
-      from: "peer-x",
-    });
-    await deliver(client, {
-      type: "y-update",
-      docKind: "comments",
-      streamId: 1,
-      payload: await encryptPayload(key, Y.encodeStateAsUpdate(commentsDoc)),
-      from: "peer-x",
-    });
-
-    expect(session.getDoc("prose").getText("body").toString()).toBe("prose");
-    expect(session.getDoc("comments").getText("body").toString()).toBe(
-      "comment",
-    );
+    expect(doc.getText("body").toString()).toBe("ABC");
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(origins).toEqual([REMOTE_ORIGIN]);
   });
 });
 

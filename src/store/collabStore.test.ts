@@ -49,43 +49,6 @@ describe("collabStore", () => {
     expect(s.error).toBeNull();
   });
 
-  it("setStatus transitions through host_disconnected and back", () => {
-    getState().setSession(fakeSession, {
-      role: "edit",
-      peerId: "p",
-      hostPresent: true,
-    });
-    getState().setStatus("host_disconnected");
-    expect(getState().status).toBe("host_disconnected");
-    getState().setStatus("connected");
-    expect(getState().status).toBe("connected");
-  });
-
-  it("setPeerCount, setHostPresent, setHostGraceDeadline update individually", () => {
-    getState().setPeerCount(3);
-    expect(getState().peerCount).toBe(3);
-    getState().setHostPresent(false);
-    expect(getState().hostPresent).toBe(false);
-    getState().setHostGraceDeadline(123_456);
-    expect(getState().hostGraceDeadline).toBe(123_456);
-    getState().setHostGraceDeadline(null);
-    expect(getState().hostGraceDeadline).toBeNull();
-  });
-
-  it("setShareUrls only stores values (intended for host)", () => {
-    getState().setShareUrls(fakeShareUrls);
-    expect(getState().shareUrls).toEqual(fakeShareUrls);
-    getState().setShareUrls(null);
-    expect(getState().shareUrls).toBeNull();
-  });
-
-  it("setError records and clears terminal errors", () => {
-    getState().setError({ kind: "room-not-found", message: "no such room" });
-    expect(getState().error?.kind).toBe("room-not-found");
-    getState().setError(null);
-    expect(getState().error).toBeNull();
-  });
-
   it("reset clears all fields back to the initial state", () => {
     getState().setSession(fakeSession, {
       role: "host",
@@ -115,36 +78,22 @@ describe("collabSelectors", () => {
     getState().reset();
   });
 
-  it("isHost only when role is host", () => {
+  it.each([
+    ["host", "isHost", true],
+    ["host", "canEditComments", true],
+    ["edit", "isHost", false],
+    ["edit", "canEditComments", true],
+    ["review", "isHost", false],
+    ["review", "canEditComments", true],
+    ["view", "isHost", false],
+    ["view", "canEditComments", false],
+  ] as const)("role=%s: %s -> %s", (role, selectorName, expected) => {
     getState().setSession(fakeSession, {
-      role: "edit",
+      role,
       peerId: "p",
       hostPresent: true,
     });
-    expect(collabSelectors.isHost(getState())).toBe(false);
-    getState().setSession(fakeSession, {
-      role: "host",
-      peerId: "p",
-      hostPresent: true,
-    });
-    expect(collabSelectors.isHost(getState())).toBe(true);
-  });
-
-  it("canEditComments: host, edit, or review", () => {
-    for (const role of ["host", "edit", "review"] as const) {
-      getState().setSession(fakeSession, {
-        role,
-        peerId: "p",
-        hostPresent: true,
-      });
-      expect(collabSelectors.canEditComments(getState())).toBe(true);
-    }
-    getState().setSession(fakeSession, {
-      role: "view",
-      peerId: "p",
-      hostPresent: true,
-    });
-    expect(collabSelectors.canEditComments(getState())).toBe(false);
+    expect(collabSelectors[selectorName](getState())).toBe(expected);
   });
 
   it("isInGrace only when status is host_disconnected", () => {

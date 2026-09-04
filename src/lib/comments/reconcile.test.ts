@@ -68,22 +68,6 @@ describe("reconcileComment", () => {
       expect(result).toEqual({ found: true, confidence: "exact" });
     });
 
-    it("returns fuzzy with clamped position when past end", () => {
-      const text = "Hi";
-      const comment = makeComment({
-        fromOffset: 100,
-        toOffset: 100,
-        anchorText: "",
-      });
-      const result = reconcileComment(comment, text);
-      expect(result).toEqual({
-        found: true,
-        newFrom: 3,
-        newTo: 3,
-        confidence: "fuzzy",
-      });
-    });
-
     it("returns fuzzy with clamped position on empty document", () => {
       const comment = makeComment({
         fromOffset: 5,
@@ -189,11 +173,14 @@ describe("reconcileComment", () => {
       expect(result).toEqual({ found: true, confidence: "exact" });
     });
 
-    it("returns fuzzy with clamped positions when bounds exceeded", () => {
+    it.each([
+      ["a point comment", 100, 100],
+      ["a range comment", 50, 100],
+    ])("clamps %s past the end of the text to fuzzy", (_label, from, to) => {
       const text = "Hi";
       const comment = makeComment({
-        fromOffset: 50,
-        toOffset: 100,
+        fromOffset: from,
+        toOffset: to,
         anchorText: "",
       });
       const result = reconcileComment(comment, text);
@@ -229,10 +216,6 @@ describe("reconcileComment", () => {
       // the live PM doc supplied, reconcile locates the anchor and returns
       // the corrected positions.
       const doc = makePmDoc("First paragraph.", "Second paragraph here.");
-      // The "S" in "Second" sits in the second paragraph. PM positions:
-      // 1=doc start, 2..17 = first paragraph chars (16 chars + node open),
-      // wait — let's just rely on findAnchorPositionInDoc to compute it
-      // and check the relationship rather than hardcoding magic numbers.
       const located = findAnchorPositionInDoc(doc, "Second paragraph");
       expect(located).not.toBeNull();
       if (!located) return;
@@ -269,15 +252,22 @@ describe("reconcileComment", () => {
     it("tolerates curly vs straight quotes when locating in the doc", () => {
       // Doc has curly quotes; stored anchor has straight ones (LLM emission).
       const doc = makePmDoc("She said “hello” softly.");
+      const located = findAnchorPositionInDoc(doc, "said “hello”");
+      expect(located).not.toBeNull();
+      if (!located) return;
+
       const comment = makeComment({
         fromOffset: 1,
         toOffset: 1 + 'said "hello"'.length,
         anchorText: 'said "hello"',
       });
       const result = reconcileComment(comment, doc.textContent, doc);
-      expect(result.found).toBe(true);
-      expect(result.newFrom).toBeDefined();
-      expect(result.newTo).toBeDefined();
+      expect(result).toEqual({
+        found: true,
+        newFrom: located.from,
+        newTo: located.to,
+        confidence: "fuzzy",
+      });
     });
 
     it("falls back to plain-text path when the anchor isn't in the doc", () => {

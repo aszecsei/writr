@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CollabClient, type CollabTransport } from "./client";
 import {
   deriveWrapKey,
@@ -14,53 +14,21 @@ import {
   runGuestHandshake,
 } from "./handshake";
 import type { ServerMessage } from "./protocol";
-import type { WebSocketLike } from "./transport";
+import { asWebSocketLike, FakeWebSocket, flush } from "./test-support";
 
-class FakeWebSocket {
-  readonly url = "fake://socket";
-  sent: string[] = [];
-  closed: { code?: number; reason?: string } | null = null;
-  private listeners: Record<string, Array<(event: unknown) => void>> = {};
-
-  send(data: string): void {
-    this.sent.push(data);
-  }
-  close(code?: number, reason?: string): void {
-    if (this.closed) return;
-    const close: { code?: number; reason?: string } = {};
-    if (code !== undefined) close.code = code;
-    if (reason !== undefined) close.reason = reason;
-    this.closed = close;
-    this.dispatch("close", { code: code ?? 1000, reason: reason ?? "" });
-  }
-  addEventListener(type: string, listener: (event: unknown) => void): void {
-    const bucket = this.listeners[type] ?? [];
-    bucket.push(listener);
-    this.listeners[type] = bucket;
-  }
-  fireServer(message: ServerMessage): void {
-    this.dispatch("message", { data: JSON.stringify(message) });
-  }
-  fireClose(code: number, reason: string): void {
-    this.dispatch("close", { code, reason });
-  }
-  fireError(): void {
-    this.dispatch("error", undefined);
-  }
-  private dispatch(type: string, event: unknown): void {
-    for (const cb of this.listeners[type] ?? []) cb(event);
-  }
-}
-
-function asWs(fake: FakeWebSocket): WebSocketLike {
-  return fake as unknown as WebSocketLike;
-}
-
-async function flush(turns = 6): Promise<void> {
-  for (let i = 0; i < turns; i++) await new Promise((r) => setTimeout(r, 0));
-}
+const asWs = asWebSocketLike;
 
 const ROOM = "11111111-2222-3333-4444-555555555555";
+
+beforeEach(() => {
+  vi.spyOn(crypto, "randomUUID").mockReturnValue(
+    "req-1" as `${string}-${string}-${string}-${string}-${string}`,
+  );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("runGuestHandshake", () => {
   it("welcome → join-request → join-approved produces a usable room key", async () => {
@@ -74,7 +42,6 @@ describe("runGuestHandshake", () => {
       hostPubEncoded: hostPair.pubEncoded,
       displayName: "Alice",
       color: "#a1b2c3",
-      requestId: "req-1",
     });
 
     await flush();
@@ -132,7 +99,6 @@ describe("runGuestHandshake", () => {
       hostPubEncoded: hostPair.pubEncoded,
       displayName: "Bob",
       color: "#bbbbbb",
-      requestId: "req-1",
     });
 
     await flush();
@@ -181,7 +147,6 @@ describe("runGuestHandshake", () => {
       hostPubEncoded: hostPair.pubEncoded,
       displayName: "D",
       color: "#dddddd",
-      requestId: "req-1",
     });
 
     await flush();
@@ -241,13 +206,14 @@ describe("attachJoinRequestHandler", () => {
     };
   }
 
-  it("auto-approves a guest when isApproved returns true (no onIncoming)", async () => {
+  it("auto-approves a guest when isApproved returns true (no onIncoming, onAutoApproved fires)", async () => {
     const { client, sent } = makeHostClient();
     const hostPair = await generateX25519Keypair();
     const guestPair = await generateX25519Keypair();
     const roomKey = await generateRoomKey();
 
     let onIncomingCalled = false;
+    const autoApproved: Array<{ requestId: string; guestPub: string }> = [];
     const handle = attachJoinRequestHandler({
       client,
       hostPriv: hostPair.priv,
@@ -258,6 +224,9 @@ describe("attachJoinRequestHandler", () => {
         onIncomingCalled = true;
       },
       onCancelled: () => {},
+      onAutoApproved: (req) => {
+        autoApproved.push({ requestId: req.requestId, guestPub: req.guestPub });
+      },
     });
 
     await client.handleMessage(
@@ -275,6 +244,9 @@ describe("attachJoinRequestHandler", () => {
     expect(onIncomingCalled).toBe(false);
     const approvedMsg = sent.find((s) => s.includes("join-approved"));
     expect(approvedMsg).toBeDefined();
+    expect(autoApproved).toEqual([
+      { requestId: "req-1", guestPub: guestPair.pubEncoded },
+    ]);
     handle.detach();
   });
 

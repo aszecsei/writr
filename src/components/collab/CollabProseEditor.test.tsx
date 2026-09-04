@@ -17,34 +17,19 @@ afterEach(() => {
 });
 
 describe("CollabProseEditor", () => {
-  it("mounts without crashing in editable mode", () => {
+  it.each([true, false] as const)("mounts with editable=%s", (editable) => {
     const { doc, awareness } = makeDoc();
     cleanups.push(() => {
       awareness.destroy();
       doc.destroy();
     });
     const { container } = render(
-      <CollabProseEditor doc={doc} awareness={awareness} editable={true} />,
+      <CollabProseEditor doc={doc} awareness={awareness} editable={editable} />,
     );
-    // ProseMirror renders a contenteditable div; in editable mode it should
-    // be present with contenteditable="true".
+    // ProseMirror renders a contenteditable div reflecting the editable prop.
     const ce = container.querySelector("[contenteditable]");
     expect(ce).not.toBeNull();
-    expect(ce?.getAttribute("contenteditable")).toBe("true");
-  });
-
-  it("mounts in read-only mode with contenteditable=false", () => {
-    const { doc, awareness } = makeDoc();
-    cleanups.push(() => {
-      awareness.destroy();
-      doc.destroy();
-    });
-    const { container } = render(
-      <CollabProseEditor doc={doc} awareness={awareness} editable={false} />,
-    );
-    const ce = container.querySelector("[contenteditable]");
-    expect(ce).not.toBeNull();
-    expect(ce?.getAttribute("contenteditable")).toBe("false");
+    expect(ce?.getAttribute("contenteditable")).toBe(String(editable));
   });
 
   it("reflects pre-existing Y.Doc content when mounted", () => {

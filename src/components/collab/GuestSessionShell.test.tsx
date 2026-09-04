@@ -3,60 +3,72 @@ import { fireEvent, render, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { GuestSessionShell } from "./GuestSessionShell";
 
-describe("GuestSessionShell (snapshots)", () => {
+describe("GuestSessionShell", () => {
   it("renders the disabled state when collab is not configured", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "disabled" }} />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("Collaboration is not enabled"),
+    ).toBeInTheDocument();
+    expect(within(container).queryByRole("button")).toBeNull();
   });
 
   it("renders the missing-token error", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "missing-token" }} />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("Share link is incomplete"),
+    ).toBeInTheDocument();
   });
 
   it("renders the missing-host-key error", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "missing-host-key" }} />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("This invitation link is invalid"),
+    ).toBeInTheDocument();
   });
 
   it("renders the connecting state with a spinner", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "connecting" }} />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("Joining the session…"),
+    ).toBeInTheDocument();
   });
 
   it("renders the awaiting-approval state with a spinner", () => {
     const { container } = render(
       <GuestSessionShell state={{ kind: "awaiting-approval" }} />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText(
+        "Waiting for the host to approve your request…",
+      ),
+    ).toBeInTheDocument();
   });
 
-  it("renders the denied state with a Back to home button", () => {
+  it.each([
+    ["not on the list", "not on the list"],
+    [null, "You weren't admitted to this collaborative session."],
+  ])("renders the denied state with reason=%s", (reason, expectedMessage) => {
     const { container } = render(
       <GuestSessionShell
-        state={{ kind: "denied", reason: "not on the list" }}
+        state={{ kind: "denied", reason }}
         onLeave={vi.fn()}
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it("renders the denied state with a null reason (host gave none)", () => {
-    const { container } = render(
-      <GuestSessionShell
-        state={{ kind: "denied", reason: null }}
-        onLeave={vi.fn()}
-      />,
-    );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("The host declined your request"),
+    ).toBeInTheDocument();
+    expect(within(container).getByText(expectedMessage)).toBeInTheDocument();
+    expect(
+      within(container).getByRole("button", { name: "Back to home" }),
+    ).toBeInTheDocument();
   });
 
   it("renders a retryable error with Try again + Close", () => {
@@ -71,7 +83,17 @@ describe("GuestSessionShell (snapshots)", () => {
         onLeave={vi.fn()}
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText(
+        "Network error contacting collab relay: ECONNREFUSED",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(container).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
+    expect(
+      within(container).getByRole("button", { name: "Try again" }),
+    ).toBeInTheDocument();
   });
 
   it("renders a non-retryable error without Try again", () => {
@@ -85,7 +107,15 @@ describe("GuestSessionShell (snapshots)", () => {
         onLeave={vi.fn()}
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("Collab relay returned 404"),
+    ).toBeInTheDocument();
+    expect(
+      within(container).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
+    expect(
+      within(container).queryByRole("button", { name: "Try again" }),
+    ).toBeNull();
   });
 
   it("renders the ended state with a Close button", () => {
@@ -95,7 +125,12 @@ describe("GuestSessionShell (snapshots)", () => {
         onLeave={vi.fn()}
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
+    expect(
+      within(container).getByText("The session has ended"),
+    ).toBeInTheDocument();
+    expect(
+      within(container).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
   });
 });
 

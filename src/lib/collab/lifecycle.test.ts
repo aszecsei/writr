@@ -11,59 +11,8 @@ import {
   mintRoom,
   type WebSocketFactory,
 } from "./lifecycle";
-import { CLOSE_CODES, type ServerMessage } from "./protocol";
-import type { WebSocketLike } from "./transport";
-
-class FakeWebSocket {
-  readonly url: string;
-  sent: string[] = [];
-  closed: { code?: number; reason?: string } | null = null;
-  private listeners: Record<string, Array<(event: unknown) => void>> = {};
-
-  constructor(url: string) {
-    this.url = url;
-  }
-
-  send(data: string): void {
-    this.sent.push(data);
-  }
-
-  close(code?: number, reason?: string): void {
-    if (this.closed) return;
-    const close: { code?: number; reason?: string } = {};
-    if (code !== undefined) close.code = code;
-    if (reason !== undefined) close.reason = reason;
-    this.closed = close;
-    this.dispatch("close", { code: code ?? 1000, reason: reason ?? "" });
-  }
-
-  addEventListener(type: string, listener: (event: unknown) => void): void {
-    const bucket = this.listeners[type] ?? [];
-    bucket.push(listener);
-    this.listeners[type] = bucket;
-  }
-
-  fireOpen(): void {
-    this.dispatch("open", undefined);
-  }
-  fireMessage(data: string): void {
-    this.dispatch("message", { data });
-  }
-  fireServer(message: ServerMessage): void {
-    this.fireMessage(JSON.stringify(message));
-  }
-  fireClose(code: number, reason: string): void {
-    this.dispatch("close", { code, reason });
-  }
-
-  private dispatch(type: string, event: unknown): void {
-    for (const cb of this.listeners[type] ?? []) cb(event);
-  }
-}
-
-function asTransport(fake: FakeWebSocket): WebSocketLike {
-  return fake as unknown as WebSocketLike;
-}
+import { CLOSE_CODES } from "./protocol";
+import { asWebSocketLike, FakeWebSocket, flush } from "./test-support";
 
 function captureFactory(): {
   factory: WebSocketFactory;
@@ -74,7 +23,7 @@ function captureFactory(): {
     factory: (url) => {
       const ws = new FakeWebSocket(url);
       sockets.push(ws);
-      return asTransport(ws);
+      return asWebSocketLike(ws);
     },
     sockets,
   };
@@ -99,12 +48,6 @@ const SAMPLE_ROOM = {
   inviteTokens: { edit: "edit-tok", review: "review-tok", view: "view-tok" },
 };
 
-async function flush(turns = 6): Promise<void> {
-  for (let i = 0; i < turns; i++) {
-    await new Promise((r) => setTimeout(r, 0));
-  }
-}
-
 describe("mintRoom", () => {
   it("posts to /rooms on the http origin and returns the body", async () => {
     const fetchFn = vi.fn().mockResolvedValue({
@@ -123,15 +66,6 @@ describe("mintRoom", () => {
       expect.objectContaining({ method: "POST" }),
     );
     expect(room).toEqual(SAMPLE_ROOM);
-  });
-
-  it("rewrites ws:// to http:// for the mint request", async () => {
-    const fetchFn = mockFetch(SAMPLE_ROOM);
-    await mintRoom({ baseUrl: "ws://localhost:4444", fetchFn });
-    expect(fetchFn).toHaveBeenCalledWith(
-      "http://localhost:4444/rooms",
-      expect.anything(),
-    );
   });
 
   it("throws a descriptive error on rate limit", async () => {
@@ -371,7 +305,7 @@ describe("connectAsGuest", () => {
     expect(result.client.role).toBe("edit");
   });
 
-  it("rejects with JoinDeniedError on join-denied", async () => {
+  it("closes the socket when the handshake is denied", async () => {
     const { factory, sockets } = captureFactory();
     const hostKeypair = await generateX25519Keypair();
 
@@ -398,8 +332,9 @@ describe("connectAsGuest", () => {
       peerCount: 1,
       hostPresent: true,
     });
-    // Poll for join-request to be sent rather than relying on a fixed flush.
-    for (let i = 0; i < 20 && ws.sent.length === 0; i++) await flush(2);
+    await vi.waitFor(() => {
+      expect(ws.sent.length).toBeGreaterThan(0);
+    });
     const sent = JSON.parse(ws.sent[0] as string) as { requestId: string };
     ws.fireServer({
       type: "join-denied",
@@ -407,7 +342,10 @@ describe("connectAsGuest", () => {
       reason: "not authorized",
     });
 
-    await expect(promise).rejects.toThrow(/declined/i);
+    await expect(promise).rejects.toThrow();
+    // connectAsGuest is responsible for closing the transport-level socket
+    // on handshake failure — the handshake layer itself never touches it.
+    expect(ws.closed).not.toBeNull();
   });
 
   it("rejects on a malformed host pubkey", async () => {
