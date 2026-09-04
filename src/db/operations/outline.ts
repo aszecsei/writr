@@ -12,8 +12,9 @@ import {
   type ProjectId,
 } from "../schemas";
 import {
+  compact,
   generateId,
-  getNextOrder,
+  nextOrder,
   now,
   reorderEntities,
   stripUndefined,
@@ -42,7 +43,7 @@ export async function createOutlineGridColumn(
   data: Pick<OutlineGridColumn, "projectId" | "title"> &
     Partial<Pick<OutlineGridColumn, "order" | "width">>,
 ): Promise<OutlineGridColumn> {
-  const order = await getNextOrder(
+  const order = await nextOrder(
     db.outlineGridColumns,
     { projectId: data.projectId },
     data.order,
@@ -128,7 +129,7 @@ export async function createOutlineGridRow(
   data: Pick<OutlineGridRow, "projectId"> &
     Partial<Pick<OutlineGridRow, "linkedChapterId" | "label" | "order">>,
 ): Promise<OutlineGridRow> {
-  const order = await getNextOrder(
+  const order = await nextOrder(
     db.outlineGridRows,
     { projectId: data.projectId },
     data.order,
@@ -170,11 +171,7 @@ export async function deleteOutlineGridRow(
       const remaining = await db.outlineGridRows
         .where({ projectId: row.projectId })
         .sortBy("order");
-      for (let i = 0; i < remaining.length; i++) {
-        if (remaining[i].order !== i) {
-          await db.outlineGridRows.update(remaining[i].id, { order: i });
-        }
-      }
+      await compact(db.outlineGridRows, remaining);
     },
   );
 }

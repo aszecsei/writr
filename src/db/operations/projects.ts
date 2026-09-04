@@ -1,8 +1,26 @@
 import { db } from "../database";
 import { type Project, type ProjectId, ProjectSchema } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import { createCrud, generateId, now, stripUndefined } from "./helpers";
 
 // ─── Projects ────────────────────────────────────────────────────────
+
+// Tables Dexie indexes by `projectId` but that a project delete deliberately
+// leaves alone: savedPrompts carries a nullable projectId (global-or-scoped)
+// but prompts survive deletion of the project that scoped them; outlineColumns
+// and outlineCards are pre-v9 stores superseded by outlineGrid* — no code path
+// writes to them any more, but the Dexie version chain never dropped the
+// object stores, so they still surface here.
+const PROJECT_SCOPED_NOT_CASCADED = new Set([
+  "savedPrompts",
+  "outlineColumns",
+  "outlineCards",
+]);
+
+/** Every table cascaded by {@link deleteAllProjectData} and {@link deleteProject}. */
+export const PROJECT_SCOPED_TABLES: string[] = db.tables
+  .filter((t) => t.schema.indexes.some((idx) => idx.name === "projectId"))
+  .map((t) => t.name)
+  .filter((name) => !PROJECT_SCOPED_NOT_CASCADED.has(name));
 
 export async function createProject(
   data: Pick<Project, "title"> &
@@ -44,56 +62,15 @@ export async function updateProject(
 export async function deleteAllProjectData(
   projectId: ProjectId,
 ): Promise<void> {
-  await db.chapters.where({ projectId }).delete();
-  await db.characters.where({ projectId }).delete();
-  await db.locations.where({ projectId }).delete();
-  await db.timelineEvents.where({ projectId }).delete();
-  await db.styleGuideEntries.where({ projectId }).delete();
-  await db.worldbuildingDocs.where({ projectId }).delete();
-  await db.characterRelationships.where({ projectId }).delete();
-  await db.outlineGridColumns.where({ projectId }).delete();
-  await db.outlineGridRows.where({ projectId }).delete();
-  await db.outlineGridCells.where({ projectId }).delete();
-  await db.writingSprints.where({ projectId }).delete();
-  await db.writingSessions.where({ projectId }).delete();
-  await db.playlistTracks.where({ projectId }).delete();
-  await db.comments.where({ projectId }).delete();
-  await db.chapterSnapshots.where({ projectId }).delete();
-  await db.projectDictionaries.where({ projectId }).delete();
-  await db.chapterSummaries.where({ projectId }).delete();
-  await db.agents.where({ projectId }).delete();
-  await db.indexedChunks.where({ projectId }).delete();
-  await db.guardrailEntries.where({ projectId }).delete();
-  await db.scenes.where({ projectId }).delete();
+  for (const name of PROJECT_SCOPED_TABLES) {
+    await db.table(name).where({ projectId }).delete();
+  }
 }
 
 export async function deleteProject(id: ProjectId): Promise<void> {
   await db.transaction(
     "rw",
-    [
-      db.projects,
-      db.chapters,
-      db.characters,
-      db.locations,
-      db.timelineEvents,
-      db.styleGuideEntries,
-      db.worldbuildingDocs,
-      db.characterRelationships,
-      db.outlineGridColumns,
-      db.outlineGridRows,
-      db.outlineGridCells,
-      db.writingSprints,
-      db.writingSessions,
-      db.playlistTracks,
-      db.comments,
-      db.chapterSnapshots,
-      db.projectDictionaries,
-      db.chapterSummaries,
-      db.agents,
-      db.indexedChunks,
-      db.guardrailEntries,
-      db.scenes,
-    ],
+    [db.projects, ...PROJECT_SCOPED_TABLES.map((name) => db.table(name))],
     async () => {
       await deleteAllProjectData(id);
       await db.projects.delete(id);
@@ -101,6 +78,4 @@ export async function deleteProject(id: ProjectId): Promise<void> {
   );
 }
 
-export async function getProject(id: ProjectId): Promise<Project | undefined> {
-  return db.projects.get(id);
-}
+export const getProject = createCrud<Project, ProjectId>(db.projects).get;

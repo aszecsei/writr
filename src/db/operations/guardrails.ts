@@ -6,8 +6,9 @@ import {
   type ProjectId,
 } from "../schemas";
 import {
+  createCrud,
   generateId,
-  getNextOrderForProjectScope,
+  nextOrder,
   now,
   stripUndefined,
 } from "./helpers";
@@ -29,11 +30,10 @@ export async function listGuardrailsForProject(
     .sort(byScopeThenOrder);
 }
 
-export async function getGuardrailEntry(
-  id: GuardrailEntryId,
-): Promise<GuardrailEntry | undefined> {
-  return db.guardrailEntries.get(id);
-}
+const guardrailEntryCrud = createCrud<GuardrailEntry, GuardrailEntryId>(
+  db.guardrailEntries,
+);
+export const getGuardrailEntry = guardrailEntryCrud.get;
 
 export async function createGuardrailEntry(
   data: Partial<Pick<GuardrailEntry, "projectId">> &
@@ -41,11 +41,7 @@ export async function createGuardrailEntry(
     Partial<Pick<GuardrailEntry, "flags" | "fix" | "positiveFix" | "order">>,
 ): Promise<GuardrailEntry> {
   const projectId = data.projectId ?? null;
-  const order = await getNextOrderForProjectScope(
-    db.guardrailEntries,
-    projectId,
-    data.order,
-  );
+  const order = await nextOrder(db.guardrailEntries, { projectId }, data.order);
   const ts = now();
   const entry = GuardrailEntrySchema.parse({
     id: generateId(),
@@ -87,8 +83,4 @@ export async function setGuardrailDisabledInProject(
   await updateGuardrailEntry(id, { disabledProjectIds: [...current] });
 }
 
-export async function deleteGuardrailEntry(
-  id: GuardrailEntryId,
-): Promise<void> {
-  await db.guardrailEntries.delete(id);
-}
+export const deleteGuardrailEntry = guardrailEntryCrud.delete;

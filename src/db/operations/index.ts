@@ -1,12 +1,3 @@
-// Re-export chapter-outline sync functions
-export {
-  createChapterFromRow,
-  linkChapterToRow,
-  syncDeleteOutlineRow,
-  syncReorderOutlineRows,
-  unlinkChapterFromRow,
-  updateRowLabel,
-} from "../chapter-outline-sync";
 export * from "./agents";
 export * from "./brainstorm";
 export * from "./chapterSummaries";
@@ -18,6 +9,7 @@ export * from "./guardrails";
 export * from "./indexedChunks";
 export * from "./locations";
 export * from "./outline";
+export * from "./outline-sync";
 export * from "./playlist";
 export * from "./projects";
 export * from "./savedPrompts";

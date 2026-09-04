@@ -2,6 +2,7 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import { listAgents } from "@/db/operations/agents";
 import type {
   AgentDefinition,
   AgentDefinitionId,
@@ -9,51 +10,24 @@ import type {
 } from "@/db/schemas";
 
 /**
- * List agents available for a project. Includes:
- *   - Built-in chat agents (spark, scene, reader, editor, etc.).
- *   - User-created agents that are global or scoped to this project.
- */
-export function useChatAgents(
-  projectId: ProjectId | null,
-): AgentDefinition[] | undefined {
-  return useLiveQuery(async () => {
-    const all = await db.agents.toArray();
-    return all
-      .filter((a) => {
-        if (a.kind === "user") {
-          return (
-            a.projectId === null ||
-            (projectId !== null && a.projectId === projectId)
-          );
-        }
-        return true;
-      })
-      .sort((a, b) => agentSortKey(a).localeCompare(agentSortKey(b)));
-  }, [projectId]);
-}
-
-/**
- * List all agents for the Manage Agents view. Built-in agents come first in
- * canonical order, then user agents A-Z.
+ * List all agents for a project context: built-in chat agents (spark, scene,
+ * reader, editor, etc.) come first in canonical order, then user-created
+ * agents that are global or scoped to this project, A-Z.
  */
 export function useAllAgents(
   projectId: ProjectId | null,
 ): AgentDefinition[] | undefined {
   return useLiveQuery(async () => {
-    const all = await db.agents.toArray();
-    return all
-      .filter((a) => {
-        if (a.kind === "user") {
-          return (
-            a.projectId === null ||
-            (projectId !== null && a.projectId === projectId)
-          );
-        }
-        return true;
-      })
-      .sort((a, b) => agentSortKey(a).localeCompare(agentSortKey(b)));
+    const agents = await listAgents(projectId);
+    return agents.sort((a, b) =>
+      agentSortKey(a).localeCompare(agentSortKey(b)),
+    );
   }, [projectId]);
 }
+
+/** Alias of {@link useAllAgents}: chat agent selection and Manage Agents use
+ * the same underlying list. */
+export const useChatAgents = useAllAgents;
 
 export function useAgent(
   id: AgentDefinitionId | null,

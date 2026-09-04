@@ -18,21 +18,14 @@
  *    "other side" with invariant #2.
  */
 
-import { db } from "./database";
-import { createChapter, deleteRowAndDependents } from "./operations/chapters";
-import type { ChapterId, OutlineGridRowId, ProjectId } from "./schemas";
-
-function now(): string {
-  return new Date().toISOString();
-}
+import { db } from "../database";
+import type { ChapterId, OutlineGridRowId, ProjectId } from "../schemas";
+import { createChapter, deleteRowAndDependents } from "./chapters";
+import { compact, now, renumber } from "./helpers";
 
 async function compactRowOrders(projectId: ProjectId): Promise<void> {
   const rows = await db.outlineGridRows.where({ projectId }).sortBy("order");
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i].order !== i) {
-      await db.outlineGridRows.update(rows[i].id, { order: i });
-    }
-  }
+  await compact(db.outlineGridRows, rows);
 }
 
 async function compactChapterOrders(projectId: ProjectId): Promise<void> {
@@ -48,11 +41,7 @@ async function compactChapterOrders(projectId: ProjectId): Promise<void> {
   }
   for (const group of groups.values()) {
     group.sort((a, b) => a.order - b.order);
-    for (let i = 0; i < group.length; i++) {
-      if (group[i].order !== i) {
-        await db.chapters.update(group[i].id, { order: i });
-      }
-    }
+    await compact(db.chapters, group);
   }
 }
 
@@ -180,11 +169,9 @@ export async function updateRowLabel(
 export async function syncReorderOutlineRows(
   orderedRowIds: OutlineGridRowId[],
 ): Promise<void> {
-  await db.transaction("rw", db.outlineGridRows, async () => {
-    for (let i = 0; i < orderedRowIds.length; i++) {
-      await db.outlineGridRows.update(orderedRowIds[i], { order: i });
-    }
-  });
+  await db.transaction("rw", db.outlineGridRows, () =>
+    renumber(db.outlineGridRows, orderedRowIds),
+  );
 }
 
 /**

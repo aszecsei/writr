@@ -2,22 +2,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { makeOutlineGridRow, resetIdCounter } from "@/test/helpers";
 import { db } from "../database";
 import type { ProjectId } from "../schemas";
-import { getNextOrder, stripUndefined } from "./helpers";
+import { nextOrder, stripUndefined } from "./helpers";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
-describe("getNextOrder", () => {
+describe("nextOrder", () => {
   beforeEach(async () => {
     resetIdCounter();
     await db.outlineGridRows.clear();
   });
 
   it("returns 0 when the table is empty", async () => {
-    const next = await getNextOrder(
-      db.outlineGridRows,
-      { projectId },
-      undefined,
-    );
+    const next = await nextOrder(db.outlineGridRows, { projectId }, undefined);
     expect(next).toBe(0);
   });
 
@@ -29,11 +25,7 @@ describe("getNextOrder", () => {
       makeOutlineGridRow({ projectId, order: 2 }),
     ]);
 
-    const next = await getNextOrder(
-      db.outlineGridRows,
-      { projectId },
-      undefined,
-    );
+    const next = await nextOrder(db.outlineGridRows, { projectId }, undefined);
     expect(next).toBe(3);
   });
 
@@ -44,11 +36,7 @@ describe("getNextOrder", () => {
       makeOutlineGridRow({ projectId, order: 2 }),
     ]);
 
-    const next = await getNextOrder(
-      db.outlineGridRows,
-      { projectId },
-      undefined,
-    );
+    const next = await nextOrder(db.outlineGridRows, { projectId }, undefined);
     expect(next).toBe(3);
   });
 
@@ -58,7 +46,7 @@ describe("getNextOrder", () => {
       makeOutlineGridRow({ projectId, order: 1 }),
     ]);
 
-    const next = await getNextOrder(db.outlineGridRows, { projectId }, 99);
+    const next = await nextOrder(db.outlineGridRows, { projectId }, 99);
     expect(next).toBe(99);
   });
 });

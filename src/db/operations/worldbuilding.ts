@@ -6,8 +6,9 @@ import {
   WorldbuildingDocSchema,
 } from "../schemas";
 import {
+  createCrud,
   generateId,
-  getNextOrderForProjectScope,
+  nextOrder,
   now,
   reorderEntities,
   stripUndefined,
@@ -21,11 +22,10 @@ export async function getWorldbuildingDocsByProject(
   return db.worldbuildingDocs.where({ projectId }).sortBy("order");
 }
 
-export async function getWorldbuildingDoc(
-  id: WorldbuildingDocId,
-): Promise<WorldbuildingDoc | undefined> {
-  return db.worldbuildingDocs.get(id);
-}
+export const getWorldbuildingDoc = createCrud<
+  WorldbuildingDoc,
+  WorldbuildingDocId
+>(db.worldbuildingDocs).get;
 
 export async function createWorldbuildingDoc(
   data: Pick<WorldbuildingDoc, "projectId" | "title"> &
@@ -42,9 +42,9 @@ export async function createWorldbuildingDoc(
     >,
 ): Promise<WorldbuildingDoc> {
   const parentDocId = data.parentDocId ?? null;
-  const order = await getNextOrderForProjectScope(
+  const order = await nextOrder(
     db.worldbuildingDocs,
-    data.projectId,
+    { projectId: data.projectId },
     data.order,
     (r) => (r as { parentDocId: string | null }).parentDocId === parentDocId,
   );

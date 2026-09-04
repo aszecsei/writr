@@ -6,7 +6,7 @@ import {
   type IndexedChunkSourceType,
   type ProjectId,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { createCrud, generateId, now } from "./helpers";
 
 export type IndexedChunkInput = Omit<
   IndexedChunk,
@@ -56,6 +56,6 @@ export async function putIndexedChunk(
   return row;
 }
 
-export async function deleteIndexedChunk(id: IndexedChunkId): Promise<void> {
-  await db.indexedChunks.delete(id);
-}
+export const deleteIndexedChunk = createCrud<IndexedChunk, IndexedChunkId>(
+  db.indexedChunks,
+).delete;

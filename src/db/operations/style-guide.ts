@@ -6,8 +6,9 @@ import {
   StyleGuideEntrySchema,
 } from "../schemas";
 import {
+  createCrud,
   generateId,
-  getNextOrderForProjectScope,
+  nextOrder,
   now,
   stripUndefined,
 } from "./helpers";
@@ -29,11 +30,10 @@ export async function listStyleGuideForProject(
     .sort(byScopeThenOrder);
 }
 
-export async function getStyleGuideEntry(
-  id: StyleGuideEntryId,
-): Promise<StyleGuideEntry | undefined> {
-  return db.styleGuideEntries.get(id);
-}
+const styleGuideEntryCrud = createCrud<StyleGuideEntry, StyleGuideEntryId>(
+  db.styleGuideEntries,
+);
+export const getStyleGuideEntry = styleGuideEntryCrud.get;
 
 export async function createStyleGuideEntry(
   data: Partial<Pick<StyleGuideEntry, "projectId">> &
@@ -41,9 +41,9 @@ export async function createStyleGuideEntry(
     Partial<Pick<StyleGuideEntry, "category" | "content" | "order">>,
 ): Promise<StyleGuideEntry> {
   const projectId = data.projectId ?? null;
-  const order = await getNextOrderForProjectScope(
+  const order = await nextOrder(
     db.styleGuideEntries,
-    projectId,
+    { projectId },
     data.order,
   );
   const ts = now();
@@ -86,8 +86,4 @@ export async function setStyleGuideDisabledInProject(
   await updateStyleGuideEntry(id, { disabledProjectIds: [...current] });
 }
 
-export async function deleteStyleGuideEntry(
-  id: StyleGuideEntryId,
-): Promise<void> {
-  await db.styleGuideEntries.delete(id);
-}
+export const deleteStyleGuideEntry = styleGuideEntryCrud.delete;

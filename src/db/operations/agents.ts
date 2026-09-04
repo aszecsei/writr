@@ -1,3 +1,4 @@
+import { BUILTIN_AGENT_DEFAULTS } from "@/lib/ai/agents/builtins/defaults";
 import { db } from "../database";
 import {
   type AgentDefinition,
@@ -7,6 +8,7 @@ import {
   type ProjectId,
 } from "../schemas";
 import { generateId, now, stripUndefined } from "./helpers";
+import { appliesToProject } from "./scope";
 
 export type CreateAgentInput = {
   kind: AgentKind;
@@ -44,6 +46,10 @@ export async function createAgent(
   return agent;
 }
 
+// A plain function, not `createCrud`: database.ts imports this module for
+// the built-in agent seed, and a factory call at module scope here would
+// dereference `db.agents` before the `db` export it closes over is assigned,
+// throwing at import time.
 export async function getAgent(
   id: AgentDefinitionId,
 ): Promise<AgentDefinition | undefined> {
@@ -60,12 +66,7 @@ export async function listAgents(
   projectId: ProjectId | null,
 ): Promise<AgentDefinition[]> {
   const all = await db.agents.toArray();
-  return all.filter((a) =>
-    a.kind === "user"
-      ? a.projectId === null ||
-        (projectId !== null && a.projectId === projectId)
-      : true,
-  );
+  return all.filter((a) => a.kind !== "user" || appliesToProject(a, projectId));
 }
 
 export async function updateAgent(
@@ -108,11 +109,6 @@ export async function resetAgentToDefaults(
   const existing = await db.agents.get(id);
   if (!existing || existing.kind === "user") return;
 
-  // Lazy-import the defaults to avoid pulling AI runtime modules into every
-  // operation consumer.
-  const { BUILTIN_AGENT_DEFAULTS } = await import(
-    "@/lib/ai/agents/builtins/defaults"
-  );
   const def = BUILTIN_AGENT_DEFAULTS[existing.kind];
   if (!def) return;
 
@@ -125,4 +121,37 @@ export async function resetAgentToDefaults(
     assistantPrefill: def.assistantPrefill ?? "",
     updatedAt: now(),
   });
+}
+
+/**
+ * Idempotent built-in agent seed: covers fresh installs and any case where a
+ * built-in row went missing. Existing rows (including user edits) are left
+ * untouched.
+ */
+export async function seedBuiltinAgents(): Promise<void> {
+  const timestamp = now();
+  const existing = await db.agents.toArray();
+  const presentKinds = new Set(
+    existing.filter((a) => a.kind !== "user").map((a) => a.kind),
+  );
+  const builtinKinds = Object.keys(
+    BUILTIN_AGENT_DEFAULTS,
+  ) as (keyof typeof BUILTIN_AGENT_DEFAULTS)[];
+  for (const kind of builtinKinds) {
+    if (presentKinds.has(kind)) continue;
+    const def = BUILTIN_AGENT_DEFAULTS[kind];
+    await db.agents.add({
+      id: generateId() as AgentDefinitionId,
+      kind,
+      projectId: null,
+      name: def.name,
+      description: def.description,
+      systemPrompt: def.systemPrompt,
+      allowedToolIds: def.allowedToolIds,
+      modelOverride: null,
+      assistantPrefill: def.assistantPrefill ?? "",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
 }

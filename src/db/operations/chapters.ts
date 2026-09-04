@@ -12,7 +12,14 @@ import {
   type ChapterSection,
   type ProjectId,
 } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import {
+  createCrud,
+  generateId,
+  nextOrder,
+  now,
+  renumber,
+  stripUndefined,
+} from "./helpers";
 import { createScene } from "./scenes";
 import { recordWritingSession } from "./sprints";
 
@@ -47,9 +54,7 @@ export async function getBinderItems(
     : all;
 }
 
-export async function getChapter(id: ChapterId): Promise<Chapter | undefined> {
-  return db.chapters.get(id);
-}
+export const getChapter = createCrud<Chapter, ChapterId>(db.chapters).get;
 
 /**
  * Manuscript documents in true reading order: the flattened depth-first
@@ -75,12 +80,14 @@ async function nextSiblingOrder(
   section: ChapterSection,
   parentChapterId: ChapterId | null,
 ): Promise<number> {
-  const siblings = (await db.chapters.where({ projectId }).toArray()).filter(
-    (c) =>
-      c.section === section && (c.parentChapterId ?? null) === parentChapterId,
+  return nextOrder(
+    db.chapters,
+    { projectId },
+    undefined,
+    (r) =>
+      r.section === section &&
+      ((r.parentChapterId as ChapterId | null) ?? null) === parentChapterId,
   );
-  if (siblings.length === 0) return 0;
-  return Math.max(...siblings.map((c) => c.order)) + 1;
 }
 
 export async function createChapter(
@@ -239,9 +246,7 @@ export async function moveChapter(
       section: newSection,
       updatedAt: now(),
     });
-    for (let i = 0; i < orderedIds.length; i++) {
-      await db.chapters.update(orderedIds[i], { order: i, updatedAt: now() });
-    }
+    await renumber(db.chapters, orderedIds, { touchUpdatedAt: true });
     if (sectionChanged) {
       for (const nodeId of subtree) {
         if (nodeId === id) continue;

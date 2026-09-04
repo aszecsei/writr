@@ -4,7 +4,7 @@ import {
   type ChapterSnapshotId,
   ChapterSnapshotSchema,
 } from "../schemas";
-import { generateId, now } from "./helpers";
+import { createCrud, generateId, now } from "./helpers";
 
 // ─── Chapter Snapshots ──────────────────────────────────────────────
 
@@ -27,6 +27,6 @@ export async function createSnapshot(
   return snapshot;
 }
 
-export async function deleteSnapshot(id: ChapterSnapshotId): Promise<void> {
-  await db.chapterSnapshots.delete(id);
-}
+export const deleteSnapshot = createCrud<ChapterSnapshot, ChapterSnapshotId>(
+  db.chapterSnapshots,
+).delete;

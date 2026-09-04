@@ -5,7 +5,7 @@ import {
   LocationSchema,
   type ProjectId,
 } from "../schemas";
-import { generateId, now, stripUndefined } from "./helpers";
+import { createCrud, generateId, now, stripUndefined } from "./helpers";
 
 // ─── Locations ───────────────────────────────────────────────────────
 
@@ -15,11 +15,8 @@ export async function getLocationsByProject(
   return db.locations.where({ projectId }).sortBy("name");
 }
 
-export async function getLocation(
-  id: LocationId,
-): Promise<Location | undefined> {
-  return db.locations.get(id);
-}
+const locationCrud = createCrud<Location, LocationId>(db.locations);
+export const getLocation = locationCrud.get;
 
 export async function createLocation(
   data: Pick<Location, "projectId" | "name"> &
@@ -57,6 +54,4 @@ export async function updateLocation(
   await db.locations.update(id, { ...stripUndefined(data), updatedAt: now() });
 }
 
-export async function deleteLocation(id: LocationId): Promise<void> {
-  await db.locations.delete(id);
-}
+export const deleteLocation = locationCrud.delete;
