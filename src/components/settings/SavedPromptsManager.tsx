@@ -16,6 +16,7 @@ import {
   updateSavedPrompt,
 } from "@/db/operations/savedPrompts";
 import type { SavedPrompt, SavedPromptId } from "@/db/schemas";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
@@ -30,7 +31,7 @@ export function SavedPromptsManager() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
-  const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectTitle = useActiveProject()?.title ?? null;
 
   const prompts = useAvailableSavedPrompts(activeProjectId);
 

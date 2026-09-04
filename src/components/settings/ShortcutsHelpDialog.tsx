@@ -1,13 +1,13 @@
 "use client";
 
 import { Modal } from "@/components/ui/Modal";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   type CommandCategory,
   commandTitle,
   formatBinding,
   shortcutRegistry,
 } from "@/lib/shortcuts";
-import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
 
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
@@ -27,7 +27,7 @@ const CATEGORY_ORDER: CommandCategory[] = [
 export function ShortcutsHelpDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   if (modal.id !== "shortcuts-help") return null;
 

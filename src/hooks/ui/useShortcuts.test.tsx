@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db/database";
 import type { ProjectId } from "@/db/schemas";
 import { useProjectStore } from "@/store/projectStore";
 import { useUiStore } from "@/store/uiStore";
+import { makeProject } from "@/test/helpers";
 import { useShortcuts } from "./useShortcuts";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
@@ -29,12 +31,11 @@ function press(
 }
 
 describe("useShortcuts", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     pushMock.mockClear();
-    useProjectStore.setState({
-      activeProjectId: projectId,
-      activeProjectMode: "prose",
-    });
+    await db.projects.clear();
+    await db.projects.add(makeProject({ id: projectId, title: "Draft" }));
+    useProjectStore.setState({ activeProjectId: projectId });
     useUiStore.setState({
       modal: { id: null },
       searchFocusToken: 0,

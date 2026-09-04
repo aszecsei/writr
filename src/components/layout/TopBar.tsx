@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { SearchBar } from "@/components/search";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
+import { useActiveProject } from "@/hooks/data/useProject";
 import { formatReadingTime } from "@/lib/reading-time";
 import { useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
@@ -23,7 +24,7 @@ export function TopBar() {
   const toggleRightPanel = useUiStore((s) => s.toggleRightPanel);
   const rightPanelOpen = useUiStore((s) => s.rightPanel.open);
   const openModal = useUiStore((s) => s.openModal);
-  const projectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const projectTitle = useActiveProject()?.title ?? null;
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const wordCount = useEditorStore((s) => s.wordCount);

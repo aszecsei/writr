@@ -11,6 +11,7 @@ import {
   RADIO_INACTIVE,
 } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   type ExportFormat,
   type ExportHoleScan,
@@ -19,7 +20,6 @@ import {
   scanExportHoles,
 } from "@/lib/export";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import { isExportModal, useUiStore } from "@/store/uiStore";
 
 const PROSE_FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
@@ -36,7 +36,7 @@ const SCREENPLAY_FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
 export function ExportDialog() {
   const modal = useUiStore((s) => s.modal);
   const closeModal = useUiStore((s) => s.closeModal);
-  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
+  const activeProjectMode = useActiveProject()?.mode ?? null;
   const isScreenplay = activeProjectMode === "screenplay";
 
   const [format, setFormat] = useState<ExportFormat>(

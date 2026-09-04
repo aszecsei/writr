@@ -11,6 +11,7 @@ import type {
   ProjectId,
 } from "@/db/schemas";
 import { useChaptersByProject } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   useOutlineGridCellsMap,
   useOutlineGridColumns,
@@ -20,7 +21,6 @@ import { useOutlineGridDragDrop } from "@/hooks/outline/useOutlineGridDragDrop";
 import { useOutlineGridOperations } from "@/hooks/outline/useOutlineGridOperations";
 import { depthMap, isManuscriptDocument } from "@/lib/binder/tree";
 import { getTerm } from "@/lib/terminology";
-import { useProjectStore } from "@/store/projectStore";
 import {
   type ContextMenuTarget,
   OutlineGridContextMenu,
@@ -39,7 +39,7 @@ export function OutlineGrid({ projectId, highlightCellId }: OutlineGridProps) {
   const rows = useOutlineGridRows(projectId);
   const cellsMap = useOutlineGridCellsMap(projectId);
   const chapters = useChaptersByProject(projectId);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
   const chapterTerm = getTerm(projectMode, "chapter");
 
   const { localRows, onDragStart, onDragOver, onDragEnd } =

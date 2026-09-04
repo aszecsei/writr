@@ -14,6 +14,7 @@ import {
   useLocationsByProject,
 } from "@/hooks/data/source";
 import { useChapter } from "@/hooks/data/useChapter";
+import { useActiveProject } from "@/hooks/data/useProject";
 import {
   useProjectStrands,
   useScene,
@@ -74,7 +75,7 @@ export function DetailsPanel() {
   const activeSceneId = useEditorStore((s) => s.activeSceneId);
   const requestSceneScroll = useEditorStore((s) => s.requestSceneScroll);
   const projectId = useProjectStore((s) => s.activeProjectId);
-  const projectMode = useProjectStore((s) => s.activeProjectMode);
+  const projectMode = useActiveProject()?.mode ?? null;
 
   const chapter = useChapter(chapterId);
   const scenes = useScenesByChapter(chapterId);
