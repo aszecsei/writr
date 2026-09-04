@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import { HostMovedBanner } from "@/components/collab/HostMovedBanner";
+import { RolePill, SessionHeaderBar } from "@/components/collab/SessionHeader";
 import { DataSourceProvider } from "@/context/DataSourceContext";
 import { attachProjectReader } from "@/lib/collab/projectReader";
 import { collabSelectors, useCollabStore } from "@/store/collabStore";
@@ -67,14 +68,14 @@ export default function SharedProjectLayout({
   return (
     <DataSourceProvider source={{ kind: "shared" }}>
       <div className="flex h-screen flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-2 dark:border-neutral-800">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            Read-only project share
-          </span>
-          <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-            {role ?? "guest"}
-          </span>
-        </header>
+        <SessionHeaderBar
+          left={
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              Read-only project share
+            </span>
+          }
+          right={<RolePill role={role ?? "guest"} />}
+        />
         <HostMovedBanner />
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
