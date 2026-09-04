@@ -5,6 +5,7 @@ import type {
   ToolCallPayload,
   ToolDefinitionForModel,
 } from "../tool-calling";
+import { isTerminalToolStatus } from "../tool-calling";
 import type {
   AiResponse,
   AiStreamChunk,
@@ -373,14 +374,7 @@ export async function runAgent(
       // by toAiMessages, and orphans the matching tool_use id on the next
       // request.
       for (let k = 0; k < entries.length; k++) {
-        const status = entries[k].status;
-        if (
-          status === "executed" ||
-          status === "denied" ||
-          status === "error"
-        ) {
-          continue;
-        }
+        if (isTerminalToolStatus(entries[k].status)) continue;
         const cleaned: ToolCallEntry = {
           ...entries[k],
           status: "denied",

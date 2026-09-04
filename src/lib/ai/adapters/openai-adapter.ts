@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { match, P } from "ts-pattern";
-import type { AiMessage, AiToolCall, FinishReason } from "../types";
+import type {
+  AiMessage,
+  AiToolCall,
+  ContentPart,
+  FinishReason,
+} from "../types";
 import { extractTextContent, generateToolUseId } from "./helpers";
 import type {
   CompletionParams,
@@ -210,10 +215,10 @@ function toOpenAIMessage(
         // Always array-form for Anthropic so wire shape stays stable across
         // iterations, even when a previously-trailing message no longer
         // carries cache_control.
-        const parts: ContentPartLike[] =
+        const parts: ContentPart[] =
           typeof m.content === "string"
             ? [{ type: "text", text: m.content }]
-            : (m.content as ContentPartLike[]);
+            : m.content;
         return {
           role: m.role,
           content: parts,
@@ -239,13 +244,6 @@ function toOpenAIMessage(
       } as OpenAI.ChatCompletionMessageParam;
     });
 }
-
-// Local alias so we can pass ContentPart-shaped values through to OpenRouter
-// without forcing them through the OpenAI SDK's stricter ChatCompletionContent-
-// Part union. Anthropic accepts the richer shape (cache_control, etc.).
-type ContentPartLike =
-  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
-  | { type: "image_url"; image_url: { url: string } };
 
 function convertMessages(
   messages: AiMessage[],

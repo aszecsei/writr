@@ -11,11 +11,7 @@ import {
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import type { SavedPrompt } from "@/db/schemas";
 import { useUiStore } from "@/store/uiStore";
-
-export interface PendingImage {
-  url: string;
-  alt?: string;
-}
+import type { ChatImage } from "./chat/types";
 
 interface PromptInputProps {
   value: string;
@@ -27,8 +23,8 @@ interface PromptInputProps {
   onClearSelection?: () => void;
   savedPrompts: SavedPrompt[];
   onSelectPrompt: (body: string) => void;
-  pendingImages: PendingImage[];
-  onAddImage: (image: PendingImage) => void;
+  pendingImages: ChatImage[];
+  onAddImage: (image: ChatImage) => void;
   onRemoveImage: (index: number) => void;
   onOpenImagePicker: () => void;
 }

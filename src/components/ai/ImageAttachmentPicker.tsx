@@ -4,14 +4,14 @@ import { Globe, ImageIcon, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import type { Character, EntityImage, Location } from "@/db/schemas";
 import { Modal } from "../ui/Modal";
-import type { PendingImage } from "./PromptInput";
+import type { ChatImage } from "./chat/types";
 
 type PickerTab = "gallery" | "url" | "upload";
 
 interface ImageAttachmentPickerProps {
   characters: Character[];
   locations: Location[];
-  onSelect: (image: PendingImage) => void;
+  onSelect: (image: ChatImage) => void;
   onClose: () => void;
 }
 

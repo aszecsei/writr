@@ -1,5 +1,5 @@
-import type { ToolResult } from "@/lib/ai/tool-calling";
-import type { AiMessage, FinishReason } from "@/lib/ai/types";
+import type { ToolCallStatus, ToolResult } from "@/lib/ai/tool-calling";
+import type { AiMessage, AiToolCall, FinishReason } from "@/lib/ai/types";
 
 /**
  * Branded ID for chat messages. Stable across the lifetime of a chat session.
@@ -9,17 +9,6 @@ export type ChatMessageId = string & { readonly __brand: "ChatMessageId" };
 export interface ChatImage {
   url: string;
   alt?: string;
-}
-
-/**
- * Wire-format toolCall reference attached to an assistant turn. The runtime
- * details (status, result, displayName) live on the matching ToolChatMessage,
- * found by `id`. Mirrors `AiToolCall` from `@/lib/ai/types`.
- */
-export interface ToolCallRef {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
 }
 
 export interface UserChatMessage {
@@ -40,7 +29,7 @@ export interface AssistantChatMessage {
   content: string;
   reasoning?: string;
   /** Tool-call references the assistant emitted. Each id matches a following ToolChatMessage. */
-  toolCallRefs?: ToolCallRef[];
+  toolCallRefs?: AiToolCall[];
   durationMs?: number;
   finishReason?: FinishReason;
   /**
@@ -59,13 +48,6 @@ export interface AssistantChatMessage {
   createdAt: string;
 }
 
-export type ToolChatMessageStatus =
-  | "pending"
-  | "approved"
-  | "denied"
-  | "executed"
-  | "error";
-
 export interface ToolChatMessage {
   id: ChatMessageId;
   role: "tool";
@@ -74,7 +56,7 @@ export interface ToolChatMessage {
   toolName: string;
   displayName: string;
   input: Record<string, unknown>;
-  status: ToolChatMessageStatus;
+  status: ToolCallStatus;
   result?: ToolResult;
   /**
    * UI-only: for a `delegate` tool call, the sub-agent's own transcript. The

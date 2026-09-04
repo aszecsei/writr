@@ -3,7 +3,23 @@
 import { z } from "zod";
 import type { ProjectId } from "@/db/schemas";
 
-type ToolCallStatus = "pending" | "approved" | "denied" | "executed" | "error";
+export type ToolCallStatus =
+  | "pending"
+  | "approved"
+  | "denied"
+  | "executed"
+  | "error";
+
+const TERMINAL_TOOL_STATUSES = new Set<ToolCallStatus>([
+  "executed",
+  "denied",
+  "error",
+]);
+
+/** True once a tool call has reached a status the runner won't advance further. */
+export function isTerminalToolStatus(status: ToolCallStatus): boolean {
+  return TERMINAL_TOOL_STATUSES.has(status);
+}
 
 export interface ToolResult {
   success: boolean;

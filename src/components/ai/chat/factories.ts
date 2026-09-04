@@ -1,10 +1,9 @@
+import type { ToolCallStatus } from "@/lib/ai/tool-calling";
 import type {
   AssistantChatMessage,
   ChatImage,
   ChatMessageId,
-  ToolCallRef,
   ToolChatMessage,
-  ToolChatMessageStatus,
   UserChatMessage,
 } from "./types";
 
@@ -54,7 +53,7 @@ export function makePendingToolMessage(input: {
   toolName: string;
   displayName: string;
   toolInput: Record<string, unknown>;
-  status: ToolChatMessageStatus;
+  status: ToolCallStatus;
 }): ToolChatMessage {
   return {
     id: mintChatMessageId(),
@@ -66,12 +65,4 @@ export function makePendingToolMessage(input: {
     status: input.status,
     createdAt: nowIso(),
   };
-}
-
-export function toToolCallRef(call: {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-}): ToolCallRef {
-  return { id: call.id, name: call.name, arguments: call.arguments };
 }

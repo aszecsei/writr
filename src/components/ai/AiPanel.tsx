@@ -51,11 +51,15 @@ import {
   makeAiPanelAccessor,
   makeNestedPanelAccessor,
 } from "./chat/panelAccessor";
-import type { ChatMessage, ChatMessageId, ToolChatMessage } from "./chat/types";
+import type {
+  ChatImage,
+  ChatMessage,
+  ChatMessageId,
+  ToolChatMessage,
+} from "./chat/types";
 import { ImageAttachmentPicker } from "./ImageAttachmentPicker";
 import { MessageList } from "./MessageList";
 import { type PendingGate, PendingGatesBar } from "./PendingGatesBar";
-import type { PendingImage } from "./PromptInput";
 import { PromptInput } from "./PromptInput";
 import { PromptInspectorDialog } from "./PromptInspectorDialog";
 import { RetrievalPreviewDialog } from "./RetrievalPreviewDialog";
@@ -141,7 +145,7 @@ export function AiPanel() {
   const [editingMessageId, setEditingMessageId] =
     useState<ChatMessageId | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [pendingImages, setPendingImages] = useState<ChatImage[]>([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [pendingToolApproval, setPendingToolApproval] = useState(false);
   const [showRetrievalPreview, setShowRetrievalPreview] = useState(false);
