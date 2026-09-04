@@ -70,11 +70,7 @@ export function DictionaryManagerDialog() {
   }
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Dictionary Manager
-      </h2>
-
+    <Modal onClose={closeModal} maxWidth="max-w-lg" title="Dictionary Manager">
       {/* Tab bar */}
       <div className="mt-4 flex gap-2">
         <button

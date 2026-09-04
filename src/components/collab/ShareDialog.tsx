@@ -41,7 +41,19 @@ export function ShareDialog() {
   };
 
   return (
-    <Modal onClose={closeModal} maxWidth="max-w-lg">
+    <Modal
+      onClose={closeModal}
+      maxWidth="max-w-lg"
+      title="Share session"
+      description={
+        <>
+          Generate three share links — one per role. Anyone with a link can join
+          while your tab is open. The relay never sees your content; the host
+          identity that gates the handshake lives only in the link's{" "}
+          <code>#h=</code> fragment.
+        </>
+      }
+    >
       <ShareDialogContent
         status={status}
         peerCount={peerCount}
@@ -83,18 +95,6 @@ export function ShareDialogContent({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-          Share session
-        </h2>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          Generate three share links — one per role. Anyone with a link can join
-          while your tab is open. The relay never sees your content; the host
-          identity that gates the handshake lives only in the link's{" "}
-          <code>#h=</code> fragment.
-        </p>
-      </div>
-
       {errorMessage && (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {errorMessage}

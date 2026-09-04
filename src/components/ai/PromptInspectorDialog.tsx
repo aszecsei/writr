@@ -20,11 +20,8 @@ export function PromptInspectorDialog({
   };
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-2xl">
+    <Modal onClose={onClose} maxWidth="max-w-2xl" title="Prompt Inspector">
       <div className="flex flex-col max-h-[85vh]">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-          Prompt Inspector
-        </h2>
         <div className="flex-1 overflow-y-auto space-y-4">
           {promptMessages.map((msg, i) => (
             /* biome-ignore lint/suspicious/noArrayIndexKey: does not change order */

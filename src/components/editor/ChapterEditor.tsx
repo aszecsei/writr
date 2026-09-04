@@ -3,6 +3,7 @@
 
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Spinner } from "@/components/ui/Spinner";
 import { updateChapterContent, updateCommentPositions } from "@/db/operations";
 import type { ChapterId, Comment, ProjectId, SceneId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
@@ -733,7 +734,7 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   if (!chapter) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+        <Spinner />
       </div>
     );
   }

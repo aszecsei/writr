@@ -4,6 +4,8 @@ import { Download, Loader2, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import {
+  CHECKBOX_CLASS,
+  LEGEND_CLASS,
   RADIO_ACTIVE,
   RADIO_BASE,
   RADIO_INACTIVE,
@@ -92,18 +94,19 @@ export function ExportDialog() {
   }
 
   return (
-    <Modal onClose={closeModal}>
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        <Download size={18} />
-        Export
-      </h2>
-
+    <Modal
+      onClose={closeModal}
+      title={
+        <span className="inline-flex items-center gap-2">
+          <Download size={18} />
+          Export
+        </span>
+      }
+    >
       <div className="mt-5 space-y-5">
         {/* Format */}
         <fieldset>
-          <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Format
-          </legend>
+          <legend className={LEGEND_CLASS}>Format</legend>
           <div className="mt-2 flex gap-2">
             {(isScreenplay
               ? SCREENPLAY_FORMAT_OPTIONS
@@ -127,9 +130,7 @@ export function ExportDialog() {
         {/* Scope */}
         {hasChapter && (
           <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Scope
-            </legend>
+            <legend className={LEGEND_CLASS}>Scope</legend>
             <div className="mt-2 flex gap-2">
               {(
                 [
@@ -162,9 +163,7 @@ export function ExportDialog() {
         {/* Options (prose only — screenplay PDF uses standard formatting) */}
         {!isScreenplay && (
           <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              Options
-            </legend>
+            <legend className={LEGEND_CLASS}>Options</legend>
             <div className="mt-2 space-y-2">
               {effectiveScope === "book" && (
                 <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
@@ -172,7 +171,7 @@ export function ExportDialog() {
                     type="checkbox"
                     checked={includeTitlePage}
                     onChange={(e) => setIncludeTitlePage(e.target.checked)}
-                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                    className={CHECKBOX_CLASS}
                   />
                   Include title page
                 </label>
@@ -182,7 +181,7 @@ export function ExportDialog() {
                   type="checkbox"
                   checked={includeChapterHeadings}
                   onChange={(e) => setIncludeChapterHeadings(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                  className={CHECKBOX_CLASS}
                 />
                 Include {getTerm(activeProjectMode, "chapter").toLowerCase()}{" "}
                 headings
@@ -193,7 +192,7 @@ export function ExportDialog() {
                     type="checkbox"
                     checked={pageBreaks}
                     onChange={(e) => setPageBreaks(e.target.checked)}
-                    className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                    className={CHECKBOX_CLASS}
                   />
                   Page breaks between{" "}
                   {getTerm(activeProjectMode, "chapters").toLowerCase()}

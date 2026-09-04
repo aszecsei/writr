@@ -2,6 +2,8 @@
 
 import { ChevronDown, ChevronRight, RotateCcw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Fieldset } from "@/components/ui/Fieldset";
+import { CHECKBOX_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { updateAppSettings } from "@/db/operations";
 import { DEFAULT_DISABLED_LINT_KINDS } from "@/db/schemas";
@@ -10,8 +12,7 @@ import { type GrammarRuleInfo, getGrammarService } from "@/lib/grammar";
 import { GRAMMAR_CATEGORIES } from "@/lib/grammar/categories";
 import { useUiStore } from "@/store/uiStore";
 
-const CHECKBOX_CLASS =
-  "mt-0.5 h-4 w-4 shrink-0 rounded border-neutral-300 dark:border-neutral-600";
+const RULE_CHECKBOX_CLASS = `mt-0.5 shrink-0 ${CHECKBOX_CLASS}`;
 
 export function GrammarRulesDialog() {
   const modal = useUiStore((s) => s.modal);
@@ -110,10 +111,7 @@ export function GrammarRulesDialog() {
       </p>
 
       {/* Categories */}
-      <fieldset className="mt-4">
-        <legend className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Categories
-        </legend>
+      <Fieldset legend="Categories" className="mt-4">
         <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
           {GRAMMAR_CATEGORIES.map((category) => (
             <label
@@ -126,7 +124,7 @@ export function GrammarRulesDialog() {
                 onChange={(e) =>
                   toggleCategory(category.kind, e.target.checked)
                 }
-                className={CHECKBOX_CLASS}
+                className={RULE_CHECKBOX_CLASS}
               />
               <span>
                 <span className="font-medium">{category.label}</span>
@@ -137,7 +135,7 @@ export function GrammarRulesDialog() {
             </label>
           ))}
         </div>
-      </fieldset>
+      </Fieldset>
 
       {/* Individual rules */}
       <div className="mt-6">
@@ -200,7 +198,7 @@ export function GrammarRulesDialog() {
                               onChange={(e) =>
                                 toggleRule(rule, e.target.checked)
                               }
-                              className={CHECKBOX_CLASS}
+                              className={RULE_CHECKBOX_CLASS}
                             />
                             <span>
                               <span className="font-medium">{rule.key}</span>

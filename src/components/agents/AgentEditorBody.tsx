@@ -16,8 +16,10 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   BUTTON_CANCEL,
   BUTTON_PRIMARY,
+  CHECKBOX_CLASS,
   INPUT_CLASS,
   LABEL_CLASS,
+  LEGEND_CLASS,
 } from "@/components/ui/form-styles";
 import { TriStateCheckbox } from "@/components/ui/TriStateCheckbox";
 import {
@@ -306,7 +308,7 @@ export function AgentEditorBody({
           </label>
 
           <fieldset className="rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
-            <legend className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            <legend className={`px-1 ${LEGEND_CLASS}`}>
               Allowed Tools ({allowedToolIds.size})
             </legend>
             <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
@@ -412,7 +414,7 @@ export function AgentEditorBody({
           </fieldset>
 
           <fieldset className="rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
-            <legend className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+            <legend className={`px-1 ${LEGEND_CLASS}`}>
               Model Override (optional)
             </legend>
             <label className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -420,7 +422,7 @@ export function AgentEditorBody({
                 type="checkbox"
                 checked={overrideEnabled}
                 onChange={(e) => setOverrideEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-neutral-300 dark:border-neutral-600"
+                className={CHECKBOX_CLASS}
               />
               Use a specific provider/model for this agent
             </label>

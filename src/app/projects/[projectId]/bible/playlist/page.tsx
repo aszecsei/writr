@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { DragHandle } from "@/components/bible/DragHandle";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import {
   createPlaylistTrack,
   deletePlaylistTrack,
@@ -130,7 +131,7 @@ export default function PlaylistPage() {
           <button
             type="button"
             onClick={handlePlayAll}
-            className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+            className={`flex items-center gap-2 ${BUTTON_PRIMARY}`}
           >
             <Play size={14} />
             Play All
@@ -150,7 +151,7 @@ export default function PlaylistPage() {
           <button
             type="submit"
             disabled={!newUrl.trim() || isAdding}
-            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+            className={BUTTON_PRIMARY}
           >
             {isAdding ? "Adding..." : "Add"}
           </button>

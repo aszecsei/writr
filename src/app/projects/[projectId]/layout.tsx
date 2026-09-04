@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import { HostProjectMirror } from "@/components/collab/HostProjectMirror";
 import { AppShell } from "@/components/layout/AppShell";
+import { Spinner } from "@/components/ui/Spinner";
 import type { ProjectId } from "@/db/schemas";
 import { useProject } from "@/hooks/data/useProject";
 import { collabSelectors, useCollabStore } from "@/store/collabStore";
@@ -29,7 +30,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
   if (project === undefined) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-primary-600 dark:border-neutral-700 dark:border-t-primary-400" />
+        <Spinner />
       </div>
     );
   }

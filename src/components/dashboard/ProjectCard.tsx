@@ -2,6 +2,7 @@
 
 import { Calendar } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/Badge";
 import { ProjectCover } from "@/components/ui/ProjectCover";
 import type { Project, ProjectId } from "@/db/schemas";
 
@@ -33,9 +34,10 @@ export function ProjectCard({ project, onContextMenu }: ProjectCardProps) {
             {project.title}
           </h3>
           {project.genre && (
-            <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-              {project.genre}
-            </span>
+            <Badge
+              label={project.genre}
+              className="shrink-0 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+            />
           )}
         </div>
         {project.description && (

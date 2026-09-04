@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import { createRelationship } from "@/db/operations";
 import type {
@@ -51,23 +52,17 @@ export function AddRelationshipDialog({
   }
 
   return (
-    <Modal onClose={onClose}>
-      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Add Relationship
-      </h3>
+    <Modal onClose={onClose} title="Add Relationship">
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
-          <label
-            htmlFor="rel-source"
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
+          <label htmlFor="rel-source" className={LABEL_CLASS}>
             From Character
           </label>
           <select
             id="rel-source"
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value as CharacterId | "")}
-            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+            className={INPUT_CLASS}
           >
             <option value="">Select character...</option>
             {characters.map((c) => (
@@ -79,17 +74,14 @@ export function AddRelationshipDialog({
         </div>
 
         <div>
-          <label
-            htmlFor="rel-target"
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
+          <label htmlFor="rel-target" className={LABEL_CLASS}>
             To Character
           </label>
           <select
             id="rel-target"
             value={targetId}
             onChange={(e) => setTargetId(e.target.value as CharacterId | "")}
-            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+            className={INPUT_CLASS}
           >
             <option value="">Select character...</option>
             {characters
@@ -103,17 +95,14 @@ export function AddRelationshipDialog({
         </div>
 
         <div>
-          <label
-            htmlFor="rel-type"
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
+          <label htmlFor="rel-type" className={LABEL_CLASS}>
             Relationship Type
           </label>
           <select
             id="rel-type"
             value={type}
             onChange={(e) => setType(e.target.value as RelationshipType)}
-            className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+            className={INPUT_CLASS}
           >
             {relationshipTypeList.map((rt) => (
               <option key={rt.value} value={rt.value}>
@@ -125,10 +114,7 @@ export function AddRelationshipDialog({
 
         {type === "custom" && (
           <div>
-            <label
-              htmlFor="rel-custom-label"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-            >
+            <label htmlFor="rel-custom-label" className={LABEL_CLASS}>
               Custom Label
             </label>
             <input
@@ -137,7 +123,7 @@ export function AddRelationshipDialog({
               value={customLabel}
               onChange={(e) => setCustomLabel(e.target.value)}
               placeholder="e.g. Mentor, Rival..."
-              className="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
+              className={INPUT_CLASS}
             />
           </div>
         )}
@@ -146,13 +132,8 @@ export function AddRelationshipDialog({
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className={BUTTON_CANCEL}>
-            Cancel
-          </button>
-          <button type="submit" className={BUTTON_PRIMARY}>
-            Add
-          </button>
+        <div className="pt-2">
+          <DialogFooter onCancel={onClose} submitLabel="Add" />
         </div>
       </form>
     </Modal>

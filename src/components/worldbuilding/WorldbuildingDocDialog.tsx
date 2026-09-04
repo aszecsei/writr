@@ -1,6 +1,9 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
+import { Modal } from "@/components/ui/Modal";
 import {
   deleteWorldbuildingDoc,
   updateWorldbuildingDoc,
@@ -95,98 +98,67 @@ export function WorldbuildingDocDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      role="dialog"
-      aria-modal="true"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
-        <form
-          onSubmit={handleSave}
-          className="flex flex-1 flex-col overflow-hidden"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-700">
+    <Modal onClose={onClose} maxWidth="max-w-2xl">
+      <form onSubmit={handleSave} className="space-y-4">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full bg-transparent text-lg font-bold text-neutral-900 outline-none dark:text-neutral-100"
+          placeholder="Document Title"
+        />
+        <div className="flex gap-4">
+          <label className={`flex-1 ${LABEL_CLASS}`}>
+            Parent
+            <select
+              value={parentDocId ?? ""}
+              onChange={(e) => handleParentChange(e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">None (root level)</option>
+              {selectableDocs.map(({ doc: d, depth }) => (
+                <option key={d.id} value={d.id}>
+                  {"\u00A0\u00A0".repeat(depth)}
+                  {d.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={`flex-1 ${LABEL_CLASS}`}>
+            Tags
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="flex-1 bg-transparent text-lg font-bold text-neutral-900 outline-none dark:text-neutral-100"
-              placeholder="Document Title"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              className={INPUT_CLASS}
+              placeholder="comma-separated"
             />
-            <div className="ml-4 flex gap-2">
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-md bg-primary-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-            <div className="flex gap-4">
-              <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Parent
-                <select
-                  value={parentDocId ?? ""}
-                  onChange={(e) => handleParentChange(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                >
-                  <option value="">None (root level)</option>
-                  {selectableDocs.map(({ doc: d, depth }) => (
-                    <option key={d.id} value={d.id}>
-                      {"\u00A0\u00A0".repeat(depth)}
-                      {d.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Tags
-                <input
-                  type="text"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  placeholder="comma-separated"
-                />
-              </label>
-            </div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Content
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={16}
-                className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-mono dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                placeholder="Write your worldbuilding content here (Markdown supported)... Leave empty to use as a section heading."
-              />
-            </label>
-          </div>
-        </form>
-      </div>
-    </div>
+          </label>
+        </div>
+        <label className={LABEL_CLASS}>
+          Content
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={16}
+            className={`font-mono ${INPUT_CLASS}`}
+            placeholder="Write your worldbuilding content here (Markdown supported)... Leave empty to use as a section heading."
+          />
+        </label>
+        <DialogFooter
+          onCancel={onClose}
+          submitLabel="Save"
+          left={
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              Delete
+            </button>
+          }
+        />
+      </form>
+    </Modal>
   );
 }

@@ -2,7 +2,9 @@
 
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { useState } from "react";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { DialogFooter } from "@/components/ui/DialogFooter";
+import { LABEL_CLASS } from "@/components/ui/form-styles";
 import { Modal } from "@/components/ui/Modal";
 import {
   type Backup,
@@ -116,11 +118,7 @@ export function ImportBackupDialog({
   }
 
   return (
-    <Modal onClose={onClose} maxWidth="max-w-md">
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Import Backup
-      </h2>
-
+    <Modal onClose={onClose} maxWidth="max-w-md" title="Import Backup">
       <div className="mt-4 space-y-4">
         <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
           <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -138,10 +136,7 @@ export function ImportBackupDialog({
         </div>
 
         <div>
-          <label
-            htmlFor="conflict-resolution"
-            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
+          <label htmlFor="conflict-resolution" className={LABEL_CLASS}>
             If a project already exists:
           </label>
           <select
@@ -185,23 +180,15 @@ export function ImportBackupDialog({
           </label>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isImporting}
-            className={BUTTON_CANCEL}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={isImporting}
-            className={BUTTON_PRIMARY}
-          >
-            {isImporting ? "Importing..." : "Import"}
-          </button>
+        <div className="pt-2">
+          <DialogFooter
+            onCancel={onClose}
+            cancelDisabled={isImporting}
+            submitType="button"
+            onSubmit={handleImport}
+            submitDisabled={isImporting}
+            submitChildren={isImporting ? "Importing..." : "Import"}
+          />
         </div>
       </div>
     </Modal>

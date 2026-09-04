@@ -25,6 +25,7 @@ import {
 } from "@/components/family-tree/CharacterNode";
 import { RelationshipEdge } from "@/components/family-tree/RelationshipEdge";
 import { RelationshipList } from "@/components/family-tree/RelationshipList";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
 import type { ProjectId } from "@/db/schemas";
 import {
   useCharactersByProject,
@@ -103,7 +104,7 @@ function FamilyTreeCanvas() {
         </p>
         <Link
           href={`/projects/${params.projectId}/bible/characters`}
-          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          className={BUTTON_PRIMARY}
         >
           Go to Characters
         </Link>
@@ -163,7 +164,7 @@ function FamilyTreeCanvas() {
         <button
           type="button"
           onClick={() => setShowDialog(true)}
-          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-primary-700 dark:bg-primary-500 dark:text-white dark:hover:bg-primary-400"
+          className={`shadow-md ${BUTTON_PRIMARY}`}
         >
           Add Relationship
         </button>

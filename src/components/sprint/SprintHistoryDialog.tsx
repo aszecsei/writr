@@ -1,7 +1,7 @@
 "use client";
 
 import { History, Trash2 } from "lucide-react";
-import { BUTTON_CANCEL } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
 import { Modal } from "@/components/ui/Modal";
 import { deleteSprint } from "@/db/operations";
 import type { WritingSprint } from "@/db/schemas";
@@ -156,14 +156,8 @@ export function SprintHistoryDialog() {
       </div>
 
       {/* Close button */}
-      <div className="mt-5 flex justify-end">
-        <button
-          type="button"
-          onClick={closeHistoryModal}
-          className={BUTTON_CANCEL}
-        >
-          Close
-        </button>
+      <div className="mt-5">
+        <CloseFooter onClose={closeHistoryModal} />
       </div>
     </Modal>
   );

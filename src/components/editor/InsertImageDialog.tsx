@@ -53,11 +53,7 @@ export function InsertImageDialog({ onInsert }: InsertImageDialogProps) {
   if (!isOpen) return null;
 
   return (
-    <Modal onClose={handleClose} maxWidth="max-w-sm">
-      <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-        Insert Image
-      </h3>
-
+    <Modal onClose={handleClose} maxWidth="max-w-sm" title="Insert Image">
       <div className="mt-4 space-y-4">
         <div>
           <label htmlFor="image-url" className={LABEL_CLASS}>

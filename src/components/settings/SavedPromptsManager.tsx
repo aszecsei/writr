@@ -3,7 +3,8 @@
 import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
-import { BUTTON_CANCEL, BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { BUTTON_PRIMARY } from "@/components/ui/button-styles";
+import { CloseFooter } from "@/components/ui/CloseFooter";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DialogFooter } from "@/components/ui/DialogFooter";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/form-styles";
@@ -208,10 +209,8 @@ export function SavedPromptsManager() {
         />
       )}
 
-      <div className="mt-4 flex justify-end">
-        <button type="button" onClick={closeModal} className={BUTTON_CANCEL}>
-          Close
-        </button>
+      <div className="mt-4">
+        <CloseFooter onClose={closeModal} />
       </div>
     </Modal>
   );
