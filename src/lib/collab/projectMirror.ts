@@ -5,7 +5,6 @@ import {
   getProjectTable,
   PROJECT_DOC_VERSION,
   type ProjectDocEntity,
-  type ProjectDocMeta,
   type ProjectDocTable,
   upsertEntity,
   writeProjectMeta,
@@ -21,7 +20,7 @@ export type ProjectSnapshot = {
   [K in ProjectDocTable]: ProjectDocEntity<K>[];
 };
 
-export interface ProjectMirrorOptions {
+interface ProjectMirrorOptions {
   doc: Y.Doc;
   projectId: ProjectId;
 }
@@ -132,21 +131,6 @@ export class ProjectMirror {
     writeProjectMeta(this.doc, { activeChapterId: id }, MIRROR_ORIGIN);
   }
 
-  bumpRevision(): void {
-    if (this.destroyed) return;
-    this.revision += 1;
-    writeProjectMeta(this.doc, { revision: this.revision }, MIRROR_ORIGIN);
-  }
-
-  /**
-   * Drop in-memory hashes so the next syncTable call re-emits everything.
-   * Used after rotate-stream + reseed compactions.
-   */
-  resetHashes(): void {
-    this.hashes.clear();
-    this.projectHash = null;
-  }
-
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -195,5 +179,3 @@ const TABLE_KEYS: ProjectDocTable[] = [
   "outlineRows",
   "outlineCells",
 ];
-
-export type { ProjectDocMeta };

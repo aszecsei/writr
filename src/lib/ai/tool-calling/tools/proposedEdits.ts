@@ -21,7 +21,6 @@ import { fail, ok } from "./helpers";
 
 export const proposeEditTool = defineTool({
   id: "propose_edit",
-  category: "edit",
   name: "Propose Edit",
   description:
     "Propose a developmental edit to a chapter. " +
@@ -142,7 +141,6 @@ export const proposeEditTool = defineTool({
       .exhaustive();
 
     return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
-      mode: "chat",
       chapterId: params.chapterId,
       chapterTitle: chapter.title,
       kind: params.kind,

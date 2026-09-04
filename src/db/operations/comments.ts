@@ -1,10 +1,5 @@
 import { db } from "../database";
-import {
-  type ChapterId,
-  type Comment,
-  type CommentId,
-  CommentSchema,
-} from "../schemas";
+import { type Comment, type CommentId, CommentSchema } from "../schemas";
 import { generateId, now, stripUndefined } from "./helpers";
 
 // ─── Comments ────────────────────────────────────────────────────────

@@ -59,4 +59,3 @@ export async function putIndexedChunk(
 export async function deleteIndexedChunk(id: IndexedChunkId): Promise<void> {
   await db.indexedChunks.delete(id);
 }
-

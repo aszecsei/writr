@@ -3,12 +3,7 @@ import type { ChapterId } from "@/db/schemas";
 import { chunkTextForTts } from "@/lib/tts/chunk";
 import { hashTtsText } from "@/lib/tts/extract";
 
-type TtsPlaybackState =
-  | "idle"
-  | "loading"
-  | "playing"
-  | "paused"
-  | "error";
+type TtsPlaybackState = "idle" | "loading" | "playing" | "paused" | "error";
 
 interface StartArgs {
   chapterId: ChapterId;

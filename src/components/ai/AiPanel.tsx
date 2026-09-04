@@ -21,20 +21,12 @@ import {
   useCharactersByProject,
   useGuardrailsByProject,
   useLocationsByProject,
-  useRelationshipsByProject,
   useStyleGuideByProject,
-  useTimelineByProject,
-  useWorldbuildingDocsByProject,
 } from "@/hooks/data/useBibleEntries";
 import { useChapter, useManuscriptChapters } from "@/hooks/data/useChapter";
 import { useLoreRetrieval } from "@/hooks/data/useLoreRetrieval";
 import { useProject } from "@/hooks/data/useProject";
 import { useAvailableSavedPrompts } from "@/hooks/data/useSavedPrompts";
-import {
-  useOutlineGridCells,
-  useOutlineGridColumns,
-  useOutlineGridRows,
-} from "@/hooks/outline/useOutlineGrid";
 import {
   type Agent,
   makeChatAgent,
@@ -123,12 +115,6 @@ export function AiPanel() {
   const locations = useLocationsByProject(projectId);
   const styleGuide = useStyleGuideByProject(projectId);
   const guardrails = useGuardrailsByProject(projectId);
-  const timelineEvents = useTimelineByProject(projectId);
-  const worldbuildingDocs = useWorldbuildingDocsByProject(projectId);
-  const relationships = useRelationshipsByProject(projectId);
-  const outlineGridColumns = useOutlineGridColumns(projectId);
-  const outlineGridRows = useOutlineGridRows(projectId);
-  const outlineGridCells = useOutlineGridCells(projectId);
   const chapters = useManuscriptChapters(projectId);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
@@ -216,20 +202,12 @@ export function AiPanel() {
       projectDescription: project?.description ?? "",
       genre: project?.genre ?? "",
       projectMode: activeProjectMode ?? "prose",
-      characters: characters ?? [],
-      locations: locations ?? [],
       styleGuide: (styleGuide ?? []).filter((e) =>
         isActiveInProject(e, projectId),
       ),
       guardrails: (guardrails ?? []).filter((e) =>
         isActiveInProject(e, projectId),
       ),
-      timelineEvents: timelineEvents ?? [],
-      worldbuildingDocs: worldbuildingDocs ?? [],
-      relationships: relationships ?? [],
-      outlineGridColumns: outlineGridColumns ?? [],
-      outlineGridRows: outlineGridRows ?? [],
-      outlineGridCells: outlineGridCells ?? [],
       chapters: chapters ?? [],
       currentChapterId: activeChapter?.id,
       currentChapterTitle: activeChapter?.title,
@@ -241,16 +219,8 @@ export function AiPanel() {
   }, [
     projectId,
     project,
-    characters,
-    locations,
     styleGuide,
     guardrails,
-    timelineEvents,
-    worldbuildingDocs,
-    relationships,
-    outlineGridColumns,
-    outlineGridRows,
-    outlineGridCells,
     chapters,
     activeChapter,
     selectedText,

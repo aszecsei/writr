@@ -8,7 +8,8 @@ Real-time multi-user editing, end-to-end encrypted. The feature is **gated on th
 src/lib/collab/         Client library (encryption, transport, session lifecycle)
 src/components/collab/  UI: ShareDialog, CollabBanner, GuestSessionShell, …
 src/store/collabStore   Session state, peer identity, approval queue
-src/hooks/collab/       useCollabManager, useCommentsAdapter, useCommentsMeta
+src/hooks/collab/       useCollabManager, useCommentsMeta
+src/hooks/editor/       useCommentsAdapter
 collab/                 Standalone WebSocket relay (separate Node service)
 ```
 
@@ -20,7 +21,7 @@ collab/                 Standalone WebSocket relay (separate Node service)
 - **`transport.ts`** — WebSocket transport with reconnect/backoff.
 - **`protocol.ts`** — Wire-format messages.
 - **`client.ts`** — High-level facade used by hooks and components.
-- **`attach.ts`** — Wires a Y.js doc into a TipTap editor; backs `CollabProseEditor`.
+- **`attach.ts`** — Wires a `CollabClient` into the collab store; used by `useCollabManager`.
 - **`comments.ts`** — Comment sync layer that keeps Dexie comments aligned with Y.js positions.
 - **`y-position.ts`** — ProseMirror ↔ Y.js position mapping.
 - **`identity.ts`, `config.ts`** — Display name/color, env-driven config.
@@ -40,7 +41,7 @@ The relay has **no persistent storage**; rooms exist only in memory and clear on
 
 ## Editor integration
 
-When a session is active, `ChapterEditor` swaps to `CollabProseEditor`, which uses `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-caret` over a Y.js doc. Markdown round-tripping still happens for save/load; collab only changes the in-memory transport.
+`ChapterEditor` (the host's local view) binds its own `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-caret` extensions over the session's Y.js doc when hosting. `CollabProseEditor` is guest-only — it backs the `/shared/[uuid]` route. Markdown round-tripping still happens for save/load; collab only changes the in-memory transport.
 
 ## UI flows
 

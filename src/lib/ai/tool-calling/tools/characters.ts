@@ -11,7 +11,6 @@ import { fail, ok } from "./helpers";
 
 export const createCharacterTool = defineTool({
   id: "create_character",
-  category: "character",
   name: "Create Character",
   description:
     "Create a new character in the story bible. Use when the user asks to add a character.",
@@ -68,7 +67,6 @@ export const createCharacterTool = defineTool({
 
 export const updateCharacterTool = defineTool({
   id: "update_character",
-  category: "character",
   name: "Update Character",
   description:
     "Update fields on an existing character. Only include fields to change. " +
@@ -127,7 +125,6 @@ export const updateCharacterTool = defineTool({
 
 export const deleteCharacterTool = defineTool({
   id: "delete_character",
-  category: "character",
   name: "Delete Character",
   description:
     "Delete a character from the story bible. Also removes the character's " +

@@ -10,22 +10,6 @@ export async function generateRoomKey(): Promise<RoomKey> {
   ]);
 }
 
-export async function exportRoomKey(key: RoomKey): Promise<string> {
-  const raw = await crypto.subtle.exportKey("raw", key);
-  return bytesToBase64url(new Uint8Array(raw));
-}
-
-export async function importRoomKey(encoded: string): Promise<RoomKey> {
-  const raw = base64urlToBytes(encoded);
-  return crypto.subtle.importKey(
-    "raw",
-    raw as BufferSource,
-    { name: "AES-GCM" },
-    true,
-    ["encrypt", "decrypt"],
-  );
-}
-
 export async function encryptPayload(
   key: CryptoKey,
   plaintext: Uint8Array,
@@ -60,7 +44,7 @@ export async function decryptPayload(
   return new Uint8Array(plaintext);
 }
 
-export interface X25519Keypair {
+interface X25519Keypair {
   priv: CryptoKey;
   pub: CryptoKey;
   pubEncoded: string;
@@ -76,18 +60,6 @@ export async function generateX25519Keypair(): Promise<X25519Keypair> {
     pub: pair.publicKey,
     pubEncoded: bytesToBase64url(new Uint8Array(rawPub)),
   };
-}
-
-export async function exportX25519PrivJwk(
-  priv: CryptoKey,
-): Promise<JsonWebKey> {
-  return crypto.subtle.exportKey("jwk", priv);
-}
-
-export async function importX25519PrivJwk(jwk: JsonWebKey): Promise<CryptoKey> {
-  return crypto.subtle.importKey("jwk", jwk, { name: "X25519" }, true, [
-    "deriveBits",
-  ]);
 }
 
 export async function importX25519PubFromEncoded(
@@ -160,7 +132,7 @@ export async function unwrapRoomKey(
 
 export type ShareMode = "chapter" | "project";
 
-export interface ShareLinkParams {
+interface ShareLinkParams {
   origin: string;
   roomUuid: string;
   token: string;

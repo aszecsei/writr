@@ -10,16 +10,8 @@ function emptyContext(overrides?: Partial<AiContext>): AiContext {
     projectTitle: "Test Novel",
     projectDescription: "",
     genre: "",
-    characters: [],
-    locations: [],
     styleGuide: [],
     guardrails: [],
-    timelineEvents: [],
-    worldbuildingDocs: [],
-    relationships: [],
-    outlineGridColumns: [],
-    outlineGridRows: [],
-    outlineGridCells: [],
     chapters: [],
     ...overrides,
   };
@@ -228,10 +220,10 @@ describe("buildMessages", () => {
   });
 
   it("keeps history wire shape byte-stable across tool-calling iterations", () => {
-    // Regression: the previously-trailing message must NOT flip from array
-    // form (with cache_control) on iter N to string form (no cache_control)
-    // on iter N+1 — Anthropic's prompt cache is a prefix-byte match, so a
-    // shape flip silently invalidates the conversation-prefix cache between
+    // The message trailing in iteration N must NOT flip from array form
+    // (with cache_control) to string form (no cache_control) in iteration
+    // N+1 — Anthropic's prompt cache is a prefix-byte match, so a shape flip
+    // silently invalidates the conversation-prefix cache between
     // tool-calling iterations.
     const userQ1: AiMessage = { role: "user", content: "what's in chapter 3?" };
     const iter1 = buildMessages("agent prompt", emptyContext(), [userQ1], {
@@ -318,16 +310,8 @@ function baseContext(): AiContext {
     projectDescription: "",
     genre: "",
     projectMode: "prose",
-    characters: [],
-    locations: [],
     styleGuide: [],
     guardrails: [],
-    timelineEvents: [],
-    worldbuildingDocs: [],
-    relationships: [],
-    outlineGridColumns: [],
-    outlineGridRows: [],
-    outlineGridCells: [],
     chapters: [],
   };
 }

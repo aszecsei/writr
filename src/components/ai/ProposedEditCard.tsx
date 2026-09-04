@@ -7,11 +7,10 @@ import type { ChapterId } from "@/db/schemas";
 import { useEditorStore } from "@/store/editorStore";
 
 /**
- * Shape returned by the chat-mode branch of the propose_edit tool.
- * Mirrors the `data` payload built in tools/proposedEdits.ts.
+ * Shape returned by the propose_edit tool. Mirrors the `data` payload built
+ * in tools/proposedEdits.ts.
  */
 export interface ProposedEditChatPayload {
-  mode: "chat";
   chapterId: ChapterId;
   chapterTitle: string;
   kind: "replace" | "insert_at" | "append" | "full_chapter";

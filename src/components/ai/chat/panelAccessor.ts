@@ -77,7 +77,7 @@ interface MakeAiPanelAccessorOptions {
   /**
    * Stable ref to the latest `messages` state. Read once at accessor creation
    * to seed the canonical buffer. After that, the buffer is the source of
-   * truth for the wire format — the ref is no longer consulted.
+   * truth for the wire format; the ref only seeds it once.
    */
   messagesRef: MutableRefObject<ChatMessage[]>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;

@@ -4,7 +4,6 @@ import { useCallback, useEffect } from "react";
 import { attachClientToStore } from "@/lib/collab/attach";
 import type { CollabClient } from "@/lib/collab/client";
 import { getCollabBaseUrl, isCollabEnabled } from "@/lib/collab/config";
-import { exportX25519PrivJwk, importX25519PrivJwk } from "@/lib/collab/crypto";
 import {
   attachJoinRequestHandler,
   type JoinRequestHandle,
@@ -23,7 +22,7 @@ export interface CollabIdentityInput {
   color: string;
 }
 
-export interface StartAsHostOptions {
+interface StartAsHostOptions {
   /** Origin used when generating shareable URLs. Defaults to window.location.origin. */
   appOrigin?: string;
   signal?: AbortSignal;
@@ -39,7 +38,7 @@ export interface StartAsHostOptions {
   projectMode?: boolean;
 }
 
-export interface JoinAsGuestOptions {
+interface JoinAsGuestOptions {
   roomUuid: string;
   token: string;
   hostPubEncoded: string;
@@ -63,7 +62,7 @@ export interface UseCollabManagerOptions {
   ownsLifecycle?: boolean;
 }
 
-export interface UseCollabManager {
+interface UseCollabManager {
   /** False when NEXT_PUBLIC_COLLAB_URL is unset. UI should treat this as "feature off". */
   enabled: boolean;
   startAsHost: (opts?: StartAsHostOptions) => Promise<void>;
@@ -96,47 +95,6 @@ export class CollabAlreadyActiveError extends Error {
   }
 }
 
-const HOST_KEY_STORAGE_PREFIX = "writr.collab.host.";
-
-interface StoredHostKey {
-  jwk: JsonWebKey;
-  pubEncoded: string;
-  roomUuid: string;
-}
-
-function hostKeyStorageKey(roomUuid: string): string {
-  return `${HOST_KEY_STORAGE_PREFIX}${roomUuid}`;
-}
-
-async function persistHostKey(
-  roomUuid: string,
-  priv: CryptoKey,
-  pubEncoded: string,
-): Promise<void> {
-  if (typeof window === "undefined" || !window.sessionStorage) return;
-  try {
-    const jwk = await exportX25519PrivJwk(priv);
-    const payload: StoredHostKey = { jwk, pubEncoded, roomUuid };
-    window.sessionStorage.setItem(
-      hostKeyStorageKey(roomUuid),
-      JSON.stringify(payload),
-    );
-  } catch {
-    // sessionStorage can throw in private mode / quota exceeded — non-fatal.
-  }
-}
-
-function clearHostKey(roomUuid: string | null): void {
-  if (typeof window === "undefined" || !window.sessionStorage) return;
-  if (roomUuid) {
-    try {
-      window.sessionStorage.removeItem(hostKeyStorageKey(roomUuid));
-    } catch {
-      // ignore
-    }
-  }
-}
-
 /**
  * The imperative connection state for the collab session, shared across
  * every mounted `useCollabManager()` instance. Only one session can be
@@ -151,7 +109,6 @@ interface LiveCollabState {
   client: CollabClient | null;
   joinHandle: JoinRequestHandle | null;
   detach: (() => void) | null;
-  roomUuid: string | null;
 }
 
 const live: LiveCollabState = {
@@ -159,7 +116,6 @@ const live: LiveCollabState = {
   client: null,
   joinHandle: null,
   detach: null,
-  roomUuid: null,
 };
 
 /**
@@ -186,8 +142,6 @@ export function useCollabManager(
     live.session?.destroy();
     live.session = null;
     live.client = null;
-    clearHostKey(live.roomUuid);
-    live.roomUuid = null;
     useCollabStore.getState().reset();
   }, []);
 
@@ -218,7 +172,6 @@ export function useCollabManager(
         const detach = attachClientToStore(conn.client, useCollabStore);
         live.detach = detach;
         live.session = conn.session;
-        live.roomUuid = conn.roomUuid;
         live.client = conn.client;
 
         // Track peer_left so we know when an approved guest goes offline
@@ -233,8 +186,6 @@ export function useCollabManager(
           offSystemForPeerLeft();
           previousDetach?.();
         };
-
-        await persistHostKey(conn.roomUuid, conn.hostPriv, conn.hostPubEncoded);
 
         const store = useCollabStore.getState();
         store.setSession(conn.session, {
@@ -461,26 +412,4 @@ function advanceJoinModal(): void {
     displayName: next.displayName,
     color: next.color,
   });
-}
-
-/**
- * Recover a host's persisted ephemeral keypair after a same-tab reload.
- * Returns null if nothing is stored or if the entry is for a different
- * room. Callers (the host page) can use this to skip re-minting and
- * re-handshaking when the user simply reloaded.
- */
-export async function loadPersistedHostKey(
-  roomUuid: string,
-): Promise<{ priv: CryptoKey; pubEncoded: string } | null> {
-  if (typeof window === "undefined" || !window.sessionStorage) return null;
-  const raw = window.sessionStorage.getItem(hostKeyStorageKey(roomUuid));
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as StoredHostKey;
-    if (parsed.roomUuid !== roomUuid) return null;
-    const priv = await importX25519PrivJwk(parsed.jwk);
-    return { priv, pubEncoded: parsed.pubEncoded };
-  } catch {
-    return null;
-  }
 }

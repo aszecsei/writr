@@ -85,19 +85,3 @@ export function ApproveJoinDialog() {
     </Modal>
   );
 }
-
-/**
- * Convenience: closes the modal when the host's session ends. No-op when
- * the modal isn't an approve-join one, so it's safe to mount globally.
- */
-export function useCloseApproveJoinOnSessionEnd(): void {
-  const status = useCollabStore((s) => s.status);
-  const modal = useUiStore((s) => s.modal);
-  const closeModal = useUiStore((s) => s.closeModal);
-  if (
-    (status === "ended" || status === "idle") &&
-    isCollabApproveJoinModal(modal)
-  ) {
-    closeModal();
-  }
-}

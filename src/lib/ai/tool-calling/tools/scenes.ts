@@ -68,7 +68,6 @@ function serializeScene(
 
 export const listScenesTool = defineTool({
   id: "list_scenes",
-  category: "scene",
   name: "List Scenes",
   description:
     "List a chapter's scenes in order with their metadata (title, status, POV, " +
@@ -112,7 +111,6 @@ export const listScenesTool = defineTool({
 
 export const updateSceneTool = defineTool({
   id: "update_scene",
-  category: "scene",
   name: "Update Scene",
   description:
     "Update a scene's metadata. Only include fields to change. Use `list_scenes` " +

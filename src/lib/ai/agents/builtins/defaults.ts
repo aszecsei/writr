@@ -28,8 +28,6 @@ import {
   RESEARCHER_TOOLS,
   WORLDBUILDER_TOOLS,
 } from "./tool-permissions";
-// Pipeline agents (orchestrator, verifier) were removed; chat-mode sub-agent
-// delegation (the `orchestrator-chat` agent) replaces them.
 import { WORLDBUILDER_PROMPT } from "./worldbuilder";
 
 /**
@@ -70,10 +68,9 @@ export interface BuiltinAgentDefault {
 }
 
 // Stored prompts contain ONLY the role description. The shared
-// `VOICE_MANDATE` from `voice.ts` is prepended at runtime by the agent
-// factories (`chatAgent.ts` for chat agents; pipeline factories already
-// applied it). This keeps the agent-management UI showing each agent's
-// distinctive role without the boilerplate preamble repeated nine times.
+// `VOICE_MANDATE` from `voice.ts` is prepended at runtime by `chatAgent.ts`.
+// This keeps the agent-management UI showing each agent's distinctive role
+// without the boilerplate preamble repeated in every entry.
 
 const SPARK_PROMPT = `You are a continuation generator. Your job is to write THREE distinct continuations of the user's text, each 3-4 sentences long.
 
@@ -116,8 +113,8 @@ After research, write the scene as finished prose. Do NOT narrate what you looke
 - No commentary, no scene-marker brackets, no TODO placeholders, no editorial preamble. Output finished prose only.
 </write>`;
 
-// READER_CHAT_PROMPT and EDITOR_CHAT_PROMPT are co-located with their
-// pipeline-mode prompts in `reader.ts` and `editor.ts` and imported above.
+// READER_CHAT_PROMPT and EDITOR_CHAT_PROMPT live in `reader.ts` and
+// `editor.ts`, imported above.
 
 const CHARACTER_DIALOGUE_PROMPT = `You are a dialogue writer. Write dialogue between the named characters that's faithful to their established voices.
 
@@ -291,31 +288,11 @@ export const BUILTIN_AGENT_DEFAULTS: Record<
   },
 };
 
-/** Behaviour for a `kind="user"` agent — always treated as a chat agent. */
-export const USER_AGENT_BEHAVIOR: AgentBehavior = "chat";
-
 /** Lookup helper that handles user-created agents too. */
 export function getAgentBehavior(kind: AgentKind): AgentBehavior {
-  if (kind === "user") return USER_AGENT_BEHAVIOR;
+  if (kind === "user") return "chat";
   return BUILTIN_AGENT_DEFAULTS[kind].behavior;
 }
-
-/** Stable order in the AiPanel chat dropdown. */
-export const CHAT_AGENT_ORDER: ReadonlyArray<Exclude<AgentKind, "user">> = [
-  "spark",
-  "scene",
-  "reader",
-  "editor",
-  "character-dialogue",
-  "brainstorm",
-  "chat",
-  "beta-reader",
-  "outline-architect",
-  "worldbuilder",
-  "orchestrator-chat",
-  "researcher",
-  "prose-writer",
-];
 
 /** Spark response delimiter. Mirrored in SparkOptions parser. */
 export const SPARK_OPTION_DELIMITER = "<<<OPTION>>>";

@@ -7,7 +7,7 @@ import {
   type ProjectDocTable,
 } from "@/lib/collab/projectDoc";
 
-export type SharedProjectByTable = {
+type SharedProjectByTable = {
   [K in ProjectDocTable]: Map<string, ProjectDocEntity<K>>;
 };
 
@@ -15,9 +15,6 @@ export interface SharedProjectState {
   meta: ProjectDocMeta | null;
   project: Project | null;
   byTable: SharedProjectByTable;
-  /** Bumped on every applied delta so consumers using useSyncExternalStore-
-   *  style selectors can pick up changes without comparing maps directly. */
-  revision: number;
 
   setMeta: (meta: ProjectDocMeta | null) => void;
   setProject: (project: Project | null) => void;
@@ -41,20 +38,16 @@ function emptyByTable(): SharedProjectByTable {
   return out;
 }
 
-const INITIAL: Pick<
-  SharedProjectState,
-  "meta" | "project" | "byTable" | "revision"
-> = {
+const INITIAL: Pick<SharedProjectState, "meta" | "project" | "byTable"> = {
   meta: null,
   project: null,
   byTable: emptyByTable(),
-  revision: 0,
 };
 
 export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
   ...INITIAL,
-  setMeta: (meta) => set((s) => ({ meta, revision: s.revision + 1 })),
-  setProject: (project) => set((s) => ({ project, revision: s.revision + 1 })),
+  setMeta: (meta) => set({ meta }),
+  setProject: (project) => set({ project }),
   upsertEntity: (table, row) =>
     set((s) => {
       const existing = s.byTable[table];
@@ -65,7 +58,6 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
       (next as Map<string, typeof row>).set(id, row);
       return {
         byTable: { ...s.byTable, [table]: next } as SharedProjectByTable,
-        revision: s.revision + 1,
       };
     }),
   removeEntity: (table, id) =>
@@ -78,11 +70,10 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
       next.delete(id);
       return {
         byTable: { ...s.byTable, [table]: next } as SharedProjectByTable,
-        revision: s.revision + 1,
       };
     }),
   bulkSeed: (rows, opts) =>
-    set((s) => {
+    set(() => {
       const byTable = emptyByTable();
       for (const table of PROJECT_DOC_TABLES) {
         const provided = rows[table];
@@ -96,7 +87,6 @@ export const useSharedProjectStore = create<SharedProjectState>()((set) => ({
         byTable,
         project: opts?.project ?? null,
         meta: opts?.meta ?? null,
-        revision: s.revision + 1,
       };
     }),
   resetForRoom: () => set({ ...INITIAL, byTable: emptyByTable() }),

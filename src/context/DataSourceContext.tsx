@@ -6,12 +6,10 @@ import { createContext, type ReactNode, useContext, useMemo } from "react";
  * Tells project page components which backing store to read from. The
  * default is `"dexie"` — every existing route uses the user's local
  * IndexedDB. The shared-project guest layout overrides it with
- * `{ kind: "shared", roomUuid }` so the page bodies read from the
- * in-memory `useSharedProjectStore` populated by the project Y.Doc.
+ * `{ kind: "shared" }` so the page bodies read from the in-memory
+ * `useSharedProjectStore` populated by the project Y.Doc.
  */
-export type DataSource =
-  | { kind: "dexie" }
-  | { kind: "shared"; roomUuid: string };
+export type DataSource = { kind: "dexie" } | { kind: "shared" };
 
 const DataSourceContext = createContext<DataSource>({ kind: "dexie" });
 

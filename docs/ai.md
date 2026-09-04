@@ -31,23 +31,25 @@ Tools are registered in a central registry (`tool-calling/tools.ts`) and dispatc
 
 Tools (`tool-calling/tools/`):
 
-- `chapters.ts` — read/list/update chapter metadata.
+- `registry.ts` — the consolidated `list` / `get` read tools spanning all bible categories, plus per-agent category scoping.
+- `chapters.ts` — chapter CRUD and content reads (`read_chapter`, `read_chapter_range`, `search_chapter`, `get_chapter_structure`, `search_chapters`).
 - `characters.ts` — character CRUD.
 - `locations.ts` — location CRUD.
 - `timeline.ts` — timeline event CRUD.
-- `bible.ts` — combined bible queries.
-- `notes.ts` — agent notes (work-unit annotations).
-- `workUnits.ts` — work-unit assignment & status updates.
-- `proposedEdits.ts` — propose, list, and resolve edits to chapter prose.
+- `worldbuilding.ts` — worldbuilding doc CRUD + move.
+- `scenes.ts` — scene metadata read/write.
+- `outline.ts` — outline grid column/row/cell management.
+- `proposedEdits.ts` — `propose_edit`, staging a developmental edit for the user to apply.
 - `comments.ts` — `add_comment` / `reply_to_comment` for Beta Reader (auto-execute, persona-attributed inline editor comments).
-- `verification.ts` — record verification findings.
+- `delegate.ts` — `delegate`, running a named sub-agent to completion.
+- `presentChoice.ts` — `present_choice`, pausing to ask the user to pick an option.
 - `search.ts` — project-wide full-text search.
+- `edit-locator.ts` — shared anchor-locating logic for `propose_edit` / `add_comment`.
 - `helpers.ts` — shared validation/formatting.
-- `registry.ts` — central dispatch + schema export.
 
 ## Serialization (`serialize.ts`)
 
-Round-trips tool call payloads / messages between the chat history shape and what the provider expects.
+Serializes style guide entries, guardrail entries, and the outline grid to the XML blocks `prompts.ts` embeds in the system context.
 
 ## Conventions
 

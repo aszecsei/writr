@@ -6,10 +6,10 @@
 
 const NAME_KEY = "writr.collab.displayName";
 
-export const HOST_DEFAULT_NAME = "Host";
+const HOST_DEFAULT_NAME = "Host";
 export const GUEST_DEFAULT_NAME = "Guest";
 
-export const HOST_DEFAULT_COLOR = "#10b981";
+const HOST_DEFAULT_COLOR = "#10b981";
 
 /**
  * Stable palette for guest carets. Picked deterministically from the
@@ -44,7 +44,7 @@ export function writeStoredDisplayName(name: string): void {
   }
 }
 
-export function pickGuestColor(seed: string): string {
+function pickGuestColor(seed: string): string {
   let hash = 0;
   for (let i = 0; i < seed.length; i += 1) {
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
@@ -52,7 +52,7 @@ export function pickGuestColor(seed: string): string {
   return GUEST_COLOR_PALETTE[Math.abs(hash) % GUEST_COLOR_PALETTE.length];
 }
 
-export interface BuildIdentityOptions {
+interface BuildIdentityOptions {
   role: "host" | "guest";
   name: string;
 }
