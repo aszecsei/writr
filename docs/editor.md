@@ -7,11 +7,13 @@ The editor is TipTap v3 with `tiptap-markdown` for round-tripping. **Content is 
 ```
 src/components/editor/
   ChapterEditor.tsx           Top-level editor; "use no memo" for TipTap's imperative DOM
-  EditorToolbar.tsx           Main toolbar (formatting, headings, lists, alignment)
+  EditorToolbar.tsx           Main toolbar (formatting, headings, lists, alignment); also
+                               exports SharedChapterActions (see below)
   ScreenplayToolbar.tsx       Screenplay-mode toolbar (scene headings, action, dialogue, …)
   FindReplacePanel.tsx        Find & replace UI driven by findReplaceStore
   FocusModeOverlay.tsx        Dim-non-active-paragraph overlay
-  toolbar-actions.ts          Shared command helpers
+  toolbar-actions.ts          Shared ToolbarAction[] definitions (prose actions,
+                               screenplay element-type actions)
   AlignmentDropdown.tsx       FontSelector.tsx       FontSizeSelector.tsx
   CopyMenu.tsx                TextToolsMenu.tsx
   InsertImageDialog.tsx       LinkEditorDialog.tsx   RubyDialog.tsx
@@ -22,6 +24,27 @@ src/components/editor/
   comments/                   Comment thread UI, margin rendering
   extensions/                 Custom TipTap extensions (see below)
 ```
+
+## Toolbars
+
+`EditorToolbar` and `ScreenplayToolbar` share their project/chapter-scoped
+actions (export, version history, copy, comments, spellcheck toggle/scanner,
+focus mode) via `SharedChapterActions`, exported from `EditorToolbar.tsx` and
+rendered by both toolbars. `SharedChapterActions` takes `beforeCopy` /
+`afterCopy` / `afterSpellcheck` `ReactNode` slots so each toolbar can
+interleave its own extras (e.g. `ShareSessionButton`, `TextToolsMenu`, the
+grammar toggle/scanner in `EditorToolbar`) without reshuffling the shared
+buttons. Both toolbars are built from `ToolbarButton` / `ToolbarSeparator`
+(`src/components/ui/`).
+
+`toolbar-actions.ts` exports `ToolbarAction`, a discriminated union on
+`kind`: `{ kind: "command"; run(editor) }` for actions that mutate the
+editor directly, or `{ kind: "modal"; modal: "link-editor" | "insert-image" | "ruby-editor" }`
+for actions that open a dialog — `EditorToolbar` dispatches on `action.kind`
+rather than the action's label text. `screenplayElementActions` holds the
+screenplay element-type buttons (scene heading, action, character, …) in the
+same shape; `ScreenplayToolbar`'s undo/redo buttons reuse the `"history"`
+group from the shared `actions` array instead of hand-rolling `undo()`/`redo()`.
 
 ## Spellcheck and grammar checkers
 
@@ -38,7 +61,7 @@ Located in `src/components/editor/extensions/`.
 ### Prose extensions
 
 - **`Comments`** — inline anchored comments with ProseMirror `Mapping`-based offset tracking.
-- **`SearchAndReplace`** — search/replace decorations, driven by `findReplaceStore`.
+- **`SearchAndReplace`** — search/replace decorations, driven by `findReplaceStore`. Owns the search state and exposes it as TipTap commands (`search`, `findNext`, `findPrevious`, `replaceCurrent`, `replaceAll`); `FindReplacePanel` calls these instead of re-dispatching `SEARCH_UPDATED_META` and reading state back after a `setTimeout`.
 - **`TypewriterScrolling`** — keeps the active line centered.
 - **`Spellcheck`** — squiggle decorations, integrates with `nspell` via `spellcheckStore`.
 - **`Grammar`** — blue squiggle decorations for grammar/style issues, integrates with `harper.js` (web worker) via `grammarStore`. Async check; spelling lints are filtered (nspell owns spelling). Toggle persists in the `grammarCheckerEnabled` AppSettings field.
