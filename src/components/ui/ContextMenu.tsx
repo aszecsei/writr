@@ -14,9 +14,15 @@ interface ContextMenuProps {
   children: ReactNode;
   position: { x: number; y: number };
   onClose: () => void;
+  className?: string;
 }
 
-export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
+export function ContextMenu({
+  children,
+  position,
+  onClose,
+  className,
+}: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState<{
     x: number;
@@ -79,7 +85,7 @@ export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[160px] rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+      className={`fixed z-50 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900 ${className ?? "min-w-[160px]"}`}
       style={{
         left: adjustedPosition?.x ?? position.x,
         top: adjustedPosition?.y ?? position.y,
@@ -94,6 +100,8 @@ export function ContextMenu({ children, position, onClose }: ContextMenuProps) {
 interface ContextMenuItemProps {
   children: ReactNode;
   icon?: LucideIcon;
+  /** Extra content rendered before the icon/label, e.g. a numbered-shortcut badge. */
+  prefix?: ReactNode;
   variant?: "default" | "danger";
   onClick: () => void;
 }
@@ -101,6 +109,7 @@ interface ContextMenuItemProps {
 export function ContextMenuItem({
   children,
   icon: Icon,
+  prefix,
   variant = "default",
   onClick,
 }: ContextMenuItemProps) {
@@ -115,6 +124,7 @@ export function ContextMenuItem({
       className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-400 ${styles}`}
       onClick={onClick}
     >
+      {prefix}
       {Icon && <Icon size={14} />}
       {children}
     </button>

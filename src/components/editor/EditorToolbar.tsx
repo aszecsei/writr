@@ -111,7 +111,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     if (!editor) return;
     const results = getSpellcheckResults(editor.state);
     openScanner(results);
-  }, [editor, openScanner]);
+    openModal({ id: "spellcheck-scanner" });
+  }, [editor, openScanner, openModal]);
 
   const toggleGrammar = useCallback(() => {
     void updateAppSettings({ grammarCheckerEnabled: !grammarEnabled });
@@ -121,7 +122,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const handleOpenGrammarScanner = useCallback(() => {
     if (!editor) return;
     openGrammarScanner(getGrammarResults(editor.state));
-  }, [editor, openGrammarScanner]);
+    openModal({ id: "grammar-scanner" });
+  }, [editor, openGrammarScanner, openModal]);
 
   // Link editor callbacks
   const handleLinkApply = useCallback(

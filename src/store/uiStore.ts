@@ -49,7 +49,9 @@ type ModalState =
       displayName: string;
       color: string;
     }
-  | { id: "collab-manage-participants" };
+  | { id: "collab-manage-participants" }
+  | { id: "spellcheck-scanner" }
+  | { id: "grammar-scanner" };
 
 export type ModalId = ModalState["id"];
 
@@ -227,3 +229,5 @@ export const isCollabApproveJoinModal = createModalGuard("collab-approve-join");
 export const isCollabManageParticipantsModal = createModalGuard(
   "collab-manage-participants",
 );
+export const isSpellcheckScannerModal = createModalGuard("spellcheck-scanner");
+export const isGrammarScannerModal = createModalGuard("grammar-scanner");

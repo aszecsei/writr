@@ -9,7 +9,7 @@ All Zustand stores use Immer middleware and are intended for **ephemeral UI stat
 - **`projectStore`** — active project context (id, title, mode).
 - **`commentStore`** — selected comment, comment-margin visibility.
 - **`sprintStore`** — active sprint timer, word tracking, config & history modal state.
-- **`spellcheckStore`** — enabled state, ignored words, context menu, scanner state.
+- **`spellcheckStore`** / **`grammarStore`** — enabled state (spellcheck) / persisted-in-AppSettings enabled state (grammar), ignored keys, context menu, scanner state. Both build on the shared `createCheckerSlice` in `src/store/createCheckerStore.ts` (context menu, scanner current-index + items, ignored-keys set, wraparound `next`/`prev`/`removeAt`, `addToIgnored`) and add their own domain-specific fields on top.
 - **`findReplaceStore`** — search/replace terms, regex/case/whole-word modes, match tracking.
 - **`radioStore`** — playlist playback (queue, volume, shuffle, loop). **Persisted** to localStorage.
 - **`collabStore`** — collab session state, connection lifecycle, peer identity, share URLs, approval queue.
@@ -26,6 +26,7 @@ project-settings         app-settings           export
 preview-card             link-editor            insert-image
 ruby-editor              dictionary-manager     version-history
 share-collab-session     collab-approve-join    collab-manage-participants
+spellcheck-scanner       grammar-scanner
 ```
 
 The `null` variant (`{ id: null }`) means "closed". When adding a modal, extend the union; the discriminated type forces every call site to pass the right payload.
