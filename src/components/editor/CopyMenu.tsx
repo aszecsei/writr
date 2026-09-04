@@ -3,6 +3,7 @@
 import { Check, Copy, FileCode2, FileText } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
@@ -71,18 +72,12 @@ export function CopyMenu({ projectId, chapterId }: CopyMenuProps) {
 
   return (
     <div className="relative" ref={copyMenuRef}>
-      <button
-        type="button"
+      <ToolbarButton
+        icon={copiedType ? Check : Copy}
         title="Copy to clipboard"
         onClick={() => setCopyMenuOpen(!copyMenuOpen)}
-        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-          copiedType
-            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        }`}
-      >
-        {copiedType ? <Check size={16} /> : <Copy size={16} />}
-      </button>
+        variant={copiedType ? "success" : "default"}
+      />
       {copyMenuOpen && (
         <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
           <button

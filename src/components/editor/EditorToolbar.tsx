@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useCallback } from "react";
 import { ShareSessionButton } from "@/components/collab/ShareSessionButton";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
+import { ToolbarSeparator } from "@/components/ui/ToolbarSeparator";
 import { updateAppSettings } from "@/db/operations";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
@@ -218,7 +220,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     <div className="flex flex-wrap items-center gap-density border-b border-neutral-200 bg-white px-4 py-density-button dark:border-neutral-800 dark:bg-neutral-900">
       <FontSelector currentFont={currentFont} />
       <FontSizeSelector currentFontSize={settings?.editorFontSize ?? 16} />
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+      <ToolbarSeparator />
       {groups.map((group, gi) => {
         const groupActions = actions.filter((a) => a.group === group);
         if (groupActions.length === 0) return null;
@@ -227,9 +229,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         if (group === "align") {
           return (
             <div key={group} className="flex items-center">
-              {gi > 0 && (
-                <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-              )}
+              {gi > 0 && <ToolbarSeparator />}
               <AlignmentDropdown editor={editor} />
             </div>
           );
@@ -237,49 +237,36 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
         return (
           <div key={group} className="flex items-center">
-            {gi > 0 && (
-              <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-            )}
-            {groupActions.map((action) => {
-              const active = activeStates[action.label] ?? false;
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.label}
-                  type="button"
-                  title={action.label}
-                  onClick={() =>
-                    action.opensModal
-                      ? handleModalAction(action.label)
-                      : action.action(editor)
-                  }
-                  className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                    active
-                      ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                  }`}
-                >
-                  <Icon size={16} />
-                </button>
-              );
-            })}
+            {gi > 0 && <ToolbarSeparator />}
+            {groupActions.map((action) => (
+              <ToolbarButton
+                key={action.label}
+                icon={action.icon}
+                title={action.label}
+                variant={
+                  (activeStates[action.label] ?? false) ? "active" : "default"
+                }
+                onClick={() =>
+                  action.opensModal
+                    ? handleModalAction(action.label)
+                    : action.action(editor)
+                }
+              />
+            ))}
           </div>
         );
       })}
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <button
-        type="button"
+      <ToolbarSeparator />
+      <ToolbarButton
+        icon={Brackets}
         title="Insert hole (Ctrl+Shift+H)"
         onClick={() => editor.chain().focus().insertHole().run()}
-        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-      >
-        <Brackets size={16} />
-      </button>
+      />
       {activeProjectId && activeDocumentId && (
         <>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <button
-            type="button"
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={Download}
             title="Export"
             onClick={() =>
               openModal({
@@ -289,12 +276,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 scope: "chapter",
               })
             }
-            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            <Download size={16} />
-          </button>
-          <button
-            type="button"
+          />
+          <ToolbarButton
+            icon={History}
             title="Version history"
             onClick={() =>
               openModal({
@@ -303,32 +287,22 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                 projectId: activeProjectId,
               })
             }
-            className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            <History size={16} />
-          </button>
+          />
           <ShareSessionButton />
           <CopyMenu projectId={activeProjectId} chapterId={activeDocumentId} />
           <TextToolsMenu editor={editor} />
           {canReadAloud && (
-            <button
-              type="button"
+            <ToolbarButton
+              icon={Volume2}
               title={
                 hasSelection ? "Read selection aloud" : "Read chapter aloud"
               }
               onClick={handleReadAloud}
               disabled={readAloudLoading}
-              className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-                readAloudLoading
-                  ? "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-              }`}
-            >
-              <Volume2 size={16} />
-            </button>
+            />
           )}
-          <button
-            type="button"
+          <ToolbarButton
+            icon={ImagePlus}
             title="Preview Card (Ctrl+Shift+P)"
             onClick={() =>
               openModal({
@@ -339,90 +313,48 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               })
             }
             disabled={!hasSelection}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              hasSelection
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <ImagePlus size={16} />
-          </button>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
+          />
+          <ToolbarSeparator />
           <CreateCommentButton editor={editor} />
-          <button
-            type="button"
+          <ToolbarButton
+            icon={PanelRight}
             title="Toggle comment margin"
             onClick={toggleMargin}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              marginVisible
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <PanelRight size={16} />
-          </button>
-          <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-          <button
-            type="button"
+            variant={marginVisible ? "active" : "default"}
+          />
+          <ToolbarSeparator />
+          <ToolbarButton
+            icon={SpellCheck}
             title="Toggle spellcheck"
             onClick={toggleSpellcheck}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              spellcheckEnabled
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <SpellCheck size={16} />
-          </button>
-          <button
-            type="button"
+            variant={spellcheckEnabled ? "active" : "default"}
+          />
+          <ToolbarButton
+            icon={ScanSearch}
             title="Open spellcheck scanner"
             onClick={handleOpenScanner}
             disabled={!spellcheckEnabled}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              spellcheckEnabled
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <ScanSearch size={16} />
-          </button>
-          <button
-            type="button"
+          />
+          <ToolbarButton
+            icon={SpellCheck2}
             title="Toggle grammar checker"
             onClick={toggleGrammar}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              grammarEnabled
-                ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100"
-                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-            }`}
-          >
-            <SpellCheck2 size={16} />
-          </button>
-          <button
-            type="button"
+            variant={grammarEnabled ? "active" : "default"}
+          />
+          <ToolbarButton
+            icon={TextSearch}
             title="Open grammar scanner"
             onClick={handleOpenGrammarScanner}
             disabled={!grammarEnabled}
-            className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-              grammarEnabled
-                ? "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                : "cursor-not-allowed text-neutral-300 dark:text-neutral-600"
-            }`}
-          >
-            <TextSearch size={16} />
-          </button>
+          />
         </>
       )}
-      <div className="mx-1 h-4 w-px bg-neutral-200 dark:bg-neutral-700" />
-      <button
-        type="button"
+      <ToolbarSeparator />
+      <ToolbarButton
+        icon={Maximize2}
         title="Focus mode (Ctrl+Shift+F)"
         onClick={toggleFocusMode}
-        className="rounded p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-neutral-400 dark:hover:bg-neutral-800"
-      >
-        <Maximize2 size={16} />
-      </button>
+      />
       <LinkEditorDialog onApply={handleLinkApply} onRemove={handleLinkRemove} />
       <InsertImageDialog onInsert={handleImageInsert} />
       <RubyDialog onApply={handleRubyApply} onRemove={handleRubyRemove} />

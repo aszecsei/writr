@@ -3,6 +3,7 @@
 import type { Editor } from "@tiptap/react";
 import { Check, Pilcrow, Type } from "lucide-react";
 import { useRef, useState } from "react";
+import { ToolbarButton } from "@/components/ui/ToolbarButton";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { findLineBreakPairs } from "@/lib/normalize-line-breaks";
 import { convertToSmartQuotes } from "@/lib/smart-quotes";
@@ -71,18 +72,12 @@ export function TextToolsMenu({ editor }: TextToolsMenuProps) {
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
-        type="button"
+      <ToolbarButton
+        icon={applied ? Check : Type}
         title="Text tools"
         onClick={() => setMenuOpen(!menuOpen)}
-        className={`rounded p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-          applied
-            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        }`}
-      >
-        {applied ? <Check size={16} /> : <Type size={16} />}
-      </button>
+        variant={applied ? "success" : "default"}
+      />
       {menuOpen && (
         <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
           <button
