@@ -2,36 +2,40 @@
 
 All entity data is stored in IndexedDB via Dexie. Components never import Dexie directly — they go through hooks (`src/hooks/data/`) or operations (`src/db/operations/`).
 
-## Schemas (`src/db/schemas.ts`)
+## Schemas (`src/db/schemas/`)
 
-Zod is the single source of truth for every entity. The schema file exports both the schema (`FooSchema`) and the inferred type (`Foo`).
+Zod is the single source of truth for every entity. `@/db/schemas` resolves to `src/db/schemas/index.ts`, a barrel that re-exports every domain module — components and operations always import from `@/db/schemas`, never from a domain file directly. Each schema exports both the schema (`FooSchema`) and the inferred type (`Foo`).
 
-**Core entities**
+Domain modules:
 
-`Project`, `Chapter`, `Character`, `CharacterRelationship`, `Location`, `TimelineEvent`, `StyleGuideEntry`, `WorldbuildingDoc`, `EntityImage` (image attachments for bible entries).
+- **`ids.ts`** — every branded entity-id schema (`ProjectIdSchema`, `ChapterIdSchema`, etc.) and its inferred id type. Other domain modules import the ids they need from here; `ids.ts` itself has no dependencies on other domain modules.
+- **`shared.ts`** — cross-entity primitives: the `timestamp` schema and the `isSupportedImageSource` / `ImageSourceSchema` pair used for cover art and bible images.
+- **`project.ts`** — `Project`, `ProjectMode`.
+- **`chapter.ts`** — `Chapter` (binder fields), `Scene` (Model D scene metadata), `ChapterSnapshot`, `ChapterSummary`.
+- **`bible.ts`** — `Character`, `CharacterRelationship`, `Location`, `TimelineEvent`, `StyleGuideEntry`, `GuardrailEntry`, `WorldbuildingDoc`, `EntityImage` (image attachments for bible entries).
+- **`outline.ts`** — `OutlineGridColumn`, `OutlineGridRow`, `OutlineGridCell`, `OutlineCardColor`.
+- **`writing.ts`** — `WritingSprint`, `WritingSession`, `PlaylistTrack`, `TrackSource`.
+- **`ai.ts`** — `AgentDefinition`, `AgentModelOverride`, `AiProvider`, `ReasoningEffort` (see `docs/agents.md`), `SavedPrompt`, and `Comment` (chapter margin comments).
+- **`settings.ts`** — `AppSettings`, `AppDictionary`, `ProjectDictionary`, and `normalizeAppSettings` (converts legacy per-provider API key fields to the current record format).
+- **`brainstorm.ts`** — `BrainstormSetup`, `BrainstormColumn`, `BrainstormIdea`.
+- **`search.ts`** — `IndexedChunk` (semantic retrieval).
 
-**Outline grid**
-
-`OutlineGridColumn`, `OutlineGridRow`, `OutlineGridCell`.
-
-**Writing tooling**
-
-`WritingSprint`, `WritingSession`, `PlaylistTrack`, `TrackSource`, `ChapterSnapshot`, `Comment`.
-
-**Settings & dictionaries**
-
-`AppSettings`, `AppDictionary`, `ProjectDictionary`.
-
-**Agent system** (see `docs/agents.md`)
-
-`AgentDefinition`, `AgentModelOverride`. `ChapterSummary` (cached per-chapter summaries) is also defined here; it backs the `get:summary` read tool and is independent of agents.
+`ChapterSummary` backs the `get:summary` read tool and is independent of the agent system despite living next to `Chapter`.
 
 ## Database (`src/db/database.ts`)
 
-Dexie subclass with table definitions, compound indexes, and **46 migration versions**. Singleton `db` export. v36 adds the `savedPrompts` table for the reusable prompt library. v37 adds binder fields to `chapters` (`parentChapterId`, `section`, `kind`, `includeInCompile`, `pageBreakBefore`) for the Scrivener-style nested binder — no index change, nesting is queried by JS-side filter like `worldbuildingDocs`; `backfillBinderFieldsV37` keeps legacy chapters as top-level manuscript documents. v42 removes the agent "pipeline" feature (chat-mode sub-agent delegation replaces it), dropping `agentRuns`, `readerBibleLog`, `readerBibleView`, `agentNotes`, `agentQuestions`, `workUnits`, `editPlans`, `proposedEdits`, `verifications`, and `snapshotManifests`. v44 adds the `scenes` table (see `docs/editor.md` for the scene model). When you add or change an entity:
+Dexie subclass with table definitions, compound indexes, and a singleton `db` export. The constructor applies **46 migration versions** by calling three functions from `src/db/migrations/`, each covering a version range and grouped by era:
 
-1. Update the Zod schema in `schemas.ts`.
-2. Add or update the Dexie table in `database.ts` and bump to a new `this.version(...).stores({...})` block.
+- **`v01-v20.ts`** — the initial schema and its early additions (character/location detail fields, outline columns, sprints/sessions, playlist, comments, dictionaries, tool-calling settings).
+- **`v21-v40.ts`** — settings/provider growth, the (now-removed) agent pipeline tables (v26–v29), the agents-table unification (v32–v33), threaded comments (v35), saved prompts (v36), the binder hierarchy (v37), brainstorm (v38), indexed chunks (v39), guardrails (v40).
+- **`v41-plus.ts`** — global style guide/guardrail scope (v41), pipeline removal (v42), saved-prompt backfill (v43), scenes (v44), character summary (v45), project cover (v46).
+
+Each file exports an `applyVxxToVyy(db: Dexie): void` function; `database.ts` calls all three in order before registering the `on("ready")` seed hook. Backfill functions that are unit-tested directly (`backfillBinderFieldsV37`, `backfillCoreScenesV44`, `backfillProjectCoverV46`) live in their era file and are re-exported from `database.ts` so `import { ... } from "./database"` keeps working.
+
+v36 adds the `savedPrompts` table for the reusable prompt library. v37 adds binder fields to `chapters` (`parentChapterId`, `section`, `kind`, `includeInCompile`, `pageBreakBefore`) for the Scrivener-style nested binder — no index change, nesting is queried by JS-side filter like `worldbuildingDocs`; `backfillBinderFieldsV37` keeps legacy chapters as top-level manuscript documents. v42 removes the agent "pipeline" feature (chat-mode sub-agent delegation replaces it), dropping `agentRuns`, `readerBibleLog`, `readerBibleView`, `agentNotes`, `agentQuestions`, `workUnits`, `editPlans`, `proposedEdits`, `verifications`, and `snapshotManifests`. v44 adds the `scenes` table (see `docs/editor.md` for the scene model). When you add or change an entity:
+
+1. Update the Zod schema in the relevant `src/db/schemas/*.ts` domain module (add a new module and export it from `index.ts` if none fits).
+2. Add or update the Dexie table in `database.ts` and bump to a new `this.version(...).stores({...})` block in the current era's migration file (start a new era file once the current one grows unwieldy).
 3. Add or extend the per-entity ops file in `src/db/operations/`.
 
 ## Operations (`src/db/operations/`)
