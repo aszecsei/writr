@@ -22,7 +22,7 @@ export interface AnalyzedTerm {
 export interface AnalyzedSentence {
   /** Original sentence text, used for excerpts. */
   text: string;
-  terms: AnalyzedTerm[];
+  terms: readonly AnalyzedTerm[];
   paragraphIndex: number;
 }
 

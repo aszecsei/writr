@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { rootedTerm, sentence, term } from "../test-helpers";
-import type { Echo } from "../types";
-import {
-  detectEchoes,
-  ECHO_WINDOW_SENTENCES,
-  echoProximity,
-  echoSeverity,
-  topContentWords,
-} from "./frequency";
+import { echoAt, rootedTerm, sentence, term } from "../test-helpers";
+import { ECHO_WINDOW_SENTENCES } from "../thresholds";
+import { detectEchoes, echoProximity, topContentWords } from "./frequency";
 
 describe("topContentWords", () => {
   it("excludes stopwords, numbers and short words", () => {
@@ -163,17 +157,6 @@ describe("detectEchoes", () => {
   });
 });
 
-function echoAt(sentenceIndexes: number[]): Echo {
-  return {
-    word: "gleaming",
-    count: sentenceIndexes.length,
-    occurrences: sentenceIndexes.map((sentenceIndex) => ({
-      sentenceIndex,
-      excerpt: "…",
-    })),
-  };
-}
-
 describe("echoProximity", () => {
   it("reports min and max gaps between consecutive occurrences", () => {
     expect(echoProximity(echoAt([0, 1, 4]))).toEqual({ minGap: 1, maxGap: 3 });
@@ -189,23 +172,5 @@ describe("echoProximity", () => {
 
   it("throws on fewer than two occurrences", () => {
     expect(() => echoProximity(echoAt([1]))).toThrow(/at least 2/);
-  });
-});
-
-describe("echoSeverity", () => {
-  it("marks four or more occurrences dense regardless of spacing", () => {
-    expect(echoSeverity(echoAt([0, 5, 10, 15]))).toBe("dense");
-  });
-
-  it("marks three tightly-packed occurrences dense", () => {
-    expect(echoSeverity(echoAt([0, 1, 4]))).toBe("dense");
-  });
-
-  it("keeps three spread-out occurrences an ordinary echo", () => {
-    expect(echoSeverity(echoAt([0, 2, 4]))).toBe("echo");
-  });
-
-  it("keeps two occurrences an ordinary echo even when adjacent", () => {
-    expect(echoSeverity(echoAt([0, 1]))).toBe("echo");
   });
 });

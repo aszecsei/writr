@@ -5,12 +5,9 @@ import { checkSticky, countGlueWords } from "./metrics/glue";
 import { openerCategory } from "./metrics/openers";
 import { isPassiveSentence } from "./metrics/passive";
 import { fleschReadingEase } from "./metrics/readability";
-import {
-  bucketForLength,
-  meanFromSums,
-  stdDevFromSums,
-} from "./metrics/sentences";
+import { meanFromSums, stdDevFromSums } from "./metrics/sentences";
 import { mtld, ttrFromFrequency } from "./metrics/vocabulary";
+import { bucketForLength } from "./presentation";
 import {
   type AnalysisCounts,
   type AnalyzedSentence,

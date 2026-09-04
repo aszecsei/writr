@@ -1,12 +1,11 @@
+import { makeExcerpt } from "../excerpt";
+import {
+  ECHO_LIMIT,
+  ECHO_WINDOW_SENTENCES,
+  TOP_WORDS_LIMIT,
+} from "../thresholds";
 import type { AnalyzedSentence, AnalyzedTerm, Echo, WordCount } from "../types";
 import { STOPWORDS } from "../word-lists";
-import { makeExcerpt } from "./glue";
-
-/** Two uses of a word within this many sentences read as an echo. */
-export const ECHO_WINDOW_SENTENCES = 5;
-
-const TOP_WORDS_LIMIT = 20;
-const ECHO_LIMIT = 50;
 
 function isContentWord(normal: string): boolean {
   return normal.length > 2 && !STOPWORDS.has(normal) && !/\d/.test(normal);
@@ -125,8 +124,6 @@ export function detectEchoes(sentences: readonly AnalyzedSentence[]): Echo[] {
     .slice(0, ECHO_LIMIT);
 }
 
-export type EchoSeverity = "dense" | "echo";
-
 export interface EchoProximity {
   /** Smallest sentence gap between consecutive occurrences. 0 = same sentence. */
   minGap: number;
@@ -150,14 +147,4 @@ export function echoProximity(echo: Echo): EchoProximity {
     maxGap = Math.max(maxGap, gap);
   }
   return { minGap, maxGap };
-}
-
-/**
- * Dense echoes repeat often (4+) or pile up in adjacent sentences (3+ with
- * back-to-back uses); everything else detected is an ordinary echo.
- */
-export function echoSeverity(echo: Echo): EchoSeverity {
-  if (echo.count >= 4) return "dense";
-  if (echo.count >= 3 && echoProximity(echo).minGap <= 1) return "dense";
-  return "echo";
 }
