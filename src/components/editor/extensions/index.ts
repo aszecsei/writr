@@ -52,7 +52,7 @@ import { TypewriterScrolling } from "./TypewriterScrolling";
  * StarterKit's UndoRedo is disabled so we don't double-track history
  * against Yjs.
  */
-export interface CollabExtensionConfig {
+interface CollabExtensionConfig {
   doc: Y.Doc;
   awareness: Awareness;
   /** Display name surfaced over the local user's caret. */
@@ -68,7 +68,7 @@ export interface CollabExtensionConfig {
   onFirstRender?: () => void;
 }
 
-export interface ExtensionOptions {
+interface ExtensionOptions {
   typewriterScrollingRef?: { current: boolean };
   sentenceLengthPreviewRef?: { current: boolean };
   commentsRef?: { current: Comment[] };

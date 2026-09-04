@@ -6,6 +6,7 @@ Next.js App Router (`src/app/`). Every page is `"use client"` because data lives
 
 ```
 /                                            Dashboard / project picker
+/brainstorm                                  Brainstorm workspace
 /projects/[projectId]                        Project overview (sidebar + topbar layout)
 /projects/[projectId]/chapters/[chapterId]   Chapter editor (TipTap)
 /projects/[projectId]/outline                Outline grid view

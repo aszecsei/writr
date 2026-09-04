@@ -245,10 +245,8 @@ function SortableTrackCard({
           : "border-neutral-200 bg-white hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/50"
       }`}
     >
-      {/* Drag Handle */}
       <DragHandle ref={handleRef} />
 
-      {/* Thumbnail */}
       <button
         type="button"
         onClick={onClick}
@@ -274,7 +272,6 @@ function SortableTrackCard({
         </div>
       </button>
 
-      {/* Info */}
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -290,7 +287,6 @@ function SortableTrackCard({
         </button>
       </div>
 
-      {/* Delete */}
       <button
         type="button"
         onClick={(e) => {

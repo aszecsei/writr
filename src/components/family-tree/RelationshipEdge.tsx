@@ -6,7 +6,7 @@ import {
 } from "@xyflow/react";
 import { relationshipTypeConfigs } from "./relationship-config";
 
-export type RelationshipEdgeData = {
+type RelationshipEdgeData = {
   relationshipType: string;
   customLabel: string;
 };

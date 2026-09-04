@@ -6,7 +6,6 @@ export const LABEL_CLASS =
 
 export {
   BUTTON_CANCEL,
-  BUTTON_DANGER,
   BUTTON_PRIMARY,
   RADIO_ACTIVE,
   RADIO_BASE,

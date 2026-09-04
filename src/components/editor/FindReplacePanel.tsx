@@ -46,12 +46,8 @@ export function FindReplacePanel({ editor }: FindReplacePanelProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Focus search input when panel opens or re-triggered.
-  // focusTrigger is intentionally in the dep array to re-fire the effect
-  // even when isOpen is already true (e.g. Ctrl+F pressed twice).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusTrigger is the intentional trigger to re-fire the effect even when isOpen is already true (e.g. Ctrl+F pressed twice)
   useEffect(() => {
-    // Reference focusTrigger so the linter sees it used in the body
-    void focusTrigger;
     if (isOpen) {
       // Small delay to let the panel render
       setTimeout(() => {

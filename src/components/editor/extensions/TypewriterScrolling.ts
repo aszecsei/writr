@@ -27,7 +27,6 @@ export const TypewriterScrolling = Extension.create<TypewriterScrollingOptions>(
                 // Check if enabled via ref (allows dynamic toggling)
                 if (!enabledRef?.current) return;
 
-                // Only scroll if selection changed
                 if (prevState && view.state.selection.eq(prevState.selection)) {
                   return;
                 }
@@ -35,7 +34,6 @@ export const TypewriterScrolling = Extension.create<TypewriterScrollingOptions>(
                 const { from } = view.state.selection;
                 const coords = view.coordsAtPos(from);
 
-                // Find the scrollable container (the editor's parent with overflow-y-auto)
                 const editorElement = view.dom;
                 const scrollContainer = editorElement.closest(
                   ".overflow-y-auto",

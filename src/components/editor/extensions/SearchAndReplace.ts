@@ -3,7 +3,7 @@ import type { Transaction } from "@tiptap/pm/state";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
-export const searchAndReplacePluginKey = new PluginKey<SearchPluginState>(
+const searchAndReplacePluginKey = new PluginKey<SearchPluginState>(
   "searchAndReplace",
 );
 

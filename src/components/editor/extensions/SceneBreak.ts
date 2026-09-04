@@ -24,7 +24,7 @@ export interface SceneBreakOptions {
   sceneTitlesRef: { current: Map<string, string> } | undefined;
 }
 
-export const sceneBreakPluginKey = new PluginKey<DecorationSet>("sceneBreak");
+const sceneBreakPluginKey = new PluginKey<DecorationSet>("sceneBreak");
 
 /** Metadata key signalling that scene-break title labels should rebuild. */
 export const SCENE_TITLES_UPDATED_META = "sceneTitlesUpdated";

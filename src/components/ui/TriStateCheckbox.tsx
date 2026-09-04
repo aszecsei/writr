@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-export interface TriStateCheckboxProps {
+interface TriStateCheckboxProps {
   state: "off" | "on" | "partial";
   onToggle: () => void;
   disabled?: boolean;

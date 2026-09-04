@@ -193,7 +193,7 @@ function mutationRow(id: string): ToolPickerRow {
 
 // ─── State helpers ─────────────────────────────────────────────────────
 
-export type RowState = "off" | "on" | "partial";
+type RowState = "off" | "on" | "partial";
 
 /** Compute a row's state from the agent's allowedToolIds set. */
 export function rowState(

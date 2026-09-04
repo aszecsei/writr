@@ -208,7 +208,7 @@ function SceneRow({
   );
 }
 
-export interface BinderSectionLabels {
+interface BinderSectionLabels {
   /** Uppercase section header, e.g. "Manuscript". */
   header: string;
   /** "Add" button + sibling menu label, e.g. "Add Chapter". */

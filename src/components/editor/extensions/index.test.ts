@@ -23,20 +23,14 @@ describe("createExtensions: defaults", () => {
     expect(ns).not.toContain("collaborationCaret");
   });
 
-  it("uses the builtin Selection extension plus the slim SelectionReporter", () => {
-    const ns = names(createExtensions());
-    expect(ns).toContain("selection");
-    expect(ns).toContain("selectionReporter");
-    expect(ns).not.toContain("selectionPreserver");
-  });
-});
-
-describe("createScreenplayExtensions: defaults", () => {
-  it("uses the builtin Selection extension plus the slim SelectionReporter", () => {
-    const ns = names(createScreenplayExtensions());
-    expect(ns).toContain("selection");
-    expect(ns).toContain("selectionReporter");
-    expect(ns).not.toContain("selectionPreserver");
+  it("uses the builtin Selection extension plus the slim SelectionReporter, for both prose and screenplay", () => {
+    for (const ns of [
+      names(createExtensions()),
+      names(createScreenplayExtensions()),
+    ]) {
+      expect(ns).toContain("selection");
+      expect(ns).toContain("selectionReporter");
+    }
   });
 });
 

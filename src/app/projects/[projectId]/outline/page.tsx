@@ -33,13 +33,11 @@ export default function OutlinePage() {
     if (columns === undefined || rows === undefined || chapters === undefined)
       return;
 
-    // Grid has data, no need for template
     if (columns.length > 0 || rows.length > 0) {
       hasInitialized.current = true;
       return;
     }
 
-    // Grid is empty, show template dialog
     hasInitialized.current = true;
     setShowTemplateDialog(true);
   }, [columns, rows, chapters]);
@@ -49,7 +47,6 @@ export default function OutlinePage() {
 
     const templateColumns = getTemplateColumns(template);
 
-    // Create columns from template
     for (let i = 0; i < templateColumns.length; i++) {
       await createOutlineGridColumn({
         projectId: params.projectId,
@@ -58,7 +55,6 @@ export default function OutlinePage() {
       });
     }
 
-    // Create rows from existing chapters (if any)
     if (chapters && chapters.length > 0) {
       for (let i = 0; i < chapters.length; i++) {
         await createOutlineGridRow({

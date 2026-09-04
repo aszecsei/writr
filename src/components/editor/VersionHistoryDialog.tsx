@@ -38,7 +38,7 @@ function formatRelativeTime(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString();
 }
 
-export function InlineDiff({
+function InlineDiff({
   oldText,
   newText,
 }: {
