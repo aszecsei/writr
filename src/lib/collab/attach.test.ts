@@ -112,7 +112,7 @@ describe("attachClientToStore: close handling", () => {
   it("transitions to ended on close and records a transport error for non-normal codes", () => {
     const { client } = makeClientSync();
     attachClientToStore(client, useCollabStore);
-    client.handleClose(CLOSE_CODES.UNAUTHORIZED, "invalid-token");
+    client.handleClose(CLOSE_CODES.FORBIDDEN, "invalid-token");
     const s = getState();
     expect(s.status).toBe("ended");
     expect(s.error?.kind).toBe("transport");
@@ -133,7 +133,7 @@ describe("attachClientToStore: close handling", () => {
     useCollabStore
       .getState()
       .setError({ kind: "rate-limited", message: "first" });
-    client.handleClose(CLOSE_CODES.UNAUTHORIZED, "second");
+    client.handleClose(CLOSE_CODES.FORBIDDEN, "second");
     expect(getState().error?.kind).toBe("rate-limited");
     expect(getState().error?.message).toBe("first");
   });

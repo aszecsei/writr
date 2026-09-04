@@ -14,7 +14,7 @@ import {
   wireWebSocketToClient,
 } from "./transport";
 
-export interface MintedRoom {
+interface MintedRoom {
   roomUuid: string;
   hostToken: string;
   inviteTokens: {
@@ -46,7 +46,7 @@ function defaultAppOrigin(): string {
   return "";
 }
 
-export interface MintRoomOptions {
+interface MintRoomOptions {
   baseUrl: string;
   fetchFn?: typeof fetch;
   signal?: AbortSignal;
@@ -73,7 +73,7 @@ export async function mintRoom(opts: MintRoomOptions): Promise<MintedRoom> {
   return (await res.json()) as MintedRoom;
 }
 
-export interface ConnectAsHostOptions {
+interface ConnectAsHostOptions {
   baseUrl: string;
   appOrigin?: string;
   fetchFn?: typeof fetch;
@@ -86,7 +86,7 @@ export interface ConnectAsHostOptions {
   projectMode?: boolean;
 }
 
-export type ShareMode = "chapter" | "project";
+type ShareMode = "chapter" | "project";
 
 export interface ShareUrls {
   mode: ShareMode;
@@ -95,11 +95,10 @@ export interface ShareUrls {
   view: string;
 }
 
-export interface HostConnection {
+interface HostConnection {
   client: CollabClient;
   session: CollabSession;
   roomUuid: string;
-  hostToken: string;
   hostPriv: CryptoKey;
   hostPubEncoded: string;
   roomKey: CryptoKey;
@@ -166,7 +165,6 @@ export async function connectAsHost(
     client,
     session,
     roomUuid: room.roomUuid,
-    hostToken: room.hostToken,
     hostPriv: hostKeypair.priv,
     hostPubEncoded: hostKeypair.pubEncoded,
     roomKey,
@@ -176,7 +174,7 @@ export async function connectAsHost(
   };
 }
 
-export interface ConnectAsGuestOptions {
+interface ConnectAsGuestOptions {
   baseUrl: string;
   roomUuid: string;
   token: string;
@@ -187,7 +185,7 @@ export interface ConnectAsGuestOptions {
   signal?: AbortSignal;
 }
 
-export interface GuestConnection {
+interface GuestConnection {
   client: CollabClient;
   session: CollabSession;
   role: Role;

@@ -9,7 +9,7 @@ import type { CollabSession } from "@/lib/collab/session";
  * `host_disconnected` is the host-grace-period state guests see while the
  * server holds the room open waiting for the host to return.
  */
-export type CollabStatus =
+type CollabStatus =
   | "idle"
   | "connecting"
   | "awaiting_approval"
@@ -28,7 +28,7 @@ export interface CollabError {
  * + color and the `author` / `authorColor` fields on comments this peer
  * authors.
  */
-export interface CollabIdentity {
+interface CollabIdentity {
   name: string;
   color: string;
 }
@@ -37,7 +37,7 @@ export interface CollabIdentity {
  * A guest waiting for the host to approve their request to join.
  * Host-only state. The host's approval modal reads the head of this queue.
  */
-export interface PendingJoinRequest {
+interface PendingJoinRequest {
   requestId: string;
   guestPub: string;
   displayName: string;
@@ -53,7 +53,7 @@ export interface PendingJoinRequest {
  * X25519 public key. Subsequent join-requests with a known pubkey are
  * auto-approved without surfacing the modal.
  */
-export interface ApprovedGuest {
+interface ApprovedGuest {
   displayName: string;
   color: string;
   approvedAt: number;
@@ -62,7 +62,7 @@ export interface ApprovedGuest {
   peerId: string | null;
 }
 
-export interface CollabState {
+interface CollabState {
   session: CollabSession | null;
   status: CollabStatus;
   role: Role | null;
@@ -109,7 +109,6 @@ export interface CollabState {
   setIdentity: (identity: CollabIdentity | null) => void;
   addPendingJoinRequest: (req: PendingJoinRequest) => void;
   removePendingJoinRequest: (requestId: string) => void;
-  clearPendingJoinRequests: () => void;
   approveGuestPub: (
     guestPub: string,
     info: { displayName: string; color: string; peerId: string },
@@ -135,7 +134,6 @@ const INITIAL: Omit<
   | "setIdentity"
   | "addPendingJoinRequest"
   | "removePendingJoinRequest"
-  | "clearPendingJoinRequests"
   | "approveGuestPub"
   | "revokeGuestPub"
   | "clearGuestPeerId"
@@ -190,7 +188,6 @@ export const useCollabStore = create<CollabState>()((set) => ({
         (p) => p.requestId !== requestId,
       ),
     })),
-  clearPendingJoinRequests: () => set({ pendingJoinRequests: [] }),
   approveGuestPub: (guestPub, info) =>
     set((s) => ({
       approvedGuests: {
@@ -234,11 +231,8 @@ export const useCollabStore = create<CollabState>()((set) => ({
  * Zustand's shallow comparison can avoid unnecessary re-renders.
  */
 export const collabSelectors = {
-  isActive: (s: CollabState): boolean => s.session !== null,
   isHost: (s: CollabState): boolean => s.role === "host",
   isProjectMode: (s: CollabState): boolean => s.projectMode === true,
-  canEditProse: (s: CollabState): boolean =>
-    s.role === "host" || s.role === "edit",
   canEditComments: (s: CollabState): boolean =>
     s.role === "host" || s.role === "edit" || s.role === "review",
   isInGrace: (s: CollabState): boolean => s.status === "host_disconnected",

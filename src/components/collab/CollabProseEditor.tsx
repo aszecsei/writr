@@ -19,7 +19,7 @@ import type { ChapterId, Comment, ProjectId } from "@/db/schemas";
 import { useCommentsAdapter } from "@/hooks/editor/useCommentsAdapter";
 import { useEditorCommentSync } from "@/hooks/editor/useEditorCommentSync";
 
-export interface CollabProseEditorProps {
+interface CollabProseEditorProps {
   doc: Y.Doc;
   awareness: Awareness;
   editable: boolean;
@@ -39,8 +39,7 @@ export interface CollabProseEditorProps {
 
 /**
  * TipTap editor bound to a shared Y.Doc + Awareness, with optional
- * collaborative comments. Used by the /shared/[uuid] guest route until
- * the host's ChapterEditor learns the same binding.
+ * collaborative comments. Used by the /shared/[uuid] guest route.
  */
 export function CollabProseEditor(props: CollabProseEditorProps) {
   const {
@@ -148,9 +147,8 @@ export function CollabProseEditor(props: CollabProseEditorProps) {
   );
 }
 
-// Tailwind utility used by the host editor too — pulls editor width
-// from the `--editor-content-width` CSS custom property defined in
-// globals.css.
+// Pulls editor width from the `--editor-content-width` CSS custom
+// property defined in globals.css.
 const CENTERED_COLUMN = "mx-auto px-8 max-w-editor";
 
 interface CommentEnabledBodyProps {

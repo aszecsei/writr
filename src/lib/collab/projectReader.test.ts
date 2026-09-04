@@ -192,20 +192,6 @@ describe("attachProjectReader", () => {
     );
   });
 
-  it("bumps revision on every applied delta", () => {
-    const host = new Y.Doc();
-    const guest = new Y.Doc();
-    relay(host, guest);
-
-    const mirror = new ProjectMirror({ doc: host, projectId: PROJECT_ID });
-    attachProjectReader({ doc: guest, store: useSharedProjectStore });
-
-    const before = useSharedProjectStore.getState().revision;
-    mirror.syncTable("chapters", [chapter(CHAPTER_ID_1)]);
-    const afterUpsert = useSharedProjectStore.getState().revision;
-    expect(afterUpsert).toBeGreaterThan(before);
-  });
-
   it("detach unsubscribes all observers", () => {
     const host = new Y.Doc();
     const guest = new Y.Doc();

@@ -75,7 +75,7 @@ function character(id: CharacterId, name = "Alice"): Character {
 }
 
 const SharedWrapper = ({ children }: { children: ReactNode }) => (
-  <DataSourceProvider source={{ kind: "shared", roomUuid: "r-1" }}>
+  <DataSourceProvider source={{ kind: "shared" }}>
     {children}
   </DataSourceProvider>
 );

@@ -13,8 +13,6 @@ export interface CollabSessionOptions {
   client: CollabClient;
 }
 
-export type DocReplacedListener = (docKind: DocKind, doc: Y.Doc) => void;
-
 interface DocEntry {
   doc: Y.Doc;
   detachUpdate: () => void;
@@ -26,7 +24,6 @@ export class CollabSession {
   private readonly sessionDoc: Y.Doc;
   private readonly docs = new Map<DocKind, DocEntry>();
   private readonly clientUnsubs: Array<() => void> = [];
-  private readonly docReplacedListeners = new Set<DocReplacedListener>();
   private destroyed = false;
 
   constructor(opts: CollabSessionOptions) {
@@ -47,13 +44,6 @@ export class CollabSession {
     return this.createDoc(docKind);
   }
 
-  onDocReplaced(cb: DocReplacedListener): () => void {
-    this.docReplacedListeners.add(cb);
-    return () => {
-      this.docReplacedListeners.delete(cb);
-    };
-  }
-
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -70,7 +60,6 @@ export class CollabSession {
     // cleanup (Room.detach → destroy("host_left") when no other peers remain).
     // Idempotent: client.close() is a no-op if already closed.
     this.client.close(CLOSE_CODES.NORMAL, "session-destroyed");
-    this.docReplacedListeners.clear();
   }
 
   private createDoc(docKind: DocKind): Y.Doc {
@@ -86,24 +75,6 @@ export class CollabSession {
         doc.off("update", handler);
       },
     });
-    return doc;
-  }
-
-  private replaceDoc(docKind: DocKind): Y.Doc {
-    const existing = this.docs.get(docKind);
-    if (existing) {
-      existing.detachUpdate();
-      existing.doc.destroy();
-      this.docs.delete(docKind);
-    }
-    const doc = this.createDoc(docKind);
-    for (const cb of this.docReplacedListeners) {
-      try {
-        cb(docKind, doc);
-      } catch {
-        // listener errors must not break the session
-      }
-    }
     return doc;
   }
 
@@ -129,12 +100,6 @@ export class CollabSession {
     this.clientUnsubs.push(
       this.client.on("awareness", ({ update }) => {
         applyAwarenessUpdate(this.awareness, update, REMOTE_ORIGIN);
-      }),
-    );
-
-    this.clientUnsubs.push(
-      this.client.on("rotate-stream", ({ docKind }) => {
-        this.replaceDoc(docKind);
       }),
     );
   }

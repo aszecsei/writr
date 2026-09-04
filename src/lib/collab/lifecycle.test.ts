@@ -1,13 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  base64urlToBytes,
-  bytesToBase64url,
-  decryptPayload,
   deriveWrapKey,
-  encryptPayload,
   generateX25519Keypair,
   importX25519PubFromEncoded,
-  unwrapRoomKey,
   wrapRoomKey,
 } from "./crypto";
 import {
@@ -202,7 +197,6 @@ describe("connectAsHost", () => {
 
     const result = await promise;
     expect(result.roomUuid).toBe(SAMPLE_ROOM.roomUuid);
-    expect(result.hostToken).toBe("host-token");
     expect(result.hostPubEncoded).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(result.shareUrls.edit).toContain(
       `/shared/${SAMPLE_ROOM.roomUuid}?t=edit-tok#h=`,
@@ -261,7 +255,7 @@ describe("connectAsHost", () => {
     const ws = sockets[0];
     if (!ws) throw new Error("no socket");
     ws.fireOpen();
-    ws.fireClose(CLOSE_CODES.UNAUTHORIZED, "invalid-token");
+    ws.fireClose(CLOSE_CODES.FORBIDDEN, "invalid-token");
 
     await expect(promise).rejects.toThrow(/closed before welcome/);
   });
@@ -431,10 +425,3 @@ describe("connectAsGuest", () => {
     ).rejects.toThrow();
   });
 });
-
-// quiet TS unused-import warnings in the helpers above
-void base64urlToBytes;
-void bytesToBase64url;
-void decryptPayload;
-void encryptPayload;
-void unwrapRoomKey;
