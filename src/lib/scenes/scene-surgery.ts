@@ -15,6 +15,7 @@ import {
   assembleSegments,
   mapSegmentsToScenes,
   type OrderedSegment,
+  resolveCoreId,
 } from "./segments";
 
 // ─── Model-D scene structural operations ─────────────────────────────
@@ -151,16 +152,6 @@ function reseedIfActive(...chapterIds: ChapterId[]): void {
   }
 }
 
-/** The core scene id of a chapter: the row whose id no marker references. */
-function coreIdOf(sceneIds: string[], content: string): string {
-  const markerIds = new Set(
-    [...content.matchAll(/data-scene-id="([^"]*)"/g)]
-      .map((m) => m[1])
-      .filter(Boolean),
-  );
-  return sceneIds.find((id) => !markerIds.has(id)) ?? sceneIds[0] ?? "";
-}
-
 /**
  * Reorder the scenes of a chapter to `orderedSceneIds` (core-first). Rewrites
  * the chapter content, updates row order, and re-anchors comments.
@@ -182,7 +173,7 @@ export async function reorderScenesInChapter(
     .filter((seg): seg is OrderedSegment => seg !== undefined);
   if (reordered.length !== mapped.length) return; // stale ids — bail safely
 
-  const oldCore = coreIdOf(sceneIds, content);
+  const oldCore = resolveCoreId(sceneIds, content);
   const newContent = assembleSegments(reordered);
   const newCore = orderedSceneIds[0];
 
@@ -237,8 +228,8 @@ export async function moveSceneToChapter(
 
   const sourceIds = sourceScenes.map((s) => s.id);
   const targetIds = targetScenes.map((s) => s.id);
-  const oldSourceCore = coreIdOf(sourceIds, source.content);
-  const oldTargetCore = coreIdOf(targetIds, target.content);
+  const oldSourceCore = resolveCoreId(sourceIds, source.content);
+  const oldTargetCore = resolveCoreId(targetIds, target.content);
 
   const sourceSegs = mapSegmentsToScenes(source.content, sourceIds);
   const movedSeg = sourceSegs.find((s) => s.sceneId === sceneId);
@@ -350,7 +341,7 @@ export async function deleteSceneWithContent(sceneId: SceneId): Promise<void> {
   if (scenes.length <= 1) return;
 
   const sceneIds = scenes.map((s) => s.id);
-  const oldCore = coreIdOf(sceneIds, chapter.content);
+  const oldCore = resolveCoreId(sceneIds, chapter.content);
   const segs = mapSegmentsToScenes(chapter.content, sceneIds);
   const remaining = segs.filter((s) => s.sceneId !== sceneId);
   const newContent = assembleSegments(remaining);
