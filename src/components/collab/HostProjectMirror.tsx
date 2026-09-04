@@ -20,7 +20,7 @@ import {
 } from "@/hooks/outline/useOutlineGrid";
 import { ProjectMirror } from "@/lib/collab/projectMirror";
 import { collabSelectors, useCollabStore } from "@/store/collabStore";
-import { useProjectStore } from "@/store/projectStore";
+import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 
 /**
  * Effect-only host wrapper that mirrors the active project's Dexie state
@@ -32,7 +32,7 @@ export function HostProjectMirror({ projectId }: { projectId: ProjectId }) {
   const session = useCollabStore((s) => s.session);
   const isHost = useCollabStore(collabSelectors.isHost);
   const isProjectMode = useCollabStore(collabSelectors.isProjectMode);
-  const activeChapterId = useProjectStore((s) => s.activeChapterId);
+  const activeChapterId = useEditorStore(selectActiveChapterId);
 
   const project = useProject(projectId);
   const chapters = useChaptersByProject(projectId);
