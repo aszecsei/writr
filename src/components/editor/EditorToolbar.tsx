@@ -24,6 +24,7 @@ import { updateAppSettings } from "@/db/operations";
 import type { ChapterId, ProjectId } from "@/db/schemas";
 import { useAppSettings } from "@/hooks/data/useAppSettings";
 import { useChapter } from "@/hooks/data/useChapter";
+import { getTerm } from "@/lib/terminology";
 import { extractReadAloudText } from "@/lib/tts/extract";
 import { useCommentStore } from "@/store/commentStore";
 import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
@@ -163,6 +164,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const activeDocumentId = useEditorStore(selectActiveChapterId);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProjectTitle = useProjectStore((s) => s.activeProjectTitle);
+  const activeProjectMode = useProjectStore((s) => s.activeProjectMode);
 
   // Grammar checking — enabled state is persisted in AppSettings.
   const grammarEnabled = settings?.grammarCheckerEnabled ?? false;
@@ -193,7 +195,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     if (!text.trim()) return;
     void startReadAloud({
       chapterId: activeDocumentId,
-      chapterTitle: chapter.title || "Untitled chapter",
+      chapterTitle:
+        chapter.title || getTerm(activeProjectMode, "untitledChapter"),
       text,
       apiKey: ttsApiKey,
       provider: "openrouter",
@@ -204,6 +207,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     editor,
     activeDocumentId,
     chapter,
+    activeProjectMode,
     ttsApiKey,
     ttsModel,
     ttsVoice,
@@ -369,7 +373,9 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
               <ToolbarButton
                 icon={Volume2}
                 title={
-                  hasSelection ? "Read selection aloud" : "Read chapter aloud"
+                  hasSelection
+                    ? "Read selection aloud"
+                    : `Read ${getTerm(activeProjectMode, "chapter").toLowerCase()} aloud`
                 }
                 onClick={handleReadAloud}
                 disabled={readAloudLoading}
