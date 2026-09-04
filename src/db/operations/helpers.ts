@@ -27,18 +27,25 @@ export async function getNextOrder(
  * project where `projectId` may be null (global). A null projectId is not a
  * valid IndexedDB key, so `.where({ projectId: null })` would match nothing and
  * collide every global entry at order 0. Scan in JS and filter by exact scope.
+ *
+ * `extraScope` narrows further to a sub-group within the project (e.g. siblings
+ * under the same nullable `parentDocId`), for entities whose sibling field also
+ * isn't a valid compound-index key when null.
  */
 export async function getNextOrderForProjectScope(
   table: Table,
   projectId: string | null,
   explicitOrder: number | undefined,
+  extraScope?: (row: Record<string, unknown>) => boolean,
 ): Promise<number> {
   if (explicitOrder !== undefined) return explicitOrder;
   const all = (await table.toArray()) as Array<{
     projectId: string | null;
     order: number;
   }>;
-  const inScope = all.filter((r) => r.projectId === projectId);
+  const inScope = all.filter(
+    (r) => r.projectId === projectId && (extraScope ? extraScope(r) : true),
+  );
   if (inScope.length === 0) return 0;
   return Math.max(...inScope.map((r) => r.order)) + 1;
 }

@@ -5,7 +5,13 @@ import {
   type WorldbuildingDocId,
   WorldbuildingDocSchema,
 } from "../schemas";
-import { generateId, now, reorderEntities, stripUndefined } from "./helpers";
+import {
+  generateId,
+  getNextOrderForProjectScope,
+  now,
+  reorderEntities,
+  stripUndefined,
+} from "./helpers";
 
 // ─── Worldbuilding Docs ─────────────────────────────────────────────
 
@@ -36,12 +42,12 @@ export async function createWorldbuildingDoc(
     >,
 ): Promise<WorldbuildingDoc> {
   const parentDocId = data.parentDocId ?? null;
-  const order =
-    data.order ??
-    (await db.worldbuildingDocs
-      .where({ projectId: data.projectId })
-      .filter((d) => d.parentDocId === parentDocId)
-      .count());
+  const order = await getNextOrderForProjectScope(
+    db.worldbuildingDocs,
+    data.projectId,
+    data.order,
+    (r) => (r as { parentDocId: string | null }).parentDocId === parentDocId,
+  );
   const doc = WorldbuildingDocSchema.parse({
     id: generateId(),
     projectId: data.projectId,

@@ -251,10 +251,14 @@ export async function moveChapter(
 
 /**
  * Remove a single binder row and every dependent that keys off its id: linked
- * outline rows (and their cells), comments, and snapshots. Does NOT compact
- * order values (sibling order tolerates gaps).
+ * outline rows (and their cells), comments, snapshots, scenes, and indexed
+ * chunks. Does NOT compact order values (sibling order tolerates gaps). The
+ * canonical chapter cascade — also used by the outline-row delete path so the
+ * two never drift apart.
  */
-async function deleteRowAndDependents(chapterId: ChapterId): Promise<void> {
+export async function deleteRowAndDependents(
+  chapterId: ChapterId,
+): Promise<void> {
   const linkedRows = await db.outlineGridRows
     .where({ linkedChapterId: chapterId })
     .toArray();
