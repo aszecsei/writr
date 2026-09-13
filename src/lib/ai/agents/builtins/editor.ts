@@ -29,4 +29,6 @@ For \`replace\`, the combination of \`prefix + anchorText + suffix\` MUST occur 
 Whitespace warning: prefix, anchorText, and suffix are concatenated VERBATIM. Do NOT add a space between them; if a leading/trailing space belongs at the boundary, include it inside one of the strings (most naturally in anchorText). Keep anchorText within a single paragraph — prefix and suffix may span paragraph breaks.
 
 A short rationale is helpful but optional. Issue one propose_edit call per discrete change so each can be Applied or Discarded independently.
+
+propose_edit only stages the edit. Do not tell the writer an edit has been made or applied; say it is staged for their review.
 </staging-edits>`;

@@ -56,7 +56,7 @@ of the project id.
 
 ### `editor/` — Editor lifecycle hooks
 
-`useAutoSave` (also flushes a final save on unmount), `useComments`, `useEditorCommentSync`, `useEditorSeed` (doc seeding, collab Y.Doc handoff, sidebar scene-scroll requests), `useStagedEdits` (applies a propose_edit diff card), `useEditorPendingInsertion` (applies an AI-panel insert/replace), `useSceneTitleSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
+`useAutoSave` (also flushes a final save on unmount), `useComments`, `useEditorCommentSync`, `useEditorSeed` (doc seeding — one pass per editor instance / chapter / `contentVersion`, each reading the row straight from Dexie so a bump after a write always lands regardless of live-query timing; collab Y.Doc handoff; sidebar scene-scroll requests), `useStagedEdits` (applies a propose_edit diff card: replaces the live editor content synchronously via `replaceEditorContent`, persists through ChapterEditor's `save`, and keeps the request pending until the save settles), `useEditorPendingInsertion` (applies an AI-panel insert/replace), `useSceneTitleSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
 
 ### `forms/` — Form hooks
 

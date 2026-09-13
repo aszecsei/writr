@@ -69,17 +69,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setActiveDocument = useEditorStore((s) => s.setActiveDocument);
   const clearActiveDocument = useEditorStore((s) => s.clearActiveDocument);
   const markDirty = useEditorStore((s) => s.markDirty);
-  const markSaved = useEditorStore((s) => s.markSaved);
-  const bumpContentVersion = useEditorStore((s) => s.bumpContentVersion);
   const setWordCount = useEditorStore((s) => s.setWordCount);
   const setSelection = useEditorStore((s) => s.setSelection);
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const setActiveSceneId = useEditorStore((s) => s.setActiveSceneId);
   const pendingSceneScroll = useEditorStore((s) => s.pendingSceneScroll);
   const clearSceneScroll = useEditorStore((s) => s.clearSceneScroll);
-  const reportStagedEditResult = useEditorStore(
-    (s) => s.reportStagedEditResult,
-  );
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const sentenceLengthPreviewEnabled = useUiStore(
     (s) => s.sentenceLengthPreviewEnabled,
@@ -306,7 +301,6 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   // collab-mode change, and consume pending sidebar scene-scroll requests.
   useEditorSeed({
     editor,
-    chapter,
     chapterId,
     isScreenplay,
     collabDoc,
@@ -430,20 +424,12 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   });
 
   // AI-driven staged edits: applies a propose_edit diff card's Apply click.
-  const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
-  const clearPendingStagedEdit = useEditorStore(
-    (s) => s.clearPendingStagedEdit,
-  );
   useStagedEdits({
     editor,
     chapterId,
     isScreenplay,
-    pendingStagedEdit,
-    clearPendingStagedEdit,
-    reportStagedEditResult,
-    markSaved,
-    bumpContentVersion,
-    holeDelimitersRef,
+    saveChapter: save,
+    resetReconcile,
   });
 
   // Keyboard shortcuts (Ctrl+Shift+P for preview card)

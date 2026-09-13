@@ -2,10 +2,10 @@ import type { Editor } from "@tiptap/react";
 import type { MutableRefObject } from "react";
 import { useEffect, useRef } from "react";
 import type * as Y from "yjs";
-import type { Chapter, ChapterId, SceneId } from "@/db/schemas";
+import { getChapter } from "@/db/operations/chapters";
+import type { ChapterId, SceneId } from "@/db/schemas";
+import { replaceEditorContent } from "@/lib/editor/replace-content";
 import { scrollToPos } from "@/lib/editor/scroll";
-import { getWordCount } from "@/lib/editor/tiptap-storage";
-import { fountainToProseMirror, parseFountain } from "@/lib/fountain";
 
 /** Position of the sceneBreak marker carrying `sceneId`, or null if absent. */
 function findSceneMarkerPos(editor: Editor, sceneId: string): number | null {
@@ -55,7 +55,6 @@ function scrollEditorToScene(
 
 export interface UseEditorSeedOptions {
   editor: Editor | null;
-  chapter: Chapter | undefined;
   chapterId: ChapterId;
   isScreenplay: boolean;
   collabDoc: Y.Doc | null;
@@ -70,16 +69,26 @@ export interface UseEditorSeedOptions {
 }
 
 /**
- * Owns the editor's "has this chapter's content been loaded" lifecycle:
- * seeds the doc from Dexie (or the collab Y.Doc) once per chapter/session,
- * resets that flag when the chapter, a staged-edit content version bump, or
- * collab mode changes, and consumes a pending sidebar scene-scroll request
- * both right after seeding (cross-chapter navigation) and while already
- * seeded (same-chapter clicks).
+ * Owns the editor's "has this chapter's content been loaded" lifecycle.
+ *
+ * One seed pass runs per (editor instance, chapterId, contentVersion, collab
+ * mode). Each pass reads the chapter row straight from Dexie rather than from
+ * the `useChapter` live query: callers that bump `contentVersion` (staged-edit
+ * apply, version restore, scene surgery) do so only after their write has
+ * resolved, so the fetch always sees the written row no matter whether the
+ * live query's re-emission lands before, with, or after the bump. Re-emissions
+ * without a bump (every autosave) never reseed, so unsaved typing is safe.
+ *
+ * `initializedRef` is false from the moment a new pass is needed until its
+ * content has landed; the stale-doc effects in ChapterEditor and the comment
+ * sync gate on it.
+ *
+ * Also consumes a pending sidebar scene-scroll request both right after
+ * seeding (cross-chapter navigation) and while already seeded (same-chapter
+ * clicks).
  */
 export function useEditorSeed({
   editor,
-  chapter,
   chapterId,
   isScreenplay,
   collabDoc,
@@ -92,70 +101,75 @@ export function useEditorSeed({
   initializedRef,
   resetReconcile,
 }: UseEditorSeedOptions) {
-  // Latest values readable from the content-seed effect without making it a
+  // Latest values readable from the seed effect without making it a
   // dependency (which would wrongly reseed the doc when scenes change).
   const scenesRef = useRef(scenes);
   scenesRef.current = scenes;
   const pendingSceneScrollRef = useRef(pendingSceneScroll);
   pendingSceneScrollRef.current = pendingSceneScroll;
 
-  // Load content from Dexie into the editor once. In collab mode we only
-  // seed the shared Y.Doc when it's empty; otherwise the relay's buffered
-  // state has already been applied via the Collaboration extension.
+  // The (editor, key) pair whose content the editor currently holds.
+  const seededRef = useRef<{ editor: Editor; key: string } | null>(null);
+
   useEffect(() => {
-    if (!editor || !chapter || editor.isDestroyed || initializedRef.current) {
-      return;
-    }
-    if (collabDoc) {
-      const isYDocEmpty = collabDoc.getXmlFragment("default").length === 0;
-      if (isYDocEmpty && (chapter.content || "").length > 0) {
-        if (isScreenplay) {
-          const elements = parseFountain(chapter.content || "");
-          const json = fountainToProseMirror(elements);
-          editor.commands.setContent(json);
-        } else {
-          editor.commands.setContent(chapter.content || "");
-        }
+    if (!editor || editor.isDestroyed) return;
+    const key = `${chapterId}:${contentVersion}:${isCollabHost}`;
+    const prev = seededRef.current;
+    if (prev && prev.editor === editor && prev.key === key) return;
+
+    initializedRef.current = false;
+    // "Peers' state wins" applies only when an editor instance first joins a
+    // collab doc that already has content. A later version bump on the same
+    // editor is a deliberate local replacement (restore, scene surgery) and
+    // is applied; the Collaboration extension pushes it into the Y.Doc.
+    const isFreshEditor = !prev || prev.editor !== editor;
+    let cancelled = false;
+
+    void (async () => {
+      const row = await getChapter(chapterId);
+      if (cancelled || editor.isDestroyed) return;
+      if (!row) return;
+      const content = row.content ?? "";
+      const skipForCollab =
+        collabDoc !== null &&
+        isFreshEditor &&
+        (collabDoc.getXmlFragment("default").length > 0 ||
+          content.length === 0);
+      const wc = skipForCollab
+        ? null
+        : replaceEditorContent(editor, content, { isScreenplay });
+      if (wc !== null) setWordCount(wc);
+      initializedRef.current = true;
+      seededRef.current = { editor, key };
+      resetReconcile();
+      // Consume a pending scene-scroll now that the doc is seeded — this is
+      // the path that fires after cross-chapter navigation. Same-chapter
+      // clicks are handled by the dedicated effect below.
+      const pending = pendingSceneScrollRef.current;
+      if (
+        pending &&
+        scenesRef.current &&
+        scrollEditorToScene(editor, scenesRef.current, pending)
+      ) {
+        clearSceneScroll();
       }
-      // If the Y.Doc has content we leave it alone — peers' state wins.
-    } else if (isScreenplay) {
-      const elements = parseFountain(chapter.content || "");
-      const json = fountainToProseMirror(elements);
-      editor.commands.setContent(json);
-    } else {
-      editor.commands.setContent(chapter.content || "");
-    }
-    const wc = getWordCount(editor.storage);
-    setWordCount(wc);
-    initializedRef.current = true;
-    // Consume a pending scene-scroll now that the doc is seeded — this is the
-    // path that fires after cross-chapter navigation. Same-chapter clicks are
-    // handled by the dedicated effect below.
-    const pending = pendingSceneScrollRef.current;
-    if (
-      pending &&
-      scenesRef.current &&
-      scrollEditorToScene(editor, scenesRef.current, pending)
-    ) {
-      clearSceneScroll();
-    }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     editor,
-    chapter,
-    setWordCount,
-    isScreenplay,
+    chapterId,
+    contentVersion,
+    isCollabHost,
     collabDoc,
+    isScreenplay,
+    setWordCount,
     clearSceneScroll,
     initializedRef,
+    resetReconcile,
   ]);
-
-  // Reset initialized flag when chapterId, contentVersion, or collab mode
-  // changes — entering or leaving a session needs a fresh seed pass.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on chapterId/contentVersion/collab change
-  useEffect(() => {
-    initializedRef.current = false;
-    resetReconcile();
-  }, [chapterId, contentVersion, resetReconcile, isCollabHost]);
 
   // Scroll to a scene requested from a sidebar. Handles the same-chapter case
   // (editor already seeded); cross-chapter scrolls are consumed by the seed

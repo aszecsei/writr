@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import type { MutableRefObject, RefObject } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COMMENTS_UPDATED_META } from "@/components/editor/extensions/Comments";
 import { updateComment } from "@/db/operations";
 import type { Comment, CommentId } from "@/db/schemas";
@@ -25,6 +25,9 @@ export function useEditorCommentSync(
   initializedRef: RefObject<boolean>,
 ) {
   const reconciledIdsRef = useRef<Set<CommentId>>(new Set());
+  // Bumped by resetReconcile so the reconcile effect re-runs against the
+  // current document even when `comments` hasn't changed (same-chapter reseed).
+  const [reconcileEpoch, setReconcileEpoch] = useState(0);
 
   const activeComments = useMemo(() => {
     return (comments ?? []).filter((c) => c.status !== "resolved");
@@ -40,6 +43,7 @@ export function useEditorCommentSync(
   }, [activeComments, editor, commentsRef, initializedRef]);
 
   // Reconcile any comments we haven't seen yet this session.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reconcileEpoch forces a re-run after a reset
   useEffect(() => {
     if (!editor || editor.isDestroyed || !comments || !initializedRef.current)
       return;
@@ -69,12 +73,14 @@ export function useEditorCommentSync(
 
       reconciledIdsRef.current.add(comment.id);
     }
-  }, [editor, comments, initializedRef]);
+  }, [editor, comments, initializedRef, reconcileEpoch]);
 
-  // Reset the reconciled-ids set when the call site swaps chapters.
-  const resetReconcile = () => {
+  // Forget what has been reconciled and re-run against the current document.
+  // Called after a chapter switch or any whole-document replacement.
+  const resetReconcile = useCallback(() => {
     reconciledIdsRef.current = new Set();
-  };
+    setReconcileEpoch((e) => e + 1);
+  }, []);
 
   return { activeComments, resetReconcile };
 }

@@ -49,6 +49,19 @@ describe("propose_edit (render-only diff payload)", () => {
     expect(result.data?.rationale).toBe("verb does the work; cut the adverb");
   });
 
+  it("tells the model the edit awaits the user's Apply", async () => {
+    const chapter = await seedChapter("Existing content.");
+
+    const result = await executeTool(
+      "propose_edit",
+      { chapterId: chapter.id, kind: "append", newContent: "More." },
+      { projectId },
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.message).toMatch(/not applied until the user clicks apply/i);
+  });
+
   it("echoes prefix/suffix back in the chat payload", async () => {
     const chapter = await seedChapter("the good dog and the bad dog");
 

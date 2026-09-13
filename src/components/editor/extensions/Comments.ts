@@ -15,6 +15,15 @@ const commentsPluginKey = new PluginKey<CommentsPluginState>("comments");
 /** Metadata key used to signal that comments have changed. */
 export const COMMENTS_UPDATED_META = "commentsUpdated";
 
+/**
+ * Metadata key set on a whole-document replacement (seed, reseed, staged-edit
+ * apply). Mapping tracked positions through a full replace collapses every
+ * comment to the document end, so the plugin instead drops its position map
+ * and falls back to each comment's stored offsets until the next reconcile
+ * writes fresh ones.
+ */
+export const COMMENTS_RESET_META = "commentsReset";
+
 interface CommentsPluginState {
   decorations: DecorationSet;
   positionMap: Map<string, { from: number; to: number }>;
@@ -147,6 +156,24 @@ export const Comments = Extension.create<CommentsOptions>({
           },
           apply(tr, old, _oldState, newState): CommentsPluginState {
             const comments = commentsRef?.current ?? [];
+
+            if (tr.getMeta(COMMENTS_RESET_META)) {
+              // Whole-document replacement: forget tracked positions and
+              // render from stored offsets. An empty map also tells the
+              // editor's save path there is nothing to write back.
+              const positionMap = new Map<
+                string,
+                { from: number; to: number }
+              >();
+              return {
+                decorations: buildDecorationsFromMap(
+                  newState,
+                  positionMap,
+                  comments,
+                ),
+                positionMap,
+              };
+            }
 
             if (tr.getMeta(COMMENTS_UPDATED_META)) {
               // Comments changed from DB/liveQuery. Keep mapped positions

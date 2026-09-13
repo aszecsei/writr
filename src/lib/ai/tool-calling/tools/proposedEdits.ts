@@ -145,18 +145,21 @@ export const proposeEditTool = defineTool({
       suffix: params.suffix,
     });
 
-    return ok(`Proposed ${params.kind} edit on "${chapter.title}"`, {
-      chapterId: params.chapterId,
-      chapterTitle: chapter.title,
-      kind: params.kind,
-      anchorText: params.anchorText,
-      prefix: params.prefix,
-      suffix: params.suffix,
-      newContent: params.newContent,
-      rationale: params.rationale,
-      originalText,
-      anchorFound,
-    });
+    return ok(
+      `Staged ${params.kind} edit on "${chapter.title}" for user review — NOT applied until the user clicks Apply in the diff card.`,
+      {
+        chapterId: params.chapterId,
+        chapterTitle: chapter.title,
+        kind: params.kind,
+        anchorText: params.anchorText,
+        prefix: params.prefix,
+        suffix: params.suffix,
+        newContent: params.newContent,
+        rationale: params.rationale,
+        originalText,
+        anchorFound,
+      },
+    );
   },
 });
 

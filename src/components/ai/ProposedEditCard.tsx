@@ -42,6 +42,7 @@ export function ProposedEditCard({ payload }: Props) {
   const requestStagedEdit = useEditorStore((s) => s.requestStagedEdit);
   const activeDocumentId = useEditorStore((s) => s.activeDocumentId);
   const activeDocumentType = useEditorStore((s) => s.activeDocumentType);
+  const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
   // Correlation id so the asynchronous apply (run in ChapterEditor) can report
   // success/failure back to this specific card. Stable across re-renders.
   const editId = useId();
@@ -62,6 +63,10 @@ export function ProposedEditCard({ payload }: Props) {
 
   const chapterMatches =
     activeDocumentType === "chapter" && activeDocumentId === payload.chapterId;
+  // Applies run one at a time: a second card's Apply while the first is still
+  // being written would splice against pre-edit content and drop the first.
+  const anotherApplying =
+    pendingStagedEdit !== null && pendingStagedEdit.editId !== editId;
   // Allow apply from the initial pending state and after a failed attempt
   // (Retry) — both require the anchor to be present and the chapter active.
   const canApply =
@@ -164,7 +169,10 @@ export function ProposedEditCard({ payload }: Props) {
           <button
             type="button"
             onClick={handleApply}
-            disabled={status === "applying" || !canApply}
+            disabled={status === "applying" || !canApply || anotherApplying}
+            title={
+              anotherApplying ? "Another edit is being applied…" : undefined
+            }
             className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-green-700 dark:hover:bg-green-600"
           >
             <Check size={12} />

@@ -1,74 +1,78 @@
 import type { Editor } from "@tiptap/react";
-import type { MutableRefObject } from "react";
-import { useEffect } from "react";
-import { updateChapterContent } from "@/db/operations";
+import { useEffect, useRef } from "react";
 import type { ChapterId } from "@/db/schemas";
 import {
   locateProposedEdit,
   spliceEdit,
 } from "@/lib/ai/tool-calling/tools/edit-locator";
+import { replaceEditorContent } from "@/lib/editor/replace-content";
 import { getMarkdown } from "@/lib/editor/tiptap-storage";
 import { serializeFountain } from "@/lib/fountain";
-import { countWordsExcludingHoles, type HoleDelimiters } from "@/lib/holes";
-import type { PendingStagedEdit } from "@/store/editorStore";
-
-// Word count for a serialized chapter string (markdown or fountain). Used when
-// persisting a staged-edit splice, where the editor's live characterCount isn't
-// available for the post-splice content (it's reseeded asynchronously). The
-// next real editor save recomputes the authoritative count. Holes are excluded
-// to match the live CharacterCount, which is configured the same way.
-function countContentWords(text: string, delimiters: HoleDelimiters): number {
-  return countWordsExcludingHoles(text, delimiters);
-}
+import { useEditorStore } from "@/store/editorStore";
 
 export interface UseStagedEditsOptions {
   editor: Editor | null;
   chapterId: ChapterId;
   isScreenplay: boolean;
-  pendingStagedEdit: PendingStagedEdit | null;
-  clearPendingStagedEdit: () => void;
-  reportStagedEditResult: (
-    editId: string,
-    result: "applied" | "failed",
-  ) => void;
-  markSaved: () => void;
-  bumpContentVersion: () => void;
-  holeDelimitersRef: MutableRefObject<HoleDelimiters>;
+  /** ChapterEditor's `save`: serializes the editor and persists everything derived from it. */
+  saveChapter: () => Promise<void>;
+  /** Re-anchor comments against the replaced document. */
+  resetReconcile: () => void;
 }
 
 /**
  * AI-driven staged edits: the AiPanel posts an edit when the user clicks
  * Apply on a propose_edit diff card. The panel has no editor access, so we
- * resolve and apply here. Resolution runs against the chapter's serialized
- * STRING (the same representation propose_edit validated its anchor against)
- * via the shared `locateProposedEdit` — not the flattened PM doc, which
- * strips markdown and silently dropped any anchor touching formatting. We
- * splice the string, persist, then `bumpContentVersion` to reseed the editor
- * (re-parsing fountain when needed) and re-anchor comments through the normal
- * reconcile path. The originating card observes the outcome via
- * `reportStagedEditResult`.
+ * resolve and apply here.
+ *
+ * Resolution runs against the chapter's serialized STRING (the same
+ * representation propose_edit validated its anchor against) via the shared
+ * `locateProposedEdit`. The spliced string is put straight into the live
+ * editor — synchronously, so the user sees it at once and, when hosting a
+ * collab session, the Collaboration extension carries it into the Y.Doc —
+ * and then persisted through the editor's normal `save` (content, scene rows,
+ * comment positions). The request stays pending until that save settles so
+ * other cards can't interleave with a half-applied edit. The originating
+ * card observes the outcome via `stagedEditResults`.
  */
 export function useStagedEdits({
   editor,
   chapterId,
   isScreenplay,
-  pendingStagedEdit,
-  clearPendingStagedEdit,
-  reportStagedEditResult,
-  markSaved,
-  bumpContentVersion,
-  holeDelimitersRef,
+  saveChapter,
+  resetReconcile,
 }: UseStagedEditsOptions) {
+  const pendingStagedEdit = useEditorStore((s) => s.pendingStagedEdit);
+  // The editId whose apply is in flight; guards against effect re-runs (e.g.
+  // a new saveChapter identity) while the request is still pending.
+  const inFlightRef = useRef<string | null>(null);
+
   useEffect(() => {
+    // Editor not ready yet: wait — the effect re-runs when useEditor yields.
     if (!pendingStagedEdit || !editor || editor.isDestroyed) return;
-    if (pendingStagedEdit.chapterId !== chapterId) return;
     const edit = pendingStagedEdit;
+    const {
+      clearPendingStagedEdit,
+      reportStagedEditResult,
+      markSaving,
+      markSaved,
+      markSaveError,
+      markDirty,
+      setWordCount,
+    } = useEditorStore.getState();
+
+    if (edit.chapterId !== chapterId) {
+      // The user navigated away between clicking Apply and this effect.
+      reportStagedEditResult(edit.editId, "failed");
+      clearPendingStagedEdit();
+      return;
+    }
+    if (inFlightRef.current === edit.editId) return;
 
     const content = isScreenplay
       ? serializeFountain(editor.state.doc)
       : getMarkdown(editor.storage);
     const range = locateProposedEdit(content, edit);
-
     if (!range) {
       console.warn(
         `[propose_edit] anchorText not located in chapter — staged ${edit.kind} edit dropped`,
@@ -78,32 +82,49 @@ export function useStagedEdits({
       return;
     }
 
+    inFlightRef.current = edit.editId;
     const next = spliceEdit(content, range, edit.newContent);
-    clearPendingStagedEdit();
-    // Cancel any pending autosave before persisting. A debounced autosave armed
-    // by recent typing would read the editor doc — which still holds the
-    // pre-splice content until the async reseed below — and clobber our write.
-    // Marking saved clears that timer; our apply never re-dirties the doc, so no
-    // new autosave starts before the reseed.
-    markSaved();
+    setWordCount(replaceEditorContent(editor, next, { isScreenplay }));
+    resetReconcile();
+    markSaving();
     void (async () => {
-      await updateChapterContent(
-        chapterId,
-        next,
-        countContentWords(next, holeDelimitersRef.current),
-      );
-      bumpContentVersion();
-      reportStagedEditResult(edit.editId, "applied");
+      try {
+        await saveChapter();
+        markSaved();
+      } catch (err) {
+        // The edit is in the document; the autosave / unmount flush will
+        // retry the write. Surface it through the save-status indicator.
+        console.error("[propose_edit] persist failed:", err);
+        markDirty();
+        markSaveError();
+      } finally {
+        inFlightRef.current = null;
+        reportStagedEditResult(edit.editId, "applied");
+        clearPendingStagedEdit();
+      }
     })();
   }, [
     pendingStagedEdit,
     editor,
     chapterId,
     isScreenplay,
-    reportStagedEditResult,
-    clearPendingStagedEdit,
-    markSaved,
-    bumpContentVersion,
-    holeDelimitersRef,
+    saveChapter,
+    resetReconcile,
   ]);
+
+  // If this editor unmounts with a request it never started, fail it so the
+  // card doesn't sit on "Applying…" (and block every other card) forever.
+  useEffect(() => {
+    return () => {
+      const {
+        pendingStagedEdit: pending,
+        reportStagedEditResult,
+        clearPendingStagedEdit,
+      } = useEditorStore.getState();
+      if (pending && inFlightRef.current !== pending.editId) {
+        reportStagedEditResult(pending.editId, "failed");
+        clearPendingStagedEdit();
+      }
+    };
+  }, []);
 }
