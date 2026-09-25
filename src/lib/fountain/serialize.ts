@@ -1,5 +1,27 @@
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { match } from "ts-pattern";
+import {
+  type FountainMark,
+  type FountainSpan,
+  serializeFountainInline,
+} from "./inline";
+
+const FOUNTAIN_MARKS = new Set<string>(["bold", "italic", "underline"]);
+
+/** A block's inline content as Fountain text, keeping bold/italic/underline. */
+function inlineFountain(node: ProseMirrorNode, upper = false): string {
+  const spans: FountainSpan[] = [];
+  node.forEach((child) => {
+    if (!child.isText || !child.text) return;
+    spans.push({
+      text: upper ? child.text.toUpperCase() : child.text,
+      marks: child.marks
+        .map((m) => m.type.name)
+        .filter((name): name is FountainMark => FOUNTAIN_MARKS.has(name)),
+    });
+  });
+  return serializeFountainInline(spans);
+}
 
 /**
  * Serialize a ProseMirror document (with screenplay node types) back to Fountain plain text.
@@ -8,7 +30,7 @@ export function serializeFountain(doc: ProseMirrorNode): string {
   const lines: string[] = [];
 
   doc.forEach((node, _offset, index) => {
-    const text = node.textContent;
+    const text = inlineFountain(node);
 
     match(node.type.name)
       .with("sceneHeading", () => {
@@ -26,7 +48,7 @@ export function serializeFountain(doc: ProseMirrorNode): string {
       })
       .with("character", () => {
         if (index > 0) lines.push("");
-        lines.push(text.toUpperCase());
+        lines.push(inlineFountain(node, true));
       })
       .with("dialogue", () => {
         // Dialogue follows character directly (no blank line)
@@ -34,12 +56,12 @@ export function serializeFountain(doc: ProseMirrorNode): string {
       })
       .with("parenthetical", () => {
         // Parenthetical follows character/dialogue directly
-        const wrapped = text.startsWith("(") ? text : `(${text})`;
+        const wrapped = node.textContent.startsWith("(") ? text : `(${text})`;
         lines.push(wrapped);
       })
       .with("transition", () => {
         if (index > 0) lines.push("");
-        lines.push(text.toUpperCase());
+        lines.push(inlineFountain(node, true));
       })
       .with("centered", () => {
         if (index > 0) lines.push("");

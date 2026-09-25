@@ -1,7 +1,11 @@
-import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import type {
+  Content,
+  ContentText,
+  TDocumentDefinitions,
+} from "pdfmake/interfaces";
 import { match } from "ts-pattern";
 import type { FountainElement } from "@/lib/fountain";
-import { parseFountain } from "@/lib/fountain";
+import { parseFountain, parseFountainInline } from "@/lib/fountain";
 import { loadPdfMake } from "./pdfmake";
 import type { ExportContent, ExportOptions } from "./types";
 
@@ -20,13 +24,27 @@ const DIALOGUE_RIGHT = 108; // ~1.5" from right
 const PAREN_LEFT = 108; // ~1.5" from left
 const PAREN_RIGHT = 144; // ~2" from right
 
+/** Fountain emphasis as a pdfmake inline text array. */
+function styledText(text: string, upper = false): ContentText["text"] {
+  const spans = parseFountainInline(text);
+  if (spans.length === 0) return "";
+  return spans.map((span) => ({
+    text: upper ? span.text.toUpperCase() : span.text,
+    bold: span.marks.includes("bold") || undefined,
+    italics: span.marks.includes("italic") || undefined,
+    decoration: span.marks.includes("underline")
+      ? ("underline" as const)
+      : undefined,
+  }));
+}
+
 function elementsToContent(elements: FountainElement[]): Content[] {
   return elements.map((el) =>
     match(el)
       .with(
         { type: "scene_heading" },
         (e): Content => ({
-          text: e.text.toUpperCase(),
+          text: styledText(e.text, true),
           bold: true,
           margin: [0, 12, 0, 6],
         }),
@@ -34,35 +52,38 @@ function elementsToContent(elements: FountainElement[]): Content[] {
       .with(
         { type: "action" },
         (e): Content => ({
-          text: e.text,
+          text: styledText(e.text),
           margin: [0, 6, 0, 0],
         }),
       )
       .with(
         { type: "character" },
         (e): Content => ({
-          text: e.text.toUpperCase(),
+          text: styledText(e.text, true),
           margin: [CHARACTER_INDENT, 6, 0, 0],
         }),
       )
       .with(
         { type: "dialogue" },
         (e): Content => ({
-          text: e.text,
+          text: styledText(e.text),
           margin: [DIALOGUE_LEFT, 0, DIALOGUE_RIGHT, 0],
         }),
       )
       .with({ type: "parenthetical" }, (e): Content => {
-        const text = e.text.startsWith("(") ? e.text : `(${e.text})`;
+        const plain = parseFountainInline(e.text)
+          .map((span) => span.text)
+          .join("");
+        const text = plain.startsWith("(") ? e.text : `(${e.text})`;
         return {
-          text,
+          text: styledText(text),
           margin: [PAREN_LEFT, 0, PAREN_RIGHT, 0],
         };
       })
       .with(
         { type: "transition" },
         (e): Content => ({
-          text: e.text.toUpperCase(),
+          text: styledText(e.text, true),
           alignment: "right",
           margin: [0, 6, 0, 0],
         }),
@@ -70,7 +91,7 @@ function elementsToContent(elements: FountainElement[]): Content[] {
       .with(
         { type: "centered" },
         (e): Content => ({
-          text: e.text,
+          text: styledText(e.text),
           alignment: "center",
           margin: [0, 6, 0, 0],
         }),

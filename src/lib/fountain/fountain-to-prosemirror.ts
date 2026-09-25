@@ -1,3 +1,4 @@
+import { parseFountainInline } from "./inline";
 import type { FountainElement } from "./types";
 
 interface ProseMirrorNodeJSON {
@@ -22,70 +23,16 @@ const NODE_TYPE_MAP: Record<string, string> = {
   page_break: "screenplayPageBreak",
 };
 
-/**
- * Parse basic Fountain inline formatting into ProseMirror text nodes with marks.
- *
- * Fountain supports:
- *   ***bold italic***  -> bold + italic
- *   **bold**           -> bold
- *   *italic*           -> italic
- *   _underline_        -> underline
- */
-function parseInlineFormatting(text: string): ProseMirrorNodeJSON[] {
-  if (!text) return [];
-
-  const nodes: ProseMirrorNodeJSON[] = [];
-  // Simple regex-based parser for inline formatting
-  // Process in order: bold-italic, bold, italic, underline
-  const regex = /(\*{3})(.*?)\1|(\*{2})(.*?)\3|(\*)(.*?)\5|(_)(.*?)\7/g;
-
-  let lastIndex = 0;
-
-  for (const match of text.matchAll(regex)) {
-    // Add any plain text before this match
-    if (match.index > lastIndex) {
-      nodes.push({ type: "text", text: text.slice(lastIndex, match.index) });
-    }
-
-    if (match[1] === "***") {
-      // Bold italic
-      nodes.push({
-        type: "text",
-        text: match[2],
-        marks: [{ type: "bold" }, { type: "italic" }],
-      });
-    } else if (match[3] === "**") {
-      // Bold
-      nodes.push({
-        type: "text",
-        text: match[4],
-        marks: [{ type: "bold" }],
-      });
-    } else if (match[5] === "*") {
-      // Italic
-      nodes.push({
-        type: "text",
-        text: match[6],
-        marks: [{ type: "italic" }],
-      });
-    } else if (match[7] === "_") {
-      // Underline
-      nodes.push({
-        type: "text",
-        text: match[8],
-        marks: [{ type: "underline" }],
-      });
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Add any remaining plain text
-  if (lastIndex < text.length) {
-    nodes.push({ type: "text", text: text.slice(lastIndex) });
-  }
-
-  return nodes;
+function inlineContent(text: string): ProseMirrorNodeJSON[] {
+  return parseFountainInline(text).map((span) =>
+    span.marks.length === 0
+      ? { type: "text", text: span.text }
+      : {
+          type: "text",
+          text: span.text,
+          marks: span.marks.map((type) => ({ type })),
+        },
+  );
 }
 
 /**
@@ -107,7 +54,7 @@ export function fountainToProseMirror(
 
     const node: ProseMirrorNodeJSON = {
       type: nodeType,
-      content: parseInlineFormatting(el.text),
+      content: inlineContent(el.text),
     };
 
     if (el.type === "scene_heading" && el.sceneNumber) {
