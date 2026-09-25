@@ -2,6 +2,9 @@ import type { Editor } from "@tiptap/react";
 import type { LucideIcon } from "lucide-react";
 import {
   AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   ArrowRight,
   Bold,
   Clapperboard,
@@ -125,6 +128,23 @@ export const actions: ToolbarAction[] = [
     isActive: (e) => e.isActive("heading", { level: 3 }),
     group: "heading",
   },
+  ...(
+    [
+      { value: "left", label: "Align Left", icon: AlignLeft },
+      { value: "center", label: "Align Center", icon: AlignCenter },
+      { value: "right", label: "Align Right", icon: AlignRight },
+      { value: "justify", label: "Justify", icon: AlignJustify },
+    ] as const
+  ).map(
+    ({ value, label, icon }): ToolbarAction => ({
+      label,
+      icon,
+      kind: "command",
+      run: (e) => e.chain().focus().setTextAlign(value).run(),
+      isActive: (e) => e.isActive({ textAlign: value }),
+      group: "align",
+    }),
+  ),
   {
     label: "Blockquote",
     icon: Quote,

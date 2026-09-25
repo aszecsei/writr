@@ -14,7 +14,7 @@ src/components/editor/
   FocusModeOverlay.tsx        Dim-non-active-paragraph overlay
   toolbar-actions.ts          Shared ToolbarAction[] definitions (prose actions,
                                screenplay element-type actions)
-  AlignmentDropdown.tsx       FontSelector.tsx       FontSizeSelector.tsx
+  FontSelector.tsx            FontSizeSelector.tsx
   CopyMenu.tsx                TextToolsMenu.tsx
   InsertImageDialog.tsx       LinkEditorDialog.tsx   RubyDialog.tsx
   SpellcheckContextMenu.tsx   SpellcheckScannerModal.tsx
@@ -66,6 +66,7 @@ Located in `src/components/editor/extensions/`.
 - **`Spellcheck`** — squiggle decorations, integrates with `nspell` via `spellcheckStore`.
 - **`Grammar`** — blue squiggle decorations for grammar/style issues, integrates with `harper.js` (web worker) via `grammarStore`. Async check; spelling lints are filtered (nspell owns spelling). Toggle persists in the `grammarCheckerEnabled` AppSettings field.
 - **`Indent`** — paragraph indentation marks.
+- **`MarkdownParagraph` / `MarkdownHeading`** (`MarkdownBlockAttrs.ts`) — replace StarterKit's paragraph and heading. Markdown has no syntax for alignment or indent, so a block with non-left `textAlign` or `indent > 0` is serialized as an HTML block (`<p style="text-align: …" data-indent="…">`); `parseHTML` restores the attributes on load, and `src/lib/export/markdown-to-nodes.ts` reads the same form. Plain blocks stay plain Markdown. Alignment is set from the toolbar's `"align"` group in `toolbar-actions.ts` (or TextAlign's Mod-Shift-L/E/R/J).
 - **`Ruby`** — ruby-text annotations (CJK reading hints).
 
 ### Screenplay extensions (`extensions/screenplay/`)

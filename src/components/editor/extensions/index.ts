@@ -28,6 +28,7 @@ import { Comments } from "./Comments";
 import { Grammar } from "./Grammar";
 import { Holes } from "./Holes";
 import { Indent } from "./Indent";
+import { MarkdownHeading, MarkdownParagraph } from "./MarkdownBlockAttrs";
 import { MarkdownBlockquote } from "./MarkdownBlockquote";
 import { Ruby } from "./Ruby";
 import { SceneBreak } from "./SceneBreak";
@@ -127,7 +128,10 @@ function holesExtension(options?: ExtensionOptions) {
 export function createExtensions(options?: ExtensionOptions) {
   const collab = options?.collab;
   const starterKitConfig: Parameters<typeof StarterKit.configure>[0] = {
-    heading: { levels: [1, 2, 3] },
+    // Replaced by MarkdownParagraph / MarkdownHeading, which keep alignment
+    // and indent through the Markdown round-trip (see MarkdownBlockAttrs.ts).
+    paragraph: false,
+    heading: false,
     // Replaced by MarkdownBlockquote, which fixes emphasis serialization
     // inside multi-paragraph blockquotes (see MarkdownBlockquote.ts).
     blockquote: false,
@@ -144,6 +148,8 @@ export function createExtensions(options?: ExtensionOptions) {
   }
   return [
     StarterKit.configure(starterKitConfig),
+    MarkdownParagraph,
+    MarkdownHeading.configure({ levels: [1, 2, 3] }),
     Placeholder.configure({
       placeholder: "Start writing...",
     }),

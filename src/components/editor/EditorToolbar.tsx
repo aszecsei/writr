@@ -34,7 +34,6 @@ import { useProjectStore } from "@/store/projectStore";
 import { useSpellcheckStore } from "@/store/spellcheckStore";
 import { useTtsStore } from "@/store/ttsStore";
 import { useUiStore } from "@/store/uiStore";
-import { AlignmentDropdown } from "./AlignmentDropdown";
 import { CopyMenu } from "./CopyMenu";
 import { CreateCommentButton } from "./comments";
 import { getGrammarResults } from "./extensions/Grammar";
@@ -324,16 +323,6 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       {groups.map((group, gi) => {
         const groupActions = actions.filter((a) => a.group === group);
         if (groupActions.length === 0) return null;
-
-        // Render alignment group as a dropdown
-        if (group === "align") {
-          return (
-            <div key={group} className="flex items-center">
-              {gi > 0 && <ToolbarSeparator />}
-              <AlignmentDropdown editor={editor} />
-            </div>
-          );
-        }
 
         return (
           <div key={group} className="flex items-center">
