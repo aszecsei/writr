@@ -55,6 +55,22 @@ describe("fountainToProseMirror", () => {
     expect(content[2].text).toBe(" away.");
   });
 
+  it("handles underline combined with bold", () => {
+    const doc = fountainToProseMirror([{ type: "action", text: "_**x**_" }]);
+    expect(doc.content?.[0].content).toEqual([
+      {
+        type: "text",
+        text: "x",
+        marks: [{ type: "underline" }, { type: "bold" }],
+      },
+    ]);
+  });
+
+  it("reads escaped asterisks as literal text", () => {
+    const doc = fountainToProseMirror([{ type: "action", text: "2\\*3\\*4" }]);
+    expect(doc.content?.[0].content).toEqual([{ type: "text", text: "2*3*4" }]);
+  });
+
   it("returns empty action for empty input", () => {
     const doc = fountainToProseMirror([]);
     expect(doc.content).toHaveLength(1);

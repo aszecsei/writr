@@ -32,6 +32,9 @@ function spansToHtml(spans: InlineSpan[]): string {
           if (textSpan.styles.includes("strikethrough")) {
             html = `<s>${html}</s>`;
           }
+          if (textSpan.styles.includes("underline")) {
+            html = `<u>${html}</u>`;
+          }
           if (textSpan.styles.includes("code")) {
             html = `<code>${html}</code>`;
           }

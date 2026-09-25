@@ -1,6 +1,7 @@
 import type {
   Content,
   ContentText,
+  Decoration,
   TDocumentDefinitions,
 } from "pdfmake/interfaces";
 import { match } from "ts-pattern";
@@ -49,19 +50,27 @@ type PdfTextPart = {
   text: string;
   bold?: boolean;
   italics?: boolean;
-  decoration?: "lineThrough";
+  decoration?: Decoration | Decoration[];
   font?: string;
   fontSize?: number;
   color?: string;
 };
 
+function decorationFor(
+  styles: TextSpan["styles"],
+): Decoration | Decoration[] | undefined {
+  const decorations: Decoration[] = [];
+  if (styles.includes("underline")) decorations.push("underline");
+  if (styles.includes("strikethrough")) decorations.push("lineThrough");
+  if (decorations.length <= 1) return decorations[0];
+  return decorations;
+}
+
 function spanToPdfParts(s: TextSpan): PdfTextPart[] {
   const base = {
     bold: s.styles.includes("bold") || undefined,
     italics: s.styles.includes("italic") || undefined,
-    decoration: s.styles.includes("strikethrough")
-      ? ("lineThrough" as const)
-      : undefined,
+    decoration: decorationFor(s.styles),
     font: s.styles.includes("code") ? "Courier" : undefined,
   };
 
@@ -90,9 +99,7 @@ function spansToPdfText(spans: InlineSpan[]): ContentText {
       text: onlySpan.text,
       bold: onlySpan.styles.includes("bold") || undefined,
       italics: onlySpan.styles.includes("italic") || undefined,
-      decoration: onlySpan.styles.includes("strikethrough")
-        ? "lineThrough"
-        : undefined,
+      decoration: decorationFor(onlySpan.styles),
       font: onlySpan.styles.includes("code") ? "Courier" : undefined,
     };
   }

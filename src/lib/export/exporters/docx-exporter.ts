@@ -59,6 +59,7 @@ function spanToRunOptions(span: TextSpan) {
     bold: span.styles.includes("bold"),
     italics: span.styles.includes("italic"),
     strike: span.styles.includes("strikethrough"),
+    underline: span.styles.includes("underline") ? {} : undefined,
     font: span.styles.includes("code") ? "Courier New" : FONT,
     size: FONT_SIZE,
   };

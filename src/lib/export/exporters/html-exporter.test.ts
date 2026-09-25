@@ -29,6 +29,10 @@ describe("HtmlExporter", () => {
     );
   });
 
+  it("renders underline as <u>", () => {
+    expect(renderChapter("a <u>under</u> b")).toBe("<p>a <u>under</u> b</p>");
+  });
+
   it("renders a Writr scene-break marker as <hr>", () => {
     expect(
       renderChapter(
