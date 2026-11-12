@@ -9,6 +9,7 @@ import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
 import { useProjectStore } from "@/store/projectStore";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { ParagraphDensitySection } from "./sections/ParagraphDensitySection";
+import { RepeatedPassagesSection } from "./sections/RepeatedPassagesSection";
 import { SentenceLengthSection } from "./sections/SentenceLengthSection";
 import { SentenceOpenerSection } from "./sections/SentenceOpenerSection";
 import { SentenceRhythmSection } from "./sections/SentenceRhythmSection";
@@ -139,6 +140,10 @@ export function AnalysisPanel() {
               <WordEchoesSection
                 echoes={result.chapter?.echoes ?? null}
                 chapterTerm={chapterTerm}
+              />
+              <RepeatedPassagesSection
+                projectId={tab === "project" ? activeProjectId : null}
+                projectMode={projectMode}
               />
               <WordFrequencySection derived={analysis.derived} />
             </div>

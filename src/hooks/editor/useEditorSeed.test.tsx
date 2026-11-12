@@ -10,6 +10,8 @@ import {
 import { db } from "@/db/database";
 import { updateChapterContent } from "@/db/operations/chapters";
 import type { ChapterId, ProjectId } from "@/db/schemas";
+import { DEFAULT_HOLE_DELIMITERS } from "@/lib/holes";
+import { tokenizeText } from "@/lib/text-analysis/repeats/tokenize";
 import { makeChapter, resetIdCounter } from "@/test/helpers";
 import { type UseEditorSeedOptions, useEditorSeed } from "./useEditorSeed";
 
@@ -29,6 +31,9 @@ function makeOptions(
     scenes: [],
     pendingSceneScroll: null,
     clearSceneScroll: vi.fn(),
+    pendingPassageReveal: null,
+    clearPassageReveal: vi.fn(),
+    holeDelimitersRef: { current: DEFAULT_HOLE_DELIMITERS },
     setWordCount: vi.fn(),
     initializedRef: { current: false },
     resetReconcile: vi.fn(),
@@ -124,5 +129,70 @@ describe("useEditorSeed", () => {
       expect(editor.getText()).toContain("She waits.");
     });
     expect(editor.state.doc.firstChild?.type.name).toBe("sceneHeading");
+  });
+
+  describe("passage reveal", () => {
+    const anchor = {
+      tokens: tokenizeText("the gale came howling").map((t) => t.word),
+      occurrence: 0,
+    };
+
+    function selectedText() {
+      const { from, to } = editor.state.selection;
+      return editor.state.doc.textBetween(from, to);
+    }
+
+    it("selects a passage requested for this chapter once seeded, then clears the request", async () => {
+      const chapter = await seedChapter("At dusk the gale came howling in.");
+      const options = makeOptions({
+        chapterId: chapter.id,
+        pendingPassageReveal: { chapterId: chapter.id, anchor },
+      });
+
+      renderHook(() => useEditorSeed(options));
+
+      await vi.waitFor(() => {
+        expect(options.clearPassageReveal).toHaveBeenCalled();
+      });
+      expect(selectedText()).toBe("the gale came howling");
+    });
+
+    it("leaves a reveal meant for another chapter pending", async () => {
+      const chapter = await seedChapter("At dusk the gale came howling in.");
+      const options = makeOptions({
+        chapterId: chapter.id,
+        pendingPassageReveal: {
+          chapterId: "b9999999-9999-4999-a999-999999999999" as ChapterId,
+          anchor,
+        },
+      });
+
+      renderHook(() => useEditorSeed(options));
+
+      await vi.waitFor(() => {
+        expect(options.initializedRef.current).toBe(true);
+      });
+      expect(options.clearPassageReveal).not.toHaveBeenCalled();
+    });
+
+    it("selects a passage requested while the chapter is already open", async () => {
+      const chapter = await seedChapter("At dusk the gale came howling in.");
+      const base = makeOptions({ chapterId: chapter.id });
+      const { rerender } = renderHook(
+        (props: UseEditorSeedOptions) => useEditorSeed(props),
+        { initialProps: base },
+      );
+      await vi.waitFor(() => {
+        expect(base.initializedRef.current).toBe(true);
+      });
+
+      rerender({
+        ...base,
+        pendingPassageReveal: { chapterId: chapter.id, anchor },
+      });
+
+      expect(base.clearPassageReveal).toHaveBeenCalled();
+      expect(selectedText()).toBe("the gale came howling");
+    });
   });
 });

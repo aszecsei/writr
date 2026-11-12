@@ -5,7 +5,7 @@ All Zustand stores use Immer middleware and are intended for **ephemeral UI stat
 ## Stores
 
 - **`uiStore`** — sidebar (`open` + active panel: `chapters | bible | agents`), modal (discriminated union — see below), AI panel toggle, focus-mode toggle.
-- **`editorStore`** — active document, dirty/save state, word count, selection, content version (used to invalidate derived state).
+- **`editorStore`** — active document, dirty/save state, word count, selection, content version (used to invalidate derived state). Also cross-component editor requests that survive navigation and are consumed by the target chapter's editor via `useEditorSeed`: `pendingSceneScroll` (sidebar scene rows) and `pendingPassageReveal` (`{ chapterId, anchor }`, from the Repeated passages analysis).
 - **`projectStore`** — active project id, set once by the project layout. Every reader derives title/mode from the live `Project` row via `useActiveProject()` (`src/hooks/data/useProject.ts`).
 - **`commentStore`** — selected comment, comment-margin visibility.
 - **`sprintStore`** — ephemeral ticker state only (`elapsedMs`, `remainingMs`, `wordsWritten`). The active sprint itself (id, running/paused status) is a live Dexie query via `useActiveSprint()` (`src/hooks/writing/useActiveSprint.ts`), not store state.

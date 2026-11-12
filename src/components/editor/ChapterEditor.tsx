@@ -75,6 +75,8 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
   const setActiveSceneId = useEditorStore((s) => s.setActiveSceneId);
   const pendingSceneScroll = useEditorStore((s) => s.pendingSceneScroll);
   const clearSceneScroll = useEditorStore((s) => s.clearSceneScroll);
+  const pendingPassageReveal = useEditorStore((s) => s.pendingPassageReveal);
+  const clearPassageReveal = useEditorStore((s) => s.clearPassageReveal);
   const focusModeEnabled = useUiStore((s) => s.focusModeEnabled);
   const sentenceLengthPreviewEnabled = useUiStore(
     (s) => s.sentenceLengthPreviewEnabled,
@@ -309,6 +311,9 @@ export function ChapterEditor({ chapterId }: ChapterEditorProps) {
     scenes,
     pendingSceneScroll,
     clearSceneScroll,
+    pendingPassageReveal,
+    clearPassageReveal,
+    holeDelimitersRef,
     setWordCount,
     initializedRef,
     resetReconcile,

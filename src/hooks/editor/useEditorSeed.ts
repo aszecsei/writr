@@ -6,6 +6,9 @@ import { getChapter } from "@/db/operations/chapters";
 import type { ChapterId, SceneId } from "@/db/schemas";
 import { replaceEditorContent } from "@/lib/editor/replace-content";
 import { scrollToPos } from "@/lib/editor/scroll";
+import type { HoleDelimiters } from "@/lib/holes";
+import { locatePassageInDoc } from "@/lib/prosemirror/locate-passage";
+import type { PassageAnchor } from "@/lib/text-analysis/repeats/types";
 
 /** Position of the sceneBreak marker carrying `sceneId`, or null if absent. */
 function findSceneMarkerPos(editor: Editor, sceneId: string): number | null {
@@ -53,6 +56,35 @@ function scrollEditorToScene(
   return true;
 }
 
+/**
+ * Select a passage and scroll it into view. When the passage can't be found
+ * (edited away since the analysis ran) the chapter simply stays at the top.
+ * Focus is needed for the selection to show; the scroll goes through
+ * `scrollToPos` a frame later for the same reason as scene scrolls.
+ */
+function revealPassage(
+  editor: Editor,
+  anchor: PassageAnchor,
+  delimiters: HoleDelimiters,
+): void {
+  const range = locatePassageInDoc(editor.state.doc, anchor, delimiters);
+  if (!range) return;
+  editor
+    .chain()
+    .setTextSelection(range)
+    .focus(undefined, { scrollIntoView: false })
+    .run();
+  requestAnimationFrame(() => {
+    if (editor.isDestroyed) return;
+    scrollToPos(editor, range.from, { center: true });
+  });
+}
+
+interface PendingPassageReveal {
+  chapterId: ChapterId;
+  anchor: PassageAnchor;
+}
+
 export interface UseEditorSeedOptions {
   editor: Editor | null;
   chapterId: ChapterId;
@@ -63,6 +95,9 @@ export interface UseEditorSeedOptions {
   scenes: { id: string }[] | undefined;
   pendingSceneScroll: SceneId | null;
   clearSceneScroll: () => void;
+  pendingPassageReveal: PendingPassageReveal | null;
+  clearPassageReveal: () => void;
+  holeDelimitersRef: MutableRefObject<HoleDelimiters>;
   setWordCount: (count: number) => void;
   initializedRef: MutableRefObject<boolean>;
   resetReconcile: () => void;
@@ -83,9 +118,9 @@ export interface UseEditorSeedOptions {
  * content has landed; the stale-doc effects in ChapterEditor and the comment
  * sync gate on it.
  *
- * Also consumes a pending sidebar scene-scroll request both right after
- * seeding (cross-chapter navigation) and while already seeded (same-chapter
- * clicks).
+ * Also consumes a pending sidebar scene-scroll request, and a pending
+ * passage reveal from the analysis panel, both right after seeding
+ * (cross-chapter navigation) and while already seeded (same-chapter clicks).
  */
 export function useEditorSeed({
   editor,
@@ -97,6 +132,9 @@ export function useEditorSeed({
   scenes,
   pendingSceneScroll,
   clearSceneScroll,
+  pendingPassageReveal,
+  clearPassageReveal,
+  holeDelimitersRef,
   setWordCount,
   initializedRef,
   resetReconcile,
@@ -107,6 +145,8 @@ export function useEditorSeed({
   scenesRef.current = scenes;
   const pendingSceneScrollRef = useRef(pendingSceneScroll);
   pendingSceneScrollRef.current = pendingSceneScroll;
+  const pendingPassageRevealRef = useRef(pendingPassageReveal);
+  pendingPassageRevealRef.current = pendingPassageReveal;
 
   // The (editor, key) pair whose content the editor currently holds.
   const seededRef = useRef<{ editor: Editor; key: string } | null>(null);
@@ -153,6 +193,11 @@ export function useEditorSeed({
       ) {
         clearSceneScroll();
       }
+      const reveal = pendingPassageRevealRef.current;
+      if (reveal && reveal.chapterId === chapterId) {
+        revealPassage(editor, reveal.anchor, holeDelimitersRef.current);
+        clearPassageReveal();
+      }
     })();
 
     return () => {
@@ -167,6 +212,8 @@ export function useEditorSeed({
     isScreenplay,
     setWordCount,
     clearSceneScroll,
+    clearPassageReveal,
+    holeDelimitersRef,
     initializedRef,
     resetReconcile,
   ]);
@@ -187,4 +234,33 @@ export function useEditorSeed({
       clearSceneScroll();
     }
   }, [pendingSceneScroll, editor, scenes, clearSceneScroll, initializedRef]);
+
+  // Reveal a passage requested from the analysis panel while this chapter
+  // is already open; cross-chapter reveals are consumed by the seed effect.
+  // Declared after the seed effect, which flips initializedRef off first
+  // when the chapter changes, so an outgoing chapter never consumes it.
+  useEffect(() => {
+    if (
+      !pendingPassageReveal ||
+      pendingPassageReveal.chapterId !== chapterId ||
+      !editor ||
+      editor.isDestroyed ||
+      !initializedRef.current
+    ) {
+      return;
+    }
+    revealPassage(
+      editor,
+      pendingPassageReveal.anchor,
+      holeDelimitersRef.current,
+    );
+    clearPassageReveal();
+  }, [
+    pendingPassageReveal,
+    chapterId,
+    editor,
+    clearPassageReveal,
+    holeDelimitersRef,
+    initializedRef,
+  ]);
 }

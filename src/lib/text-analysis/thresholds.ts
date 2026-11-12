@@ -37,3 +37,62 @@ export const MTLD_MIN_TOKENS = 50;
 
 /** The TTR level at which an MTLD factor is considered complete. */
 export const MTLD_TTR_THRESHOLD = 0.72;
+
+// ─── Repeated passages (`repeats/`) ─────────────────────────────────
+
+/** Words per shingle: the shortest verbatim run that can seed a match. */
+export const REPEAT_SHINGLE_TOKENS = 5;
+
+/**
+ * Unmatched words tolerated on either side between two verbatim runs
+ * before a match is split in two. Covers a substitution and an insertion
+ * a couple of words apart.
+ */
+export const REPEAT_MAX_GAP_TOKENS = 6;
+
+/** Max difference between the two sides' gaps (net inserted/deleted words). */
+export const REPEAT_MAX_SKEW_TOKENS = 3;
+
+/**
+ * Each occurrence of a shingle is paired with at most this many earlier
+ * occurrences, keeping seed count linear for refrains repeated hundreds of
+ * times. Union-find still joins every copy into one cluster.
+ */
+export const REPEAT_SEED_NEIGHBOR_WINDOW = 8;
+
+/** A repeat must share at least this many words to be reported. */
+export const REPEAT_MIN_MATCHED_TOKENS = 8;
+
+/** ...and contain at least this many non-glue words, so filler doesn't count. */
+export const REPEAT_MIN_CONTENT_TOKENS = 3;
+
+/**
+ * Two copies within one chapter must be at least this many words apart;
+ * closer repetition is deliberate rhetoric (anaphora) or an echo, which
+ * the word-echo metric already covers.
+ */
+export const REPEAT_MIN_SELF_DISTANCE_TOKENS = 60;
+
+/**
+ * Spans overlapping by this share of the longer one are the same location.
+ * Measured against the longer span so a short phrase that a longer match
+ * happens to run into stays a separate location (and cluster).
+ */
+export const REPEAT_LOCATION_MERGE_OVERLAP = 0.5;
+
+/**
+ * Cluster score is Σ R·(n/R)^E over each copy's redundant words n, so a
+ * copy of R words scores R and longer copies score superlinearly. Short
+ * phrasal tics don't outrank a recycled paragraph.
+ */
+export const REPEAT_SCORE_REFERENCE_TOKENS = 10;
+export const REPEAT_SCORE_EXPONENT = 1.5;
+
+/** Max clusters `findRepeatedPassages` returns. */
+export const REPEAT_CLUSTER_LIMIT = 100;
+
+/**
+ * When an exact passage can't be found in the editor (it was edited after
+ * the run), fall back to locating its first this-many words.
+ */
+export const PASSAGE_PROBE_TOKENS = 8;

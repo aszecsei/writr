@@ -29,9 +29,15 @@ Users filter which checks run via the **Grammar Rules** modal (`GrammarRulesDial
 
 `createLazyService(doLoad)` returns `{ load, isLoaded, isLoading, get }`: dedupes concurrent `load()` calls via a shared promise and always clears `isLoading` (even when `doLoad` throws) via `finally`. Backs both `SpellcheckService` and `GrammarService`.
 
+## `binder/` — Binder tree helpers
+
+`tree.ts` builds and flattens the chapter tree (`buildTree`, `flattenManuscript` for reading order, `subtreeIds`, `isManuscriptDocument`, drag-and-drop projection). `contexts.ts`'s `listComparisonContexts(items)` lists the slices of the manuscript an analysis can be confined to — the whole project, each separator group (a separator plus the siblings after it, up to the next separator, at any depth), each row with nested documents (its subtree), and each top-level document — so a collection of short stories can be analysed one story at a time. Contexts covering the same documents as an earlier one are dropped. `config.ts` gates the nesting UI.
+
 ## `prosemirror/` — Shared document walker
 
-`extract-text-blocks.ts`'s `extractTextBlocks(doc)` is the one place that knows how to walk a ProseMirror doc's inline content: skip `codeBlock`, collapse inline `code`-marked text and other atoms to a placeholder character, treat `hardBreak` as a boundary, and track absolute positions. Returns one `TextBlock` (`{ node, pos, runs }`) per textblock; `flattenBlock()` concatenates a block's runs into `{ text, offsets }` (offsets\[i\] = the ProseMirror position of `text[i]`). Consumed by `grammar/extractor.ts`, `spellcheck/tokenizer.ts`, `smart-quotes.ts`, and `normalize-line-breaks.ts`.
+`extract-text-blocks.ts`'s `extractTextBlocks(doc)` is the one place that knows how to walk a ProseMirror doc's inline content: skip `codeBlock`, collapse inline `code`-marked text and other atoms to a placeholder character, treat `hardBreak` as a boundary, and track absolute positions. Returns one `TextBlock` (`{ node, pos, runs }`) per textblock; `flattenBlock()` concatenates a block's runs into `{ text, offsets }` (offsets\[i\] = the ProseMirror position of `text[i]`). Consumed by `grammar/extractor.ts`, `spellcheck/tokenizer.ts`, `smart-quotes.ts`, `normalize-line-breaks.ts`, and `locate-passage.ts`.
+
+`locate-passage.ts`'s `locatePassageInDoc(doc, anchor, delimiters)` finds a repeated-passages `PassageAnchor` (word sequence + occurrence index) in a live doc. It reduces the doc the way `text-analysis/strip.ts` reduces markdown (headings skipped, holes removed), so it matches across mark boundaries and paragraph breaks, and falls back to the passage's opening words when the passage was edited after the run.
 
 ## `text/` — Small text utilities
 
@@ -108,6 +114,8 @@ Backs the Analysis Panel. `analyze.ts`'s `analyzeSentences()` builds one chapter
 - `thresholds.ts` — Every numeric knob (echo window/limits, sticky threshold, sentence-length and density-band boundaries, MTLD minimums), collected in one place instead of scattered as module-level consts across the metric files.
 - `presentation.ts` — The banding helpers that map a raw metric to a user-facing bucket/label: `readabilityBand`, `paragraphDensityLevel`, `echoSeverity`, `bucketForLength`.
 - `excerpt.ts` — `makeExcerpt()`, a length-clamped sentence excerpt for echo/sticky-sentence UI.
+- `strip.ts` — Reduces stored chapter content to plain prose paragraphs (`chapterPlainParagraphs` picks the markdown or screenplay path by project mode).
+- `repeats/` — The on-demand **Repeated passages** check: recycled wording across chapters, with no NLP or model. `tokenize.ts` is a cheap regex tokenizer that keeps source offsets. `find-repeats.ts`'s `findRepeatedPassages(chapters)` hashes 5-word shingles (any containing at least one non-`GLUE_WORDS` word), pairs each occurrence with its few previous occurrences, chains seeds along diagonals (tolerating a few edited/inserted words), merges overlapping spans into locations, and groups locations into clusters. Scoring follows reading order: the first copy is free, and each later copy counts the words it shares with its best earlier copy (`redundantWords`). The cluster `score` sums `score.ts`'s superlinear `repeatWeight`, so one recycled paragraph outranks several short tics. `run-key.ts` fingerprints a run for staleness. Every knob is a `REPEAT_*` constant in `thresholds.ts`. Not re-exported from the barrel: `locate-passage.ts` imports the tokenizer and must not pull compromise into the editor bundle.
 - `index.ts` re-exports all of the above (plus the metric/aggregate/cache functions) under their existing names, so components import from the barrel; `SentenceLengthPreview.ts` is the one deliberate exception, deep-importing `bucketForLength` from `presentation.ts` directly to keep the compromise-backed barrel out of the editor bundle.
 
 ## Standalone files
@@ -119,6 +127,7 @@ Backs the Analysis Panel. `analyze.ts`'s `analyzeSentences()` builds one chapter
 - `format-time.ts` — Clock/duration/relative-time formatters (countdown timers, playback bars, hour-of-day labels, relative timestamps, sprint history).
 - `download.ts` — `triggerDownload()`, a throwaway-anchor blob download.
 - `filename.ts` — `sanitizeFilename()`, lowercase-kebab-case for filenames.
+- `idle.ts` — `idle()`, resolves on the next idle callback; used to chunk main-thread analysis work.
 - `hash.ts` — `hashText()`, a non-cryptographic FNV-1a hash for change detection.
 - `holes.ts` — Detects/strips bracketed "hole" placeholders in prose.
 - `punctuation-match.ts` — Punctuation-tolerant substring matching for LLM-generated anchors.
