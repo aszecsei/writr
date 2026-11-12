@@ -43,6 +43,7 @@ Tools (`tool-calling/tools/`):
 - `timeline.ts` — timeline event CRUD.
 - `worldbuilding.ts` — worldbuilding doc CRUD + move.
 - `scenes.ts` — scene metadata read/write.
+- `scratchpad.ts` — `read_scratchpad` (list, or read one doc by id) / `write_scratchpad` (create, replace, or append) / `delete_scratchpad` (children are promoted) for the binder's Scratchpad section. Every tool resolves its target through one guard that rejects manuscript rows, separators, and other projects' rows. Writes go through `setChapterContent`, so AI-written words don't record a writing session, and they reseed the open editor via `reseedIfActive` (`src/lib/editor/reseed-if-active.ts`). `read_scratchpad` is in the shared chat read baseline; write/delete are opt-in via the agent tool picker.
 - `outline.ts` — outline grid column/row/cell management.
 - `proposedEdits.ts` — `propose_edit`, staging a developmental edit for the user to apply.
 - `comments.ts` — `add_comment` / `reply_to_comment` for Beta Reader (auto-execute, persona-attributed inline editor comments).

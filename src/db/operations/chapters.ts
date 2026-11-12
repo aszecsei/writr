@@ -182,6 +182,19 @@ export async function updateChapterContent(
 }
 
 /**
+ * Write a chapter's content without crediting a writing session. For
+ * non-user authorship (AI tools), so generated words don't inflate the
+ * writer's stats. User edits go through {@link updateChapterContent}.
+ */
+export async function setChapterContent(
+  id: ChapterId,
+  content: string,
+  wordCount: number,
+): Promise<void> {
+  await db.chapters.update(id, { content, wordCount, updatedAt: now() });
+}
+
+/**
  * Re-parent and/or reorder a binder item.
  *
  * - Rejects moves that would create a cycle (a node under its own descendant).

@@ -102,6 +102,12 @@ export const READS_GROUPS: ToolPickerGroup[] = [
         label: "Chapter summary",
         ids: ["get:summary"],
       },
+      {
+        key: "read:scratchpad",
+        label: "Scratchpad",
+        hint: "read_scratchpad — the writer's loose, non-manuscript notes",
+        ids: ["read_scratchpad"],
+      },
     ],
   },
   {
@@ -161,6 +167,10 @@ export const MUTATIONS_GROUPS: ToolPickerGroup[] = [
       mutationRow("update_chapter"),
       mutationRow("update_scene"),
     ],
+  },
+  {
+    heading: "Scratchpad",
+    rows: [mutationRow("write_scratchpad"), mutationRow("delete_scratchpad")],
   },
   {
     heading: "Outline grid",

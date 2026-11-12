@@ -41,6 +41,7 @@ export const CHAT_READS_BASE: readonly string[] = [
   "get_chapter_structure",
   "list_scenes",
   "get:summary",
+  "read_scratchpad",
   // Project-wide.
   "get:outline",
   "search_project",
