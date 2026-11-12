@@ -10,7 +10,7 @@ import {
   updateChapterContent,
 } from "@/db/operations";
 import type { ChapterId, Comment, CommentId, SceneId } from "@/db/schemas";
-import { selectActiveChapterId, useEditorStore } from "@/store/editorStore";
+import { reseedIfActive } from "@/lib/editor/reseed-if-active";
 import {
   assembleSegments,
   mapSegmentsToScenes,
@@ -138,18 +138,6 @@ async function applyCommentWrites(
       }
     }
   });
-}
-
-/** Reseed the open editor from Dexie when the changed chapter is the active one. */
-function reseedIfActive(...chapterIds: ChapterId[]): void {
-  const state = useEditorStore.getState();
-  const active = selectActiveChapterId(state);
-  if (active && chapterIds.includes(active)) {
-    // Cancel a pending autosave (it holds pre-op editor content), then bump the
-    // content version so ChapterEditor re-seeds from the freshly written row.
-    state.markSaved();
-    state.bumpContentVersion();
-  }
 }
 
 /**

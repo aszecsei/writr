@@ -30,6 +30,11 @@ import { presentChoiceTool } from "./tools/presentChoice";
 import { proposeEditTool } from "./tools/proposedEdits";
 import { getTool, listTool } from "./tools/registry";
 import { listScenesTool, updateSceneTool } from "./tools/scenes";
+import {
+  deleteScratchpadTool,
+  readScratchpadTool,
+  writeScratchpadTool,
+} from "./tools/scratchpad";
 import { searchProjectTool } from "./tools/search";
 import {
   createTimelineEventTool,
@@ -80,6 +85,10 @@ export const AI_TOOLS: AiToolDefinition[] = [
   // Scene metadata: read (per chapter) + write
   listScenesTool,
   updateSceneTool,
+  // Scratchpad: loose notes (never compiled)
+  readScratchpadTool,
+  writeScratchpadTool,
+  deleteScratchpadTool,
   // Project-wide search
   searchProjectTool,
   // Editor: stage a developmental edit for the user to apply

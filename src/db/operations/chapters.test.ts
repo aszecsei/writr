@@ -15,6 +15,7 @@ import {
   getBinderItems,
   getChaptersByProject,
   moveChapter,
+  setChapterContent,
   updateChapterContent,
 } from "./chapters";
 import { getIndexedChunksBySource, putIndexedChunk } from "./indexedChunks";
@@ -61,6 +62,16 @@ describe("updateChapterContent", () => {
 
     const sessions = await db.writingSessions.toArray();
     expect(sessions).toHaveLength(0);
+  });
+
+  it("setChapterContent writes content without recording a session", async () => {
+    const ch = makeChapter({ projectId, title: "Ch", wordCount: 0 });
+    await db.chapters.add(ch);
+
+    await setChapterContent(ch.id, "three new words", 3);
+
+    expect((await db.chapters.get(ch.id))?.content).toBe("three new words");
+    expect(await db.writingSessions.toArray()).toHaveLength(0);
   });
 });
 
