@@ -7,6 +7,7 @@ import { getManuscriptChaptersOrdered } from "@/db/operations/chapters";
 import type { Chapter, ProjectMode } from "@/db/schemas";
 import { isManuscriptDocument } from "@/lib/binder/tree";
 import { DEFAULT_HOLE_DELIMITERS, type HoleDelimiters } from "@/lib/holes";
+import { idle } from "@/lib/idle";
 import {
   type AggregateAnalysis,
   type AnalysisScope,
@@ -14,11 +15,10 @@ import {
   aggregateAnalyses,
   analyzeSentences,
   type ChapterAnalysis,
+  chapterPlainParagraphs,
   getCachedAnalysis,
   makeAnalysisCacheKey,
-  markdownToPlainParagraphs,
   parseParagraph,
-  screenplayToPlainParagraphs,
   setCachedAnalysis,
 } from "@/lib/text-analysis";
 import { useAppSettings } from "../data/useAppSettings";
@@ -45,16 +45,6 @@ const BATCH_WORD_TARGET = 1500;
 /** Quiet period after an edit before re-analyzing the changed chapter. */
 const RECOMPUTE_DEBOUNCE_MS = 1000;
 
-function idle(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof requestIdleCallback === "function") {
-      requestIdleCallback(() => resolve());
-    } else {
-      setTimeout(resolve, 0);
-    }
-  });
-}
-
 function approximateWordCount(text: string): number {
   return text.split(/\s+/).length;
 }
@@ -65,10 +55,7 @@ async function analyzeChapter(
   isCancelled: () => boolean,
 ): Promise<ChapterAnalysis | null> {
   const { chapter, mode } = input;
-  const paragraphs =
-    mode === "screenplay"
-      ? screenplayToPlainParagraphs(chapter.content, delimiters)
-      : markdownToPlainParagraphs(chapter.content, delimiters);
+  const paragraphs = chapterPlainParagraphs(chapter.content, mode, delimiters);
 
   const sentences: AnalyzedSentence[] = [];
   let batchWords = 0;

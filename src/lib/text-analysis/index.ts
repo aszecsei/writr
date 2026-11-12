@@ -15,10 +15,7 @@ export {
   paragraphDensityLevel,
   readabilityBand,
 } from "./presentation";
-export {
-  markdownToPlainParagraphs,
-  screenplayToPlainParagraphs,
-} from "./strip";
+export { chapterPlainParagraphs } from "./strip";
 export {
   ECHO_WINDOW_SENTENCES,
   LONG_MAX,

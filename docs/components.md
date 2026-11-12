@@ -4,6 +4,7 @@ Components live under `src/components/` and are organized by feature area. Befor
 
 ## Feature directories
 
+- **`analysis/`** — The Analysis panel: `AnalysisPanel` (Chapter / Project / All tabs over `useTextAnalysis`), `AnalysisProgress`, and one `sections/*Section` per metric group, each an `AccordionSection`. `RepeatedPassagesSection` is the exception: it runs on demand (Project tab only) through `useRepeatedPassages`, with a context picker, and `RepeatedPassageRow` links each copy to its chapter (requesting a passage reveal) and offers a side-by-side compare.
 - **`agents/`** — `AgentEditorBody`: the full-page agent-definition editor behind the `/agents/definitions` routes. `AgentsPageBody`: the Agent list (Global / Project) body.
 - **`ai/`** — AI chat panel: `AiPanel`, `AgentSelector`, `MessageList`, `MarkdownMessage`, `ToolCallMessage`, `ProposedEditCard`, `DelegatedAgentCard`, `PendingGatesBar`, `PromptInput`, `SparkOptions`, `PromptInspectorDialog`, `ImageAttachmentPicker`. Sub-agent delegation renders nested transcripts (`DelegatedAgentCard`) and user gates (`PendingGatesBar`). `AiPanel` is composition/layout only — the delegation host, gate plumbing, and run lifecycle live in `src/hooks/ai/` (see `docs/hooks.md`).
 - **`bible/`** — Story-bible building blocks: `AddImageDialog`, `ImageGallery`, `ImageLightbox`, `CollapsibleSection`, `DragHandle`, `RoleBadge`, `SortableTimelineCard`.
@@ -35,6 +36,7 @@ Always check here before building new UI. **Dialogs use `Modal`; menus use `Cont
 - **`ToolbarButton`** — Icon-only toolbar button. Props: `icon`, `title`, `onClick?`, `onMouseDown?`, `variant?` (`"default" | "active" | "success"`), `disabled?`, `size?` (`"sm" | "md"`), `iconSize?`, `className?`.
 - **`ToolbarSeparator`** — Vertical divider between toolbar groups. No props.
 - **`TextPromptDialog`** — Single-field-or-more prompt dialog built on `Modal`. Props: `isOpen`, `title`, `description?`, `icon?`, `fields` (`{ id, label, type?, placeholder? }[]`), `initialValues`, `onClose`, `onApply(values)`, `onRemove?`, `canRemove?`, `removeIcon?`, `applyLabel?`, `removeLabel?`, `maxWidth?`. The first field is the one whose value gates the Apply button.
+- **`SideBySideDiff`** — Two texts in columns with a word-level diff (`diffWordsWithSpace`): removed words highlighted on the left, added on the right; stacks below the `@sm` container width. Props: `before`, `after`, `beforeLabel`, `afterLabel`.
 - **`Badge`** — Simple styled pill span (`rounded-full`). Props: `label`, `className?`.
 - **`AutoResizeTextarea`** — Auto-growing textarea.
 - **`DialogFooter`** — Standard Cancel + Submit footer with optional left slot. Props include `cancelDisabled?` and `submitDisabled?`.

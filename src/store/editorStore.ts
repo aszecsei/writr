@@ -1,3 +1,4 @@
+import { castDraft } from "immer";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type {
@@ -6,6 +7,7 @@ import type {
   StyleGuideEntryId,
   WorldbuildingDocId,
 } from "@/db/schemas";
+import type { PassageAnchor } from "@/lib/text-analysis/repeats/types";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type DocumentType = "chapter" | "worldbuilding" | "style-guide";
@@ -85,6 +87,12 @@ interface EditorState {
    * it. Survives cross-chapter navigation because the store is global.
    */
   pendingSceneScroll: SceneId | null;
+  /**
+   * A request to select and scroll to a passage (from the Repeated passages
+   * analysis). Like `pendingSceneScroll`, it survives cross-chapter navigation
+   * and is consumed by that chapter's editor once seeded.
+   */
+  pendingPassageReveal: { chapterId: ChapterId; anchor: PassageAnchor } | null;
   contentVersion: number;
   pendingInsertion: PendingInsertion | null;
   pendingStagedEdit: PendingStagedEdit | null;
@@ -107,6 +115,11 @@ interface EditorState {
   setActiveSceneId: (id: SceneId | null) => void;
   requestSceneScroll: (id: SceneId) => void;
   clearSceneScroll: () => void;
+  requestPassageReveal: (reveal: {
+    chapterId: ChapterId;
+    anchor: PassageAnchor;
+  }) => void;
+  clearPassageReveal: () => void;
   bumpContentVersion: () => void;
   requestInsertAtCursor: (insertion: PendingInsertion) => void;
   clearPendingInsertion: () => void;
@@ -130,6 +143,7 @@ export const useEditorStore = create<EditorState>()(
     selectedRange: null,
     activeSceneId: null,
     pendingSceneScroll: null,
+    pendingPassageReveal: null,
     contentVersion: 0,
     pendingInsertion: null,
     pendingStagedEdit: null,
@@ -207,6 +221,16 @@ export const useEditorStore = create<EditorState>()(
     clearSceneScroll: () =>
       set((s) => {
         s.pendingSceneScroll = null;
+      }),
+
+    requestPassageReveal: (reveal) =>
+      set((s) => {
+        s.pendingPassageReveal = castDraft(reveal);
+      }),
+
+    clearPassageReveal: () =>
+      set((s) => {
+        s.pendingPassageReveal = null;
       }),
 
     bumpContentVersion: () =>

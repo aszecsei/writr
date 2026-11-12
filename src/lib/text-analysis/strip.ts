@@ -1,3 +1,4 @@
+import type { ProjectMode } from "@/db/schemas";
 import { type DocNode, markdownToNodes } from "@/lib/export/markdown-to-nodes";
 import { type HoleDelimiters, stripHoles } from "@/lib/holes";
 import { splitParagraphs } from "@/lib/text/split-paragraphs";
@@ -75,4 +76,15 @@ export function screenplayToPlainParagraphs(
         .join(" "),
     )
     .filter(Boolean);
+}
+
+/** The plain prose paragraphs of a chapter, parsed according to the project's mode. */
+export function chapterPlainParagraphs(
+  content: string,
+  mode: ProjectMode,
+  delimiters: HoleDelimiters,
+): string[] {
+  return mode === "screenplay"
+    ? screenplayToPlainParagraphs(content, delimiters)
+    : markdownToPlainParagraphs(content, delimiters);
 }

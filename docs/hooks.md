@@ -52,11 +52,13 @@ of the project id.
 
 ### `analysis/` — Text analysis
 
-`useTextAnalysis` — sentence-level prose analysis (readability, hole counts) for a chapter or project scope.
+`useTextAnalysis` — sentence-level prose analysis (readability, style flags, echoes) for a chapter, project, or library scope; runs automatically while the panel is open.
+
+`useRepeatedPassages(projectId, mode)` — the on-demand Repeated passages check. Lists the project's comparison contexts (`lib/binder/contexts.ts`), and `run()` tokenizes the selected context's chapters across idle callbacks before running `findRepeatedPassages`; `cancel()` aborts. The last run per project is kept in a module-level map so results survive panel/tab switches, and `isStale` compares a run key (chapter ids + a content hash + mode + hole delimiters) against the live chapters. The key hashes content rather than using `updatedAt`, because leaving a chapter re-saves it even when unchanged.
 
 ### `editor/` — Editor lifecycle hooks
 
-`useAutoSave` (also flushes a final save on unmount), `useComments`, `useEditorCommentSync`, `useEditorSeed` (doc seeding — one pass per editor instance / chapter / `contentVersion`, each reading the row straight from Dexie so a bump after a write always lands regardless of live-query timing; collab Y.Doc handoff; sidebar scene-scroll requests), `useStagedEdits` (applies a propose_edit diff card: replaces the live editor content synchronously via `replaceEditorContent`, persists through ChapterEditor's `save`, and keeps the request pending until the save settles), `useEditorPendingInsertion` (applies an AI-panel insert/replace), `useSceneTitleSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
+`useAutoSave` (also flushes a final save on unmount), `useComments`, `useEditorCommentSync`, `useEditorSeed` (doc seeding — one pass per editor instance / chapter / `contentVersion`, each reading the row straight from Dexie so a bump after a write always lands regardless of live-query timing; collab Y.Doc handoff; sidebar scene-scroll requests and Repeated-passages reveal requests, each consumed after seeding or while already seeded), `useStagedEdits` (applies a propose_edit diff card: replaces the live editor content synchronously via `replaceEditorContent`, persists through ChapterEditor's `save`, and keeps the request pending until the save settles), `useEditorPendingInsertion` (applies an AI-panel insert/replace), `useSceneTitleSync`, `useEditorSpellcheck`, `useEditorKeyboardShortcuts`, `useFocusMode`, `useWritingStats`, `useAppStats`, `useHighlightFade`.
 
 ### `forms/` — Form hooks
 
