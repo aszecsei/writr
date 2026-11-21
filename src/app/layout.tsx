@@ -5,7 +5,6 @@ import {
   Courier_Prime,
   Crimson_Pro,
   EB_Garamond,
-  Geist,
   Geist_Mono,
   Inter,
   JetBrains_Mono,
@@ -19,12 +18,8 @@ import {
 } from "next/font/google";
 import Script from "next/script";
 import { AppProviders } from "@/components/providers/AppProviders";
+import "allo-font/allo.css";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -139,9 +134,7 @@ export default function RootLayout({
       <head>
         <Script src="/theme-init.js" strategy="beforeInteractive" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${literaryFontVars} antialiased`}
-      >
+      <body className={`${geistMono.variable} ${literaryFontVars} antialiased`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
