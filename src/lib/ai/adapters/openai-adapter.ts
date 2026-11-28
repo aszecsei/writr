@@ -9,6 +9,7 @@ import type {
 import {
   extractTextContent,
   generateToolUseId,
+  parseToolArguments,
   REASONING_EFFORT_SCALE,
   toAiUsage,
 } from "./helpers";
@@ -19,8 +20,17 @@ import type {
   TtsResult,
 } from "./types";
 
+/**
+ * Request dialect. `openrouter` sends OpenRouter's `reasoning` object and
+ * `max_tokens` (also used for Grok and z.ai, unchanged). `openai` speaks the
+ * native Chat Completions API: `max_completion_tokens`, and
+ * `reasoning_effort` for reasoning models only.
+ */
+type OpenAiDialect = "openrouter" | "openai";
+
 interface OpenAiAdapterConfig {
   baseURL: string;
+  dialect: OpenAiDialect;
   defaultHeaders?: Record<string, string>;
 }
 
@@ -73,7 +83,23 @@ function isClaude46(model: string): boolean {
   return isAnthropicModel(model) && (/4\.6/.test(model) || /4-6/.test(model));
 }
 
-function buildReasoningParam(params: CompletionParams): object {
+/**
+ * OpenAI reasoning models (o-series, GPT-5 family). They accept
+ * `reasoning_effort` and reject a non-default `temperature`; every other
+ * OpenAI model rejects `reasoning_effort`.
+ */
+function isOpenAiReasoningModel(model: string): boolean {
+  return /^(o\d|gpt-5)/.test(model);
+}
+
+function buildOpenAiSamplingParams(params: CompletionParams): object {
+  if (!isOpenAiReasoningModel(params.model)) {
+    return { temperature: params.temperature };
+  }
+  return params.reasoning ? { reasoning_effort: params.reasoning.effort } : {};
+}
+
+function buildOpenRouterReasoningParam(params: CompletionParams): object {
   if (!params.reasoning) return {};
   if (isClaude46(params.model)) {
     // OpenRouter ignores reasoning.effort for Claude 4.6;
@@ -286,13 +312,20 @@ export function createOpenAiAdapter(
     return {
       model: params.model,
       messages: convertMessages(params.messages, isAnthropic),
-      temperature: params.temperature,
-      max_tokens: params.maxTokens,
+      ...(config.dialect === "openai"
+        ? {
+            max_completion_tokens: params.maxTokens,
+            ...buildOpenAiSamplingParams(params),
+          }
+        : {
+            temperature: params.temperature,
+            max_tokens: params.maxTokens,
+            ...buildOpenRouterReasoningParam(params),
+          }),
       stream,
       // Ask for usage on streaming responses. Without this, OpenAI-compatible
       // APIs omit the usage object entirely from the stream.
       ...(stream ? { stream_options: { include_usage: true } } : {}),
-      ...buildReasoningParam(params),
       ...buildToolsParam(params),
     };
   }
@@ -361,23 +394,21 @@ export function createOpenAiAdapter(
         reasoning?: string;
       };
 
-      let toolCalls: AiToolCall[] | undefined;
-      if (message?.tool_calls?.length) {
-        toolCalls = message.tool_calls
-          .filter(
-            (
-              tc,
-            ): tc is typeof tc & {
-              type: "function";
-              function: { name: string; arguments: string };
-            } => tc.type === "function" && "function" in tc,
-          )
-          .map((tc) => ({
-            id: generateToolUseId(),
-            name: tc.function.name,
-            arguments: JSON.parse(tc.function.arguments || "{}"),
-          }));
+      const toolCalls: AiToolCall[] = [];
+      for (const tc of message?.tool_calls ?? []) {
+        if (tc.type !== "function" || !("function" in tc)) continue;
+        const args = parseToolArguments(
+          tc.function.name,
+          tc.function.arguments,
+        );
+        if (!args) continue;
+        toolCalls.push({
+          id: generateToolUseId(),
+          name: tc.function.name,
+          arguments: args,
+        });
       }
+      const hasToolCalls = toolCalls.length > 0;
 
       return {
         content: message?.content ?? "",
@@ -391,8 +422,12 @@ export function createOpenAiAdapter(
               ...extractCacheUsage(response.usage),
             })
           : undefined,
-        finishReason: normalizeFinishReason(choice?.finish_reason),
-        toolCalls,
+        // Some routes report `stop` on a turn that ended in tool calls; the
+        // runner only loops on `tool_use`.
+        finishReason: hasToolCalls
+          ? "tool_use"
+          : normalizeFinishReason(choice?.finish_reason),
+        toolCalls: hasToolCalls ? toolCalls : undefined,
       };
     },
 
@@ -480,23 +515,29 @@ export function createOpenAiAdapter(
         }
       }
 
-      if (finalFinishReason === "tool_calls") {
-        for (const [, tc] of [...toolCallAccumulator.entries()].sort(
-          (a, b) => a[0] - b[0],
-        )) {
-          yield {
-            type: "tool_use" as const,
-            id: generateToolUseId(),
-            name: tc.name,
-            input: JSON.parse(tc.args || "{}"),
-          };
-        }
+      // Emit accumulated calls regardless of the reported finish reason —
+      // some routes end a tool-calling turn with `stop` or no reason at all.
+      let emittedToolCall = false;
+      for (const [, tc] of [...toolCallAccumulator.entries()].sort(
+        (a, b) => a[0] - b[0],
+      )) {
+        const input = parseToolArguments(tc.name, tc.args);
+        if (!input) continue;
+        emittedToolCall = true;
+        yield {
+          type: "tool_use" as const,
+          id: generateToolUseId(),
+          name: tc.name,
+          input,
+        };
       }
 
-      if (finalFinishReason) {
+      if (finalFinishReason || emittedToolCall) {
         yield {
           type: "stop" as const,
-          finishReason: normalizeFinishReason(finalFinishReason),
+          finishReason: emittedToolCall
+            ? "tool_use"
+            : normalizeFinishReason(finalFinishReason),
           ...(finalUsage
             ? {
                 usage: toAiUsage({

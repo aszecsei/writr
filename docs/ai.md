@@ -15,6 +15,17 @@
 
 Each adapter normalizes streaming into a single internal event format so the rest of the codebase doesn't branch on provider.
 
+Protocol rules every adapter follows:
+
+- **`tool_use` finish reason.** When a turn yields any tool call, the final `stop` chunk and `complete()` report `finishReason: "tool_use"`, whatever the upstream said. Gemini always says `STOP`, and some OpenAI-compatible routes say `stop` or nothing. The runner only loops on `tool_use`.
+- **Parallel tool results.** Consecutive `role: "tool"` messages become ONE user turn: one Anthropic `user` message with several `tool_result` blocks, or one Gemini `user` turn with several `functionResponse` parts. Each block keeps its own `cache_control`.
+- **Malformed tool arguments.** Streamed or returned argument JSON goes through `parseToolArguments` (`helpers.ts`). A call whose arguments aren't a JSON object, usually one cut off by `max_tokens`, is dropped with a warning. It is never run on fabricated input, and since it never enters history it can't orphan a tool_use id.
+- **Thinking replay.** Anthropic thinking and redacted-thinking blocks stream out as `thinking_block` chunks (with their accumulated `signature_delta`) and come back on `AiMessage.thinkingBlocks` (schema: `src/lib/ai/thinking.ts`). The adapter puts them first on the assistant turn, and only when thinking is enabled. Gemini's per-call `thoughtSignature` round-trips the same way on `AiToolCall`.
+- **Anthropic thinking budget.** `budget_tokens` is shrunk to fit under `max_tokens` (minus a 1024-token reply reserve) rather than `max_tokens` being raised past the model's output cap.
+- **OpenAI dialects.** `createOpenAiAdapter({ dialect })`:
+  - `"openrouter"` (OpenRouter, Grok, z.ai) sends `max_tokens` and OpenRouter's `reasoning` object.
+  - `"openai"` (direct OpenAI) sends `max_completion_tokens`. For reasoning models (`o*`, `gpt-5*`) it also sends `reasoning_effort` and no `temperature`; for other models it sends `temperature` and no reasoning params.
+
 ## Client (`client.ts`)
 
 Single entry point for sending an AI request. Features:

@@ -117,3 +117,32 @@ export function toAiUsage(input: {
       : {}),
   };
 }
+
+/**
+ * Parse a tool call's JSON-encoded arguments. Returns `null` when the text is
+ * not a JSON object — typically a call cut off by `max_tokens` mid-arguments.
+ * Adapters drop such calls rather than run a tool on fabricated input; a
+ * dropped call never enters history, so no tool_use id is left unpaired.
+ */
+export function parseToolArguments(
+  name: string,
+  json: string,
+): Record<string, unknown> | null {
+  if (!json) return {};
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (
+      parsed !== null &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // fall through
+  }
+  console.warn(
+    `[ai] dropping tool call ${name}: arguments are not a JSON object`,
+  );
+  return null;
+}

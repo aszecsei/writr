@@ -19,6 +19,8 @@ export interface AiToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
+  /** Gemini's opaque `thoughtSignature` for this function call; echoed back on the next request. */
+  thoughtSignature?: string;
 }
 
 export interface AiMessage {
@@ -26,6 +28,8 @@ export interface AiMessage {
   content: string | ContentPart[];
   toolCalls?: AiToolCall[];
   toolCallId?: string;
+  /** Signed reasoning blocks of an assistant turn, replayed ahead of its tool calls. */
+  thinkingBlocks?: ThinkingBlock[];
 }
 
 import type {
@@ -37,7 +41,9 @@ import type {
   StyleGuideEntry,
 } from "@/db/schemas";
 
-export type { ReasoningEffort };
+import type { ThinkingBlock } from "./thinking";
+
+export type { ReasoningEffort, ThinkingBlock };
 
 export interface AiContext {
   projectTitle: string;
@@ -81,6 +87,7 @@ export interface AiResponse {
   usage?: AiUsage;
   finishReason?: FinishReason;
   toolCalls?: AiToolCall[];
+  thinkingBlocks?: ThinkingBlock[];
 }
 
 export type AiStreamChunk =
@@ -91,7 +98,9 @@ export type AiStreamChunk =
       id: string;
       name: string;
       input: Record<string, unknown>;
+      thoughtSignature?: string;
     }
+  | { type: "thinking_block"; block: ThinkingBlock }
   | { type: "stop"; finishReason: FinishReason; usage?: AiUsage };
 
 /**

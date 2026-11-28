@@ -1,5 +1,10 @@
 import type { ToolCallStatus, ToolResult } from "@/lib/ai/tool-calling";
-import type { AiMessage, AiToolCall, FinishReason } from "@/lib/ai/types";
+import type {
+  AiMessage,
+  AiToolCall,
+  FinishReason,
+  ThinkingBlock,
+} from "@/lib/ai/types";
 
 /**
  * Branded ID for chat messages. Stable across the lifetime of a chat session.
@@ -30,6 +35,8 @@ export interface AssistantChatMessage {
   reasoning?: string;
   /** Tool-call references the assistant emitted. Each id matches a following ToolChatMessage. */
   toolCallRefs?: AiToolCall[];
+  /** Signed reasoning blocks replayed with `toolCallRefs` on the wire. */
+  thinkingBlocks?: ThinkingBlock[];
   durationMs?: number;
   finishReason?: FinishReason;
   /**

@@ -5,6 +5,7 @@ import type {
   AiToolCall,
   AiUsage,
   FinishReason,
+  ThinkingBlock,
 } from "../types";
 
 /**
@@ -21,6 +22,8 @@ export interface AssistantTurnFinalizeInfo {
   usage?: AiUsage;
   /** Tool-call references the assistant emitted, if any. */
   toolCallRefs?: AiToolCall[];
+  /** Signed reasoning blocks to replay ahead of `toolCallRefs` next request. */
+  thinkingBlocks?: ThinkingBlock[];
 }
 
 export interface ToolMessagePatch {

@@ -11,6 +11,7 @@ import type {
   AiStreamChunk,
   AiUsage,
   FinishReason,
+  ThinkingBlock,
 } from "../types";
 import {
   executeAgentTool,
@@ -25,6 +26,160 @@ import type {
 } from "./types";
 
 const DEFAULT_MAX_ITERATIONS = 16;
+
+function isAbortError(err: unknown, signal?: AbortSignal): boolean {
+  return (
+    signal?.aborted === true ||
+    (err instanceof Error && err.name === "AbortError")
+  );
+}
+
+interface IterationResult {
+  content: string;
+  finishReason?: FinishReason;
+  usage?: AiUsage;
+  toolCalls: ToolCallPayload[];
+  thinkingBlocks: ThinkingBlock[];
+}
+
+/**
+ * POST one iteration to `/api/ai` and collect its result, forwarding
+ * content/reasoning chunks into the accessor as they arrive. Throws on
+ * transport errors (including aborts); the caller owns turn cleanup. The
+ * stream reader is cancelled on every exit that didn't drain it, so an
+ * abort or error releases the upstream connection.
+ */
+async function requestIteration(
+  requestBody: object,
+  stream: boolean,
+  history: RunAgentOptions["history"],
+  assistantId: string,
+  signal: AbortSignal | undefined,
+): Promise<IterationResult> {
+  const result: IterationResult = {
+    content: "",
+    toolCalls: [],
+    thinkingBlocks: [],
+  };
+
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+    signal,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.details ?? error.error ?? "AI request failed");
+  }
+
+  if (!stream) {
+    const data: AiResponse = await response.json();
+    result.content = data.content;
+    result.finishReason = data.finishReason;
+    result.usage = data.usage;
+    // Replay the non-streamed content as a single chunk so the accessor's
+    // streaming-aware view (chat panel) can render it the same way.
+    if (data.content) {
+      history.appendChunk(assistantId, { type: "content", text: data.content });
+    }
+    if (data.reasoning) {
+      history.appendChunk(assistantId, {
+        type: "reasoning",
+        text: data.reasoning,
+      });
+    }
+    for (const tc of data.toolCalls ?? []) {
+      result.toolCalls.push({
+        id: tc.id,
+        name: tc.name,
+        input: tc.arguments,
+        ...(tc.thoughtSignature
+          ? { thoughtSignature: tc.thoughtSignature }
+          : {}),
+      });
+    }
+    result.thinkingBlocks.push(...(data.thinkingBlocks ?? []));
+    return result;
+  }
+
+  if (!response.body) {
+    throw new Error("No response body for streaming request");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let drained = false;
+
+  try {
+    streamLoop: while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+      const { done, value } = await reader.read();
+      if (done) {
+        drained = true;
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const json = trimmed.slice(6);
+        if (json === "[DONE]") break streamLoop;
+
+        let chunk: AiStreamChunk | undefined;
+        try {
+          chunk = JSON.parse(json) as AiStreamChunk;
+        } catch {
+          continue;
+        }
+
+        // `stop` is terminal accounting and skips the accessor forward.
+        if (chunk.type === "stop") {
+          result.finishReason = chunk.finishReason;
+          if (chunk.usage) result.usage = chunk.usage;
+          continue;
+        }
+        match(chunk)
+          .with({ type: "tool_use" }, (c) => {
+            result.toolCalls.push({
+              id: c.id,
+              name: c.name,
+              input: c.input,
+              ...(c.thoughtSignature
+                ? { thoughtSignature: c.thoughtSignature }
+                : {}),
+            });
+          })
+          .with({ type: "thinking_block" }, (c) => {
+            result.thinkingBlocks.push(c.block);
+          })
+          .with({ type: "reasoning" }, () => {
+            history.appendChunk(assistantId, chunk);
+          })
+          .with({ type: "content" }, (c) => {
+            result.content += c.text;
+            history.appendChunk(assistantId, chunk);
+          })
+          .exhaustive();
+      }
+    }
+  } finally {
+    if (!drained) {
+      // Releases the upstream connection; cancel() rejects if the stream
+      // already errored, which is not interesting here.
+      reader.cancel().catch(() => {});
+    }
+  }
+  return result;
+}
 
 /**
  * Resolve which provider, model, API key, and reasoning effort an agent should
@@ -131,112 +286,33 @@ export async function runAgent(
         : {}),
     };
 
-    let assistantContent = "";
-    let finishReason: FinishReason | undefined;
-    let iterationUsage: AiUsage | undefined;
-    const collectedToolCalls: ToolCallPayload[] = [];
-
-    const response = await fetch("/api/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
-
-    if (!response.ok) {
+    let iterationResult: IterationResult;
+    try {
+      iterationResult = await requestIteration(
+        requestBody,
+        stream,
+        history,
+        assistantId,
+        signal,
+      );
+    } catch (err) {
+      // Drop the in-progress assistant turn so the UI doesn't show a
+      // half-rendered message. The accessor's `removeAssistantTurn` owns
+      // cleanup of any pending tool messages (this iteration created none).
       history.removeAssistantTurn(assistantId);
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.details ?? error.error ?? "AI request failed");
+      if (isAbortError(err, signal)) {
+        aborted = true;
+        break;
+      }
+      throw err;
     }
-
-    if (stream) {
-      if (!response.body) {
-        history.removeAssistantTurn(assistantId);
-        throw new Error("No response body for streaming request");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      streamLoop: while (true) {
-        if (signal?.aborted) {
-          aborted = true;
-          break;
-        }
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const json = trimmed.slice(6);
-          if (json === "[DONE]") break streamLoop;
-
-          let chunk: AiStreamChunk | undefined;
-          try {
-            chunk = JSON.parse(json) as AiStreamChunk;
-          } catch {
-            continue;
-          }
-
-          // `stop` is terminal accounting and skips the accessor forward.
-          if (chunk.type === "stop") {
-            finishReason = chunk.finishReason;
-            if (chunk.usage) iterationUsage = chunk.usage;
-            continue;
-          }
-          match(chunk)
-            .with({ type: "tool_use" }, (c) => {
-              collectedToolCalls.push({
-                id: c.id,
-                name: c.name,
-                input: c.input,
-              });
-            })
-            .with({ type: "reasoning" }, () => {
-              history.appendChunk(assistantId, chunk);
-            })
-            .with({ type: "content" }, (c) => {
-              assistantContent += c.text;
-              history.appendChunk(assistantId, chunk);
-            })
-            .exhaustive();
-        }
-      }
-    } else {
-      const data: AiResponse = await response.json();
-      assistantContent = data.content;
-      finishReason = data.finishReason;
-      iterationUsage = data.usage;
-      // Replay the non-streamed content as a single chunk so the accessor's
-      // streaming-aware view (chat panel) can render it the same way.
-      if (data.content) {
-        history.appendChunk(assistantId, {
-          type: "content",
-          text: data.content,
-        });
-      }
-      if (data.reasoning) {
-        history.appendChunk(assistantId, {
-          type: "reasoning",
-          text: data.reasoning,
-        });
-      }
-      if (data.toolCalls) {
-        for (const tc of data.toolCalls) {
-          collectedToolCalls.push({
-            id: tc.id,
-            name: tc.name,
-            input: tc.arguments,
-          });
-        }
-      }
-    }
+    const {
+      content: assistantContent,
+      finishReason,
+      usage: iterationUsage,
+      toolCalls: collectedToolCalls,
+      thinkingBlocks,
+    } = iterationResult;
 
     const durationMs = Date.now() - startTime;
     lastContent = assistantContent;
@@ -264,7 +340,11 @@ export async function runAgent(
               id: tc.id,
               name: tc.name,
               arguments: tc.input,
+              ...(tc.thoughtSignature
+                ? { thoughtSignature: tc.thoughtSignature }
+                : {}),
             })),
+            ...(thinkingBlocks.length > 0 ? { thinkingBlocks } : {}),
           }
         : {}),
     });

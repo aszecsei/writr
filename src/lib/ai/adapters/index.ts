@@ -15,15 +15,25 @@ export type { CompletionParams, ProviderAdapter } from "./types";
 export const PROVIDER_ADAPTERS: Record<AiProvider, ProviderAdapter> = {
   openrouter: createOpenAiAdapter({
     baseURL: "https://openrouter.ai/api/v1",
+    dialect: "openrouter",
     defaultHeaders: {
       "HTTP-Referer": "https://writr.app",
       "X-Title": "writr",
     },
   }),
   anthropic: createAnthropicAdapter(),
-  openai: createOpenAiAdapter({ baseURL: "https://api.openai.com/v1" }),
-  grok: createOpenAiAdapter({ baseURL: "https://api.x.ai/v1" }),
-  zai: createOpenAiAdapter({ baseURL: "https://api.z.ai/api/paas/v4" }),
+  openai: createOpenAiAdapter({
+    baseURL: "https://api.openai.com/v1",
+    dialect: "openai",
+  }),
+  grok: createOpenAiAdapter({
+    baseURL: "https://api.x.ai/v1",
+    dialect: "openrouter",
+  }),
+  zai: createOpenAiAdapter({
+    baseURL: "https://api.z.ai/api/paas/v4",
+    dialect: "openrouter",
+  }),
   google: createGoogleAdapter({ mode: "api-key" }),
   vertex: createGoogleAdapter({ mode: "vertex" }),
 };

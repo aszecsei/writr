@@ -203,6 +203,9 @@ export function makeChatAccessorCore(
           role: "assistant",
           content: turn.content,
           ...(toolCalls ? { toolCalls } : {}),
+          ...(info.thinkingBlocks?.length
+            ? { thinkingBlocks: info.thinkingBlocks }
+            : {}),
         });
       }
 
@@ -213,6 +216,9 @@ export function makeChatAccessorCore(
           durationMs: info.durationMs,
           finishReason: info.finishReason,
           toolCallRefs: info.toolCallRefs,
+          ...(info.thinkingBlocks?.length
+            ? { thinkingBlocks: info.thinkingBlocks }
+            : {}),
         };
         if (finalizeOverlay) finalized = finalizeOverlay(finalized);
         return finalized;
