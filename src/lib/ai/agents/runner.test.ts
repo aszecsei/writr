@@ -148,7 +148,7 @@ describe("runAgent", () => {
     );
   });
 
-  it("removes the turn, cancels the reader, and returns aborted when aborted mid-read", async () => {
+  it("removes the turn, cancels the reader, and returns aborted when aborted between reads", async () => {
     const controller = new AbortController();
     const cancel = vi.fn();
     fetchMock.mockResolvedValueOnce(
@@ -184,6 +184,36 @@ describe("runAgent", () => {
     expect(calls.removed).toEqual(["a1"]);
     expect(calls.finalized).toEqual([]);
     expect(cancel).toHaveBeenCalled();
+  });
+
+  it("removes the turn and returns aborted when a pending read rejects with AbortError", async () => {
+    const controller = new AbortController();
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        new ReadableStream({
+          pull(c) {
+            // What fetch does to the body stream when its signal aborts.
+            controller.abort();
+            c.error(
+              new DOMException("The operation was aborted.", "AbortError"),
+            );
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    const { history, calls } = recordingHistory();
+
+    const result = await runAgent({
+      agent,
+      model,
+      history,
+      signal: controller.signal,
+    });
+
+    expect(result.aborted).toBe(true);
+    expect(calls.removed).toEqual(["a1"]);
+    expect(calls.finalized).toEqual([]);
   });
 
   it("removes the turn and returns aborted when fetch rejects with AbortError", async () => {

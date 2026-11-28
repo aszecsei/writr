@@ -43,23 +43,6 @@ describe("toAiMessages", () => {
     expect(text).not.toContain('chapter-id="a"b');
   });
 
-  it("re-emits an assistant turn's thinking blocks alongside its tool calls", () => {
-    const thinkingBlocks = [
-      { type: "thinking" as const, thinking: "plan", signature: "sig" },
-    ];
-    const toolCallRefs = [{ id: "call_1", name: "get", arguments: {} }];
-    const out = toAiMessages([
-      assistantMsg({ content: "", toolCallRefs, thinkingBlocks }),
-      toolMsg({ toolCallId: "call_1", status: "executed" }),
-    ]);
-    expect(out[0]).toEqual({
-      role: "assistant",
-      content: "",
-      toolCalls: toolCallRefs,
-      thinkingBlocks,
-    });
-  });
-
   it("composes images as a multi-part content array", () => {
     const out = toAiMessages([
       userMsg({

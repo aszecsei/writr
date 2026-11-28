@@ -46,9 +46,6 @@ function assistantToAiMessage(m: AssistantChatMessage): AiMessage {
   if (m.toolCallRefs?.length) {
     out.toolCalls = m.toolCallRefs;
   }
-  if (m.thinkingBlocks?.length) {
-    out.thinkingBlocks = m.thinkingBlocks;
-  }
   return out;
 }
 

@@ -92,11 +92,38 @@ function isOpenAiReasoningModel(model: string): boolean {
   return /^(o\d|gpt-5)/.test(model);
 }
 
+/**
+ * o-series models accept only `low` / `medium` / `high`; clamp the repo's
+ * wider scale onto that range. GPT-5 models take the value as-is.
+ */
+function toOpenAiReasoningEffort(model: string, effort: string): string {
+  if (!/^o\d/.test(model)) return effort;
+  if (effort === "minimal") return "low";
+  if (effort === "xhigh") return "high";
+  return effort;
+}
+
 function buildOpenAiSamplingParams(params: CompletionParams): object {
   if (!isOpenAiReasoningModel(params.model)) {
     return { temperature: params.temperature };
   }
-  return params.reasoning ? { reasoning_effort: params.reasoning.effort } : {};
+  return params.reasoning
+    ? {
+        reasoning_effort: toOpenAiReasoningEffort(
+          params.model,
+          params.reasoning.effort,
+        ),
+      }
+    : {};
+}
+
+/**
+ * A turn cut off by `max_tokens` or a content filter may carry partial tool
+ * calls — even one with a complete name and no arguments yet. Its calls are
+ * never run, and its finish reason is kept.
+ */
+function isTruncated(reason: FinishReason): boolean {
+  return reason === "length" || reason === "content_filter";
 }
 
 function buildOpenRouterReasoningParam(params: CompletionParams): object {
@@ -394,8 +421,12 @@ export function createOpenAiAdapter(
         reasoning?: string;
       };
 
+      const upstreamReason = normalizeFinishReason(choice?.finish_reason);
       const toolCalls: AiToolCall[] = [];
-      for (const tc of message?.tool_calls ?? []) {
+      const rawToolCalls = isTruncated(upstreamReason)
+        ? []
+        : (message?.tool_calls ?? []);
+      for (const tc of rawToolCalls) {
         if (tc.type !== "function" || !("function" in tc)) continue;
         const args = parseToolArguments(
           tc.function.name,
@@ -424,9 +455,7 @@ export function createOpenAiAdapter(
           : undefined,
         // Some routes report `stop` on a turn that ended in tool calls; the
         // runner only loops on `tool_use`.
-        finishReason: hasToolCalls
-          ? "tool_use"
-          : normalizeFinishReason(choice?.finish_reason),
+        finishReason: hasToolCalls ? "tool_use" : upstreamReason,
         toolCalls: hasToolCalls ? toolCalls : undefined,
       };
     },
@@ -515,12 +544,14 @@ export function createOpenAiAdapter(
         }
       }
 
-      // Emit accumulated calls regardless of the reported finish reason —
-      // some routes end a tool-calling turn with `stop` or no reason at all.
+      // Emit accumulated calls whether the route reported `tool_calls`,
+      // `stop`, or nothing at all — but never from a truncated turn.
+      const upstreamReason = normalizeFinishReason(finalFinishReason);
+      const pendingCalls = isTruncated(upstreamReason)
+        ? []
+        : [...toolCallAccumulator.entries()].sort((a, b) => a[0] - b[0]);
       let emittedToolCall = false;
-      for (const [, tc] of [...toolCallAccumulator.entries()].sort(
-        (a, b) => a[0] - b[0],
-      )) {
+      for (const [, tc] of pendingCalls) {
         const input = parseToolArguments(tc.name, tc.args);
         if (!input) continue;
         emittedToolCall = true;
@@ -535,9 +566,7 @@ export function createOpenAiAdapter(
       if (finalFinishReason || emittedToolCall) {
         yield {
           type: "stop" as const,
-          finishReason: emittedToolCall
-            ? "tool_use"
-            : normalizeFinishReason(finalFinishReason),
+          finishReason: emittedToolCall ? "tool_use" : upstreamReason,
           ...(finalUsage
             ? {
                 usage: toAiUsage({

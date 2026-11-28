@@ -431,6 +431,25 @@ describe("createOpenAiAdapter", () => {
       },
     );
 
+    it.each([
+      ["o3", "xhigh", "high"],
+      ["o4-mini", "minimal", "low"],
+      ["gpt-5", "minimal", "minimal"],
+    ] as const)(
+      "maps %s effort %s to reasoning_effort %s",
+      async (model, effort, expected) => {
+        mockCreate.mockResolvedValueOnce(okResponse());
+
+        await openai.complete("sk-test", {
+          ...baseParams,
+          model,
+          reasoning: { effort },
+        });
+
+        expect(mockCreate.mock.calls[0][0].reasoning_effort).toBe(expected);
+      },
+    );
+
     it("sends temperature and no reasoning params to a non-reasoning model", async () => {
       mockCreate.mockResolvedValueOnce(okResponse());
 
@@ -645,6 +664,34 @@ describe("createOpenAiAdapter", () => {
         results.push(chunk);
       }
       warn.mockRestore();
+
+      expect(results).toEqual([{ type: "stop", finishReason: "length" }]);
+    });
+
+    it("does not emit a call truncated right after its name when the turn hit length", async () => {
+      const chunks = [
+        {
+          choices: [
+            {
+              delta: {
+                tool_calls: [{ index: 0, function: { name: "delete_thing" } }],
+              },
+              finish_reason: "length",
+            },
+          ],
+        },
+      ];
+
+      mockCreate.mockResolvedValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const chunk of chunks) yield chunk;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-test", baseParams)) {
+        results.push(chunk);
+      }
 
       expect(results).toEqual([{ type: "stop", finishReason: "length" }]);
     });

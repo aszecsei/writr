@@ -188,6 +188,29 @@ describe("buildMessages", () => {
     expect(text).toContain('wordCount="1234"');
   });
 
+  it("carries thinking blocks and tool-call thought signatures through to the request", () => {
+    const thinkingBlocks = [
+      { type: "thinking" as const, thinking: "plan", signature: "sig" },
+    ];
+    const toolCalls = [
+      { id: "call_1", name: "list", arguments: {}, thoughtSignature: "gsig" },
+    ];
+    const msgs = buildMessages(
+      "agent prompt",
+      emptyContext(),
+      [
+        { role: "user", content: "go" },
+        { role: "assistant", content: "", toolCalls, thinkingBlocks },
+        { role: "tool", toolCallId: "call_1", content: "{}" },
+      ],
+      { enableToolCalling: true },
+    );
+
+    const assistant = msgs.find((m) => m.toolCalls);
+    expect(assistant?.thinkingBlocks).toEqual(thinkingBlocks);
+    expect(assistant?.toolCalls).toEqual(toolCalls);
+  });
+
   it("keeps history wire shape byte-stable across tool-calling iterations", () => {
     // The message trailing in iteration N must NOT flip from array form
     // (with cache_control) to string form (no cache_control) in iteration

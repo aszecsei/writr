@@ -87,10 +87,8 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
     });
   });
 
-  it("carries thinking blocks onto the committed assistant turn and the rendered message", () => {
-    const { accessor, getRendered } = makeAccessor([
-      userMsg({ content: "research" }),
-    ]);
+  it("carries thinking blocks onto the committed assistant turn", () => {
+    const { accessor } = makeAccessor([userMsg({ content: "research" })]);
     const thinkingBlocks = [
       { type: "thinking" as const, thinking: "plan", signature: "sig" },
     ];
@@ -104,10 +102,6 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
     });
 
     expect(accessor.getMessages()[1].thinkingBlocks).toEqual(thinkingBlocks);
-    const rendered = getRendered().at(-1);
-    expect(rendered?.role === "assistant" && rendered.thinkingBlocks).toEqual(
-      thinkingBlocks,
-    );
   });
 
   it("commits a tool row to the buffer only when the tool reaches a terminal status", () => {

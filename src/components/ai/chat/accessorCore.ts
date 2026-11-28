@@ -216,9 +216,6 @@ export function makeChatAccessorCore(
           durationMs: info.durationMs,
           finishReason: info.finishReason,
           toolCallRefs: info.toolCallRefs,
-          ...(info.thinkingBlocks?.length
-            ? { thinkingBlocks: info.thinkingBlocks }
-            : {}),
         };
         if (finalizeOverlay) finalized = finalizeOverlay(finalized);
         return finalized;
