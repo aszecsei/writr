@@ -159,6 +159,7 @@ describe("createAnthropicAdapter", () => {
 
         await adapter.complete("sk-ant-test", {
           ...baseParams,
+          maxTokens: 64000,
           reasoning: { effort },
         });
 
@@ -175,6 +176,7 @@ describe("createAnthropicAdapter", () => {
 
       await adapter.complete("sk-ant-test", {
         ...baseParams,
+        maxTokens: 64000,
         reasoning: { effort: "unrecognized" as unknown as ReasoningEffort },
       });
 
@@ -183,6 +185,34 @@ describe("createAnthropicAdapter", () => {
         type: "enabled",
         budget_tokens: 10240,
       });
+    });
+
+    it("shrinks the thinking budget below max_tokens instead of raising max_tokens", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        maxTokens: 24576,
+        reasoning: { effort: "xhigh" },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.max_tokens).toBe(24576);
+      expect(createCall.thinking.budget_tokens).toBe(24576 - 1024);
+    });
+
+    it("raises max_tokens only when it cannot fit the minimum 1024-token budget", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        maxTokens: 1500,
+        reasoning: { effort: "high" },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.thinking.budget_tokens).toBe(1024);
+      expect(createCall.max_tokens).toBe(2048);
     });
 
     it("omits temperature when thinking is enabled", async () => {
@@ -211,7 +241,8 @@ describe("createAnthropicAdapter", () => {
       mockCreate.mockResolvedValueOnce(
         okResponse({
           content: [
-            { type: "thinking", thinking: "Let me think..." },
+            { type: "thinking", thinking: "Let me think...", signature: "sig" },
+            { type: "redacted_thinking", data: "opaque" },
             { type: "text", text: "Here is my answer" },
           ],
           usage: { input_tokens: 10, output_tokens: 20 },
@@ -233,6 +264,10 @@ describe("createAnthropicAdapter", () => {
           total_tokens: 30,
         },
         finishReason: "stop",
+        thinkingBlocks: [
+          { type: "thinking", thinking: "Let me think...", signature: "sig" },
+          { type: "redacted_thinking", data: "opaque" },
+        ],
       });
     });
 
@@ -328,6 +363,86 @@ describe("createAnthropicAdapter", () => {
       expect(createCall.messages[0].content).toEqual([
         { type: "text", text: "Part 1 " },
         { type: "text", text: "Part 2" },
+      ]);
+    });
+
+    it("answers parallel tool calls with one user message holding every tool_result", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        { role: "user", content: "Look both up" },
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            { id: "call_1", name: "get", arguments: {} },
+            { id: "call_2", name: "list", arguments: {} },
+          ],
+        },
+        { role: "tool", toolCallId: "call_1", content: '{"a":1}' },
+        {
+          role: "tool",
+          toolCallId: "call_2",
+          content: [
+            {
+              type: "text",
+              text: '{"b":2}',
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+        },
+      ];
+
+      await adapter.complete("sk-ant-test", { ...baseParams, messages });
+
+      const sent = mockCreate.mock.calls[0][0].messages;
+      expect(sent).toHaveLength(3);
+      expect(sent[2]).toEqual({
+        role: "user",
+        content: [
+          { type: "tool_result", tool_use_id: "call_1", content: '{"a":1}' },
+          {
+            type: "tool_result",
+            tool_use_id: "call_2",
+            content: '{"b":2}',
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+      });
+    });
+
+    it("replays thinking blocks first on a tool-calling assistant turn only when thinking is enabled", async () => {
+      const messages: AiMessage[] = [
+        { role: "user", content: "Go" },
+        {
+          role: "assistant",
+          content: "Checking",
+          thinkingBlocks: [
+            { type: "thinking", thinking: "plan", signature: "sig" },
+            { type: "redacted_thinking", data: "opaque" },
+          ],
+          toolCalls: [{ id: "call_1", name: "get", arguments: { x: 1 } }],
+        },
+        { role: "tool", toolCallId: "call_1", content: "{}" },
+      ];
+
+      mockCreate.mockResolvedValue(okResponse());
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        messages,
+        reasoning: { effort: "medium" },
+      });
+      await adapter.complete("sk-ant-test", { ...baseParams, messages });
+
+      expect(mockCreate.mock.calls[0][0].messages[1].content).toEqual([
+        { type: "thinking", thinking: "plan", signature: "sig" },
+        { type: "redacted_thinking", data: "opaque" },
+        { type: "text", text: "Checking" },
+        { type: "tool_use", id: "call_1", name: "get", input: { x: 1 } },
+      ]);
+      expect(mockCreate.mock.calls[1][0].messages[1].content).toEqual([
+        { type: "text", text: "Checking" },
+        { type: "tool_use", id: "call_1", name: "get", input: { x: 1 } },
       ]);
     });
 
@@ -442,6 +557,106 @@ describe("createAnthropicAdapter", () => {
         cache_creation_tokens: 50,
         cache_read_tokens: 200,
       });
+    });
+
+    async function collect(events: unknown[]): Promise<unknown[]> {
+      mockStream.mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const event of events) yield event;
+        },
+      });
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-ant-test", baseParams)) {
+        results.push(chunk);
+      }
+      return results;
+    }
+
+    it("emits a thinking_block with its accumulated signature when the block closes", async () => {
+      const results = await collect([
+        {
+          type: "content_block_start",
+          content_block: { type: "thinking", thinking: "", signature: "" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "step " },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "one" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "signature_delta", signature: "sig-abc" },
+        },
+        { type: "content_block_stop" },
+        {
+          type: "content_block_start",
+          content_block: { type: "redacted_thinking", data: "opaque" },
+        },
+        { type: "content_block_stop" },
+        { type: "message_delta", delta: { stop_reason: "end_turn" } },
+      ]);
+
+      expect(results).toEqual([
+        { type: "reasoning", text: "step " },
+        { type: "reasoning", text: "one" },
+        {
+          type: "thinking_block",
+          block: {
+            type: "thinking",
+            thinking: "step one",
+            signature: "sig-abc",
+          },
+        },
+        {
+          type: "thinking_block",
+          block: { type: "redacted_thinking", data: "opaque" },
+        },
+        { type: "stop", finishReason: "stop" },
+      ]);
+    });
+
+    it("drops a tool call whose streamed arguments are not valid JSON instead of throwing", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const results = await collect([
+        {
+          type: "content_block_start",
+          content_block: {
+            type: "tool_use",
+            id: "x",
+            name: "broken",
+            input: {},
+          },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "input_json_delta", partial_json: '{"query": "trunc' },
+        },
+        { type: "content_block_stop" },
+        {
+          type: "content_block_start",
+          content_block: { type: "tool_use", id: "y", name: "ok", input: {} },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "input_json_delta", partial_json: '{"q":1}' },
+        },
+        { type: "content_block_stop" },
+        { type: "message_delta", delta: { stop_reason: "tool_use" } },
+      ]);
+      warn.mockRestore();
+
+      expect(results).toEqual([
+        {
+          type: "tool_use",
+          id: expect.any(String),
+          name: "ok",
+          input: { q: 1 },
+        },
+        { type: "stop", finishReason: "tool_use" },
+      ]);
     });
   });
 });

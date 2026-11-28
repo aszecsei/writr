@@ -313,6 +313,8 @@ export interface ToolCallPayload {
   id: string;
   name: string;
   input: Record<string, unknown>;
+  /** Gemini's opaque signature for this call; see `AiToolCall.thoughtSignature`. */
+  thoughtSignature?: string;
 }
 
 /** UI state for a tool call within a message */

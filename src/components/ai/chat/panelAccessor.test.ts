@@ -87,6 +87,23 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
     });
   });
 
+  it("carries thinking blocks onto the committed assistant turn", () => {
+    const { accessor } = makeAccessor([userMsg({ content: "research" })]);
+    const thinkingBlocks = [
+      { type: "thinking" as const, thinking: "plan", signature: "sig" },
+    ];
+
+    const turnId = accessor.startAssistantTurn({ iteration: 1 });
+    accessor.finalizeAssistantTurn(turnId, {
+      durationMs: 200,
+      finishReason: "tool_use",
+      toolCallRefs: [{ id: "call_1", name: "list", arguments: {} }],
+      thinkingBlocks,
+    });
+
+    expect(accessor.getMessages()[1].thinkingBlocks).toEqual(thinkingBlocks);
+  });
+
   it("commits a tool row to the buffer only when the tool reaches a terminal status", () => {
     const { accessor } = makeAccessor([userMsg({ content: "research" })]);
 

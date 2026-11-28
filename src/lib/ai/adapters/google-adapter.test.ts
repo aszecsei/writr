@@ -331,6 +331,76 @@ describe("createGoogleAdapter", () => {
         response: { result: "not valid json" },
       });
     });
+
+    it("answers parallel function calls with one user turn holding every functionResponse", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        { role: "user", content: "Look both up" },
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            { id: "call_1", name: "get", arguments: {} },
+            { id: "call_2", name: "list", arguments: {} },
+          ],
+        },
+        { role: "tool", toolCallId: "call_1", content: '{"a":1}' },
+        { role: "tool", toolCallId: "call_2", content: '{"b":2}' },
+        { role: "user", content: "Thanks" },
+      ];
+
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const contents = mockGenerateContent.mock.calls[0][0].contents;
+      expect(contents).toHaveLength(4);
+      expect(contents[2]).toEqual({
+        role: "user",
+        parts: [
+          { functionResponse: { name: "get", response: { a: 1 } } },
+          { functionResponse: { name: "list", response: { b: 2 } } },
+        ],
+      });
+      expect(contents[3]).toEqual({
+        role: "user",
+        parts: [{ text: "Thanks" }],
+      });
+    });
+
+    it("round-trips a function call's thoughtSignature", async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        okResponse({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: { name: "get", args: { x: 1 } },
+                    thoughtSignature: "sig-1",
+                  },
+                ],
+              },
+              finishReason: "STOP",
+            },
+          ],
+        }),
+      );
+      const result = await adapter.complete("key", baseParams);
+      expect(result.toolCalls?.[0].thoughtSignature).toBe("sig-1");
+
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
+      const messages: AiMessage[] = [
+        { role: "assistant", content: "", toolCalls: result.toolCalls },
+        { role: "tool", toolCallId: result.toolCalls?.[0].id, content: "{}" },
+      ];
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const contents = mockGenerateContent.mock.calls[1][0].contents;
+      expect(contents[0].parts[0]).toEqual({
+        functionCall: { name: "get", args: { x: 1 } },
+        thoughtSignature: "sig-1",
+      });
+    });
   });
 
   describe("stream", () => {
@@ -456,6 +526,47 @@ describe("createGoogleAdapter", () => {
           total_tokens: 112,
         },
       });
+    });
+
+    it("reports tool_use when a function call was streamed, even though Gemini says STOP", async () => {
+      const responses = [
+        {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: { name: "get", args: { x: 1 } },
+                    thoughtSignature: "sig-1",
+                  },
+                ],
+              },
+              finishReason: "STOP",
+            },
+          ],
+        },
+      ];
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          for (const r of responses) yield r;
+        })(),
+      );
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("key", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results).toEqual([
+        {
+          type: "tool_use",
+          id: expect.any(String),
+          name: "get",
+          input: { x: 1 },
+          thoughtSignature: "sig-1",
+        },
+        { type: "stop", finishReason: "tool_use" },
+      ]);
     });
   });
 

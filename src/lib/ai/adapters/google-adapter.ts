@@ -32,6 +32,7 @@ interface GooglePart {
   inlineData?: { mimeType: string; data: string };
   functionCall?: { name: string; args: Record<string, unknown> };
   functionResponse?: { name: string; response: Record<string, unknown> };
+  thoughtSignature?: string;
 }
 
 function toGoogleParts(parts: ContentPart[]): GooglePart[] {
@@ -87,8 +88,12 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
   // id — track each tool call's name by its id as assistant messages emit
   // them so the later tool-result message can look it up.
   const toolCallNames = new Map<string, string>();
+  // Parallel function calls must be answered by ONE user turn holding every
+  // functionResponse; consecutive tool rows extend the previous turn.
+  let toolResultTurn: GoogleMessage | null = null;
 
   for (const msg of messages) {
+    if (msg.role !== "tool") toolResultTurn = null;
     if (msg.role === "system") {
       if (typeof msg.content === "string") {
         systemParts.push(msg.content);
@@ -104,17 +109,18 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
       const name =
         (msg.toolCallId && toolCallNames.get(msg.toolCallId)) ?? "unknown";
       const responseText = extractTextContent(msg.content).text;
-      nonSystemMessages.push({
-        role: "user",
-        parts: [
-          {
-            functionResponse: {
-              name,
-              response: toFunctionResponse(responseText),
-            },
-          },
-        ],
-      });
+      const part: GooglePart = {
+        functionResponse: {
+          name,
+          response: toFunctionResponse(responseText),
+        },
+      };
+      if (toolResultTurn) {
+        toolResultTurn.parts.push(part);
+      } else {
+        toolResultTurn = { role: "user", parts: [part] };
+        nonSystemMessages.push(toolResultTurn);
+      }
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
       // Assistant message with function calls
       const parts: GooglePart[] = [];
@@ -126,6 +132,9 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         toolCallNames.set(tc.id, tc.name);
         parts.push({
           functionCall: { name: tc.name, args: tc.arguments },
+          ...(tc.thoughtSignature
+            ? { thoughtSignature: tc.thoughtSignature }
+            : {}),
         });
       }
       nonSystemMessages.push({ role: "model", parts });
@@ -239,6 +248,9 @@ export function createGoogleAdapter(
                 string,
                 unknown
               >,
+              ...(part.thoughtSignature
+                ? { thoughtSignature: part.thoughtSignature }
+                : {}),
             });
           } else if (part.text) {
             text += part.text;
@@ -275,8 +287,11 @@ export function createGoogleAdapter(
       // Capture usage and the terminating finish reason — Google streams
       // usageMetadata on every chunk (running totals) and finishReason only on
       // the final candidate. Emit `stop` once after the stream drains so the
-      // attached usage reflects the run-final values.
+      // attached usage reflects the run-final values. Gemini reports `STOP`
+      // even when the turn ended in function calls, so a yielded call forces
+      // `tool_use` — the runner only loops on that.
       let finalFinishReason: string | null = null;
+      let sawToolCall = false;
       let finalUsage: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
@@ -296,6 +311,7 @@ export function createGoogleAdapter(
               }
             } else if (part.functionCall) {
               // Google sends complete function calls (no incremental JSON)
+              sawToolCall = true;
               yield {
                 type: "tool_use" as const,
                 id: generateToolUseId(),
@@ -304,6 +320,9 @@ export function createGoogleAdapter(
                   string,
                   unknown
                 >,
+                ...(part.thoughtSignature
+                  ? { thoughtSignature: part.thoughtSignature }
+                  : {}),
               };
             } else if (part.text) {
               yield { type: "content" as const, text: part.text };
@@ -315,10 +334,12 @@ export function createGoogleAdapter(
         }
       }
 
-      if (finalFinishReason) {
+      if (finalFinishReason || sawToolCall) {
         yield {
           type: "stop" as const,
-          finishReason: normalizeFinishReason(finalFinishReason),
+          finishReason: sawToolCall
+            ? "tool_use"
+            : normalizeFinishReason(finalFinishReason),
           ...(finalUsage
             ? {
                 usage: toAiUsage({

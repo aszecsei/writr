@@ -203,6 +203,9 @@ export function makeChatAccessorCore(
           role: "assistant",
           content: turn.content,
           ...(toolCalls ? { toolCalls } : {}),
+          ...(info.thinkingBlocks?.length
+            ? { thinkingBlocks: info.thinkingBlocks }
+            : {}),
         });
       }
 

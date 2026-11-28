@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { AiProviderEnum } from "@/db/schemas";
+import { ThinkingBlockSchema } from "@/lib/ai/thinking";
 import type {
   ToolDefinitionForModel,
   ToolParameterProperty,
@@ -23,6 +24,7 @@ const ToolCallSchema = z.object({
   id: z.string(),
   name: z.string(),
   arguments: z.record(z.string(), z.unknown()),
+  thoughtSignature: z.string().optional(),
 });
 
 const ToolParameterPropertySchema: z.ZodType<ToolParameterProperty> = z.lazy(
@@ -61,6 +63,7 @@ export const ChatRequestSchema = z.object({
       content: z.union([z.string(), z.array(ContentPartSchema)]),
       toolCalls: z.array(ToolCallSchema).optional(),
       toolCallId: z.string().optional(),
+      thinkingBlocks: z.array(ThinkingBlockSchema).optional(),
     }),
   ),
   temperature: z.number().min(0).max(2).optional(),

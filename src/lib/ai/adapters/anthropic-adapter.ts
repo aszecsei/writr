@@ -6,11 +6,13 @@ import type {
   AiToolCall,
   ContentPart,
   FinishReason,
+  ThinkingBlock,
 } from "../types";
 import {
   extractTextContent,
   generateToolUseId,
   parseBase64ImageDataUrl,
+  parseToolArguments,
   REASONING_EFFORT_SCALE,
   toAiUsage,
 } from "./helpers";
@@ -75,11 +77,24 @@ interface ExtractedMessages {
   messages: Anthropic.MessageParam[];
 }
 
-function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
+/**
+ * @param includeThinking replay each assistant turn's signed thinking blocks
+ *   ahead of its tool_use blocks. Anthropic requires them on the assistant
+ *   turn a tool_result answers whenever thinking is enabled; they are left
+ *   out when it is not.
+ */
+function extractSystemMessages(
+  messages: AiMessage[],
+  includeThinking: boolean,
+): ExtractedMessages {
   const systemBlocks: Anthropic.TextBlockParam[] = [];
   const nonSystemMessages: Anthropic.MessageParam[] = [];
+  // Parallel tool_use blocks must be answered by ONE user message holding
+  // every tool_result; consecutive tool rows extend the previous message.
+  let toolResultBlocks: Anthropic.ToolResultBlockParam[] | null = null;
 
   for (const msg of messages) {
+    if (msg.role !== "tool") toolResultBlocks = null;
     if (msg.role === "system") {
       if (typeof msg.content === "string") {
         systemBlocks.push({ type: "text", text: msg.content });
@@ -101,20 +116,22 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
       // Propagate cache_control to the tool_result block so the caching marker
       // attached by `withTrailingCacheControl` survives the conversion.
       const { text, cacheControl } = extractTextContent(msg.content);
-      nonSystemMessages.push({
-        role: "user",
-        content: [
-          {
-            type: "tool_result",
-            tool_use_id: msg.toolCallId ?? "",
-            content: text,
-            ...(cacheControl ? { cache_control: cacheControl } : {}),
-          },
-        ],
-      });
+      const block: Anthropic.ToolResultBlockParam = {
+        type: "tool_result",
+        tool_use_id: msg.toolCallId ?? "",
+        content: text,
+        ...(cacheControl ? { cache_control: cacheControl } : {}),
+      };
+      if (toolResultBlocks) {
+        toolResultBlocks.push(block);
+      } else {
+        toolResultBlocks = [block];
+        nonSystemMessages.push({ role: "user", content: toolResultBlocks });
+      }
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
       // Assistant message with tool use blocks
-      const content: Anthropic.ContentBlockParam[] = [];
+      const content: Anthropic.ContentBlockParam[] =
+        includeThinking && msg.thinkingBlocks ? [...msg.thinkingBlocks] : [];
       const text = extractTextContent(msg.content).text;
       if (text) {
         content.push({ type: "text", text });
@@ -169,10 +186,29 @@ function hasThinking(
   return !!reasoning && reasoning.effort !== "none";
 }
 
-function getBudget(
+const MIN_BUDGET_TOKENS = 1024;
+/** Output tokens reserved beyond the thinking budget for the visible reply. */
+const MIN_REPLY_TOKENS = 1024;
+
+/**
+ * Anthropic requires `max_tokens > budget_tokens`. The budget shrinks to fit
+ * the caller's `maxTokens` rather than `max_tokens` growing past it, which
+ * could exceed the model's output cap; `max_tokens` grows only when
+ * `maxTokens` cannot hold even the API's minimum budget.
+ */
+function getThinkingTokens(
   reasoning: NonNullable<CompletionParams["reasoning"]>,
-): number {
-  return BUDGET_MAP[reasoning.effort] ?? 10240;
+  maxTokens: number,
+): { budgetTokens: number; maxTokens: number } {
+  const requested = BUDGET_MAP[reasoning.effort] ?? 10240;
+  const budgetTokens = Math.max(
+    MIN_BUDGET_TOKENS,
+    Math.min(requested, maxTokens - MIN_REPLY_TOKENS),
+  );
+  return {
+    budgetTokens,
+    maxTokens: Math.max(maxTokens, budgetTokens + MIN_REPLY_TOKENS),
+  };
 }
 
 function buildThinkingConfig(params: CompletionParams): object {
@@ -187,11 +223,13 @@ function buildThinkingConfig(params: CompletionParams): object {
         output_config: { effort },
       };
     }
+    const { budgetTokens, maxTokens } = getThinkingTokens(
+      params.reasoning,
+      params.maxTokens,
+    );
     return {
-      thinking: {
-        type: "enabled",
-        budget_tokens: getBudget(params.reasoning),
-      },
+      max_tokens: maxTokens,
+      thinking: { type: "enabled", budget_tokens: budgetTokens },
     };
   }
   return { temperature: params.temperature };
@@ -228,7 +266,10 @@ function buildRequestPayload(params: CompletionParams): {
   output_config?: { effort: string };
   tools?: Anthropic.Tool[];
 } {
-  const { system, messages } = extractSystemMessages(params.messages);
+  const { system, messages } = extractSystemMessages(
+    params.messages,
+    hasThinking(params.reasoning),
+  );
   return {
     model: params.model,
     ...(system.length > 0 ? { system } : {}),
@@ -254,6 +295,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
       let text = "";
       let reasoning = "";
       const toolCalls: AiToolCall[] = [];
+      const thinkingBlocks: ThinkingBlock[] = [];
       for (const block of response.content) {
         match(block)
           .with({ type: "text" }, (b) => {
@@ -261,6 +303,14 @@ export function createAnthropicAdapter(): ProviderAdapter {
           })
           .with({ type: "thinking" }, (b) => {
             reasoning += b.thinking;
+            thinkingBlocks.push({
+              type: "thinking",
+              thinking: b.thinking,
+              signature: b.signature,
+            });
+          })
+          .with({ type: "redacted_thinking" }, (b) => {
+            thinkingBlocks.push({ type: "redacted_thinking", data: b.data });
           })
           .with({ type: "tool_use" }, (b) => {
             toolCalls.push({
@@ -270,8 +320,8 @@ export function createAnthropicAdapter(): ProviderAdapter {
             });
           })
           .otherwise(() => {
-            // Other content block kinds (server tool results, redacted
-            // thinking, etc.) are not surfaced into our internal AiResponse.
+            // Other content block kinds (server tool results, etc.) are not
+            // surfaced into our internal AiResponse.
           });
       }
 
@@ -291,6 +341,7 @@ export function createAnthropicAdapter(): ProviderAdapter {
         }),
         finishReason: normalizeStopReason(response.stop_reason),
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        ...(thinkingBlocks.length > 0 ? { thinkingBlocks } : {}),
       };
     },
 
@@ -308,6 +359,10 @@ export function createAnthropicAdapter(): ProviderAdapter {
         name: string;
         inputJson: string;
       } | null = null;
+      // Thinking block being streamed; emitted whole (with its signature) on
+      // content_block_stop so the runner can replay it next iteration.
+      let currentThinking: { thinking: string; signature: string } | null =
+        null;
 
       // Accumulate usage across stream events. message_start carries the
       // initial input/cache split; message_delta carries cumulative output
@@ -338,12 +393,23 @@ export function createAnthropicAdapter(): ProviderAdapter {
             outputTokens = usage.output_tokens ?? 0;
           })
           .with({ type: "content_block_start" }, (e) => {
-            if (e.content_block.type === "tool_use") {
-              currentToolUse = {
-                name: e.content_block.name,
-                inputJson: "",
-              };
-            }
+            match(e.content_block)
+              .with({ type: "tool_use" }, (b) => {
+                currentToolUse = { name: b.name, inputJson: "" };
+              })
+              .with({ type: "thinking" }, (b) => {
+                currentThinking = {
+                  thinking: b.thinking,
+                  signature: b.signature,
+                };
+              })
+              .with({ type: "redacted_thinking" }, (b) => {
+                yields.push({
+                  type: "thinking_block",
+                  block: { type: "redacted_thinking", data: b.data },
+                });
+              })
+              .otherwise(() => undefined);
           })
           .with({ type: "content_block_delta" }, (e) => {
             match(e.delta)
@@ -351,29 +417,43 @@ export function createAnthropicAdapter(): ProviderAdapter {
                 yields.push({ type: "content", text: d.text });
               })
               .with({ type: "thinking_delta" }, (d) => {
+                if (currentThinking) currentThinking.thinking += d.thinking;
                 yields.push({ type: "reasoning", text: d.thinking });
+              })
+              .with({ type: "signature_delta" }, (d) => {
+                if (currentThinking) currentThinking.signature += d.signature;
               })
               .with({ type: "input_json_delta" }, (d) => {
                 if (currentToolUse) {
                   currentToolUse.inputJson += d.partial_json;
                 }
               })
-              // citations_delta and signature_delta are not surfaced.
-              .with(
-                { type: P.union("citations_delta", "signature_delta") },
-                () => undefined,
-              )
+              // citations_delta is not surfaced.
+              .with({ type: "citations_delta" }, () => undefined)
               .exhaustive();
           })
           .with({ type: "content_block_stop" }, () => {
             if (currentToolUse) {
-              yields.push({
-                type: "tool_use",
-                id: generateToolUseId(),
-                name: currentToolUse.name,
-                input: JSON.parse(currentToolUse.inputJson || "{}"),
-              });
+              const input = parseToolArguments(
+                currentToolUse.name,
+                currentToolUse.inputJson,
+              );
+              if (input) {
+                yields.push({
+                  type: "tool_use",
+                  id: generateToolUseId(),
+                  name: currentToolUse.name,
+                  input,
+                });
+              }
               currentToolUse = null;
+            }
+            if (currentThinking) {
+              yields.push({
+                type: "thinking_block",
+                block: { type: "thinking", ...currentThinking },
+              });
+              currentThinking = null;
             }
           })
           .with({ type: "message_delta" }, (e) => {

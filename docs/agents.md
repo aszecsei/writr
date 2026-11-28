@@ -34,6 +34,10 @@ builtins/
   tool-permissions.ts    Per-agent tool permission lists
 ```
 
+### Runner protocol
+
+Each iteration posts once to `/api/ai` (`requestIteration`). The runner loops only when the stop chunk says `finishReason: "tool_use"` and at least one tool call arrived; adapters are responsible for reporting `tool_use` whenever they emitted a call. Signed `thinking_block` chunks and Gemini `thoughtSignature`s on tool calls are collected and passed to `finalizeAssistantTurn`, so the accessor replays them on the next request. If `fetch` or the stream read throws, the runner removes the in-progress assistant turn and cancels the reader. An abort then returns `{ aborted: true }`; any other error is rethrown. Tests: `runner.test.ts`.
+
 ## Built-in chat agents
 
 `spark`, `scene`, `reader`, `editor`, `character-dialogue`, `brainstorm`, `chat`, `beta-reader`, `outline-architect`, `worldbuilder`, `orchestrator-chat`, `researcher`, and `prose-writer`. Each has a `behavior` (`spark` / `scene` / `review` / `edit` / `chat` / `panel`) that drives how the AiPanel renders its response. `kind="user"` agents are user-created and always behave as `chat`.
