@@ -187,4 +187,27 @@ describe("panelAccessor.getMessages — wire-format buffer", () => {
     // The React-state mirror also drops the draft.
     expect(getRendered().some((m) => m.id === turnId)).toBe(false);
   });
+
+  it("commits thinkingBlocks to both the wire buffer and rendered assistant message on finalize", () => {
+    const { accessor, getRendered } = makeAccessor([
+      userMsg({ content: "research" }),
+    ]);
+
+    const thinkingBlocks = [
+      { type: "thinking" as const, thinking: "Plan", signature: "sig_123" },
+    ];
+    const turnId = accessor.startAssistantTurn({ iteration: 1 });
+    accessor.finalizeAssistantTurn(turnId, {
+      durationMs: 120,
+      finishReason: "tool_use",
+      thinkingBlocks,
+      toolCallRefs: [{ id: "call_1", name: "list", arguments: {} }],
+    });
+
+    expect(accessor.getMessages()[1].thinkingBlocks).toEqual(thinkingBlocks);
+    const rendered = getRendered().find((m) => m.id === turnId);
+    expect(rendered?.role === "assistant" && rendered.thinkingBlocks).toEqual(
+      thinkingBlocks,
+    );
+  });
 });

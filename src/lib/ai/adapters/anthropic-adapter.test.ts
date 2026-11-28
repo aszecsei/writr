@@ -353,6 +353,140 @@ describe("createAnthropicAdapter", () => {
         cache_read_tokens: 200,
       });
     });
+
+    it("coalesces consecutive tool messages into one user turn and preserves trailing cache_control", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            {
+              id: "call_1",
+              name: "list",
+              arguments: { category: "character" },
+            },
+            { id: "call_2", name: "list", arguments: { category: "location" } },
+          ],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_1",
+          content: [{ type: "text", text: '{"items":["Alice"]}' }],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_2",
+          content: [
+            {
+              type: "text",
+              text: '{"items":["Castle"]}',
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+        },
+      ];
+
+      await adapter.complete("sk-ant-test", { ...baseParams, messages });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.messages).toHaveLength(2);
+      expect(createCall.messages[1]).toEqual({
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "call_1",
+            content: '{"items":["Alice"]}',
+          },
+          {
+            type: "tool_result",
+            tool_use_id: "call_2",
+            content: '{"items":["Castle"]}',
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+      });
+    });
+
+    it("raises max_tokens above budget_tokens on fixed-budget thinking models and leaves adaptive models unchanged", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        maxTokens: 24576,
+        reasoning: { effort: "xhigh" },
+      });
+      const nonAdaptiveCall = mockCreate.mock.calls[0][0];
+      expect(nonAdaptiveCall.thinking).toEqual({
+        type: "enabled",
+        budget_tokens: 32768,
+      });
+      expect(nonAdaptiveCall.max_tokens).toBeGreaterThan(
+        nonAdaptiveCall.thinking.budget_tokens,
+      );
+      expect(nonAdaptiveCall.max_tokens).toBe(36864);
+
+      mockCreate.mockResolvedValueOnce(okResponse());
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        model: "claude-opus-4-6",
+        maxTokens: 24576,
+        reasoning: { effort: "xhigh" },
+      });
+      const adaptiveCall = mockCreate.mock.calls[1][0];
+      expect(adaptiveCall.thinking).toEqual({ type: "adaptive" });
+      expect(adaptiveCall.max_tokens).toBe(24576);
+    });
+
+    it("captures signed thinking and redacted_thinking blocks in complete() and replays them on tool turns", async () => {
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          content: [
+            { type: "thinking", thinking: "Step 1", signature: "sig_abc" },
+            { type: "redacted_thinking", data: "opaque_blob" },
+            { type: "tool_use", id: "toolu_1", name: "list", input: {} },
+          ],
+          stop_reason: "tool_use",
+        }),
+      );
+
+      const first = await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        reasoning: { effort: "high" },
+      });
+
+      expect(first.thinkingBlocks).toEqual([
+        { type: "thinking", thinking: "Step 1", signature: "sig_abc" },
+        { type: "redacted_thinking", data: "opaque_blob" },
+      ]);
+
+      mockCreate.mockResolvedValueOnce(okResponse());
+      await adapter.complete("sk-ant-test", {
+        ...baseParams,
+        messages: [
+          { role: "user", content: "List characters" },
+          {
+            role: "assistant",
+            content: "",
+            thinkingBlocks: first.thinkingBlocks,
+            toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
+          },
+          { role: "tool", toolCallId: "call_1", content: '{"items":[]}' },
+        ],
+        reasoning: { effort: "high" },
+      });
+
+      const followUp = mockCreate.mock.calls[1][0];
+      expect(followUp.messages[1]).toEqual({
+        role: "assistant",
+        content: [
+          { type: "thinking", thinking: "Step 1", signature: "sig_abc" },
+          { type: "redacted_thinking", data: "opaque_blob" },
+          { type: "tool_use", id: "call_1", name: "list", input: {} },
+        ],
+      });
+    });
   });
 
   describe("stream", () => {
@@ -442,6 +576,106 @@ describe("createAnthropicAdapter", () => {
         cache_creation_tokens: 50,
         cache_read_tokens: 200,
       });
+    });
+
+    it("accumulates thinking_delta and signature_delta into thinking_block chunks and forwards redacted_thinking", async () => {
+      const events = [
+        {
+          type: "content_block_start",
+          content_block: { type: "thinking", thinking: "", signature: "" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "Let me " },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "check." },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "signature_delta", signature: "sig_part1" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "signature_delta", signature: "_part2" },
+        },
+        { type: "content_block_stop" },
+        {
+          type: "content_block_start",
+          content_block: { type: "redacted_thinking", data: "redacted_xyz" },
+        },
+        { type: "content_block_stop" },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "end_turn" },
+        },
+      ];
+
+      mockStream.mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const event of events) yield event;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-ant-test", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results).toEqual([
+        { type: "reasoning", text: "Let me " },
+        { type: "reasoning", text: "check." },
+        {
+          type: "thinking_block",
+          block: {
+            type: "thinking",
+            thinking: "Let me check.",
+            signature: "sig_part1_part2",
+          },
+        },
+        {
+          type: "thinking_block",
+          block: { type: "redacted_thinking", data: "redacted_xyz" },
+        },
+        { type: "stop", finishReason: "stop" },
+      ]);
+    });
+
+    it("falls back to {} instead of throwing when streamed tool_use JSON is malformed", async () => {
+      const events = [
+        {
+          type: "content_block_start",
+          content_block: { type: "tool_use", id: "toolu_1", name: "list" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "input_json_delta", partial_json: '{"category":' },
+        },
+        { type: "content_block_stop" },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "tool_use" },
+        },
+      ];
+
+      mockStream.mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const event of events) yield event;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-ant-test", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results[0]).toMatchObject({
+        type: "tool_use",
+        name: "list",
+        input: {},
+      });
+      expect(results[1]).toEqual({ type: "stop", finishReason: "tool_use" });
     });
   });
 });

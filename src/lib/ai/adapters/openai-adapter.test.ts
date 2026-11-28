@@ -41,6 +41,7 @@ describe("createOpenAiAdapter", () => {
   const adapter = createOpenAiAdapter({
     baseURL: "https://test.api.com/v1",
     defaultHeaders: { "X-Custom": "header" },
+    dialect: "openrouter",
   });
 
   beforeEach(() => {
@@ -476,6 +477,181 @@ describe("createOpenAiAdapter", () => {
           total_tokens: 49,
         },
       });
+    });
+
+    it("emits accumulated tool calls and finishReason 'tool_use' even when raw finish_reason is 'stop'", async () => {
+      const chunks = [
+        {
+          choices: [
+            {
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    function: { name: "list", arguments: '{"category":' },
+                  },
+                ],
+              },
+              finish_reason: null,
+            },
+          ],
+        },
+        {
+          choices: [
+            {
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    function: { arguments: '"character"}' },
+                  },
+                ],
+              },
+              finish_reason: null,
+            },
+          ],
+        },
+        { choices: [{ delta: {}, finish_reason: "stop" }] },
+      ];
+
+      mockCreate.mockResolvedValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const chunk of chunks) yield chunk;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-test", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results).toHaveLength(2);
+      expect(results[0]).toMatchObject({
+        type: "tool_use",
+        name: "list",
+        input: { category: "character" },
+      });
+      expect(results[1]).toEqual({ type: "stop", finishReason: "tool_use" });
+    });
+
+    it("falls back to {} instead of throwing on malformed streamed tool arguments", async () => {
+      const chunks = [
+        {
+          choices: [
+            {
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    function: { name: "list", arguments: '{"broken":' },
+                  },
+                ],
+              },
+              finish_reason: null,
+            },
+          ],
+        },
+        { choices: [{ delta: {}, finish_reason: "tool_calls" }] },
+      ];
+
+      mockCreate.mockResolvedValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          for (const chunk of chunks) yield chunk;
+        },
+      });
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("sk-test", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results[0]).toMatchObject({
+        type: "tool_use",
+        name: "list",
+        input: {},
+      });
+      expect(results[1]).toEqual({ type: "stop", finishReason: "tool_use" });
+    });
+  });
+
+  describe("openai dialect", () => {
+    const directAdapter = createOpenAiAdapter({
+      baseURL: "https://api.openai.com/v1",
+      dialect: "openai",
+    });
+
+    it("sends max_completion_tokens and reasoning_effort while omitting temperature when reasoning is active", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse({ model: "o3" }));
+
+      await directAdapter.complete("sk-test", {
+        ...baseParams,
+        model: "o3",
+        reasoning: { effort: "high" },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.max_completion_tokens).toBe(2048);
+      expect(createCall.max_tokens).toBeUndefined();
+      expect(createCall.reasoning_effort).toBe("high");
+      expect(createCall.reasoning).toBeUndefined();
+      expect(createCall.temperature).toBeUndefined();
+    });
+
+    it("sends max_completion_tokens and temperature without reasoning_effort when reasoning is omitted or none", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      await directAdapter.complete("sk-test", {
+        ...baseParams,
+        reasoning: { effort: "none" },
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.max_completion_tokens).toBe(2048);
+      expect(createCall.max_tokens).toBeUndefined();
+      expect(createCall.reasoning_effort).toBeUndefined();
+      expect(createCall.reasoning).toBeUndefined();
+      expect(createCall.temperature).toBe(0.7);
+    });
+
+    it("does not attach OpenRouter Anthropic cache_control markers under the openai dialect", async () => {
+      mockCreate.mockResolvedValueOnce(okResponse());
+
+      await directAdapter.complete("sk-test", {
+        ...baseParams,
+        model: "anthropic/claude-sonnet-4-5",
+        tools: [tool("a"), tool("b")],
+      });
+
+      const createCall = mockCreate.mock.calls[0][0];
+      expect(createCall.tools[1].cache_control).toBeUndefined();
+    });
+
+    it("falls back to {} instead of throwing on malformed tool arguments in complete()", async () => {
+      mockCreate.mockResolvedValueOnce(
+        okResponse({
+          choices: [
+            {
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "upstream_1",
+                    type: "function",
+                    function: { name: "list", arguments: "{invalid" },
+                  },
+                ],
+              },
+              finish_reason: "tool_calls",
+            },
+          ],
+        }),
+      );
+
+      const result = await directAdapter.complete("sk-test", baseParams);
+      expect(result.finishReason).toBe("tool_use");
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls?.[0].arguments).toEqual({});
     });
   });
 });

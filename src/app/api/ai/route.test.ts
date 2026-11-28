@@ -3,7 +3,7 @@ import type { ProjectId } from "@/db/schemas";
 import { getToolDefinitionsForAgent } from "@/lib/ai/agents/tool-filter";
 import type { Agent } from "@/lib/ai/agents/types";
 import { AI_TOOL_MAP } from "@/lib/ai/tool-calling";
-import { ToolDefinitionSchema } from "./request-schema";
+import { ChatRequestSchema, ToolDefinitionSchema } from "./request-schema";
 
 const projectId = "a1111111-1111-4111-a111-111111111111" as ProjectId;
 
@@ -46,5 +46,37 @@ describe("ToolDefinitionSchema", () => {
       parsed.parameters.properties.requests?.items?.properties?.category?.enum,
     ).toEqual(["outline", "summary"]);
     expect(parsed).toEqual(get);
+  });
+});
+
+describe("ChatRequestSchema", () => {
+  it("accepts and round-trips thinkingBlocks on assistant messages", () => {
+    const input = {
+      action: "chat" as const,
+      apiKey: "sk-ant-test",
+      model: "claude-sonnet-4-5-20250929",
+      provider: "anthropic" as const,
+      messages: [
+        { role: "user" as const, content: "Check characters" },
+        {
+          role: "assistant" as const,
+          content: "",
+          thinkingBlocks: [
+            {
+              type: "thinking" as const,
+              thinking: "Checking",
+              signature: "sig_1",
+            },
+            { type: "redacted_thinking" as const, data: "opaque_1" },
+          ],
+          toolCalls: [{ id: "call_1", name: "list", arguments: {} }],
+        },
+      ],
+    };
+
+    const parsed = ChatRequestSchema.parse(input);
+    expect(parsed.messages[1].thinkingBlocks).toEqual(
+      input.messages[1].thinkingBlocks,
+    );
   });
 });

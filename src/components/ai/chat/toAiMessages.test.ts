@@ -101,6 +101,20 @@ describe("toAiMessages", () => {
     });
   });
 
+  it("preserves thinkingBlocks on assistant turns", () => {
+    const thinkingBlocks = [
+      { type: "thinking" as const, thinking: "Plan", signature: "sig_abc" },
+      { type: "redacted_thinking" as const, data: "opaque" },
+    ];
+    const out = toAiMessages([
+      assistantMsg({
+        content: "done",
+        thinkingBlocks,
+      }),
+    ]);
+    expect(out[0].thinkingBlocks).toEqual(thinkingBlocks);
+  });
+
   it("emits role:'tool' rows for executed tool messages, JSON-encoding the result", () => {
     const out = toAiMessages([
       toolMsg({

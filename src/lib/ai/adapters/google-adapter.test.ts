@@ -331,6 +331,57 @@ describe("createGoogleAdapter", () => {
         response: { result: "not valid json" },
       });
     });
+
+    it("coalesces consecutive tool messages into a single user turn with all functionResponse parts", async () => {
+      mockGenerateContent.mockResolvedValueOnce(okResponse());
+
+      const messages: AiMessage[] = [
+        {
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            {
+              id: "call_1",
+              name: "list",
+              arguments: { category: "character" },
+            },
+            { id: "call_2", name: "list", arguments: { category: "location" } },
+          ],
+        },
+        {
+          role: "tool",
+          toolCallId: "call_1",
+          content: '{"items":["Alice"]}',
+        },
+        {
+          role: "tool",
+          toolCallId: "call_2",
+          content: '{"items":["Castle"]}',
+        },
+      ];
+
+      await adapter.complete("key", { ...baseParams, messages });
+
+      const call = mockGenerateContent.mock.calls[0][0];
+      expect(call.contents).toHaveLength(2);
+      expect(call.contents[1]).toEqual({
+        role: "user",
+        parts: [
+          {
+            functionResponse: {
+              name: "list",
+              response: { items: ["Alice"] },
+            },
+          },
+          {
+            functionResponse: {
+              name: "list",
+              response: { items: ["Castle"] },
+            },
+          },
+        ],
+      });
+    });
   });
 
   describe("stream", () => {
@@ -455,6 +506,87 @@ describe("createGoogleAdapter", () => {
           completion_tokens: 12,
           total_tokens: 112,
         },
+      });
+    });
+
+    it("emits finishReason 'tool_use' when functionCall parts are streamed even with raw finishReason STOP", async () => {
+      const responses = [
+        {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: {
+                      name: "list",
+                      args: { category: "character" },
+                    },
+                  },
+                ],
+              },
+              finishReason: "STOP",
+            },
+          ],
+        },
+      ];
+
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          for (const r of responses) yield r;
+        })(),
+      );
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("key", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results).toHaveLength(2);
+      expect(results[0]).toMatchObject({
+        type: "tool_use",
+        name: "list",
+        input: { category: "character" },
+      });
+      expect(results[1]).toEqual({
+        type: "stop",
+        finishReason: "tool_use",
+      });
+    });
+
+    it("emits stop with finishReason 'tool_use' when functionCall is streamed without a raw finishReason", async () => {
+      const responses = [
+        {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    functionCall: {
+                      name: "search_project",
+                      args: { query: "key" },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ];
+
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          for (const r of responses) yield r;
+        })(),
+      );
+
+      const results: unknown[] = [];
+      for await (const chunk of adapter.stream("key", baseParams)) {
+        results.push(chunk);
+      }
+
+      expect(results.at(-1)).toEqual({
+        type: "stop",
+        finishReason: "tool_use",
       });
     });
   });

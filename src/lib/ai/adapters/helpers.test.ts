@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractTextContent } from "./helpers";
+import { extractTextContent, parseToolArguments } from "./helpers";
 
 describe("extractTextContent", () => {
   it("passes a plain string through with no cache marker", () => {
@@ -36,5 +36,25 @@ describe("extractTextContent", () => {
         { type: "text", text: "after" },
       ]),
     ).toEqual({ text: "before after" });
+  });
+});
+
+describe("parseToolArguments", () => {
+  it("parses a valid JSON object", () => {
+    expect(parseToolArguments('{"category":"character","limit":5}')).toEqual({
+      category: "character",
+      limit: 5,
+    });
+  });
+
+  it.each([
+    ["undefined", undefined],
+    ["empty string", ""],
+    ["truncated JSON", '{"category":"char'],
+    ["JSON array", '["a","b"]'],
+    ["JSON null", "null"],
+    ["JSON primitive", '"hello"'],
+  ] as const)("falls back to {} for %s", (_label, input) => {
+    expect(parseToolArguments(input)).toEqual({});
   });
 });

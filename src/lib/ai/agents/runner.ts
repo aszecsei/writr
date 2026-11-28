@@ -11,6 +11,7 @@ import type {
   AiStreamChunk,
   AiUsage,
   FinishReason,
+  ThinkingBlock,
 } from "../types";
 import {
   executeAgentTool,
@@ -56,6 +57,15 @@ export function resolveAgentModel(
     apiKey: settings.providerApiKeys[settings.aiProvider],
     reasoningEffort: settings.reasoningEffort,
   };
+}
+
+function isAbortError(err: unknown, signal?: AbortSignal): boolean {
+  if (signal?.aborted) return true;
+  if (err instanceof Error && err.name === "AbortError") return true;
+  if (typeof DOMException !== "undefined" && err instanceof DOMException) {
+    return err.name === "AbortError";
+  }
+  return false;
 }
 
 /**
@@ -135,13 +145,24 @@ export async function runAgent(
     let finishReason: FinishReason | undefined;
     let iterationUsage: AiUsage | undefined;
     const collectedToolCalls: ToolCallPayload[] = [];
+    const collectedThinkingBlocks: ThinkingBlock[] = [];
 
-    const response = await fetch("/api/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal,
+      });
+    } catch (err) {
+      history.removeAssistantTurn(assistantId);
+      if (isAbortError(err, signal)) {
+        aborted = true;
+        break;
+      }
+      throw err;
+    }
 
     if (!response.ok) {
       history.removeAssistantTurn(assistantId);
@@ -158,58 +179,96 @@ export async function runAgent(
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let streamDone = false;
 
-      streamLoop: while (true) {
-        if (signal?.aborted) {
+      const processLine = (line: string): boolean => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) return false;
+        const json = trimmed.slice(6);
+        if (json === "[DONE]") return true;
+
+        let chunk: AiStreamChunk | undefined;
+        try {
+          chunk = JSON.parse(json) as AiStreamChunk;
+        } catch {
+          return false;
+        }
+
+        // `stop` is terminal accounting and skips the accessor forward.
+        if (chunk.type === "stop") {
+          finishReason = chunk.finishReason;
+          if (chunk.usage) iterationUsage = chunk.usage;
+          return false;
+        }
+        match(chunk)
+          .with({ type: "tool_use" }, (c) => {
+            collectedToolCalls.push({
+              id: c.id,
+              name: c.name,
+              input: c.input,
+            });
+          })
+          .with({ type: "thinking_block" }, (c) => {
+            collectedThinkingBlocks.push(c.block);
+          })
+          .with({ type: "reasoning" }, () => {
+            history.appendChunk(assistantId, chunk);
+          })
+          .with({ type: "content" }, (c) => {
+            assistantContent += c.text;
+            history.appendChunk(assistantId, chunk);
+          })
+          .exhaustive();
+        return false;
+      };
+
+      try {
+        streamLoop: while (true) {
+          if (signal?.aborted) {
+            aborted = true;
+            break;
+          }
+          const { done, value } = await reader.read();
+          if (done) {
+            streamDone = true;
+            buffer += decoder.decode();
+            if (buffer) processLine(buffer);
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (processLine(line)) break streamLoop;
+          }
+        }
+      } catch (err) {
+        if (isAbortError(err, signal)) {
+          aborted = true;
+        } else {
+          history.removeAssistantTurn(assistantId);
+          throw err;
+        }
+      } finally {
+        if (!streamDone) {
+          await reader.cancel().catch(() => {});
+        }
+        reader.releaseLock();
+      }
+    } else {
+      let data: AiResponse;
+      try {
+        data = await response.json();
+      } catch (err) {
+        history.removeAssistantTurn(assistantId);
+        if (isAbortError(err, signal)) {
           aborted = true;
           break;
         }
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
-          const json = trimmed.slice(6);
-          if (json === "[DONE]") break streamLoop;
-
-          let chunk: AiStreamChunk | undefined;
-          try {
-            chunk = JSON.parse(json) as AiStreamChunk;
-          } catch {
-            continue;
-          }
-
-          // `stop` is terminal accounting and skips the accessor forward.
-          if (chunk.type === "stop") {
-            finishReason = chunk.finishReason;
-            if (chunk.usage) iterationUsage = chunk.usage;
-            continue;
-          }
-          match(chunk)
-            .with({ type: "tool_use" }, (c) => {
-              collectedToolCalls.push({
-                id: c.id,
-                name: c.name,
-                input: c.input,
-              });
-            })
-            .with({ type: "reasoning" }, () => {
-              history.appendChunk(assistantId, chunk);
-            })
-            .with({ type: "content" }, (c) => {
-              assistantContent += c.text;
-              history.appendChunk(assistantId, chunk);
-            })
-            .exhaustive();
-        }
+        throw err;
       }
-    } else {
-      const data: AiResponse = await response.json();
       assistantContent = data.content;
       finishReason = data.finishReason;
       iterationUsage = data.usage;
@@ -227,6 +286,9 @@ export async function runAgent(
           text: data.reasoning,
         });
       }
+      if (data.thinkingBlocks?.length) {
+        collectedThinkingBlocks.push(...data.thinkingBlocks);
+      }
       if (data.toolCalls) {
         for (const tc of data.toolCalls) {
           collectedToolCalls.push({
@@ -241,7 +303,7 @@ export async function runAgent(
     const durationMs = Date.now() - startTime;
     lastContent = assistantContent;
 
-    if (signal?.aborted) {
+    if (aborted || signal?.aborted) {
       // Abort during streaming — drop the in-progress assistant turn so the
       // UI doesn't show a half-rendered message. The accessor's
       // `removeAssistantTurn` is responsible for cleanup of any pending tool
@@ -258,6 +320,9 @@ export async function runAgent(
       durationMs,
       finishReason,
       usage: iterationUsage,
+      ...(collectedThinkingBlocks.length > 0
+        ? { thinkingBlocks: collectedThinkingBlocks }
+        : {}),
       ...(hasToolCalls
         ? {
             toolCallRefs: collectedToolCalls.map((tc) => ({

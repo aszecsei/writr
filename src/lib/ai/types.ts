@@ -21,11 +21,16 @@ export interface AiToolCall {
   arguments: Record<string, unknown>;
 }
 
+export type ThinkingBlock =
+  | { type: "thinking"; thinking: string; signature: string }
+  | { type: "redacted_thinking"; data: string };
+
 export interface AiMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string | ContentPart[];
   toolCalls?: AiToolCall[];
   toolCallId?: string;
+  thinkingBlocks?: ThinkingBlock[];
 }
 
 import type {
@@ -77,6 +82,7 @@ export interface AiUsage {
 export interface AiResponse {
   content: string;
   reasoning?: string;
+  thinkingBlocks?: ThinkingBlock[];
   model: string;
   usage?: AiUsage;
   finishReason?: FinishReason;
@@ -85,6 +91,7 @@ export interface AiResponse {
 
 export type AiStreamChunk =
   | { type: "reasoning"; text: string }
+  | { type: "thinking_block"; block: ThinkingBlock }
   | { type: "content"; text: string }
   | {
       type: "tool_use";

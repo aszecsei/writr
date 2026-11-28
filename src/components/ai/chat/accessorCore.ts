@@ -199,10 +199,14 @@ export function makeChatAccessorCore(
         const toolCalls: AiToolCall[] | undefined = info.toolCallRefs?.length
           ? info.toolCallRefs
           : undefined;
+        const thinkingBlocks = info.thinkingBlocks?.length
+          ? info.thinkingBlocks
+          : undefined;
         buffer.push({
           role: "assistant",
           content: turn.content,
           ...(toolCalls ? { toolCalls } : {}),
+          ...(thinkingBlocks ? { thinkingBlocks } : {}),
         });
       }
 
@@ -213,6 +217,9 @@ export function makeChatAccessorCore(
           durationMs: info.durationMs,
           finishReason: info.finishReason,
           toolCallRefs: info.toolCallRefs,
+          ...(info.thinkingBlocks?.length
+            ? { thinkingBlocks: info.thinkingBlocks }
+            : {}),
         };
         if (finalizeOverlay) finalized = finalizeOverlay(finalized);
         return finalized;

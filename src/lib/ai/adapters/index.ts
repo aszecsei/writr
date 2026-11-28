@@ -19,11 +19,21 @@ export const PROVIDER_ADAPTERS: Record<AiProvider, ProviderAdapter> = {
       "HTTP-Referer": "https://writr.app",
       "X-Title": "writr",
     },
+    dialect: "openrouter",
   }),
   anthropic: createAnthropicAdapter(),
-  openai: createOpenAiAdapter({ baseURL: "https://api.openai.com/v1" }),
-  grok: createOpenAiAdapter({ baseURL: "https://api.x.ai/v1" }),
-  zai: createOpenAiAdapter({ baseURL: "https://api.z.ai/api/paas/v4" }),
+  openai: createOpenAiAdapter({
+    baseURL: "https://api.openai.com/v1",
+    dialect: "openai",
+  }),
+  grok: createOpenAiAdapter({
+    baseURL: "https://api.x.ai/v1",
+    dialect: "openai",
+  }),
+  zai: createOpenAiAdapter({
+    baseURL: "https://api.z.ai/api/paas/v4",
+    dialect: "openai",
+  }),
   google: createGoogleAdapter({ mode: "api-key" }),
   vertex: createGoogleAdapter({ mode: "vertex" }),
 };

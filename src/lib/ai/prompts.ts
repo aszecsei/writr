@@ -225,6 +225,9 @@ export function buildMessages(
       content,
       ...(msg.toolCalls ? { toolCalls: msg.toolCalls } : {}),
       ...(msg.toolCallId ? { toolCallId: msg.toolCallId } : {}),
+      ...(msg.thinkingBlocks?.length
+        ? { thinkingBlocks: msg.thinkingBlocks }
+        : {}),
     });
   }
 

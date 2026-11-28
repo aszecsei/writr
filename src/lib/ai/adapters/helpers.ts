@@ -84,6 +84,31 @@ export function generateToolUseId(): string {
 }
 
 /**
+ * Parse a JSON-encoded tool-call argument string into a plain object.
+ * Returns `{}` on empty, malformed, or non-object JSON so a truncated or
+ * invalid upstream stream doesn't crash the SSE generator; downstream tool
+ * schema validation then reports a clean error back to the model.
+ */
+export function parseToolArguments(
+  raw: string | undefined,
+): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed !== null &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<string, unknown>;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Build an `AiUsage` object. `totalTokens` defaults to `promptTokens +
  * completionTokens` (Anthropic reports base input tokens separately from
  * cache tokens, so callers pre-sum them into `promptTokens`); pass it

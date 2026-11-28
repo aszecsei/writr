@@ -87,6 +87,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
   // id — track each tool call's name by its id as assistant messages emit
   // them so the later tool-result message can look it up.
   const toolCallNames = new Map<string, string>();
+  let currentToolResponseParts: GooglePart[] | null = null;
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -100,22 +101,28 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
         }
       }
     } else if (msg.role === "tool") {
-      // Google expects function responses in user role messages
+      // Google expects all function responses for a parallel tool-call turn
+      // inside a single user message.
       const name =
         (msg.toolCallId && toolCallNames.get(msg.toolCallId)) ?? "unknown";
       const responseText = extractTextContent(msg.content).text;
-      nonSystemMessages.push({
-        role: "user",
-        parts: [
-          {
-            functionResponse: {
-              name,
-              response: toFunctionResponse(responseText),
-            },
-          },
-        ],
-      });
+      const part: GooglePart = {
+        functionResponse: {
+          name,
+          response: toFunctionResponse(responseText),
+        },
+      };
+      if (currentToolResponseParts) {
+        currentToolResponseParts.push(part);
+      } else {
+        currentToolResponseParts = [part];
+        nonSystemMessages.push({
+          role: "user",
+          parts: currentToolResponseParts,
+        });
+      }
     } else if (msg.role === "assistant" && msg.toolCalls?.length) {
+      currentToolResponseParts = null;
       // Assistant message with function calls
       const parts: GooglePart[] = [];
       const text = extractTextContent(msg.content).text;
@@ -130,6 +137,7 @@ function extractSystemMessages(messages: AiMessage[]): ExtractedMessages {
       }
       nonSystemMessages.push({ role: "model", parts });
     } else {
+      currentToolResponseParts = null;
       const role = msg.role === "assistant" ? "model" : "user";
       if (typeof msg.content === "string") {
         nonSystemMessages.push({ role, parts: [{ text: msg.content }] });
@@ -277,6 +285,7 @@ export function createGoogleAdapter(
       // the final candidate. Emit `stop` once after the stream drains so the
       // attached usage reflects the run-final values.
       let finalFinishReason: string | null = null;
+      let sawToolCall = false;
       let finalUsage: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
@@ -295,6 +304,7 @@ export function createGoogleAdapter(
                 yield { type: "reasoning" as const, text: part.text };
               }
             } else if (part.functionCall) {
+              sawToolCall = true;
               // Google sends complete function calls (no incremental JSON)
               yield {
                 type: "tool_use" as const,
@@ -315,10 +325,12 @@ export function createGoogleAdapter(
         }
       }
 
-      if (finalFinishReason) {
+      if (finalFinishReason || sawToolCall) {
         yield {
           type: "stop" as const,
-          finishReason: normalizeFinishReason(finalFinishReason),
+          finishReason: sawToolCall
+            ? "tool_use"
+            : normalizeFinishReason(finalFinishReason),
           ...(finalUsage
             ? {
                 usage: toAiUsage({

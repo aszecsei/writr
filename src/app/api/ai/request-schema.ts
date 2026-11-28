@@ -5,6 +5,22 @@ import type {
   ToolParameterProperty,
   ToolParametersSchema as ToolParametersType,
 } from "@/lib/ai/tool-calling";
+import type { ThinkingBlock } from "@/lib/ai/types";
+
+const ThinkingBlockSchema: z.ZodType<ThinkingBlock> = z.discriminatedUnion(
+  "type",
+  [
+    z.object({
+      type: z.literal("thinking"),
+      thinking: z.string(),
+      signature: z.string(),
+    }),
+    z.object({
+      type: z.literal("redacted_thinking"),
+      data: z.string(),
+    }),
+  ],
+);
 
 const TextPartSchema = z.object({
   type: z.literal("text"),
@@ -61,6 +77,7 @@ export const ChatRequestSchema = z.object({
       content: z.union([z.string(), z.array(ContentPartSchema)]),
       toolCalls: z.array(ToolCallSchema).optional(),
       toolCallId: z.string().optional(),
+      thinkingBlocks: z.array(ThinkingBlockSchema).optional(),
     }),
   ),
   temperature: z.number().min(0).max(2).optional(),

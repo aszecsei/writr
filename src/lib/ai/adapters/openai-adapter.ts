@@ -9,6 +9,7 @@ import type {
 import {
   extractTextContent,
   generateToolUseId,
+  parseToolArguments,
   REASONING_EFFORT_SCALE,
   toAiUsage,
 } from "./helpers";
@@ -19,9 +20,12 @@ import type {
   TtsResult,
 } from "./types";
 
+type OpenAiDialect = "openrouter" | "openai";
+
 interface OpenAiAdapterConfig {
   baseURL: string;
   defaultHeaders?: Record<string, string>;
+  dialect: OpenAiDialect;
 }
 
 function normalizeFinishReason(raw: string | null | undefined): FinishReason {
@@ -73,8 +77,20 @@ function isClaude46(model: string): boolean {
   return isAnthropicModel(model) && (/4\.6/.test(model) || /4-6/.test(model));
 }
 
-function buildReasoningParam(params: CompletionParams): object {
-  if (!params.reasoning) return {};
+function hasActiveReasoning(
+  reasoning: CompletionParams["reasoning"],
+): reasoning is NonNullable<CompletionParams["reasoning"]> {
+  return !!reasoning && reasoning.effort !== "none";
+}
+
+function buildReasoningParam(
+  params: CompletionParams,
+  dialect: OpenAiDialect,
+): object {
+  if (!hasActiveReasoning(params.reasoning)) return {};
+  if (dialect === "openai") {
+    return { reasoning_effort: params.reasoning.effort };
+  }
   if (isClaude46(params.model)) {
     // OpenRouter ignores reasoning.effort for Claude 4.6;
     // use verbosity (maps to output_config.effort) instead
@@ -243,13 +259,15 @@ function convertMessages(
   return messages.map((msg) => toOpenAIMessage(msg, isAnthropic));
 }
 
-function buildToolsParam(params: CompletionParams): object {
+function buildToolsParam(
+  params: CompletionParams,
+  isAnthropic: boolean,
+): object {
   if (!params.tools?.length) return {};
   // For Anthropic via OpenRouter, attach cache_control to the LAST tool entry
   // so the entire tools section is cached as a single breakpoint. Tools are
   // stable across iterations — high-leverage cache target. Other providers
   // don't honor cache_control on tools, so leave them alone.
-  const isAnthropic = isAnthropicModel(params.model);
   const lastIdx = params.tools.length - 1;
   return {
     tools: params.tools.map((t, i) => ({
@@ -282,18 +300,24 @@ export function createOpenAiAdapter(
   ):
     | OpenAI.ChatCompletionCreateParamsNonStreaming
     | OpenAI.ChatCompletionCreateParamsStreaming {
-    const isAnthropic = isAnthropicModel(params.model);
+    const useOpenAiDialect = config.dialect === "openai";
+    const isAnthropic = !useOpenAiDialect && isAnthropicModel(params.model);
+    // OpenAI reasoning models reject temperature when reasoning_effort is set.
+    const omitTemperature =
+      useOpenAiDialect && hasActiveReasoning(params.reasoning);
     return {
       model: params.model,
       messages: convertMessages(params.messages, isAnthropic),
-      temperature: params.temperature,
-      max_tokens: params.maxTokens,
+      ...(omitTemperature ? {} : { temperature: params.temperature }),
+      ...(useOpenAiDialect
+        ? { max_completion_tokens: params.maxTokens }
+        : { max_tokens: params.maxTokens }),
       stream,
       // Ask for usage on streaming responses. Without this, OpenAI-compatible
       // APIs omit the usage object entirely from the stream.
       ...(stream ? { stream_options: { include_usage: true } } : {}),
-      ...buildReasoningParam(params),
-      ...buildToolsParam(params),
+      ...buildReasoningParam(params, config.dialect),
+      ...buildToolsParam(params, isAnthropic),
     };
   }
 
@@ -375,10 +399,11 @@ export function createOpenAiAdapter(
           .map((tc) => ({
             id: generateToolUseId(),
             name: tc.function.name,
-            arguments: JSON.parse(tc.function.arguments || "{}"),
+            arguments: parseToolArguments(tc.function.arguments),
           }));
       }
 
+      const normalizedFinish = normalizeFinishReason(choice?.finish_reason);
       return {
         content: message?.content ?? "",
         reasoning: message?.reasoning,
@@ -391,7 +416,12 @@ export function createOpenAiAdapter(
               ...extractCacheUsage(response.usage),
             })
           : undefined,
-        finishReason: normalizeFinishReason(choice?.finish_reason),
+        finishReason:
+          toolCalls?.length &&
+          normalizedFinish !== "length" &&
+          normalizedFinish !== "content_filter"
+            ? "tool_use"
+            : normalizedFinish,
         toolCalls,
       };
     },
@@ -480,7 +510,8 @@ export function createOpenAiAdapter(
         }
       }
 
-      if (finalFinishReason === "tool_calls") {
+      const hasToolCalls = toolCallAccumulator.size > 0;
+      if (hasToolCalls) {
         for (const [, tc] of [...toolCallAccumulator.entries()].sort(
           (a, b) => a[0] - b[0],
         )) {
@@ -488,15 +519,21 @@ export function createOpenAiAdapter(
             type: "tool_use" as const,
             id: generateToolUseId(),
             name: tc.name,
-            input: JSON.parse(tc.args || "{}"),
+            input: parseToolArguments(tc.args),
           };
         }
       }
 
-      if (finalFinishReason) {
+      if (finalFinishReason || hasToolCalls) {
+        const normalizedFinish = normalizeFinishReason(finalFinishReason);
         yield {
           type: "stop" as const,
-          finishReason: normalizeFinishReason(finalFinishReason),
+          finishReason:
+            hasToolCalls &&
+            normalizedFinish !== "length" &&
+            normalizedFinish !== "content_filter"
+              ? "tool_use"
+              : normalizedFinish,
           ...(finalUsage
             ? {
                 usage: toAiUsage({
